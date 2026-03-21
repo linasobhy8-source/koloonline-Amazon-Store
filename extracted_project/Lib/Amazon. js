@@ -1,0 +1,13 @@
+import DefaultApi from "../amazon-sdk/api/DefaultApi";
+
+const client = new DefaultApi();
+
+export async function searchProducts(query) {
+  try {
+    const res = await client.searchItems({ Keywords: query });
+    return res?.SearchResult?.Items || [];
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
