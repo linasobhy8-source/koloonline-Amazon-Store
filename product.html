@@ -1,40 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Cart</title>
+  <title>Product</title>
 </head>
 
 <body>
 
-<h1>Your Cart 🛒</h1>
-
-<div id="cart"></div>
-
-<h2 id="total"></h2>
+<div id="product"></div>
 
 <script>
-function loadCart() {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  let container = document.getElementById("cart");
-  let total = 0;
-
-  cart.forEach(p => {
-    total += p.price;
-
-    container.innerHTML += `
-      <div>
-        <img src="${p.image}" width="100"/>
-        <h3>${p.title}</h3>
-        <p>$${p.price}</p>
-      </div>
-    `;
-  });
-
-  document.getElementById("total").innerText = "Total: $" + total;
+function addToCart(product){
+  cart.push(product);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  alert("Added to cart!");
 }
 
-loadCart();
+async function loadProduct(){
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  const res = await fetch("/api/products");
+  const data = await res.json();
+
+  const p = data.find(x => x.id == id);
+
+  document.getElementById("product").innerHTML = `
+    <img src="${p.image}" width="300"/>
+    <h1>${p.title}</h1>
+    <h2>$${p.price}</h2>
+
+    <button onclick='addToCart(${JSON.stringify(p)})'>
+      Add to Cart
+    </button>
+  `;
+}
+
+loadProduct();
 </script>
 
 </body>
