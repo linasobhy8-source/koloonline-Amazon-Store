@@ -18,13 +18,14 @@
   border-radius: 10px;
 }
 
-.buy-btn {
+.card a {
+  display: block;
   background: orange;
   color: white;
   padding: 10px;
+  text-align: center;
   border: none;
-  width: 100%;
-  cursor: pointer;
   margin-top: 10px;
   border-radius: 8px;
+  text-decoration: none;
 }
