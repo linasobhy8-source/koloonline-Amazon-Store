@@ -1,0 +1,9 @@
+<button onclick="checkout()">Checkout</button>
+
+<script>
+function checkout(){
+  localStorage.removeItem("cart");
+  alert("Order placed successfully 🚀");
+  window.location.href = "thankyou.html";
+}
+</script>
