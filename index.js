@@ -1,4 +1,6 @@
-async function loadProducts() {
+<input id="search" placeholder="Search products..." />
+
+<div class="products"></div>async function loadProducts() {
   const res = await fetch("/api/products");
   const data = await res.json();
 
