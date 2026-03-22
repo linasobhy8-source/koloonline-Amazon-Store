@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 Thank You - Koloonline Amazon Store</title>
+
+<!-- SEO & Open Graph -->
+<meta name="description" content="Thank you for your order at Koloonline Amazon Store">
+<meta property="og:title" content="Koloonline Amazon Thank You">
+<meta property="og:image" content="https://www.koloonline.online/favicon.ico">
+<link rel="icon" href="favicon.ico">
+
+<!-- Facebook Pixel -->
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0].parentNode.insertBefore(t,s)}
+(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','353894198840203');fbq('track','PageView');</script>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config','G-YS8L61XLPR');
+</script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>🔥 Thank You!</header>
+
+<section style="max-width:600px;margin:40px auto;background:#fff;padding:30px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
+  <h2>Thank You for Your Order!</h2>
+  <p>Your order has been received and is being processed.</p>
+
+  <h3 style="margin-top:30px;">🎁 Special Offer Just For You</h3>
+  <p>Grab this exclusive deal before it runs out!</p>
+  <button class="buy-btn" onclick="upsell()">🔥 Get This Offer</button>
+</section>
+
+<script>
+function upsell(){
+  // رابط أي منتج Upsell تابع
+  const upsellLink = "https://www.amazon.com/dp/B08N5WRWNW?tag=koloonlinesto-20";
+  fbq('track','InitiateCheckout');
+  gtag('event','begin_checkout');
+  window.location.href = upsellLink;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+// ================= ZAPIER =================
+const ZAPIER_URL="https://hooks.zapier.com/hooks/catch/26698099/u0jjg9s/";
+
+// ================= PRODUCTS =================
+const allProducts=[
+{
+title:"Anker Speakerphone",
+image:"https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
+price:"$49.99",
+asin:"B07ZNT7PRL"
+},
+{
+title:"Smart Watch",
+image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
+price:"$39.99",
+asin:"B09V7Z4TJG"
+}
+];
+
+// ================= COUNTRY =================
+function getCountry(){
+let lang=navigator.language||"en-US";
+if(lang.includes("en-US")) return "US";
+if(lang.includes("en-CA")) return "CA";
+if(lang.includes("pl")) return "PL";
+if(lang.includes("ar")) return "EG";
+return "US";
+}
+
+// ================= TAG =================
+function getTag(c){
+return {
+US:"koloonlinesto-20",
+CA:"linasobhy20d8-20",
+PL:"koloonline-21",
+EG:"onlinesh03f31-21"
+}[c];
+}
+
+// ================= DOMAIN =================
+function getDomain(c){
+return {
+US:"amazon.com",
+CA:"amazon.ca",
+PL:"amazon.pl",
+EG:"amazon.eg"
+}[c];
+}
+
+// ================= CLICK =================
+function trackClick(title,asin){
+let c=getCountry();
+let tag=getTag(c);
+let domain=getDomain(c);
+
+let link=`https://www.${domain}/dp/${asin}?tag=${tag}`;
+
+// GA4
+if(typeof gtag!=="undefined"){
+gtag('event','buy_click',{product:title,country:c});
+}
+
+// Facebook
+if(typeof fbq!=="undefined"){
+fbq('track','InitiateCheckout');
+}
+
+// Zapier
+fetch(ZAPIER_URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+product:title,
+asin:asin,
+country:c,
+link:link
+})
+});
+
+// Redirect
+window.open(link,"_blank");
+}
+
+// ================= DISPLAY =================
+function displayProducts(products){
+let html="";
+products.forEach(p=>{
+html+=`
+<div class="card">
+<img src="${p.image}">
+<div class="card-content">
+<h3>${p.title}</h3>
+<p>${p.price}</p>
+</div>
+<button class="buy-btn" onclick="trackClick('${p.title}','${p.asin}')">
+🔥 Order Now
+</button>
+</div>
+`;
+});
+document.getElementById("products").innerHTML=html;
+}
+
+// ================= SEARCH =================
+function liveSearch(){
+let q=document.getElementById("searchInput").value.toLowerCase();
+displayProducts(allProducts.filter(p=>p.title.toLowerCase().includes(q)));
+}
+
+displayProducts(allProducts);

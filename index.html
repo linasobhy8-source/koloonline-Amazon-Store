@@ -1,24 +1,152 @@
-body{font-family:Arial,sans-serif;margin:0;padding:0;background:#f5f5f5;}
-header{background:#232f3e;color:#fff;padding:15px 20px;font-size:24px;text-align:center;font-weight:bold;}
-.navbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#37475a;color:#fff;}
-.navbar input{width:50%;padding:8px;border-radius:4px;border:none;font-size:16px;}
-.navbar button{padding:9px 15px;background:#ff9900;border:none;border-radius:4px;font-weight:bold;cursor:pointer;}
-.categories{display:flex;gap:10px;padding:10px;overflow-x:auto;}
-.categories button{padding:8px 15px;background:#ddd;border:none;border-radius:5px;cursor:pointer;transition:0.3s;}
-.categories button:hover{background:#ff9900;color:#fff;}
-.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;padding:20px;}
-.card{background:#fff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;transition:0.3s;}
-.card:hover{transform:scale(1.05);}
-.card img{width:100%;height:200px;object-fit:contain;background:#f9f9f9;}
-.card-content{padding:15px;flex-grow:1;}
-.card-content h3{font-size:18px;margin:5px 0;color:#111;min-height:48px;}
-.card-content p{font-size:16px;margin:5px 0;color:#b12704;font-weight:bold;}
-button.buy-btn{background:#ff9900;border:none;padding:12px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;transition:0.3s;}
-button.buy-btn:hover{background:#e68a00;}
-.rating{display:flex;align-items:center;margin:5px 0;}
-.rating span{color:#ffa41c;margin-right:3px;}
-.slider{display:flex;overflow-x:auto;gap:15px;padding:10px;}
-.slider::-webkit-scrollbar{display:none;}
-section{padding:40px 20px;background:#fff;margin:20px;}
-section h2{font-size:22px;margin-bottom:20px;color:#232f3e;}
-.faq-item{margin-bottom:15px;}
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>Koloonline AI Store</title>
+
+<style>
+
+body { margin:0; font-family: Arial; }
+
+/* ===== HEADER ===== */
+.header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px;
+  background:#111;
+  color:#fff;
+  position:sticky;
+  top:0;
+}
+
+.logo { font-weight:bold; }
+
+.search {
+  width:50%;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+/* ===== PRODUCTS ===== */
+#products {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:15px;
+  padding:20px;
+}
+
+.card {
+  border:1px solid #ddd;
+  padding:10px;
+  border-radius:10px;
+}
+
+.card img {
+  width:100%;
+  border-radius:10px;
+}
+
+button {
+  width:100%;
+  padding:10px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:8px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+
+  <div class="logo">🔥 Koloonline Store</div>
+
+  <input id="searchInput" class="search" placeholder="ابحث..." onkeyup="liveSearch()"/>
+
+  <div>🛒</div>
+
+</header>
+
+<!-- ===== PRODUCTS ===== -->
+<div id="products"></div>
+
+<script>
+
+// ================= ZAPIER =================
+const ZAPIER_URL = "https://hooks.zapier.com/hooks/catch/26698099/u0jjg9s/";
+
+// ================= PRODUCTS DATA =================
+let allProducts = [];
+
+// ================= LOAD PRODUCTS =================
+async function loadProducts(q="smart") {
+
+  const res = await fetch(`/api/products?q=${q}`);
+  allProducts = await res.json();
+
+  displayProducts(allProducts);
+}
+
+// ================= DISPLAY =================
+function displayProducts(products){
+
+  let html="";
+
+  products.forEach(p=>{
+
+    html += `
+      <div class="card">
+        <img src="${p.image || ''}">
+        <h3>${p.title}</h3>
+        <p>${p.price}</p>
+
+        <button onclick="trackClick('${p.title}','${p.asin}')">
+          اطلب الآن
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById("products").innerHTML = html;
+}
+
+// ================= SEARCH =================
+function liveSearch(){
+
+  let q = document.getElementById("searchInput").value;
+
+  if(q.length > 1){
+    loadProducts(q);
+  } else {
+    loadProducts("smart");
+  }
+}
+
+// ================= TRACK =================
+function trackClick(title, asin){
+
+  let link = `https://amazon.com/dp/${asin}`;
+
+  fetch(ZAPIER_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({title,asin,link})
+  });
+
+  window.open(link,"_blank");
+}
+
+// ================= INIT =================
+loadProducts();
+
+</script>
+
+</body>
+</html>
