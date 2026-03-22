@@ -1,13 +1,25 @@
-data.forEach(p => {
-  container.innerHTML += `
-    <div class="card">
-      <img src="${p.image}" />
-      <h3>${p.title}</h3>
-      <p>$${p.price}</p>
+<div class="products"></div>
 
-      <a href="product.html?id=${p.id}">
-        View Details
-      </a>
-    </div>
-  `;
-});
+<script>
+async function loadProducts() {
+  const res = await fetch("/api/products");
+  const data = await res.json();
+
+  const container = document.querySelector(".products");
+
+  data.forEach(p => {
+    container.innerHTML += `
+      <div class="card">
+        <h3>${p.title}</h3>
+        <p>$${p.price}</p>
+
+        <a href="product.html?id=${p.id}">
+          عرض التفاصيل
+        </a>
+      </div>
+    `;
+  });
+}
+
+loadProducts();
+</script>
