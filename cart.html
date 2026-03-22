@@ -1,4 +1,13 @@
-<h1>Your Cart 🛒</h1>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cart</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>Your Cart 🛒</header>
 
 <div id="cart"></div>
 
@@ -6,15 +15,23 @@
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 function renderCart(){
-  const container = document.getElementById("cart");
+  let html = "";
 
-  container.innerHTML = cart.map(p => `
-    <div>
-      <h3>${p.title}</h3>
-      <p>$${p.price}</p>
-    </div>
-  `).join("");
+  cart.forEach(item=>{
+    html += `
+      <div class="card">
+        <img src="${item.image}">
+        <h3>${item.title}</h3>
+        <p>$${item.price}</p>
+      </div>
+    `;
+  });
+
+  document.getElementById("cart").innerHTML = html;
 }
 
 renderCart();
 </script>
+
+</body>
+</html>
