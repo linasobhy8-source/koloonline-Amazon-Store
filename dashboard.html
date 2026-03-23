@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Affiliate Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background:#f5f5f5; }
+    .card { background:#fff; padding:15px; margin:10px 0; border-radius:10px; }
+    h2 { color:#333; }
+  </style>
+</head>
+
+<body>
+
+<h2>💰 Koloonline Affiliate Dashboard</h2>
+
+<div id="stats"></div>
+
+<script>
+
+function loadDashboard(){
+
+  let data = JSON.parse(localStorage.getItem("clicks") || "{}");
+
+  let html = "";
+
+  let total = 0;
+
+  for(let asin in data){
+    total += data[asin];
+
+    html += `
+      <div class="card">
+        <h3>📦 Product: ${asin}</h3>
+        <p>🔥 Clicks: ${data[asin]}</p>
+      </div>
+    `;
+  }
+
+  if(Object.keys(data).length === 0){
+    html = "<p>No data yet 😎</p>";
+  } else {
+    html = `<h3>Total Clicks: ${total}</h3>` + html;
+  }
+
+  document.getElementById("stats").innerHTML = html;
+}
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>
