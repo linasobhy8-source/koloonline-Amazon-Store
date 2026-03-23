@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Cart</title>
+  <meta charset="UTF-8">
+  <title>Your Cart</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -9,28 +10,61 @@
 
 <header>Your Cart 🛒</header>
 
-<div id="cart"></div>
+<div id="cart" class="products"></div>
 
 <script>
+
+// ================= GET CART =================
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+// ================= RENDER CART =================
 function renderCart(){
+  let container = document.getElementById("cart");
+
+  // لو فاضي
+  if(cart.length === 0){
+    container.innerHTML = `
+      <div style="text-align:center;padding:50px;font-size:18px;">
+        🛒 Your cart is empty
+      </div>
+    `;
+    return;
+  }
+
   let html = "";
 
-  cart.forEach(item=>{
+  cart.forEach((item, index)=>{
     html += `
       <div class="card">
-        <img src="${item.image}">
-        <h3>${item.title}</h3>
-        <p>$${item.price}</p>
+
+        <img src="${item.image}" alt="${item.title}">
+
+        <div class="card-content">
+          <h3>${item.title}</h3>
+          <p>${item.price}</p>
+        </div>
+
+        <button class="buy-btn" onclick="removeItem(${index})" style="background:#d9534f;">
+          ❌ Remove
+        </button>
+
       </div>
     `;
   });
 
-  document.getElementById("cart").innerHTML = html;
+  container.innerHTML = html;
 }
 
+// ================= REMOVE ITEM =================
+function removeItem(index){
+  cart.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+}
+
+// ================= INIT =================
 renderCart();
+
 </script>
 
 </body>
