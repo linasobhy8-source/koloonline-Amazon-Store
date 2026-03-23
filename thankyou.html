@@ -3,52 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 Thank You - Koloonline Amazon Store</title>
 
-<!-- SEO & Open Graph -->
-<meta name="description" content="Thank you for your order at Koloonline Amazon Store">
-<meta property="og:title" content="Koloonline Amazon Thank You">
+<title>🔥 Thank You - Koloonline Store</title>
+
+<meta name="description" content="Thank you for your order at Koloonline Store">
+<meta property="og:title" content="Koloonline Order Confirmed">
 <meta property="og:image" content="https://www.koloonline.online/favicon.ico">
+
 <link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
 
-<!-- Facebook Pixel -->
-<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0].parentNode.insertBefore(t,s)}
-(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init','353894198840203');fbq('track','PageView');</script>
+<!-- ================= FACEBOOK PIXEL ================= -->
+<script>
+!function(f,b,e,v,n,t,s){
+if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
 
-<!-- Google Analytics -->
+fbq('init','353894198840203');
+fbq('track','PageView');
+</script>
+
+<!-- ================= GOOGLE ANALYTICS ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
-window.dataLayer = window.dataLayer||[];
+window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config','G-YS8L61XLPR');
 </script>
 
-<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <header>🔥 Thank You!</header>
 
-<section style="max-width:600px;margin:40px auto;background:#fff;padding:30px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
-  <h2>Thank You for Your Order!</h2>
-  <p>Your order has been received and is being processed.</p>
+<section style="
+  max-width:600px;
+  margin:40px auto;
+  background:#fff;
+  padding:30px;
+  border-radius:12px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.1);
+  text-align:center;
+">
 
-  <h3 style="margin-top:30px;">🎁 Special Offer Just For You</h3>
-  <p>Grab this exclusive deal before it runs out!</p>
-  <button class="buy-btn" onclick="upsell()">🔥 Get This Offer</button>
+  <h2>🎉 Order Confirmed Successfully!</h2>
+  <p>Your order is being processed and will be shipped soon 🚚</p>
+
+  <div id="orderInfo" style="margin:20px 0;font-weight:bold;"></div>
+
+  <h3 style="margin-top:30px;">🔥 Special Limited Offer</h3>
+  <p>Unlock this exclusive deal before it expires!</p>
+
+  <button class="buy-btn" onclick="upsell()">
+    🚀 Claim Your Offer
+  </button>
+
+  <button class="buy-btn" onclick="goHome()" style="background:#333;margin-top:10px;">
+    🏠 Back to Store
+  </button>
+
 </section>
 
 <script>
+
+// ================= ORDER ID =================
+let orderId = localStorage.getItem("lastOrderId");
+
+if(!orderId){
+  orderId = "KO-" + Math.floor(Math.random() * 9999999);
+  localStorage.setItem("lastOrderId", orderId);
+}
+
+// عرض رقم الطلب
+document.getElementById("orderInfo").innerHTML =
+  "🧾 Order ID: " + orderId;
+
+// ================= TRACK PURCHASE =================
+fbq('track', 'Purchase', {
+  value: 0,
+  currency: 'USD',
+  order_id: orderId
+});
+
+gtag('event', 'purchase', {
+  transaction_id: orderId,
+  value: 0,
+  currency: 'USD'
+});
+
+// ================= UPSELL =================
 function upsell(){
-  // رابط أي منتج Upsell تابع
-  const upsellLink = "https://www.amazon.com/dp/B08N5WRWNW?tag=koloonlinesto-20";
+
+  // مهم: هنا رابط أفلييت حقيقي
+  const upsellLink =
+    "https://www.amazon.com/dp/B08N5WRWNW?tag=koloonlinesto-20";
+
   fbq('track','InitiateCheckout');
   gtag('event','begin_checkout');
+
   window.location.href = upsellLink;
 }
+
+// ================= HOME =================
+function goHome(){
+  window.location.href = "index.html";
+}
+
+// ================= PREVENT REORDER BUG =================
+if(localStorage.getItem("cart")){
+  localStorage.removeItem("cart");
+}
+
 </script>
 
 </body>
