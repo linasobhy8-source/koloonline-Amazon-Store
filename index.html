@@ -24,6 +24,11 @@
     Cart 🛒 (<span id="cartCount">0</span>)
   </button>
 
+  <!-- ✅ زر Dashboard هنا -->
+  <button onclick="location.href='dashboard.html'">
+    📊 Dashboard
+  </button>
+
 </div>
 
 <!-- suggestion box -->
@@ -132,12 +137,10 @@ function displayProducts(list){
     html += `
       <div class="card">
         <img src="${p.image}" alt="${p.title}">
-
         <div class="card-content">
           <h3>${p.title}</h3>
           <p>${p.price}</p>
         </div>
-
         <button class="buy-btn" onclick="openProduct('${p.asin}')">
           🔥 Order Now
         </button>
@@ -148,9 +151,8 @@ function displayProducts(list){
   document.getElementById("products").innerHTML = html;
 }
 
-// ================= 🤖 AI SMART SEARCH =================
+// ================= SEARCH =================
 function smartSuggest(){
-
   let input = document.getElementById("searchInput").value.toLowerCase().trim();
   let box = document.getElementById("suggestBox");
 
@@ -160,44 +162,12 @@ function smartSuggest(){
     return;
   }
 
-  // ================= AI SCORE ENGINE =================
-  function getScore(title, query){
-
-    title = title.toLowerCase();
-
-    let score = 0;
-
-    let words = query.split(" ");
-
-    words.forEach(word=>{
-      if(title.includes(word)) score += 3;
-    });
-
-    if(title.startsWith(query)) score += 5;
-
-    if(title === query) score += 10;
-
-    // fuzzy boost
-    score += Math.max(0, 5 - Math.abs(title.length - query.length));
-
-    return score;
-  }
-
-  // ================= RANK PRODUCTS =================
-  let scored = products.map(p=>{
-    return {
-      ...p,
-      score: getScore(p.title, input)
-    };
-  });
-
-  scored.sort((a,b)=> b.score - a.score);
-
-  let filtered = scored.filter(p => p.score > 0);
+  let filtered = products.filter(p =>
+    p.title.toLowerCase().includes(input)
+  );
 
   displayProducts(filtered);
 
-  // ================= SUGGEST BOX =================
   if(filtered.length === 0){
     box.style.display = "none";
     return;
@@ -206,11 +176,11 @@ function smartSuggest(){
   box.style.display = "block";
   box.innerHTML = "";
 
-  filtered.slice(0,5).forEach(p => {
+  filtered.forEach(p => {
     box.innerHTML += `
       <div onclick="openProduct('${p.asin}')"
            style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
-        🤖 ${p.title}
+        🔎 ${p.title}
       </div>
     `;
   });
@@ -219,20 +189,16 @@ function smartSuggest(){
 // ================= ENTER =================
 function handleEnter(e){
   if(e.key === "Enter"){
-
     let input = document.getElementById("searchInput").value.trim();
 
     if(!input) return;
 
-    let best = products
-      .map(p => ({
-        ...p,
-        score: p.title.toLowerCase().includes(input.toLowerCase()) ? 1 : 0
-      }))
-      .sort((a,b)=>b.score-a.score)[0];
+    let first = products.find(p =>
+      p.title.toLowerCase().includes(input.toLowerCase())
+    );
 
-    if(best){
-      openProduct(best.asin);
+    if(first){
+      openProduct(first.asin);
     }
   }
 }
