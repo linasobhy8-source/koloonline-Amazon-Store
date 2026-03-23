@@ -30,7 +30,6 @@
 
 </div>
 
-<!-- suggestion box -->
 <div style="position:relative;">
   <div id="suggestBox"
        style="background:#fff;border-radius:6px;display:none;position:absolute;z-index:999;width:100%;">
@@ -42,40 +41,43 @@
 <script>
 
 // ================= PRODUCTS =================
-const products = [
+let products = [
   {
     id: 1,
     title: "Echo Dot 5",
     asin: "B09B8Q3YHJ",
-    price: "$39.99",
-    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+    price: 39.99,
+    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
+    affiliateRate: 0.06
   },
   {
     id: 2,
     title: "Smart Watch Pro",
     asin: "B09V7Z4TJG",
-    price: "$49.99",
-    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+    price: 49.99,
+    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
+    affiliateRate: 0.07
   },
   {
     id: 3,
     title: "Wireless Earbuds",
     asin: "B08J5F3G18",
-    price: "$29.99",
-    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
+    price: 29.99,
+    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg",
+    affiliateRate: 0.05
   }
 ];
 
 // ================= CART =================
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// ================= SAVE CART =================
+// ================= SAVE =================
 function saveCart(){
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
 }
 
-// ================= UPDATE COUNT =================
+// ================= CART COUNT =================
 function updateCartCount(){
   let total = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
   document.getElementById("cartCount").innerText = total;
@@ -84,11 +86,9 @@ function updateCartCount(){
 // ================= COUNTRY =================
 function getCountry(){
   let lang = navigator.language || "en-US";
-
   if(lang.includes("ar")) return "EG";
   if(lang.includes("en-CA")) return "CA";
   if(lang.includes("pl")) return "PL";
-
   return "US";
 }
 
@@ -112,13 +112,13 @@ function getDomain(c){
   }[c] || "amazon.com";
 }
 
-// ================= AFFILIATE LINK =================
+// ================= LINK =================
 function buildAffiliateLink(asin){
   const country = getCountry();
   return `https://www.${getDomain(country)}/dp/${asin}?tag=${getTag(country)}`;
 }
 
-// ================= TRACKING =================
+// ================= TRACK CLICK =================
 function trackClick(asin){
 
   let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
@@ -126,9 +126,9 @@ function trackClick(asin){
   localStorage.setItem("clicks", JSON.stringify(clicks));
 
   let today = new Date().toLocaleDateString();
-
   let daily = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
   daily[today] = (daily[today] || 0) + 1;
+
   localStorage.setItem("dailyClicks", JSON.stringify(daily));
 }
 
@@ -140,6 +140,7 @@ function openProduct(asin){
 
 // ================= ADD TO CART =================
 function addToCart(id){
+
   const product = products.find(p => p.id === id);
 
   let exists = cart.find(p => p.id === id);
@@ -151,14 +152,30 @@ function addToCart(id){
   }
 
   saveCart();
-  alert("Added to cart 🛒");
+}
+
+// ================= SMART RANKING =================
+function sortProducts(list){
+
+  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
+
+  return list.sort((a,b)=>{
+
+    let aScore = (clicks[a.asin] || 0) * a.affiliateRate;
+    let bScore = (clicks[b.asin] || 0) * b.affiliateRate;
+
+    return bScore - aScore;
+  });
 }
 
 // ================= DISPLAY =================
 function displayProducts(list){
+
+  let sorted = sortProducts(list);
+
   let html = "";
 
-  list.forEach(p=>{
+  sorted.forEach(p=>{
     html += `
       <div class="card">
 
@@ -166,7 +183,7 @@ function displayProducts(list){
 
         <div class="card-content">
           <h3>${p.title}</h3>
-          <p>${p.price}</p>
+          <p>💲 ${p.price}</p>
         </div>
 
         <button class="buy-btn" onclick="addToCart(${p.id})">
@@ -187,6 +204,7 @@ function displayProducts(list){
 
 // ================= SEARCH =================
 function smartSuggest(){
+
   let input = document.getElementById("searchInput").value.toLowerCase().trim();
   let box = document.getElementById("suggestBox");
 
@@ -202,18 +220,13 @@ function smartSuggest(){
 
   displayProducts(filtered);
 
-  if(filtered.length === 0){
-    box.style.display = "none";
-    return;
-  }
-
-  box.style.display = "block";
+  box.style.display = filtered.length ? "block" : "none";
   box.innerHTML = "";
 
-  filtered.forEach(p => {
+  filtered.forEach(p=>{
     box.innerHTML += `
       <div onclick="openProduct('${p.asin}')"
-           style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
+        style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
         🔎 ${p.title}
       </div>
     `;
@@ -222,10 +235,10 @@ function smartSuggest(){
 
 // ================= ENTER =================
 function handleEnter(e){
-  if(e.key === "Enter"){
-    let input = document.getElementById("searchInput").value.trim();
 
-    if(!input) return;
+  if(e.key === "Enter"){
+
+    let input = document.getElementById("searchInput").value.trim();
 
     let first = products.find(p =>
       p.title.toLowerCase().includes(input.toLowerCase())
