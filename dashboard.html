@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Koloonline Dashboard</title>
+<title>Koloonline Dashboard Pro</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -59,6 +59,7 @@ canvas {
 
 <div class="nav">
   <button onclick="location.href='index.html'">🏠 Home</button>
+  <button onclick="resetData()">🗑 Reset Data</button>
 </div>
 
 <h2>📊 Overview</h2>
@@ -79,33 +80,38 @@ canvas {
 let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
 let dailyClicks = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
 
-// ================= PRODUCTS =================
+// ================= PRODUCTS MAP =================
 const productsMap = {
   B09B8Q3YHJ: "Echo Dot 5",
   B09V7Z4TJG: "Smart Watch Pro",
   B08J5F3G18: "Wireless Earbuds"
 };
 
+// ================= SAFE SUM =================
+function getTotalClicks(){
+  return Object.values(clicks).reduce((a,b)=> a + b, 0);
+}
+
 // ================= OVERVIEW =================
 function renderOverview(){
 
-  let totalClicks = 0;
+  let totalClicks = getTotalClicks();
 
-  for(let asin in clicks){
-    totalClicks += clicks[asin];
-  }
-
-  let revenue = (totalClicks * 0.05).toFixed(2);
+  // تقدير أرباح (قابل للتعديل لاحقًا)
+  let estimatedRevenue = (totalClicks * 0.05).toFixed(2);
 
   document.getElementById("overview").innerHTML = `
     <div class="card">
       <h3>🔥 Total Clicks: ${totalClicks}</h3>
-      <h3>💰 Estimated Earnings: $${revenue}</h3>
+      <h3>💰 Estimated Earnings: $${estimatedRevenue}</h3>
+      <h3>📦 Products Tracked: ${Object.keys(clicks).length}</h3>
     </div>
   `;
 }
 
-// ================= PRODUCT CHART =================
+// ================= CLICK CHART =================
+let clickChartInstance = null;
+
 function renderChart(){
 
   let labels = [];
@@ -121,13 +127,17 @@ function renderChart(){
     data = [0];
   }
 
-  new Chart(document.getElementById("clickChart"), {
+  if(clickChartInstance){
+    clickChartInstance.destroy();
+  }
+
+  clickChartInstance = new Chart(document.getElementById("clickChart"), {
     type: "bar",
     data: {
-      labels: labels,
+      labels,
       datasets: [{
-        label: "Clicks",
-        data: data,
+        label: "Product Clicks",
+        data,
         borderWidth: 2
       }]
     },
@@ -141,6 +151,8 @@ function renderChart(){
 }
 
 // ================= DAILY CHART =================
+let dailyChartInstance = null;
+
 function renderDailyChart(){
 
   let labels = Object.keys(dailyClicks);
@@ -151,13 +163,17 @@ function renderDailyChart(){
     data = [0];
   }
 
-  new Chart(document.getElementById("dailyChart"), {
+  if(dailyChartInstance){
+    dailyChartInstance.destroy();
+  }
+
+  dailyChartInstance = new Chart(document.getElementById("dailyChart"), {
     type: "line",
     data: {
-      labels: labels,
+      labels,
       datasets: [{
         label: "Daily Clicks",
-        data: data,
+        data,
         tension: 0.3
       }]
     }
@@ -184,10 +200,19 @@ function renderTopProducts(){
   });
 
   if(arr.length === 0){
-    html = "<p>No data yet 😎</p>";
+    html = "<p>No tracking data yet 😎</p>";
   }
 
   document.getElementById("topProducts").innerHTML = html;
+}
+
+// ================= RESET DATA =================
+function resetData(){
+  if(confirm("Reset all analytics data?")){
+    localStorage.removeItem("clicks");
+    localStorage.removeItem("dailyClicks");
+    location.reload();
+  }
 }
 
 // ================= INIT =================
