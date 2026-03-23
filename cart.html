@@ -26,15 +26,19 @@
 <!-- CART CONTAINER -->
 <div id="cart" class="products"></div>
 
+<!-- TOTAL + CHECKOUT -->
+<div id="summary" style="padding:20px;"></div>
+
 <script>
 
 // ================= GET CART =================
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
 // ================= RENDER CART =================
 function renderCart(){
 
   let container = document.getElementById("cart");
+  let summary = document.getElementById("summary");
 
   // empty cart
   if(cart.length === 0){
@@ -43,12 +47,17 @@ function renderCart(){
         🛒 Your cart is empty
       </div>
     `;
+    summary.innerHTML = "";
     return;
   }
 
   let html = "";
+  let totalItems = 0;
 
   cart.forEach((item, index)=>{
+
+    totalItems += item.qty;
+
     html += `
       <div class="card">
 
@@ -57,7 +66,16 @@ function renderCart(){
         <div class="card-content">
           <h3>${item.title}</h3>
           <p>${item.price}</p>
+          <p>Qty: ${item.qty}</p>
         </div>
+
+        <button class="buy-btn" onclick="increaseQty(${index})">
+          ➕
+        </button>
+
+        <button class="buy-btn" onclick="decreaseQty(${index})">
+          ➖
+        </button>
 
         <button class="buy-btn" onclick="removeItem(${index})" style="background:#d9534f;">
           ❌ Remove
@@ -68,25 +86,57 @@ function renderCart(){
   });
 
   container.innerHTML = html;
+
+  // summary
+  summary.innerHTML = `
+    <div class="card">
+      <h3>🛒 Total Items: ${totalItems}</h3>
+
+      <button class="buy-btn" onclick="checkout()">
+        💰 Checkout
+      </button>
+    </div>
+  `;
 }
 
 // ================= REMOVE ITEM =================
 function removeItem(index){
-
   cart.splice(index, 1);
+  saveCart();
+}
 
+// ================= INCREASE =================
+function increaseQty(index){
+  cart[index].qty += 1;
+  saveCart();
+}
+
+// ================= DECREASE =================
+function decreaseQty(index){
+  if(cart[index].qty > 1){
+    cart[index].qty -= 1;
+  }else{
+    cart.splice(index,1);
+  }
+  saveCart();
+}
+
+// ================= SAVE =================
+function saveCart(){
   localStorage.setItem("cart", JSON.stringify(cart));
-
   renderCart();
-
   updateCartCount();
 }
 
-// ================= CART COUNT SYNC =================
+// ================= CART COUNT =================
 function updateCartCount(){
-  let count = cart.length;
-
+  let count = cart.reduce((sum,item)=> sum + item.qty, 0);
   localStorage.setItem("cartCount", count);
+}
+
+// ================= CHECKOUT =================
+function checkout(){
+  alert("🚀 Checkout coming next step!");
 }
 
 // ================= INIT =================
