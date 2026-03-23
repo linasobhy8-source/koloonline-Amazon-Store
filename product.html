@@ -8,35 +8,109 @@
 
 <body>
 
-<!-- ================= HEADER ================= -->
 <header>🔥 Product Details</header>
 
-<!-- ================= CART TOP BAR ================= -->
 <div class="navbar">
   🛒 Cart: <span id="cart-count">0</span>
+
+  <button onclick="location.href='index.html'">🏠 Home</button>
+  <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
 </div>
 
-<!-- ================= PRODUCT CONTAINER ================= -->
 <div id="product" class="products"></div>
 
 <script>
 
-// ================= CART =================
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+// ================= PRODUCTS (SAME AS STORE) =================
+const products = [
+  {
+    id: "1",
+    title: "Echo Dot 5 🔥 30% OFF",
+    asin: "B09B8Q3YHJ",
+    price: "$39.99",
+    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+  },
+  {
+    id: "2",
+    title: "Smart Watch Pro 🔥 Deal",
+    asin: "B09V7Z4TJG",
+    price: "$49.99",
+    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+  },
+  {
+    id: "3",
+    title: "Wireless Earbuds 🎧 Sale",
+    asin: "B08J5F3G18",
+    price: "$29.99",
+    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
+  }
+];
 
-// update cart count
+// ================= CART =================
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
 function updateCartCount(){
-  document.getElementById("cart-count").innerText = cart.length;
+  let count = cart.reduce((sum,item)=> sum + (item.qty || 1), 0);
+  document.getElementById("cart-count").innerText = count;
 }
 
 // ================= ADD TO CART =================
 function addToCart(product){
 
-  cart.push(product);
-  localStorage.setItem("cart", JSON.stringify(cart));
+  let exists = cart.find(item => item.asin === product.asin);
 
+  if(exists){
+    exists.qty += 1;
+  }else{
+    cart.push({...product, qty:1});
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
+
   alert("Added to cart 🛒");
+}
+
+// ================= COUNTRY =================
+function getCountry(){
+  let lang = navigator.language || "en-US";
+  if(lang.includes("ar")) return "EG";
+  return "US";
+}
+
+// ================= TAG =================
+function getTag(c){
+  return {
+    US: "koloonlinesto-20",
+    EG: "onlinesh03f31-21"
+  }[c] || "koloonlinesto-20";
+}
+
+// ================= DOMAIN =================
+function getDomain(c){
+  return {
+    US: "amazon.com",
+    EG: "amazon.eg"
+  }[c] || "amazon.com";
+}
+
+// ================= AFFILIATE =================
+function buildAffiliateLink(asin){
+  let c = getCountry();
+  return `https://www.${getDomain(c)}/dp/${asin}?tag=${getTag(c)}`;
+}
+
+// ================= TRACKING =================
+function trackClick(asin){
+  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
+  clicks[asin] = (clicks[asin] || 0) + 1;
+  localStorage.setItem("clicks", JSON.stringify(clicks));
+}
+
+// ================= BUY NOW =================
+function buyNow(asin){
+  trackClick(asin);
+  window.open(buildAffiliateLink(asin), "_blank");
 }
 
 // ================= LOAD PRODUCT =================
@@ -44,28 +118,6 @@ function loadProduct(){
 
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
-
-  // 👇 نفس منتجات index (مؤقتًا)
-  const products = [
-    {
-      id: "1",
-      title: "Echo Dot 5",
-      price: "$39.99",
-      image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
-    },
-    {
-      id: "2",
-      title: "Smart Watch Pro",
-      price: "$49.99",
-      image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
-    },
-    {
-      id: "3",
-      title: "Wireless Earbuds",
-      price: "$29.99",
-      image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
-    }
-  ];
 
   const p = products.find(x => x.id === id);
 
@@ -92,6 +144,11 @@ function loadProduct(){
 
       <button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
         🛒 Add to Cart
+      </button>
+
+      <button class="buy-btn" style="background:#28a745;margin-top:10px;"
+        onclick="buyNow('${p.asin}')">
+        🔥 Buy from Amazon
       </button>
 
     </div>
