@@ -10,6 +10,20 @@
 
 <header>Your Cart 🛒</header>
 
+<!-- NAV BAR -->
+<div class="navbar">
+
+  <button onclick="location.href='index.html'">
+    🏠 Home
+  </button>
+
+  <button onclick="location.href='dashboard.html'">
+    📊 Dashboard
+  </button>
+
+</div>
+
+<!-- CART CONTAINER -->
 <div id="cart" class="products"></div>
 
 <script>
@@ -19,9 +33,10 @@ let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 // ================= RENDER CART =================
 function renderCart(){
+
   let container = document.getElementById("cart");
 
-  // لو فاضي
+  // empty cart
   if(cart.length === 0){
     container.innerHTML = `
       <div style="text-align:center;padding:50px;font-size:18px;">
@@ -57,13 +72,26 @@ function renderCart(){
 
 // ================= REMOVE ITEM =================
 function removeItem(index){
+
   cart.splice(index, 1);
+
   localStorage.setItem("cart", JSON.stringify(cart));
+
   renderCart();
+
+  updateCartCount();
+}
+
+// ================= CART COUNT SYNC =================
+function updateCartCount(){
+  let count = cart.length;
+
+  localStorage.setItem("cartCount", count);
 }
 
 // ================= INIT =================
 renderCart();
+updateCartCount();
 
 </script>
 
