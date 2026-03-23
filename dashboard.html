@@ -47,6 +47,7 @@ canvas {
   background:#fff;
   padding:15px;
   border-radius:10px;
+  margin-top:10px;
 }
 </style>
 
@@ -63,18 +64,22 @@ canvas {
 <h2>📊 Overview</h2>
 <div id="overview"></div>
 
-<h2>📈 Clicks Chart</h2>
+<h2>📈 Clicks per Product</h2>
 <canvas id="clickChart"></canvas>
+
+<h2>📅 Daily Clicks</h2>
+<canvas id="dailyChart"></canvas>
 
 <h2>🔥 Top Products</h2>
 <div id="topProducts"></div>
 
 <script>
 
-// ================= DATA =================
+// ================= LOAD DATA =================
 let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
+let dailyClicks = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
 
-// ================= PRODUCTS MAP =================
+// ================= PRODUCTS =================
 const productsMap = {
   B09B8Q3YHJ: "Echo Dot 5",
   B09V7Z4TJG: "Smart Watch Pro",
@@ -100,7 +105,7 @@ function renderOverview(){
   `;
 }
 
-// ================= CHART =================
+// ================= PRODUCT CHART =================
 function renderChart(){
 
   let labels = [];
@@ -122,7 +127,38 @@ function renderChart(){
       labels: labels,
       datasets: [{
         label: "Clicks",
-        data: data
+        data: data,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ================= DAILY CHART =================
+function renderDailyChart(){
+
+  let labels = Object.keys(dailyClicks);
+  let data = Object.values(dailyClicks);
+
+  if(labels.length === 0){
+    labels = ["No Data"];
+    data = [0];
+  }
+
+  new Chart(document.getElementById("dailyChart"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Daily Clicks",
+        data: data,
+        tension: 0.3
       }]
     }
   });
@@ -157,6 +193,7 @@ function renderTopProducts(){
 // ================= INIT =================
 renderOverview();
 renderChart();
+renderDailyChart();
 renderTopProducts();
 
 </script>
