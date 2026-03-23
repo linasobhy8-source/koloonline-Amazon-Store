@@ -1,9 +1,150 @@
-<button onclick="checkout()">Checkout</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Cart</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>Your Cart 🛒</header>
+
+<!-- NAV BAR -->
+<div class="navbar">
+
+  <button onclick="location.href='index.html'">
+    🏠 Home
+  </button>
+
+  <button onclick="location.href='dashboard.html'">
+    📊 Dashboard
+  </button>
+
+</div>
+
+<!-- CART CONTAINER -->
+<div id="cart" class="products"></div>
+
+<!-- SUMMARY -->
+<div id="summary" style="padding:20px;"></div>
 
 <script>
+
+// ================= GET CART =================
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+// ================= RENDER CART =================
+function renderCart(){
+
+  let container = document.getElementById("cart");
+  let summary = document.getElementById("summary");
+
+  if(cart.length === 0){
+    container.innerHTML = `
+      <div style="text-align:center;padding:50px;font-size:18px;">
+        🛒 Your cart is empty
+      </div>
+    `;
+    summary.innerHTML = "";
+    return;
+  }
+
+  let html = "";
+  let totalItems = 0;
+
+  cart.forEach((item, index)=>{
+
+    totalItems += item.qty;
+
+    html += `
+      <div class="card">
+
+        <img src="${item.image}" alt="${item.title}">
+
+        <div class="card-content">
+          <h3>${item.title}</h3>
+          <p>${item.price}</p>
+          <p>Qty: ${item.qty}</p>
+        </div>
+
+        <button class="buy-btn" onclick="increaseQty(${index})">➕</button>
+        <button class="buy-btn" onclick="decreaseQty(${index})">➖</button>
+
+        <button class="buy-btn" onclick="removeItem(${index})" style="background:#d9534f;">
+          ❌ Remove
+        </button>
+
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  summary.innerHTML = `
+    <div class="card">
+      <h3>🛒 Total Items: ${totalItems}</h3>
+
+      <button class="buy-btn" onclick="checkout()">
+        💰 Checkout
+      </button>
+    </div>
+  `;
+}
+
+// ================= REMOVE =================
+function removeItem(index){
+  cart.splice(index, 1);
+  saveCart();
+}
+
+// ================= INCREASE =================
+function increaseQty(index){
+  cart[index].qty += 1;
+  saveCart();
+}
+
+// ================= DECREASE =================
+function decreaseQty(index){
+  if(cart[index].qty > 1){
+    cart[index].qty -= 1;
+  }else{
+    cart.splice(index,1);
+  }
+  saveCart();
+}
+
+// ================= SAVE =================
+function saveCart(){
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+  updateCartCount();
+}
+
+// ================= COUNT =================
+function updateCartCount(){
+  let count = cart.reduce((sum,item)=> sum + item.qty, 0);
+  localStorage.setItem("cartCount", count);
+}
+
+// ================= CHECKOUT =================
 function checkout(){
+
+  // تفريغ السلة
   localStorage.removeItem("cart");
+
+  // رسالة نجاح
   alert("Order placed successfully 🚀");
+
+  // تحويل لصفحة الشكر
   window.location.href = "thankyou.html";
 }
+
+// ================= INIT =================
+renderCart();
+updateCartCount();
+
 </script>
+
+</body>
+</html>
