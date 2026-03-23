@@ -102,14 +102,10 @@ function buildAffiliateLink(asin){
 // ================= TRACKING =================
 function trackClick(asin){
 
-  // Google Analytics
   if(typeof gtag !== "undefined"){
-    gtag('event','click_product',{
-      asin: asin
-    });
+    gtag('event','click_product',{asin});
   }
 
-  // Facebook Pixel
   if(typeof fbq !== "undefined"){
     fbq('track','ViewContent',{
       content_ids: [asin],
@@ -117,7 +113,6 @@ function trackClick(asin){
     });
   }
 
-  // Local tracking (future dashboard)
   let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
   clicks[asin] = (clicks[asin] || 0) + 1;
   localStorage.setItem("clicks", JSON.stringify(clicks));
@@ -125,9 +120,7 @@ function trackClick(asin){
 
 // ================= OPEN PRODUCT =================
 function openProduct(asin){
-
   trackClick(asin);
-
   window.open(buildAffiliateLink(asin), "_blank");
 }
 
@@ -155,9 +148,10 @@ function displayProducts(list){
   document.getElementById("products").innerHTML = html;
 }
 
-// ================= SEARCH =================
+// ================= 🤖 AI SMART SEARCH =================
 function smartSuggest(){
-  let input = document.getElementById("searchInput").value.toLowerCase();
+
+  let input = document.getElementById("searchInput").value.toLowerCase().trim();
   let box = document.getElementById("suggestBox");
 
   if(!input){
@@ -166,12 +160,44 @@ function smartSuggest(){
     return;
   }
 
-  let filtered = products.filter(p =>
-    p.title.toLowerCase().includes(input)
-  );
+  // ================= AI SCORE ENGINE =================
+  function getScore(title, query){
+
+    title = title.toLowerCase();
+
+    let score = 0;
+
+    let words = query.split(" ");
+
+    words.forEach(word=>{
+      if(title.includes(word)) score += 3;
+    });
+
+    if(title.startsWith(query)) score += 5;
+
+    if(title === query) score += 10;
+
+    // fuzzy boost
+    score += Math.max(0, 5 - Math.abs(title.length - query.length));
+
+    return score;
+  }
+
+  // ================= RANK PRODUCTS =================
+  let scored = products.map(p=>{
+    return {
+      ...p,
+      score: getScore(p.title, input)
+    };
+  });
+
+  scored.sort((a,b)=> b.score - a.score);
+
+  let filtered = scored.filter(p => p.score > 0);
 
   displayProducts(filtered);
 
+  // ================= SUGGEST BOX =================
   if(filtered.length === 0){
     box.style.display = "none";
     return;
@@ -180,11 +206,11 @@ function smartSuggest(){
   box.style.display = "block";
   box.innerHTML = "";
 
-  filtered.forEach(p => {
+  filtered.slice(0,5).forEach(p => {
     box.innerHTML += `
       <div onclick="openProduct('${p.asin}')"
            style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
-        🔎 ${p.title}
+        🤖 ${p.title}
       </div>
     `;
   });
@@ -193,16 +219,20 @@ function smartSuggest(){
 // ================= ENTER =================
 function handleEnter(e){
   if(e.key === "Enter"){
+
     let input = document.getElementById("searchInput").value.trim();
 
     if(!input) return;
 
-    let first = products.find(p =>
-      p.title.toLowerCase().includes(input.toLowerCase())
-    );
+    let best = products
+      .map(p => ({
+        ...p,
+        score: p.title.toLowerCase().includes(input.toLowerCase()) ? 1 : 0
+      }))
+      .sort((a,b)=>b.score-a.score)[0];
 
-    if(first){
-      openProduct(first.asin);
+    if(best){
+      openProduct(best.asin);
     }
   }
 }
