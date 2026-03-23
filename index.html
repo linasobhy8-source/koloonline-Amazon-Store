@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Koloonline Store</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Koloonline Store</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -11,10 +11,24 @@
 <header>🔥 Best Amazon Deals</header>
 
 <div class="navbar">
-  <input type="text" id="searchInput" placeholder="Search..." onkeyup="liveSearch()">
-  <button onclick="goCart()">Cart 🛒 (<span id="cartCount">0</span>)</button>
+  <input 
+    type="text" 
+    id="searchInput" 
+    placeholder="Search..." 
+    oninput="smartSuggest()" 
+    onkeypress="handleEnter(event)"
+  >
+
+  <button onclick="goCart()">
+    Cart 🛒 (<span id="cartCount">0</span>)
+  </button>
 </div>
+
+<!-- ✅ دي كانت ناقصة -->
+<div id="suggestBox" style="background:#fff;border-radius:6px;display:none;"></div>
+
 <div id="products" class="products"></div>
+
 <script>
 
 // ================= PRODUCTS =================
@@ -68,19 +82,17 @@ function getDomain(c){
   }[c] || "amazon.com";
 }
 
-// ================= BUILD LINK =================
+// ================= LINK =================
 function buildAffiliateLink(asin){
   let c = getCountry();
   let domain = getDomain(c);
   let tag = getTag(c);
-
   return `https://www.${domain}/dp/${asin}?tag=${tag}`;
 }
 
 // ================= OPEN PRODUCT =================
 function openProduct(asin){
 
-  // 🔥 تتبع
   if(typeof fbq !== "undefined"){
     fbq('track','InitiateCheckout');
   }
@@ -92,7 +104,7 @@ function openProduct(asin){
   window.open(buildAffiliateLink(asin), "_blank");
 }
 
-// ================= DISPLAY PRODUCTS =================
+// ================= DISPLAY =================
 function displayProducts(list){
   let html = "";
 
@@ -116,7 +128,7 @@ function displayProducts(list){
   document.getElementById("products").innerHTML = html;
 }
 
-// ================= SMART SEARCH =================
+// ================= SEARCH =================
 function smartSuggest(){
   let input = document.getElementById("searchInput").value.toLowerCase();
   let box = document.getElementById("suggestBox");
@@ -155,7 +167,6 @@ function smartSuggest(){
 function handleEnter(e){
   if(e.key === "Enter"){
     let input = document.getElementById("searchInput").value.trim();
-
     if(!input) return;
 
     let first = products.find(p =>
@@ -168,9 +179,15 @@ function handleEnter(e){
   }
 }
 
+// ================= CART =================
+function goCart(){
+  alert("Cart coming soon 😎");
+}
+
 // ================= LOAD =================
 displayProducts(products);
 
 </script>
+
 </body>
 </html>
