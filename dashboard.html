@@ -1,51 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Affiliate Dashboard</title>
-  <style>
-    body { font-family: Arial; padding: 20px; background:#f5f5f5; }
-    .card { background:#fff; padding:15px; margin:10px 0; border-radius:10px; }
-    h2 { color:#333; }
-  </style>
+<meta charset="UTF-8">
+<title>Koloonline Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background:#f5f5f5;
+  padding:20px;
+}
+
+h1 {
+  text-align:center;
+}
+
+.nav {
+  display:flex;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.nav button {
+  padding:10px;
+  border:none;
+  background:#000;
+  color:#fff;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+.card {
+  background:#fff;
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+}
+
+.top {
+  background:#ffeeba;
+}
+
+canvas {
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+}
+</style>
+
 </head>
 
 <body>
 
-<h2>💰 Koloonline Affiliate Dashboard</h2>
+<h1>💰 Koloonline Dashboard Pro</h1>
 
-<div id="stats"></div>
+<div class="nav">
+  <button onclick="location.href='index.html'">🏠 Home</button>
+</div>
+
+<h2>📊 Overview</h2>
+<div id="overview"></div>
+
+<h2>📈 Clicks Chart</h2>
+<canvas id="clickChart"></canvas>
+
+<h2>🔥 Top Products</h2>
+<div id="topProducts"></div>
 
 <script>
 
-function loadDashboard(){
+// ================= DATA =================
+let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
 
-  let data = JSON.parse(localStorage.getItem("clicks") || "{}");
+// ================= PRODUCTS MAP =================
+const productsMap = {
+  B09B8Q3YHJ: "Echo Dot 5",
+  B09V7Z4TJG: "Smart Watch Pro",
+  B08J5F3G18: "Wireless Earbuds"
+};
+
+// ================= OVERVIEW =================
+function renderOverview(){
+
+  let totalClicks = 0;
+
+  for(let asin in clicks){
+    totalClicks += clicks[asin];
+  }
+
+  let revenue = (totalClicks * 0.05).toFixed(2);
+
+  document.getElementById("overview").innerHTML = `
+    <div class="card">
+      <h3>🔥 Total Clicks: ${totalClicks}</h3>
+      <h3>💰 Estimated Earnings: $${revenue}</h3>
+    </div>
+  `;
+}
+
+// ================= CHART =================
+function renderChart(){
+
+  let labels = [];
+  let data = [];
+
+  for(let asin in clicks){
+    labels.push(productsMap[asin] || asin);
+    data.push(clicks[asin]);
+  }
+
+  if(labels.length === 0){
+    labels = ["No Data"];
+    data = [0];
+  }
+
+  new Chart(document.getElementById("clickChart"), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Clicks",
+        data: data
+      }]
+    }
+  });
+}
+
+// ================= TOP PRODUCTS =================
+function renderTopProducts(){
+
+  let arr = Object.entries(clicks);
+
+  arr.sort((a,b)=> b[1] - a[1]);
 
   let html = "";
 
-  let total = 0;
-
-  for(let asin in data){
-    total += data[asin];
+  arr.forEach(([asin, count], index)=>{
 
     html += `
-      <div class="card">
-        <h3>📦 Product: ${asin}</h3>
-        <p>🔥 Clicks: ${data[asin]}</p>
+      <div class="card ${index===0 ? 'top' : ''}">
+        <h3>🏆 ${productsMap[asin] || asin}</h3>
+        <p>🔥 Clicks: ${count}</p>
       </div>
     `;
-  }
+  });
 
-  if(Object.keys(data).length === 0){
+  if(arr.length === 0){
     html = "<p>No data yet 😎</p>";
-  } else {
-    html = `<h3>Total Clicks: ${total}</h3>` + html;
   }
 
-  document.getElementById("stats").innerHTML = html;
+  document.getElementById("topProducts").innerHTML = html;
 }
 
-loadDashboard();
+// ================= INIT =================
+renderOverview();
+renderChart();
+renderTopProducts();
 
 </script>
 
