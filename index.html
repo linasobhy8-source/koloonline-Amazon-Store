@@ -26,9 +26,11 @@
 
 </div>
 
-<!-- ✅ suggestion box (مهم يكون في wrapper) -->
+<!-- suggestion box -->
 <div style="position:relative;">
-  <div id="suggestBox" style="background:#fff;border-radius:6px;display:none;"></div>
+  <div id="suggestBox"
+       style="background:#fff;border-radius:6px;display:none;position:absolute;z-index:999;width:100%;">
+  </div>
 </div>
 
 <div id="products" class="products"></div>
@@ -60,9 +62,11 @@ const products = [
 // ================= COUNTRY =================
 function getCountry(){
   let lang = navigator.language || "en-US";
+
   if(lang.includes("ar")) return "EG";
   if(lang.includes("en-CA")) return "CA";
   if(lang.includes("pl")) return "PL";
+
   return "US";
 }
 
@@ -88,23 +92,41 @@ function getDomain(c){
 
 // ================= AFFILIATE LINK =================
 function buildAffiliateLink(asin){
-  let c = getCountry();
-  let domain = getDomain(c);
-  let tag = getTag(c);
+  const country = getCountry();
+  const domain = getDomain(country);
+  const tag = getTag(country);
+
   return `https://www.${domain}/dp/${asin}?tag=${tag}`;
+}
+
+// ================= TRACKING =================
+function trackClick(asin){
+
+  // Google Analytics
+  if(typeof gtag !== "undefined"){
+    gtag('event','click_product',{
+      asin: asin
+    });
+  }
+
+  // Facebook Pixel
+  if(typeof fbq !== "undefined"){
+    fbq('track','ViewContent',{
+      content_ids: [asin],
+      content_type: 'product'
+    });
+  }
+
+  // Local tracking (future dashboard)
+  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
+  clicks[asin] = (clicks[asin] || 0) + 1;
+  localStorage.setItem("clicks", JSON.stringify(clicks));
 }
 
 // ================= OPEN PRODUCT =================
 function openProduct(asin){
 
-  // tracking (آمن لو موجود)
-  if(typeof fbq !== "undefined"){
-    fbq('track','InitiateCheckout');
-  }
-
-  if(typeof gtag !== "undefined"){
-    gtag('event','click_product',{asin:asin});
-  }
+  trackClick(asin);
 
   window.open(buildAffiliateLink(asin), "_blank");
 }
@@ -116,7 +138,7 @@ function displayProducts(list){
   list.forEach(p=>{
     html += `
       <div class="card">
-        <img src="${p.image}">
+        <img src="${p.image}" alt="${p.title}">
 
         <div class="card-content">
           <h3>${p.title}</h3>
@@ -161,7 +183,7 @@ function smartSuggest(){
   filtered.forEach(p => {
     box.innerHTML += `
       <div onclick="openProduct('${p.asin}')"
-        style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
+           style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
         🔎 ${p.title}
       </div>
     `;
@@ -172,6 +194,7 @@ function smartSuggest(){
 function handleEnter(e){
   if(e.key === "Enter"){
     let input = document.getElementById("searchInput").value.trim();
+
     if(!input) return;
 
     let first = products.find(p =>
