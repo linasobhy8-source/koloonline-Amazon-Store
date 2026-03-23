@@ -24,7 +24,6 @@
     Cart 🛒 (<span id="cartCount">0</span>)
   </button>
 
-  <!-- ✅ زر Dashboard هنا -->
   <button onclick="location.href='dashboard.html'">
     📊 Dashboard
   </button>
@@ -107,10 +106,12 @@ function buildAffiliateLink(asin){
 // ================= TRACKING =================
 function trackClick(asin){
 
+  // Google Analytics
   if(typeof gtag !== "undefined"){
     gtag('event','click_product',{asin});
   }
 
+  // Facebook Pixel
   if(typeof fbq !== "undefined"){
     fbq('track','ViewContent',{
       content_ids: [asin],
@@ -118,9 +119,17 @@ function trackClick(asin){
     });
   }
 
+  // 🔥 clicks per product
   let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
   clicks[asin] = (clicks[asin] || 0) + 1;
   localStorage.setItem("clicks", JSON.stringify(clicks));
+
+  // 🔥 DAILY TRACKING (الجديد)
+  let today = new Date().toLocaleDateString();
+
+  let daily = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
+  daily[today] = (daily[today] || 0) + 1;
+  localStorage.setItem("dailyClicks", JSON.stringify(daily));
 }
 
 // ================= OPEN PRODUCT =================
