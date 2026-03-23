@@ -14,9 +14,163 @@
   <input type="text" id="searchInput" placeholder="Search..." onkeyup="liveSearch()">
   <button onclick="goCart()">Cart 🛒 (<span id="cartCount">0</span>)</button>
 </div>
-
 <div id="products" class="products"></div>
+<script>
 
-<script src="app.js"></script>
+// ================= PRODUCTS =================
+const products = [
+  {
+    title: "Echo Dot 5",
+    asin: "B09B8Q3YHJ",
+    price: "$39.99",
+    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+  },
+  {
+    title: "Smart Watch Pro",
+    asin: "B09V7Z4TJG",
+    price: "$49.99",
+    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+  },
+  {
+    title: "Wireless Earbuds",
+    asin: "B08J5F3G18",
+    price: "$29.99",
+    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
+  }
+];
+
+// ================= COUNTRY =================
+function getCountry(){
+  let lang = navigator.language || "en-US";
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("en-CA")) return "CA";
+  if(lang.includes("pl")) return "PL";
+  return "US";
+}
+
+// ================= TAG =================
+function getTag(c){
+  return {
+    US: "koloonlinesto-20",
+    CA: "linasobhy20d8-20",
+    PL: "koloonline-21",
+    EG: "onlinesh03f31-21"
+  }[c] || "koloonlinesto-20";
+}
+
+// ================= DOMAIN =================
+function getDomain(c){
+  return {
+    US: "amazon.com",
+    CA: "amazon.ca",
+    PL: "amazon.pl",
+    EG: "amazon.eg"
+  }[c] || "amazon.com";
+}
+
+// ================= BUILD LINK =================
+function buildAffiliateLink(asin){
+  let c = getCountry();
+  let domain = getDomain(c);
+  let tag = getTag(c);
+
+  return `https://www.${domain}/dp/${asin}?tag=${tag}`;
+}
+
+// ================= OPEN PRODUCT =================
+function openProduct(asin){
+
+  // 🔥 تتبع
+  if(typeof fbq !== "undefined"){
+    fbq('track','InitiateCheckout');
+  }
+
+  if(typeof gtag !== "undefined"){
+    gtag('event','click_product',{asin:asin});
+  }
+
+  window.open(buildAffiliateLink(asin), "_blank");
+}
+
+// ================= DISPLAY PRODUCTS =================
+function displayProducts(list){
+  let html = "";
+
+  list.forEach(p=>{
+    html += `
+      <div class="card">
+        <img src="${p.image}">
+
+        <div class="card-content">
+          <h3>${p.title}</h3>
+          <p>${p.price}</p>
+        </div>
+
+        <button class="buy-btn" onclick="openProduct('${p.asin}')">
+          🔥 Order Now
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById("products").innerHTML = html;
+}
+
+// ================= SMART SEARCH =================
+function smartSuggest(){
+  let input = document.getElementById("searchInput").value.toLowerCase();
+  let box = document.getElementById("suggestBox");
+
+  if(!input){
+    box.style.display = "none";
+    displayProducts(products);
+    return;
+  }
+
+  let filtered = products.filter(p =>
+    p.title.toLowerCase().includes(input)
+  );
+
+  displayProducts(filtered);
+
+  if(filtered.length === 0){
+    box.style.display = "none";
+    return;
+  }
+
+  box.style.display = "block";
+  box.innerHTML = "";
+
+  filtered.forEach(p => {
+    box.innerHTML += `
+      <div onclick="openProduct('${p.asin}')"
+        style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
+        🔎 ${p.title}
+      </div>
+    `;
+  });
+}
+
+// ================= ENTER =================
+function handleEnter(e){
+  if(e.key === "Enter"){
+    let input = document.getElementById("searchInput").value.trim();
+
+    if(!input) return;
+
+    let first = products.find(p =>
+      p.title.toLowerCase().includes(input.toLowerCase())
+    );
+
+    if(first){
+      openProduct(first.asin);
+    }
+  }
+}
+
+// ================= LOAD =================
+displayProducts(products);
+
+</script>
 </body>
 </html>
