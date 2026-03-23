@@ -44,24 +44,42 @@
 // ================= PRODUCTS =================
 const products = [
   {
+    id: 1,
     title: "Echo Dot 5",
     asin: "B09B8Q3YHJ",
     price: "$39.99",
     image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
   },
   {
+    id: 2,
     title: "Smart Watch Pro",
     asin: "B09V7Z4TJG",
     price: "$49.99",
     image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
   },
   {
+    id: 3,
     title: "Wireless Earbuds",
     asin: "B08J5F3G18",
     price: "$29.99",
     image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
   }
 ];
+
+// ================= CART =================
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// ================= SAVE CART =================
+function saveCart(){
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+}
+
+// ================= UPDATE COUNT =================
+function updateCartCount(){
+  let total = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+  document.getElementById("cartCount").innerText = total;
+}
 
 // ================= COUNTRY =================
 function getCountry(){
@@ -97,34 +115,16 @@ function getDomain(c){
 // ================= AFFILIATE LINK =================
 function buildAffiliateLink(asin){
   const country = getCountry();
-  const domain = getDomain(country);
-  const tag = getTag(country);
-
-  return `https://www.${domain}/dp/${asin}?tag=${tag}`;
+  return `https://www.${getDomain(country)}/dp/${asin}?tag=${getTag(country)}`;
 }
 
 // ================= TRACKING =================
 function trackClick(asin){
 
-  // Google Analytics
-  if(typeof gtag !== "undefined"){
-    gtag('event','click_product',{asin});
-  }
-
-  // Facebook Pixel
-  if(typeof fbq !== "undefined"){
-    fbq('track','ViewContent',{
-      content_ids: [asin],
-      content_type: 'product'
-    });
-  }
-
-  // 🔥 clicks per product
   let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
   clicks[asin] = (clicks[asin] || 0) + 1;
   localStorage.setItem("clicks", JSON.stringify(clicks));
 
-  // 🔥 DAILY TRACKING (الجديد)
   let today = new Date().toLocaleDateString();
 
   let daily = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
@@ -138,6 +138,22 @@ function openProduct(asin){
   window.open(buildAffiliateLink(asin), "_blank");
 }
 
+// ================= ADD TO CART =================
+function addToCart(id){
+  const product = products.find(p => p.id === id);
+
+  let exists = cart.find(p => p.id === id);
+
+  if(exists){
+    exists.qty = (exists.qty || 1) + 1;
+  } else {
+    cart.push({...product, qty: 1});
+  }
+
+  saveCart();
+  alert("Added to cart 🛒");
+}
+
 // ================= DISPLAY =================
 function displayProducts(list){
   let html = "";
@@ -145,14 +161,23 @@ function displayProducts(list){
   list.forEach(p=>{
     html += `
       <div class="card">
+
         <img src="${p.image}" alt="${p.title}">
+
         <div class="card-content">
           <h3>${p.title}</h3>
           <p>${p.price}</p>
         </div>
-        <button class="buy-btn" onclick="openProduct('${p.asin}')">
-          🔥 Order Now
+
+        <button class="buy-btn" onclick="addToCart(${p.id})">
+          🛒 Add to Cart
         </button>
+
+        <button class="buy-btn" style="background:#28a745;margin-top:5px;"
+          onclick="openProduct('${p.asin}')">
+          🔥 Buy Now
+        </button>
+
       </div>
     `;
   });
@@ -212,13 +237,14 @@ function handleEnter(e){
   }
 }
 
-// ================= CART =================
+// ================= CART PAGE =================
 function goCart(){
-  alert("Cart coming soon 😎");
+  window.location.href = "cart.html";
 }
 
 // ================= INIT =================
 displayProducts(products);
+updateCartCount();
 
 </script>
 
