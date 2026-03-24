@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Best Deals 2026 | Smart Devices Offers</title>
+
+<meta name="description" content="Discover the best smart devices deals including watches, earbuds, and home gadgets with exclusive discounts and Amazon offers.">
+
+<meta name="keywords" content="smart watch, earbuds, amazon deals, tech products, discounts 2026">
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header>🔥 Best Deals Products</header>
+
+<div class="navbar">
+  🛒 Cart: <span id="cart-count">0</span>
+
+  <button onclick="location.href='index.html'">🏠 Home</button>
+  <button onclick="location.href='post1.html'">📦 Post 1</button>
+</div>
+
+<!-- SEO TEXT SECTION (مهم لادسنس) -->
+<section style="padding:20px;max-width:900px;margin:auto;">
+  <h1>Top Trending Smart Products 2026</h1>
+  <p>
+    Explore the latest smart gadgets and accessories with special discounts.
+    We compare top Amazon products to help you choose the best deal.
+  </p>
+</section>
+
+<div id="product" class="products"></div>
+
+<script>
+
+// ================= PRODUCTS =================
+const products = [
+  {
+    id: "1",
+    title: "Fitness Smart Watch Ultra 🔥",
+    asin: "B0ABCDE123",
+    price: "$59.99",
+    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+  },
+  {
+    id: "2",
+    title: "Noise Cancelling Headphones 🎧",
+    asin: "B0XYZ98765",
+    price: "$79.99",
+    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
+  },
+  {
+    id: "3",
+    title: "Smart Home Mini Speaker 🔊",
+    asin: "B0HOME45678",
+    price: "$34.99",
+    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+  }
+];
+
+// ================= CART =================
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+function updateCartCount(){
+  let count = cart.reduce((sum,item)=> sum + (item.qty || 1), 0);
+  document.getElementById("cart-count").innerText = count;
+}
+
+// ================= ADD TO CART =================
+function addToCart(product){
+
+  let exists = cart.find(item => item.asin === product.asin);
+
+  if(exists){
+    exists.qty += 1;
+  }else{
+    cart.push({...product, qty:1});
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+
+  alert("Added to cart 🛒");
+}
+
+// ================= AFFILIATE =================
+function getCountry(){
+  let lang = navigator.language || "en-US";
+  if(lang.includes("ar")) return "EG";
+  return "US";
+}
+
+function getTag(c){
+  return {
+    US: "koloonlinesto-20",
+    EG: "onlinesh03f31-21"
+  }[c] || "koloonlinesto-20";
+}
+
+function getDomain(c){
+  return {
+    US: "amazon.com",
+    EG: "amazon.eg"
+  }[c] || "amazon.com";
+}
+
+function buildAffiliateLink(asin){
+  let c = getCountry();
+  return `https://www.${getDomain(c)}/dp/${asin}?tag=${getTag(c)}`;
+}
+
+function trackClick(asin){
+  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
+  clicks[asin] = (clicks[asin] || 0) + 1;
+  localStorage.setItem("clicks", JSON.stringify(clicks));
+}
+
+function buyNow(asin){
+  trackClick(asin);
+  window.open(buildAffiliateLink(asin), "_blank");
+}
+
+// ================= LOAD =================
+function loadProduct(){
+
+  const container = document.getElementById("product");
+
+  container.innerHTML = products.map(p => `
+    <div class="card">
+
+      <img src="${p.image}" alt="${p.title}">
+
+      <div class="card-content">
+        <h2>${p.title}</h2>
+        <p>${p.price}</p>
+
+        <p style="font-size:12px;color:gray;">
+          ⭐ Best deal verified product
+        </p>
+      </div>
+
+      <button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
+        🛒 Add to Cart
+      </button>
+
+      <button class="buy-btn" style="background:#28a745;margin-top:10px;"
+        onclick="buyNow('${p.asin}')">
+        🔥 Buy on Amazon
+      </button>
+
+    </div>
+  `).join("");
+}
+
+loadProduct();
+updateCartCount();
+
+</script>
+
+</body>
+</html>
