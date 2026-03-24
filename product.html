@@ -2,8 +2,83 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Product Page</title>
+<title>Product Details | Best Amazon Deals</title>
+
+<meta name="description" content="Buy the best Amazon products with exclusive deals, reviews and full details. Limited offers available now.">
+<meta name="keywords" content="amazon deals, buy now, product review, best gadgets">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="stylesheet" href="style.css">
+
+<!-- ✅ AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
+crossorigin="anonymous"></script>
+
+<style>
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  font-size:22px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  background:#37475a;
+  color:#fff;
+}
+
+.products{
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  max-width:600px;
+  margin:auto;
+  text-align:center;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card img{
+  width:100%;
+  max-height:300px;
+  object-fit:contain;
+}
+
+.buy-btn{
+  background:#ff9900;
+  border:none;
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  font-weight:bold;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+.section{
+  background:#fff;
+  margin:20px auto;
+  padding:20px;
+  max-width:700px;
+  border-radius:10px;
+}
+
+.review{
+  background:#f9f9f9;
+  padding:10px;
+  margin:10px 0;
+  border-radius:8px;
+}
+</style>
+
 </head>
 
 <body>
@@ -17,149 +92,193 @@
   <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
 </div>
 
+<!-- 🔥 TOP AD -->
+<div style="margin:20px;text-align:center;">
+<ins class="adsbygoogle"
+style="display:block"
+data-ad-client="ca-pub-1294940976431468"
+data-ad-slot="1614162350"
+data-ad-format="auto"></ins>
+<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
 <div id="product" class="products"></div>
+
+<!-- 🔥 FEATURES -->
+<div class="section">
+<h2>💡 Why You Should Buy This</h2>
+<ul>
+<li>✔ High quality and trusted product</li>
+<li>✔ Best price on Amazon</li>
+<li>✔ Fast shipping available</li>
+<li>✔ Limited time offer 🔥</li>
+</ul>
+</div>
+
+<!-- 🔥 PRODUCT DETAILS -->
+<div class="section">
+<h2>📦 Product Details</h2>
+<ul>
+<li>Available in different colors</li>
+<li>Lightweight and durable</li>
+<li>Modern design</li>
+<li>1 year warranty</li>
+</ul>
+</div>
+
+<!-- 🔥 REVIEWS -->
+<div class="section">
+<h2>⭐ Customer Reviews</h2>
+
+<div class="review">⭐⭐⭐⭐⭐ Amazing product! Worth every penny.</div>
+<div class="review">⭐⭐⭐⭐ Good quality and fast delivery.</div>
+<div class="review">⭐⭐⭐⭐⭐ I recommend it!</div>
+
+</div>
+
+<!-- 🔥 FAQ -->
+<div class="section">
+<h2>❓ FAQ</h2>
+
+<p><b>Is this original?</b><br>Yes, 100% original from Amazon.</p>
+
+<p><b>How long shipping takes?</b><br>Depends on your country, usually 3–7 days.</p>
+
+</div>
+
+<!-- 🔥 BOTTOM AD -->
+<div style="margin:20px;text-align:center;">
+<ins class="adsbygoogle"
+style="display:block"
+data-ad-client="ca-pub-1294940976431468"
+data-ad-slot="5949126633"
+data-ad-format="auto"></ins>
+<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
 
 <script>
 
-// ================= PRODUCTS (SAME AS STORE) =================
+// PRODUCTS
 const products = [
-  {
-    id: "1",
-    title: "Echo Dot 5 🔥 30% OFF",
-    asin: "B09B8Q3YHJ",
-    price: "$39.99",
-    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
-  },
-  {
-    id: "2",
-    title: "Smart Watch Pro 🔥 Deal",
-    asin: "B09V7Z4TJG",
-    price: "$49.99",
-    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
-  },
-  {
-    id: "3",
-    title: "Wireless Earbuds 🎧 Sale",
-    asin: "B08J5F3G18",
-    price: "$29.99",
-    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
-  }
+{
+id:"1",
+title:"Echo Dot 5 🔥 30% OFF",
+asin:"B09B8Q3YHJ",
+price:"$39.99",
+image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+},
+{
+id:"2",
+title:"Smart Watch Pro 🔥 Deal",
+asin:"B09V7Z4TJG",
+price:"$49.99",
+image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+}
 ];
 
-// ================= CART =================
+// CART
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
 function updateCartCount(){
-  let count = cart.reduce((sum,item)=> sum + (item.qty || 1), 0);
-  document.getElementById("cart-count").innerText = count;
+let count = cart.reduce((sum,item)=> sum + (item.qty || 1), 0);
+document.getElementById("cart-count").innerText = count;
 }
 
-// ================= ADD TO CART =================
+// ADD TO CART
 function addToCart(product){
 
-  let exists = cart.find(item => item.asin === product.asin);
+let exists = cart.find(item => item.asin === product.asin);
 
-  if(exists){
-    exists.qty += 1;
-  }else{
-    cart.push({...product, qty:1});
-  }
-
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount();
-
-  alert("Added to cart 🛒");
+if(exists){
+exists.qty += 1;
+}else{
+cart.push({...product, qty:1});
 }
 
-// ================= COUNTRY =================
+localStorage.setItem("cart", JSON.stringify(cart));
+updateCartCount();
+alert("Added to cart 🛒");
+}
+
+// GEO
 function getCountry(){
-  let lang = navigator.language || "en-US";
-  if(lang.includes("ar")) return "EG";
-  return "US";
+let lang = navigator.language || "en-US";
+if(lang.includes("ar")) return "EG";
+return "US";
 }
 
-// ================= TAG =================
 function getTag(c){
-  return {
-    US: "koloonlinesto-20",
-    EG: "onlinesh03f31-21"
-  }[c] || "koloonlinesto-20";
+return {
+US:"koloonlinesto-20",
+EG:"onlinesh03f31-21"
+}[c];
 }
 
-// ================= DOMAIN =================
 function getDomain(c){
-  return {
-    US: "amazon.com",
-    EG: "amazon.eg"
-  }[c] || "amazon.com";
+return {
+US:"amazon.com",
+EG:"amazon.eg"
+}[c];
 }
 
-// ================= AFFILIATE =================
 function buildAffiliateLink(asin){
-  let c = getCountry();
-  return `https://www.${getDomain(c)}/dp/${asin}?tag=${getTag(c)}`;
+let c = getCountry();
+return `https://www.${getDomain(c)}/dp/${asin}?tag=${getTag(c)}`;
 }
 
-// ================= TRACKING =================
+// TRACK
 function trackClick(asin){
-  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
-  clicks[asin] = (clicks[asin] || 0) + 1;
-  localStorage.setItem("clicks", JSON.stringify(clicks));
+let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
+clicks[asin] = (clicks[asin] || 0) + 1;
+localStorage.setItem("clicks", JSON.stringify(clicks));
 }
 
-// ================= BUY NOW =================
+// BUY
 function buyNow(asin){
-  trackClick(asin);
-  window.open(buildAffiliateLink(asin), "_blank");
+trackClick(asin);
+window.open(buildAffiliateLink(asin), "_blank");
 }
 
-// ================= LOAD PRODUCT =================
+// LOAD PRODUCT
 function loadProduct(){
 
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
 
-  const p = products.find(x => x.id === id);
+const p = products.find(x => x.id === id);
 
-  const container = document.getElementById("product");
+const container = document.getElementById("product");
 
-  if(!p){
-    container.innerHTML = `
-      <div style="text-align:center;padding:50px;">
-        ❌ Product not found
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = `
-    <div class="card">
-
-      <img src="${p.image}" alt="${p.title}">
-
-      <div class="card-content">
-        <h1>${p.title}</h1>
-        <p>${p.price}</p>
-      </div>
-
-      <button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
-        🛒 Add to Cart
-      </button>
-
-      <button class="buy-btn" style="background:#28a745;margin-top:10px;"
-        onclick="buyNow('${p.asin}')">
-        🔥 Buy from Amazon
-      </button>
-
-    </div>
-  `;
+if(!p){
+container.innerHTML = `<h2 style="text-align:center;">❌ Product not found</h2>`;
+return;
 }
 
-// ================= INIT =================
+container.innerHTML = `
+<div class="card">
+
+<img src="${p.image}">
+
+<h1>${p.title}</h1>
+<p style="color:#b12704;font-size:22px;">${p.price}</p>
+
+<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
+🛒 Add to Cart
+</button>
+
+<button class="buy-btn" style="background:#28a745;"
+onclick="buyNow('${p.asin}')">
+🔥 Buy from Amazon
+</button>
+
+</div>
+`;
+}
+
 loadProduct();
 updateCartCount();
 
 </script>
 
 </body>
-</html>
+  </html>
