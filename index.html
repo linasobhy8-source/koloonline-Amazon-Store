@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <title>Koloonline Store | Best Amazon Deals 2026</title>
 
@@ -9,162 +10,136 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="style.css">
-
-<!-- ✅ Favicon -->
 <link rel="icon" href="favicon.ico">
 
-<!-- ✅ Google AdSense -->
+<!-- AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
 crossorigin="anonymous"></script>
 
 <style>
-body{
-  font-family:Arial;
-  margin:0;
-  background:#f5f5f5;
-}
+body{font-family:Arial;margin:0;background:#f5f5f5}
 
-/* ✅ HEADER CSS (تم إضافته بشكل صحيح) */
+/* HEADER */
 header{
-  background:#232f3e;
-  color:#fff;
-  padding:15px;
-  font-size:22px;
-  font-weight:bold;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
+background:#232f3e;color:#fff;padding:15px;
+font-size:22px;font-weight:bold;
+display:flex;align-items:center;justify-content:center;gap:10px;
 }
 
-/* NAVBAR */
+/* HERO */
+.hero{text-align:center;background:#fff;padding:25px}
+
+/* NAV */
 .navbar{
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  background:#37475a;
+display:flex;justify-content:space-between;
+padding:10px;background:#37475a;flex-wrap:wrap
 }
 
 .navbar input{
-  width:50%;
-  padding:8px;
-  border:none;
-  border-radius:4px;
+width:45%;padding:8px;border:none;border-radius:4px
 }
 
 .navbar button{
-  background:#ff9900;
-  border:none;
-  padding:8px 12px;
-  border-radius:4px;
-  font-weight:bold;
-  cursor:pointer;
+background:#ff9900;border:none;padding:8px 12px;
+border-radius:4px;font-weight:bold;cursor:pointer;margin:3px
+}
+
+/* SEO TEXT */
+.seo{
+background:#fff;padding:20px;margin:20px;border-radius:10px
 }
 
 /* PRODUCTS */
 .products{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
-  gap:20px;
-  padding:20px;
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+gap:20px;padding:20px
 }
 
 .card{
-  background:#fff;
-  border-radius:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
-  overflow:hidden;
-  transition:0.3s;
+background:#fff;border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+overflow:hidden;transition:0.3s
 }
 
-.card:hover{
-  transform:translateY(-5px);
-}
+.card:hover{transform:translateY(-5px)}
 
 .card img{
-  width:100%;
-  height:200px;
-  object-fit:contain;
+width:100%;height:200px;object-fit:contain
 }
 
-.card-content{
-  padding:10px;
-  text-align:center;
-}
+.card-content{text-align:center;padding:10px}
 
-.card-content h3{
-  font-size:16px;
-}
-
-.card-content p{
-  color:#b12704;
-  font-weight:bold;
-}
+.card-content p{color:#b12704;font-weight:bold}
 
 .buy-btn{
-  background:#ff9900;
-  border:none;
-  width:90%;
-  margin:10px auto;
-  display:block;
-  padding:10px;
-  font-weight:bold;
-  cursor:pointer;
-  border-radius:6px;
+background:#ff9900;border:none;width:90%;
+margin:10px auto;display:block;padding:10px;
+font-weight:bold;cursor:pointer;border-radius:6px
+}
+
+/* BLOG */
+.blog{
+background:#fff;margin:20px;padding:20px;border-radius:10px
 }
 
 /* FOOTER */
 footer{
-  text-align:center;
-  padding:20px;
-  background:#232f3e;
-  color:#fff;
-  margin-top:20px;
+background:#232f3e;color:#fff;
+text-align:center;padding:20px;margin-top:20px
 }
+
+footer a{color:#fff;margin:0 10px;text-decoration:none}
 </style>
 
 </head>
 
 <body>
 
-<!-- 🔥 HEADER -->
 <header>
-  <img src="logo.png" alt="Koloonline Logo" style="height:40px;">
-  <span>Koloonline</span>
+<img src="logo.png" style="height:40px;">
+<span>Koloonline</span>
 </header>
 
-<!-- 🔥 HERO -->
-<div style="text-align:center;background:#fff;padding:20px;">
-<img src="logo.png" style="height:80px;"><br><br>
+<!-- HERO -->
+<div class="hero">
+<img src="logo.png" style="height:80px"><br><br>
 <h2>Your Global Connection 🌍</h2>
-
 <p>🔥 Best Deals Updated Daily</p>
 
-<button onclick="scrollToProducts()" class="buy-btn" style="width:auto;padding:10px 20px;">
+<button onclick="scrollToProducts()" class="buy-btn" style="width:auto">
 🔥 Shop Now
 </button>
 </div>
 
-<!-- 🔥 NAV -->
+<!-- NAV -->
 <div class="navbar">
-
-<input 
-type="text" 
-id="searchInput" 
-placeholder="Search products..."
-oninput="smartSuggest()"
->
+<input type="text" id="searchInput" placeholder="Search..." oninput="smartSuggest()">
 
 <button onclick="goCart()">Cart 🛒 (<span id="cartCount">0</span>)</button>
-
 <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
-
 <button onclick="location.href='blog.html'">📰 Blog</button>
-
 </div>
 
-<!-- 🔥 TOP AD -->
-<div style="margin:20px;text-align:center;">
+<!-- SEO CONTENT (مهم جدا) -->
+<div class="seo">
+<h1>Best Amazon Deals & Smart Products 2026</h1>
+
+<p>
+Welcome to Koloonline Store, your trusted platform to discover the best smart devices,
+gadgets, watches, and trending Amazon deals.
+</p>
+
+<h2>Why Choose Us?</h2>
+<ul>
+<li>✔ Daily updated deals</li>
+<li>✔ Trusted recommendations</li>
+<li>✔ Best prices online</li>
+</ul>
+</div>
+
+<!-- TOP AD -->
+<div style="text-align:center;margin:20px;">
 <ins class="adsbygoogle"
 style="display:block"
 data-ad-client="ca-pub-1294940976431468"
@@ -174,11 +149,22 @@ data-full-width-responsive="true"></ins>
 <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>
 
-<!-- 🔥 PRODUCTS -->
+<!-- PRODUCTS -->
 <div id="products" class="products"></div>
 
-<!-- 🔥 BOTTOM AD -->
-<div style="margin:20px;text-align:center;">
+<!-- BLOG SECTION -->
+<div class="blog">
+<h2>Latest Articles</h2>
+
+<p>
+👉 <a href="post1.html">Best Smart Watches 2026</a><br>
+👉 <a href="post2.html">Top Earbuds Deals</a><br>
+👉 <a href="post3.html">Best Amazon Tech Products</a>
+</p>
+</div>
+
+<!-- BOTTOM AD -->
+<div style="text-align:center;margin:20px;">
 <ins class="adsbygoogle"
 style="display:block"
 data-ad-client="ca-pub-1294940976431468"
@@ -188,16 +174,20 @@ data-full-width-responsive="true"></ins>
 <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>
 
-<!-- 🔥 FOOTER -->
+<!-- FOOTER -->
 <footer>
-<img src="logo.png" style="height:30px;"><br>
-© 2026 Koloonline - All Rights Reserved
+<img src="logo.png" style="height:30px"><br><br>
+
+<a href="about.html">About</a> |
+<a href="privacy.html">Privacy</a> |
+<a href="contact.html">Contact</a>
+
+<p>© 2026 Koloonline - All Rights Reserved</p>
 </footer>
 
 <script>
 
-// PRODUCTS
-let products = [
+let products=[
 {
 title:"Echo Dot 5",
 asin:"B09B8Q3YHJ",
@@ -212,21 +202,18 @@ image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
 }
 ];
 
-// BUILD LINK
 function buildLink(asin){
 return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
 }
 
-// DISPLAY
 function displayProducts(list){
-
 let html="";
 
 list.forEach(p=>{
 html+=`
 <div class="card">
 
-<img src="${p.image}">
+<img src="${p.image}" alt="${p.title}">
 
 <div class="card-content">
 <h3>${p.title}</h3>
@@ -238,29 +225,38 @@ html+=`
 </button>
 
 </div>
+
+<script type="application/ld+json">
+{
+"@context":"https://schema.org",
+"@type":"Product",
+"name":"${p.title}",
+"image":"${p.image}",
+"offers":{
+"@type":"Offer",
+"price":"${p.price}",
+"priceCurrency":"USD"
+}
+}
+</script>
 `;
 });
 
 document.getElementById("products").innerHTML=html;
 }
 
-// SEARCH
 function smartSuggest(){
 let q=document.getElementById("searchInput").value.toLowerCase();
 displayProducts(products.filter(p=>p.title.toLowerCase().includes(q)));
 }
 
-// SCROLL
 function scrollToProducts(){
 document.getElementById("products").scrollIntoView({behavior:"smooth"});
 }
 
-// INIT
 displayProducts(products);
 
 </script>
 
 </body>
   </html>
-<a href="privacy.html">Privacy Policy</a> | 
-<a href="contact.html">Contact</a>
