@@ -2,269 +2,263 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Koloonline Store</title>
+<title>Koloonline Store | Best Amazon Deals 2026</title>
+
+<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products. Shop now and get the best prices.">
+<meta name="keywords" content="amazon deals, smart watch, gadgets, online shopping">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="stylesheet" href="style.css">
+
+<!-- ✅ Favicon -->
+<link rel="icon" href="favicon.ico">
+
+<!-- ✅ Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
+crossorigin="anonymous"></script>
+
+<style>
+body{
+  font-family:Arial;
+  margin:0;
+  background:#f5f5f5;
+}
+
+/* ✅ HEADER CSS (تم إضافته بشكل صحيح) */
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  font-size:22px;
+  font-weight:bold;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+/* NAVBAR */
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  background:#37475a;
+}
+
+.navbar input{
+  width:50%;
+  padding:8px;
+  border:none;
+  border-radius:4px;
+}
+
+.navbar button{
+  background:#ff9900;
+  border:none;
+  padding:8px 12px;
+  border-radius:4px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+/* PRODUCTS */
+.products{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:20px;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  overflow:hidden;
+  transition:0.3s;
+}
+
+.card:hover{
+  transform:translateY(-5px);
+}
+
+.card img{
+  width:100%;
+  height:200px;
+  object-fit:contain;
+}
+
+.card-content{
+  padding:10px;
+  text-align:center;
+}
+
+.card-content h3{
+  font-size:16px;
+}
+
+.card-content p{
+  color:#b12704;
+  font-weight:bold;
+}
+
+.buy-btn{
+  background:#ff9900;
+  border:none;
+  width:90%;
+  margin:10px auto;
+  display:block;
+  padding:10px;
+  font-weight:bold;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:20px;
+  background:#232f3e;
+  color:#fff;
+  margin-top:20px;
+}
+</style>
+
 </head>
 
 <body>
 
-<header>🔥 Best Amazon Deals</header>
+<!-- 🔥 HEADER -->
+<header>
+  <img src="logo.png" alt="Koloonline Logo" style="height:40px;">
+  <span>Koloonline</span>
+</header>
 
+<!-- 🔥 HERO -->
+<div style="text-align:center;background:#fff;padding:20px;">
+<img src="logo.png" style="height:80px;"><br><br>
+<h2>Your Global Connection 🌍</h2>
+
+<p>🔥 Best Deals Updated Daily</p>
+
+<button onclick="scrollToProducts()" class="buy-btn" style="width:auto;padding:10px 20px;">
+🔥 Shop Now
+</button>
+</div>
+
+<!-- 🔥 NAV -->
 <div class="navbar">
 
-  <input 
-    type="text" 
-    id="searchInput" 
-    placeholder="Search..." 
-    oninput="smartSuggest()" 
-    onkeypress="handleEnter(event)"
-  >
+<input 
+type="text" 
+id="searchInput" 
+placeholder="Search products..."
+oninput="smartSuggest()"
+>
 
-  <button onclick="goCart()">
-    Cart 🛒 (<span id="cartCount">0</span>)
-  </button>
+<button onclick="goCart()">Cart 🛒 (<span id="cartCount">0</span>)</button>
 
-  <button onclick="location.href='dashboard.html'">
-    📊 Dashboard
-  </button>
+<button onclick="location.href='dashboard.html'">📊 Dashboard</button>
 
-  <!-- 🆕 Blog Button -->
-  <button onclick="location.href='blog.html'">
-    📰 Blog
-  </button>
+<button onclick="location.href='blog.html'">📰 Blog</button>
 
 </div>
 
-<div style="position:relative;">
-  <div id="suggestBox"
-       style="background:#fff;border-radius:6px;display:none;position:absolute;z-index:999;width:100%;">
-  </div>
+<!-- 🔥 TOP AD -->
+<div style="margin:20px;text-align:center;">
+<ins class="adsbygoogle"
+style="display:block"
+data-ad-client="ca-pub-1294940976431468"
+data-ad-slot="1614162350"
+data-ad-format="auto"
+data-full-width-responsive="true"></ins>
+<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>
 
+<!-- 🔥 PRODUCTS -->
 <div id="products" class="products"></div>
+
+<!-- 🔥 BOTTOM AD -->
+<div style="margin:20px;text-align:center;">
+<ins class="adsbygoogle"
+style="display:block"
+data-ad-client="ca-pub-1294940976431468"
+data-ad-slot="5949126633"
+data-ad-format="auto"
+data-full-width-responsive="true"></ins>
+<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<!-- 🔥 FOOTER -->
+<footer>
+<img src="logo.png" style="height:30px;"><br>
+© 2026 Koloonline - All Rights Reserved
+</footer>
 
 <script>
 
-// ================= PRODUCTS =================
+// PRODUCTS
 let products = [
-  {
-    id: 1,
-    title: "Echo Dot 5",
-    asin: "B09B8Q3YHJ",
-    price: 39.99,
-    image: "https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
-    affiliateRate: 0.06
-  },
-  {
-    id: 2,
-    title: "Smart Watch Pro",
-    asin: "B09V7Z4TJG",
-    price: 49.99,
-    image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
-    affiliateRate: 0.07
-  },
-  {
-    id: 3,
-    title: "Wireless Earbuds",
-    asin: "B08J5F3G18",
-    price: 29.99,
-    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg",
-    affiliateRate: 0.05
-  }
+{
+title:"Echo Dot 5",
+asin:"B09B8Q3YHJ",
+price:39.99,
+image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+},
+{
+title:"Smart Watch Pro",
+asin:"B09V7Z4TJG",
+price:49.99,
+image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+}
 ];
 
-// ================= CART =================
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-// ================= SAVE =================
-function saveCart(){
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount();
+// BUILD LINK
+function buildLink(asin){
+return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
 }
 
-// ================= CART COUNT =================
-function updateCartCount(){
-  let total = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
-  document.getElementById("cartCount").innerText = total;
-}
-
-// ================= COUNTRY =================
-function getCountry(){
-  let lang = navigator.language || "en-US";
-  if(lang.includes("ar")) return "EG";
-  if(lang.includes("en-CA")) return "CA";
-  if(lang.includes("pl")) return "PL";
-  return "US";
-}
-
-// ================= TAG =================
-function getTag(c){
-  return {
-    US: "koloonlinesto-20",
-    CA: "linasobhy20d8-20",
-    PL: "koloonline-21",
-    EG: "onlinesh03f31-21"
-  }[c] || "koloonlinesto-20";
-}
-
-// ================= DOMAIN =================
-function getDomain(c){
-  return {
-    US: "amazon.com",
-    CA: "amazon.ca",
-    PL: "amazon.pl",
-    EG: "amazon.eg"
-  }[c] || "amazon.com";
-}
-
-// ================= LINK =================
-function buildAffiliateLink(asin){
-  const country = getCountry();
-  return `https://www.${getDomain(country)}/dp/${asin}?tag=${getTag(country)}`;
-}
-
-// ================= TRACK CLICK =================
-function trackClick(asin){
-
-  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
-  clicks[asin] = (clicks[asin] || 0) + 1;
-  localStorage.setItem("clicks", JSON.stringify(clicks));
-
-  let today = new Date().toLocaleDateString();
-  let daily = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
-  daily[today] = (daily[today] || 0) + 1;
-
-  localStorage.setItem("dailyClicks", JSON.stringify(daily));
-}
-
-// ================= OPEN PRODUCT =================
-function openProduct(asin){
-  trackClick(asin);
-  window.open(buildAffiliateLink(asin), "_blank");
-}
-
-// ================= ADD TO CART =================
-function addToCart(id){
-
-  const product = products.find(p => p.id === id);
-
-  let exists = cart.find(p => p.id === id);
-
-  if(exists){
-    exists.qty = (exists.qty || 1) + 1;
-  } else {
-    cart.push({...product, qty: 1});
-  }
-
-  saveCart();
-}
-
-// ================= SMART RANKING =================
-function sortProducts(list){
-
-  let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
-
-  return list.sort((a,b)=>{
-
-    let aScore = (clicks[a.asin] || 0) * a.affiliateRate;
-    let bScore = (clicks[b.asin] || 0) * b.affiliateRate;
-
-    return bScore - aScore;
-  });
-}
-
-// ================= DISPLAY =================
+// DISPLAY
 function displayProducts(list){
 
-  let sorted = sortProducts(list);
+let html="";
 
-  let html = "";
+list.forEach(p=>{
+html+=`
+<div class="card">
 
-  sorted.forEach(p=>{
-    html += `
-      <div class="card">
+<img src="${p.image}">
 
-        <img src="${p.image}" alt="${p.title}">
+<div class="card-content">
+<h3>${p.title}</h3>
+<p>$${p.price}</p>
+</div>
 
-        <div class="card-content">
-          <h3>${p.title}</h3>
-          <p>💲 ${p.price}</p>
-        </div>
+<button class="buy-btn" onclick="window.open('${buildLink(p.asin)}')">
+🔥 Buy Now
+</button>
 
-        <button class="buy-btn" onclick="addToCart(${p.id})">
-          🛒 Add to Cart
-        </button>
+</div>
+`;
+});
 
-        <button class="buy-btn" style="background:#28a745;margin-top:5px;"
-          onclick="openProduct('${p.asin}')">
-          🔥 Buy Now
-        </button>
-
-      </div>
-    `;
-  });
-
-  document.getElementById("products").innerHTML = html;
+document.getElementById("products").innerHTML=html;
 }
 
-// ================= SEARCH =================
+// SEARCH
 function smartSuggest(){
-
-  let input = document.getElementById("searchInput").value.toLowerCase().trim();
-  let box = document.getElementById("suggestBox");
-
-  if(!input){
-    box.style.display = "none";
-    displayProducts(products);
-    return;
-  }
-
-  let filtered = products.filter(p =>
-    p.title.toLowerCase().includes(input)
-  );
-
-  displayProducts(filtered);
-
-  box.style.display = filtered.length ? "block" : "none";
-  box.innerHTML = "";
-
-  filtered.forEach(p=>{
-    box.innerHTML += `
-      <div onclick="openProduct('${p.asin}')"
-        style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;">
-        🔎 ${p.title}
-      </div>
-    `;
-  });
+let q=document.getElementById("searchInput").value.toLowerCase();
+displayProducts(products.filter(p=>p.title.toLowerCase().includes(q)));
 }
 
-// ================= ENTER =================
-function handleEnter(e){
-
-  if(e.key === "Enter"){
-
-    let input = document.getElementById("searchInput").value.trim();
-
-    let first = products.find(p =>
-      p.title.toLowerCase().includes(input.toLowerCase())
-    );
-
-    if(first){
-      openProduct(first.asin);
-    }
-  }
+// SCROLL
+function scrollToProducts(){
+document.getElementById("products").scrollIntoView({behavior:"smooth"});
 }
 
-// ================= CART PAGE =================
-function goCart(){
-  window.location.href = "cart.html";
-}
-
-// ================= INIT =================
+// INIT
 displayProducts(products);
-updateCartCount();
 
 </script>
 
 </body>
-</html>
+  </html>
