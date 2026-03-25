@@ -1,24 +1,24 @@
 let allProducts = [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// 🛒 Update cart count
+/* ================= CART COUNT ================= */
 function updateCartCount() {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
   const count = document.getElementById("cart-count");
-  if (count) {
-    count.innerText = cart.length;
-  }
+  if (count) count.innerText = cart.length;
 }
 
-// 🛒 Add to cart
+/* ================= ADD TO CART ================= */
 function addToCart(product) {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
   cart.push(product);
   localStorage.setItem("cart", JSON.stringify(cart));
+
   updateCartCount();
+  trackEvent(product.id, "cart");
+
   alert("Added to cart 🛒");
 }
 
-// 📦 Load products from API
+/* ================= LOAD PRODUCTS ================= */
 async function loadProducts() {
   try {
     const res = await fetch("/api/products");
@@ -32,10 +32,9 @@ async function loadProducts() {
   }
 }
 
-// 🎨 Render products
+/* ================= RENDER PRODUCTS ================= */
 function renderProducts(list) {
   const container = document.querySelector(".products");
-
   if (!container) return;
 
   container.innerHTML = list.map(p => `
@@ -50,6 +49,10 @@ function renderProducts(list) {
         Add to Cart 🛒
       </button>
 
+      <button onclick="buyNow('${p.asin}')">
+        Buy Now ⚡
+      </button>
+
       <a href="product.html?id=${p.id}">
         View Product
       </a>
@@ -58,7 +61,7 @@ function renderProducts(list) {
   `).join("");
 }
 
-// 🔍 Live search
+/* ================= SEARCH ================= */
 document.addEventListener("input", (e) => {
   if (e.target.id === "search") {
     const value = e.target.value.toLowerCase();
@@ -71,65 +74,60 @@ document.addEventListener("input", (e) => {
   }
 });
 
-// 🚀 Init
-loadProducts();
-updateCartCount();console.log("Tracking error:",err);
-}
-
-}
-
 /* ================= BUY NOW ================= */
-function buyNow(asin){
+function buyNow(asin) {
+  trackEvent(asin, "click");
 
-trackEvent(asin,"click");
+  const tag = getAffiliateTag();
 
-const tag = getAffiliateTag();
-
-window.open(
-`https://www.amazon.com/dp/${asin}?tag=${tag}`,
-"_blank"
-);
-
+  window.open(
+    `https://www.amazon.com/dp/${asin}?tag=${tag}`,
+    "_blank"
+  );
 }
 
-/* ================= ADD TO CART ================= */
-function addToCart(asin){
-
-cart.push(asin);
-localStorage.setItem("cart",JSON.stringify(cart));
-
-updateCartUI();
-trackEvent(asin,"cart");
-
+/* ================= TRACK EVENT ================= */
+function trackEvent(item, type) {
+  try {
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        item,
+        type,
+        page: "store",
+        time: new Date().toISOString()
+      })
+    });
+  } catch (err) {
+    console.log("Tracking error:", err);
+  }
 }
 
 /* ================= WHATSAPP ORDER ================= */
-function orderWhatsApp(product, asin){
+function orderWhatsApp(product, asin) {
+  trackEvent(asin, "whatsapp");
 
-trackEvent(asin,"whatsapp");
+  let phone = "201XXXXXXXXX";
+  let msg = `I want to order: ${product}`;
 
-let phone = "201XXXXXXXXX";
-
-let msg = `I want to order: ${product}`;
-
-window.open(
-`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
-"_blank"
-);
-
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
+    "_blank"
+  );
 }
 
 /* ================= AFFILIATE TAG SYSTEM ================= */
-function getAffiliateTag(){
+function getAffiliateTag() {
+  let lang = navigator.language || "en-US";
 
-let lang = navigator.language || "en-US";
+  if (lang.includes("ar")) return "onlinesh03f31-21";
+  if (lang.includes("ca")) return "linasobhy20d8-20";
+  if (lang.includes("pl")) return "koloonline-21";
 
-if(lang.includes("ar-EG")) return "onlinesh03f31-21";
-if(lang.includes("en-CA")) return "linasobhy20d8-20";
-if(lang.includes("pl")) return "koloonline-21";
-
-return "koloonlinesto-20";
+  return "koloonlinesto-20";
 }
 
 /* ================= INIT ================= */
-updateCartUI();
+loadProducts();
+updateCartCount();
