@@ -1,121 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard V2 | Koloonline SaaS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#0f172a;
+color:#fff;
+}
+
+header{
+background:#111827;
+padding:15px;
+text-align:center;
+font-size:20px;
+font-weight:bold;
+}
+
+.container{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:15px;
+padding:15px;
+}
+
+.card{
+background:#1f2937;
+padding:15px;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+
+h3{margin-top:0;color:#facc15}
+
+canvas{background:#111827;border-radius:10px;padding:10px}
+
+.small{
+font-size:14px;color:#9ca3af;
+}
+</style>
+</head>
+
+<body>
+
+<header>🔥 Koloonline Dashboard V2 (SaaS Analytics)</header>
+
+<div class="container">
+
+<!-- ================= SUMMARY ================= -->
+<div class="card">
+<h3>📊 Summary</h3>
+<p class="small" id="summary"></p>
+</div>
+
+<!-- ================= FUNNEL ================= -->
+<div class="card">
+<h3>🎯 Conversion Funnel</h3>
+<canvas id="funnelChart"></canvas>
+</div>
+
+<!-- ================= PRODUCTS ================= -->
+<div class="card">
+<h3>📦 Top Products</h3>
+<canvas id="productChart"></canvas>
+</div>
+
+<!-- ================= COUNTRIES ================= -->
+<div class="card">
+<h3>🌍 Countries</h3>
+<canvas id="countryChart"></canvas>
+</div>
+
+</div>
+
 <script>
 
-let analytics = JSON.parse(localStorage.getItem("analytics") || "{}");
+/* ================= LOAD DATA ================= */
+let data = JSON.parse(localStorage.getItem("analytics") || "{}");
 
-// ================= TOTAL =================
-function calcTotals(){
-
-let totalClicks=0;
+/* ================= AGGREGATION ================= */
+let totalClick=0;
 let totalCart=0;
-let totalWhatsapp=0;
+let totalWhats=0;
 
-for(let asin in analytics){
-totalClicks += analytics[asin].click || 0;
-totalCart += analytics[asin].cart || 0;
-totalWhatsapp += analytics[asin].whatsapp || 0;
+let productLabels=[];
+let clickData=[];
+
+let countryMap={};
+
+for(let asin in data){
+
+let p = data[asin];
+
+totalClick += p.click || 0;
+totalCart += p.cart || 0;
+totalWhats += p.whatsapp || 0;
+
+// products
+productLabels.push(asin);
+clickData.push(p.click || 0);
+
+// countries
+if(p.country){
+for(let c in p.country){
+countryMap[c] = (countryMap[c]||0)+p.country[c];
+}
+}
 }
 
-return {totalClicks,totalCart,totalWhatsapp};
-}
-
-// ================= OVERVIEW =================
-function renderOverview(){
-
-let {totalClicks,totalCart,totalWhatsapp} = calcTotals();
-
-let conversionRate = totalClicks ? ((totalWhatsapp / totalClicks)*100).toFixed(2) : 0;
-
-let revenue = (totalWhatsapp * 2).toFixed(2); // تقدير
-
-document.getElementById("overview").innerHTML = `
-<div class="card">
-<h3>🔥 Clicks: ${totalClicks}</h3>
-<h3>🛒 Add to Cart: ${totalCart}</h3>
-<h3>📲 WhatsApp Orders: ${totalWhatsapp}</h3>
-<h3>📊 Conversion Rate: ${conversionRate}%</h3>
-<h3>💰 Estimated Revenue: $${revenue}</h3>
-</div>
+/* ================= SUMMARY ================= */
+document.getElementById("summary").innerHTML = `
+Clicks: ${totalClick}<br>
+Add to Cart: ${totalCart}<br>
+WhatsApp Orders: ${totalWhats}<br>
+Conversion Rate: ${totalClick ? ((totalWhats/totalClick)*100).toFixed(2) : 0}%
 `;
-}
 
-// ================= TOP PRODUCTS =================
-function renderTopProducts(){
-
-let arr = [];
-
-for(let asin in analytics){
-arr.push({
-asin,
-score: analytics[asin].whatsapp
-});
-}
-
-arr.sort((a,b)=>b.score-a.score);
-
-let html="";
-
-arr.forEach((p,i)=>{
-html+=`
-<div class="card ${i===0?"top":""}">
-<h3>🏆 ${p.asin}</h3>
-<p>Orders: ${p.score}</p>
-</div>
-`;
-});
-
-document.getElementById("topProducts").innerHTML = html;
-}
-
-// ================= COUNTRY =================
-function renderCountries(){
-
-let countries={};
-
-for(let asin in analytics){
-for(let c in analytics[asin].country){
-countries[c] = (countries[c]||0)+analytics[asin].country[c];
-}
-}
-
-let html="<div class='card'><h3>🌍 Top Countries</h3>";
-
-for(let c in countries){
-html+=`<p>${c}: ${countries[c]}</p>`;
-}
-
-html+="</div>";
-
-document.getElementById("overview").innerHTML += html;
-}
-
-// ================= CHART =================
-let chart;
-
-function renderChart(){
-
-let labels=[];
-let data=[];
-
-for(let asin in analytics){
-labels.push(asin);
-data.push(analytics[asin].click);
-}
-
-if(chart) chart.destroy();
-
-chart = new Chart(document.getElementById("clickChart"),{
-type:"bar",
+/* ================= FUNNEL ================= */
+new Chart(document.getElementById("funnelChart"),{
+type:'bar',
 data:{
-labels,
-datasets:[{label:"Clicks",data}]
+labels:["Clicks","Cart","WhatsApp"],
+datasets:[{
+label:"Funnel",
+data:[totalClick,totalCart,totalWhats],
+backgroundColor:["#3b82f6","#f59e0b","#10b981"]
+}]
 }
 });
+
+/* ================= PRODUCTS ================= */
+new Chart(document.getElementById("productChart"),{
+type:'bar',
+data:{
+labels:productLabels,
+datasets:[{
+label:"Clicks per Product",
+data:clickData,
+backgroundColor:"#facc15"
+}]
 }
+});
 
-// ================= INIT =================
-renderOverview();
-renderTopProducts();
-renderCountries();
-renderChart();
+/* ================= COUNTRIES ================= */
+new Chart(document.getElementById("countryChart"),{
+type:'pie',
+data:{
+labels:Object.keys(countryMap),
+datasets:[{
+data:Object.values(countryMap),
+backgroundColor:[
+"#ef4444","#3b82f6","#22c55e","#eab308","#a855f7"
+]
+}]
+}
+});
 
-                           </script>
+</script>
+
+</body>
+</html>
