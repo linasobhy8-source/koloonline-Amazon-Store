@@ -5,34 +5,30 @@
 <meta charset="UTF-8">
 <title>Koloonline Store | Best Amazon Deals 2026</title>
 
-<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products. Shop now and get the best prices.">
-<meta name="keywords" content="amazon deals, smart watch, gadgets, online shopping">
+<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="style.css">
 <link rel="icon" href="favicon.ico">
-
-<!-- AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
-crossorigin="anonymous"></script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5}
 
 /* HEADER */
 header{
-background:#232f3e;color:#fff;padding:15px;
-font-size:22px;font-weight:bold;
+background:#232f3e;color:#fff;padding:12px;
 display:flex;align-items:center;justify-content:center;gap:10px;
 }
+header img{height:40px}
 
 /* HERO */
 .hero{text-align:center;background:#fff;padding:25px}
+.hero img{height:80px}
 
 /* NAV */
 .navbar{
 display:flex;justify-content:space-between;
-padding:10px;background:#37475a;flex-wrap:wrap
+padding:10px;background:#37475a;flex-wrap:wrap;
+position:relative
 }
 
 .navbar input{
@@ -40,14 +36,20 @@ width:45%;padding:8px;border:none;border-radius:4px
 }
 
 .navbar button{
-background:#ff9900;border:none;padding:8px 12px;
+background:#ff9900;border:none;padding:8px;
 border-radius:4px;font-weight:bold;cursor:pointer;margin:3px
 }
 
-/* SEO TEXT */
-.seo{
-background:#fff;padding:20px;margin:20px;border-radius:10px
+/* suggestions */
+#suggestions{
+position:absolute;top:45px;left:10px;
+background:#fff;width:45%;
+z-index:999;border-radius:6px;
+box-shadow:0 4px 10px rgba(0,0,0,0.2)
 }
+
+/* FILTER */
+.filters{text-align:center;padding:10px}
 
 /* PRODUCTS */
 .products{
@@ -59,37 +61,29 @@ gap:20px;padding:20px
 .card{
 background:#fff;border-radius:10px;
 box-shadow:0 4px 10px rgba(0,0,0,0.1);
-overflow:hidden;transition:0.3s
+overflow:hidden
 }
 
-.card:hover{transform:translateY(-5px)}
-
-.card img{
-width:100%;height:200px;object-fit:contain
-}
+.card img{width:100%;height:200px;object-fit:contain}
 
 .card-content{text-align:center;padding:10px}
-
 .card-content p{color:#b12704;font-weight:bold}
 
 .buy-btn{
-background:#ff9900;border:none;width:90%;
-margin:10px auto;display:block;padding:10px;
-font-weight:bold;cursor:pointer;border-radius:6px
+background:#ff9900;border:none;
+width:90%;margin:5px auto;
+display:flex;align-items:center;justify-content:center;
+gap:6px;padding:10px;font-weight:bold;
+cursor:pointer;border-radius:6px
 }
 
-/* BLOG */
-.blog{
-background:#fff;margin:20px;padding:20px;border-radius:10px
-}
+.buy-btn img{height:18px}
 
 /* FOOTER */
 footer{
 background:#232f3e;color:#fff;
 text-align:center;padding:20px;margin-top:20px
 }
-
-footer a{color:#fff;margin:0 10px;text-decoration:none}
 </style>
 
 </head>
@@ -97,166 +91,159 @@ footer a{color:#fff;margin:0 10px;text-decoration:none}
 <body>
 
 <header>
-<img src="logo.png" style="height:40px;">
+<img src="logo.png">
 <span>Koloonline</span>
 </header>
 
-<!-- HERO -->
 <div class="hero">
-<img src="logo.png" style="height:80px"><br><br>
+<img src="logo.png"><br><br>
 <h2>Your Global Connection 🌍</h2>
-<p>🔥 Best Deals Updated Daily</p>
-
 <button onclick="scrollToProducts()" class="buy-btn" style="width:auto">
-🔥 Shop Now
+<img src="logo.png"> Shop Now
 </button>
 </div>
 
-<!-- NAV -->
 <div class="navbar">
 <input type="text" id="searchInput" placeholder="Search..." oninput="smartSuggest()">
+<div id="suggestions"></div>
 
-<button onclick="goCart()">Cart 🛒 (<span id="cartCount">0</span>)</button>
-<button onclick="location.href='dashboard.html'">📊 Dashboard</button>
-<button onclick="location.href='blog.html'">📰 Blog</button>
+<button>Cart 🛒 (<span id="cartCount">0</span>)</button>
 </div>
 
-<!-- SEO CONTENT (مهم جدا) -->
-<div class="seo">
-<h1>Best Amazon Deals & Smart Products 2026</h1>
-
-<p>
-Welcome to Koloonline Store, your trusted platform to discover the best smart devices,
-gadgets, watches, and trending Amazon deals.
-</p>
-
-<h2>Why Choose Us?</h2>
-<ul>
-<li>✔ Daily updated deals</li>
-<li>✔ Trusted recommendations</li>
-<li>✔ Best prices online</li>
-</ul>
+<!-- FILTER -->
+<div class="filters">
+<button onclick="filterCategory('all')">All</button>
+<button onclick="filterCategory('electronics')">الكترونيات</button>
+<button onclick="filterCategory('wearables')">ساعات</button>
 </div>
 
-<!-- TOP AD -->
-<div style="text-align:center;margin:20px;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="1614162350"
-data-ad-format="auto"
-data-full-width-responsive="true"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
-<!-- PRODUCTS -->
 <div id="products" class="products"></div>
 
-<!-- BLOG SECTION -->
-<div class="blog">
-<h2>Latest Articles</h2>
-
-<p>
-👉 <a href="post1.html">Best Smart Watches 2026</a><br>
-👉 <a href="post2.html">Top Earbuds Deals</a><br>
-👉 <a href="post3.html">Best Amazon Tech Products</a>
-</p>
-</div>
-
-<!-- BOTTOM AD -->
-<div style="text-align:center;margin:20px;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="5949126633"
-data-ad-format="auto"
-data-full-width-responsive="true"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
-<!-- FOOTER -->
 <footer>
-<img src="logo.png" style="height:30px"><br><br>
-
-<a href="about.html">About</a> |
-<a href="privacy.html">Privacy</a> |
-<a href="contact.html">Contact</a>
-
-<p>© 2026 Koloonline - All Rights Reserved</p>
+<img src="logo.png" style="height:30px"><br>
+<p>© 2026 Koloonline</p>
 </footer>
 
 <script>
 
+// fallback products
 let products=[
 {
 title:"Echo Dot 5",
 asin:"B09B8Q3YHJ",
 price:39.99,
+category:"electronics",
 image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
 },
 {
 title:"Smart Watch Pro",
 asin:"B09V7Z4TJG",
 price:49.99,
+category:"wearables",
 image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
 }
 ];
 
+// load API
+async function loadProducts(){
+try{
+let res=await fetch("/api/products");
+let data=await res.json();
+products=data.products;
+}catch(e){
+console.log("API failed, using fallback");
+}
+displayProducts(products);
+}
+loadProducts();
+
+// build affiliate link
 function buildLink(asin){
-return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+let clickId=Date.now();
+return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20&ref=${clickId}`;
 }
 
+// display
 function displayProducts(list){
 let html="";
-
 list.forEach(p=>{
 html+=`
 <div class="card">
 
-<img src="${p.image}" alt="${p.title}">
+<img src="${p.image}">
 
 <div class="card-content">
 <h3>${p.title}</h3>
 <p>$${p.price}</p>
 </div>
 
-<button class="buy-btn" onclick="window.open('${buildLink(p.asin)}')">
-🔥 Buy Now
+<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
+<img src="logo.png"> Add
 </button>
 
-</div>
+<button class="buy-btn" onclick='trackClick(${JSON.stringify(p)}); window.open("${buildLink(p.asin)}")'>
+🔥 Buy
+</button>
 
-<script type="application/ld+json">
-{
-"@context":"https://schema.org",
-"@type":"Product",
-"name":"${p.title}",
-"image":"${p.image}",
-"offers":{
-"@type":"Offer",
-"price":"${p.price}",
-"priceCurrency":"USD"
-}
-}
-</script>
-`;
+</div>`;
 });
-
 document.getElementById("products").innerHTML=html;
 }
 
+// search + suggestions
 function smartSuggest(){
 let q=document.getElementById("searchInput").value.toLowerCase();
-displayProducts(products.filter(p=>p.title.toLowerCase().includes(q)));
+
+let results=products.filter(p=>p.title.toLowerCase().includes(q));
+displayProducts(results);
+
+let sug="";
+results.slice(0,5).forEach(p=>{
+sug+=`<div onclick="selectProduct('${p.title}')" style="padding:8px;cursor:pointer">${p.title}</div>`;
+});
+
+document.getElementById("suggestions").innerHTML=sug;
 }
 
+function selectProduct(t){
+document.getElementById("searchInput").value=t;
+document.getElementById("suggestions").innerHTML="";
+smartSuggest();
+}
+
+// filter
+function filterCategory(cat){
+if(cat==="all"){displayProducts(products);return;}
+displayProducts(products.filter(p=>p.category===cat));
+}
+
+// cart
+let cart=JSON.parse(localStorage.getItem("cart"))||[];
+
+function addToCart(p){
+cart.push(p);
+localStorage.setItem("cart",JSON.stringify(cart));
+updateCart();
+}
+
+function updateCart(){
+document.getElementById("cartCount").innerText=cart.length;
+}
+updateCart();
+
+// tracking
+function trackClick(p){
+let clicks=JSON.parse(localStorage.getItem("clicks"))||[];
+clicks.push({title:p.title,date:new Date()});
+localStorage.setItem("clicks",JSON.stringify(clicks));
+}
+
+// scroll
 function scrollToProducts(){
 document.getElementById("products").scrollIntoView({behavior:"smooth"});
 }
 
-displayProducts(products);
-
 </script>
 
 </body>
-  </html>
+</html>
