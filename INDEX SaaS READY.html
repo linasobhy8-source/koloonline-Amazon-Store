@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 
-<title>Koloonline Store | SaaS Tracking System</title>
+<title>Koloonline SaaS Store | Tracking System</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -54,7 +54,7 @@ text-align:center;
 
 .buy-btn{
 background:#ff9900;border:none;
-padding:10px;margin-top:10px;
+padding:10px;margin-top:8px;
 cursor:pointer;
 width:100%;
 }
@@ -64,13 +64,11 @@ width:100%;
 
 <body>
 
-<header>
-🔥 Koloonline SaaS Store
-</header>
+<header>🔥 Koloonline SaaS Store</header>
 
 <div class="hero">
 <h2>Smart Tracking Store 🚀</h2>
-<button onclick="scrollToProducts()" class="buy-btn">Shop Now</button>
+<button class="buy-btn" onclick="scrollToProducts()">Shop Now</button>
 </div>
 
 <div class="navbar">
@@ -106,18 +104,6 @@ data-ad-format="auto"></ins>
 
 <script>
 
-/* ================= AFFILIATE TAG SYSTEM ================= */
-function getAffiliateTag(){
-
-let lang = navigator.language || "US";
-
-if(lang.includes("ar-EG")) return "onlinesh03f31-21"; // مصر
-if(lang.includes("en-CA")) return "linasobhy20d8-20";  // كندا
-if(lang.includes("pl")) return "koloonline-21";        // بولندا
-
-return "koloonlinesto-20"; // USA default
-}
-
 /* ================= PRODUCTS ================= */
 let products = [
 {
@@ -129,7 +115,21 @@ price:39.99
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+/* ================= AFFILIATE TAG ================= */
+function getAffiliateTag(){
+
+let lang = navigator.language || "en-US";
+
+if(lang.includes("ar")) return "onlinesh03f31-21"; // Egypt
+if(lang.includes("en-CA")) return "linasobhy20d8-20"; // Canada
+if(lang.includes("pl")) return "koloonline-21"; // Poland
+
+return "koloonlinesto-20"; // USA default
+}
+
+/* ================= RENDER PRODUCTS ================= */
 function render(){
+
 let html = "";
 
 products.forEach(p=>{
@@ -138,20 +138,17 @@ html += `
 <h3>${p.title}</h3>
 <p>$${p.price}</p>
 
-<button class="buy-btn"
-onclick="buyNow('${p.asin}')">
+<button class="buy-btn" onclick="buyNow('${p.asin}')">
 Buy Now
 </button>
 
-<button class="buy-btn"
-onclick="addToCart('${p.asin}')"
-style="background:#232f3e;color:#fff;">
+<button class="buy-btn" style="background:#232f3e;color:#fff;"
+onclick="addToCart('${p.asin}')">
 Add to Cart
 </button>
 
-<button class="buy-btn"
-onclick="orderWhatsApp('${p.title}')"
-style="background:green;color:#fff;">
+<button class="buy-btn" style="background:green;color:#fff;"
+onclick="orderWhatsApp('${p.title}','${p.asin}')">
 WhatsApp
 </button>
 
@@ -162,19 +159,32 @@ WhatsApp
 document.getElementById("products").innerHTML = html;
 }
 
-/* ================= TRACKING ================= */
-function track(type,asin){
-let data = JSON.parse(localStorage.getItem("analytics")||"{}");
+/* ================= SAAS TRACKING API ================= */
+async function track(type, asin){
 
-if(!data[asin]) data[asin]={click:0,cart:0,whatsapp:0};
+if(!asin) return;
 
-data[asin][type]++;
-
-localStorage.setItem("analytics",JSON.stringify(data));
+try{
+await fetch("http://localhost:5000/track",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+asin: asin,
+type: type,
+country: navigator.language || "unknown"
+})
+});
+}catch(err){
+console.log("tracking error");
 }
 
-/* ================= ACTIONS ================= */
+}
+
+/* ================= BUY NOW ================= */
 function buyNow(asin){
+
 track("click",asin);
 
 let tag = getAffiliateTag();
@@ -182,32 +192,43 @@ let tag = getAffiliateTag();
 window.open(`https://www.amazon.com/dp/${asin}?tag=${tag}`,"_blank");
 }
 
+/* ================= ADD TO CART ================= */
 function addToCart(asin){
+
 cart.push(asin);
 localStorage.setItem("cart",JSON.stringify(cart));
+
 document.getElementById("cartCount").innerText = cart.length;
 
 track("cart",asin);
 }
 
-function orderWhatsApp(product){
-track("whatsapp",product);
+/* ================= WHATSAPP FIXED ================= */
+function orderWhatsApp(product, asin){
+
+track("whatsapp",asin);
 
 let phone="201XXXXXXXXX";
 
 let msg=`I want to order: ${product}`;
-window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+
+window.open(
+`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
+"_blank"
+);
+
 }
 
-/* ================= UI ================= */
+/* ================= SCROLL ================= */
 function scrollToProducts(){
 document.getElementById("products").scrollIntoView({behavior:"smooth"});
 }
 
+/* ================= INIT ================= */
 render();
 document.getElementById("cartCount").innerText = cart.length;
 
 </script>
 
 </body>
-  </html>
+</html>
