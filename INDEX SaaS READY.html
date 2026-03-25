@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<title>Koloonline Store | SaaS Tracking System</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ================= GTM ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<!-- ================= ADSENSE ================= -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
+crossorigin="anonymous"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5}
+
+header{
+background:#232f3e;color:#fff;padding:12px;
+text-align:center;
+}
+
+.hero{text-align:center;background:#fff;padding:20px}
+
+.navbar{
+display:flex;justify-content:space-between;
+padding:10px;background:#37475a;flex-wrap:wrap;
+}
+
+.navbar input{width:50%;padding:8px}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+gap:15px;padding:20px;
+}
+
+.card{
+background:#fff;padding:10px;border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.buy-btn{
+background:#ff9900;border:none;
+padding:10px;margin-top:10px;
+cursor:pointer;
+width:100%;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+🔥 Koloonline SaaS Store
+</header>
+
+<div class="hero">
+<h2>Smart Tracking Store 🚀</h2>
+<button onclick="scrollToProducts()" class="buy-btn">Shop Now</button>
+</div>
+
+<div class="navbar">
+<input id="search" placeholder="Search products...">
+<span>Cart: <b id="cartCount">0</b></span>
+</div>
+
+<!-- ================= ADS TOP ================= -->
+<div style="text-align:center;margin:10px;">
+<ins class="adsbygoogle"
+style="display:block"
+data-ad-client="ca-pub-1294940976431468"
+data-ad-slot="1614162350"
+data-ad-format="auto"></ins>
+<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<div id="products" class="products"></div>
+
+<!-- ================= ADS MIDDLE ================= -->
+<div style="text-align:center;margin:20px;">
+<ins class="adsbygoogle"
+style="display:block"
+data-ad-client="ca-pub-1294940976431468"
+data-ad-slot="8707151914"
+data-ad-format="auto"></ins>
+<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<footer style="text-align:center;padding:20px;background:#232f3e;color:#fff;">
+© 2026 Koloonline SaaS
+</footer>
+
+<script>
+
+/* ================= AFFILIATE TAG SYSTEM ================= */
+function getAffiliateTag(){
+
+let lang = navigator.language || "US";
+
+if(lang.includes("ar-EG")) return "onlinesh03f31-21"; // مصر
+if(lang.includes("en-CA")) return "linasobhy20d8-20";  // كندا
+if(lang.includes("pl")) return "koloonline-21";        // بولندا
+
+return "koloonlinesto-20"; // USA default
+}
+
+/* ================= PRODUCTS ================= */
+let products = [
+{
+asin:"B09V7Z4TJG",
+title:"Smart Watch Pro",
+price:39.99
+}
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+function render(){
+let html = "";
+
+products.forEach(p=>{
+html += `
+<div class="card">
+<h3>${p.title}</h3>
+<p>$${p.price}</p>
+
+<button class="buy-btn"
+onclick="buyNow('${p.asin}')">
+Buy Now
+</button>
+
+<button class="buy-btn"
+onclick="addToCart('${p.asin}')"
+style="background:#232f3e;color:#fff;">
+Add to Cart
+</button>
+
+<button class="buy-btn"
+onclick="orderWhatsApp('${p.title}')"
+style="background:green;color:#fff;">
+WhatsApp
+</button>
+
+</div>
+`;
+});
+
+document.getElementById("products").innerHTML = html;
+}
+
+/* ================= TRACKING ================= */
+function track(type,asin){
+let data = JSON.parse(localStorage.getItem("analytics")||"{}");
+
+if(!data[asin]) data[asin]={click:0,cart:0,whatsapp:0};
+
+data[asin][type]++;
+
+localStorage.setItem("analytics",JSON.stringify(data));
+}
+
+/* ================= ACTIONS ================= */
+function buyNow(asin){
+track("click",asin);
+
+let tag = getAffiliateTag();
+
+window.open(`https://www.amazon.com/dp/${asin}?tag=${tag}`,"_blank");
+}
+
+function addToCart(asin){
+cart.push(asin);
+localStorage.setItem("cart",JSON.stringify(cart));
+document.getElementById("cartCount").innerText = cart.length;
+
+track("cart",asin);
+}
+
+function orderWhatsApp(product){
+track("whatsapp",product);
+
+let phone="201XXXXXXXXX";
+
+let msg=`I want to order: ${product}`;
+window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+}
+
+/* ================= UI ================= */
+function scrollToProducts(){
+document.getElementById("products").scrollIntoView({behavior:"smooth"});
+}
+
+render();
+document.getElementById("cartCount").innerText = cart.length;
+
+</script>
+
+</body>
+  </html>
