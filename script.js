@@ -1,40 +1,79 @@
-/* ===============================
-   KoloOnline SaaS Tracking Script
-   CONNECTS TO BACKEND API
-================================= */
+let allProducts = [];
 
-const API_URL = "http://localhost:5000";
-
-/* ================= CART STORAGE (optional local fallback) ================= */
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-/* ================= UPDATE CART UI ================= */
-function updateCartUI(){
-let el = document.getElementById("cartCount");
-if(el) el.innerText = cart.length;
+// 🛒 Update cart count
+function updateCartCount() {
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const count = document.getElementById("cart-count");
+  if (count) {
+    count.innerText = cart.length;
+  }
 }
 
-/* ================= TRACK EVENT (SAAS MODE) ================= */
-async function trackEvent(asin, type){
+// 🛒 Add to cart
+function addToCart(product) {
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  cart.push(product);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  alert("Added to cart 🛒");
+}
 
-if(!asin || !type) return;
+// 📦 Load products from API
+async function loadProducts() {
+  try {
+    const res = await fetch("/api/products");
+    const data = await res.json();
 
-try{
+    allProducts = data;
+    renderProducts(data);
+    updateCartCount();
+  } catch (err) {
+    console.log("Error loading products", err);
+  }
+}
 
-await fetch(`${API_URL}/track`,{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-asin: asin,
-type: type,
-country: navigator.language || "unknown"
-})
+// 🎨 Render products
+function renderProducts(list) {
+  const container = document.querySelector(".products");
+
+  if (!container) return;
+
+  container.innerHTML = list.map(p => `
+    <div class="card">
+
+      <img src="${p.image}" />
+
+      <h3>${p.title}</h3>
+      <p>$${p.price}</p>
+
+      <button onclick='addToCart(${JSON.stringify(p)})'>
+        Add to Cart 🛒
+      </button>
+
+      <a href="product.html?id=${p.id}">
+        View Product
+      </a>
+
+    </div>
+  `).join("");
+}
+
+// 🔍 Live search
+document.addEventListener("input", (e) => {
+  if (e.target.id === "search") {
+    const value = e.target.value.toLowerCase();
+
+    const filtered = allProducts.filter(p =>
+      p.title.toLowerCase().includes(value)
+    );
+
+    renderProducts(filtered);
+  }
 });
 
-}catch(err){
-console.log("Tracking error:",err);
+// 🚀 Init
+loadProducts();
+updateCartCount();console.log("Tracking error:",err);
 }
 
 }
