@@ -126,122 +126,93 @@ text-align:center;padding:20px;margin-top:20px
 
 <script>
 
-// fallback products
-let products=[
-{
-title:"Echo Dot 5",
-asin:"B09B8Q3YHJ",
-price:39.99,
-category:"electronics",
-image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
-},
-{
-title:"Smart Watch Pro",
-asin:"B09V7Z4TJG",
-price:49.99,
-category:"wearables",
-image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
-}
-];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// load API
-async function loadProducts(){
-try{
-let res=await fetch("/api/products");
-let data=await res.json();
-products=data.products;
-}catch(e){
-console.log("API failed, using fallback");
-}
-displayProducts(products);
-}
-loadProducts();
-
-// build affiliate link
-function buildLink(asin){
-let clickId=Date.now();
-return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20&ref=${clickId}`;
-}
-
-// display
-function displayProducts(list){
-let html="";
-list.forEach(p=>{
-html+=`
-<div class="card">
-
-<img src="${p.image}">
-
-<div class="card-content">
-<h3>${p.title}</h3>
-<p>$${p.price}</p>
-</div>
-
-<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
-<img src="logo.png"> Add
-</button>
-
-<button class="buy-btn" onclick='trackClick(${JSON.stringify(p)}); window.open("${buildLink(p.asin)}")'>
-🔥 Buy
-</button>
-
-</div>`;
-});
-document.getElementById("products").innerHTML=html;
-}
-
-// search + suggestions
-function smartSuggest(){
-let q=document.getElementById("searchInput").value.toLowerCase();
-
-let results=products.filter(p=>p.title.toLowerCase().includes(q));
-displayProducts(results);
-
-let sug="";
-results.slice(0,5).forEach(p=>{
-sug+=`<div onclick="selectProduct('${p.title}')" style="padding:8px;cursor:pointer">${p.title}</div>`;
-});
-
-document.getElementById("suggestions").innerHTML=sug;
-}
-
-function selectProduct(t){
-document.getElementById("searchInput").value=t;
-document.getElementById("suggestions").innerHTML="";
-smartSuggest();
-}
-
-// filter
-function filterCategory(cat){
-if(cat==="all"){displayProducts(products);return;}
-displayProducts(products.filter(p=>p.category===cat));
-}
-
-// cart
-let cart=JSON.parse(localStorage.getItem("cart"))||[];
-
+/* ================= CART ================= */
 function addToCart(p){
+
 cart.push(p);
-localStorage.setItem("cart",JSON.stringify(cart));
+localStorage.setItem("cart", JSON.stringify(cart));
 updateCart();
+
+// tracking safe call
+if(p && p.asin){
+trackEvent("cart", p.asin);
+}
 }
 
+/* ================= CART UI ================= */
 function updateCart(){
-document.getElementById("cartCount").innerText=cart.length;
-}
-updateCart();
-
-// tracking
-function trackClick(p){
-let clicks=JSON.parse(localStorage.getItem("clicks"))||[];
-clicks.push({title:p.title,date:new Date()});
-localStorage.setItem("clicks",JSON.stringify(clicks));
+document.getElementById("cartCount").innerText = cart.length;
 }
 
-// scroll
+/* ================= BUY NOW ================= */
+function buyNow(asin){
+
+trackEvent("click", asin);
+window.open(buildAffiliateLink(asin), "_blank");
+}
+
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(product, asin){
+
+if(asin){
+trackEvent("whatsapp", asin);
+}
+
+let phone = "201XXXXXXXXX";
+let msg = `I want to order: ${product}`;
+
+window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+}
+
+/* ================= UNIFIED TRACKING ================= */
+function trackEvent(type, asin){
+
+if(!asin) return;
+
+let data = JSON.parse(localStorage.getItem("analytics") || "{}");
+
+if(!data[asin]){
+data[asin] = {
+click:0,
+cart:0,
+whatsapp:0,
+country:{}
+};
+}
+
+// safe increment
+if(typeof data[asin][type] === "number"){
+data[asin][type]++;
+}
+
+// country tracking
+let country = navigator.language || "US";
+
+if(!data[asin].country[country]){
+data[asin].country[country]=0;
+}
+
+data[asin].country[country]++;
+
+localStorage.setItem("analytics", JSON.stringify(data));
+}
+
+/* ================= HELPERS ================= */
 function scrollToProducts(){
 document.getElementById("products").scrollIntoView({behavior:"smooth"});
 }
+
+function buildAffiliateLink(asin){
+return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+}
+
+/* placeholders */
+function smartSuggest(){}
+function filterCategory(cat){}
+
+updateCart();
 
 </script>
 
