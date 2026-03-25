@@ -42,6 +42,7 @@ padding:20px;
 border-radius:10px;
 box-shadow:0 4px 10px rgba(0,0,0,0.1);
 transition:0.3s;
+cursor:pointer;
 }
 
 .card:hover{transform:scale(1.02)}
@@ -86,8 +87,8 @@ margin-top:20px;
 <div class="seo">
 <h1>Best Tech Reviews & Amazon Deals 2026</h1>
 <p>
-Welcome to Koloonline Blog — we share product reviews, buying guides,
-and trending Amazon deals with real tracking analytics.
+Welcome to Koloonline Blog — tracking-enabled SaaS blog system for analytics,
+affiliate conversion and AI optimization.
 </p>
 </div>
 
@@ -122,35 +123,41 @@ and trending Amazon deals with real tracking analytics.
 
 <!-- ================= FOOTER ================= -->
 <footer>
-<p>© 2026 Koloonline Blog</p>
+<p>© 2026 Koloonline SaaS Blog</p>
 </footer>
 
 <script>
 
-/* ================= TRACK BLOG CLICK ================= */
-async function trackBlog(category){
+/* ================= TRACK SYSTEM (CLEAN SaaS VERSION) ================= */
+async function trackEvent(type, category){
 
 try{
-await fetch("http://localhost:5000/track",{
+await fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
 method:"POST",
 headers:{ "Content-Type":"application/json" },
 body:JSON.stringify({
-asin: category,
-type: "click",
-country: navigator.language
+event: type,
+category: category,
+page: "blog",
+timestamp: new Date().toISOString(),
+lang: navigator.language
 })
 });
-}catch(e){}
+}catch(e){
+console.log("tracking error ignored");
+}
 
+}
+
+/* ================= BLOG CLICK ================= */
+function trackBlog(category){
+trackEvent("blog_click", category);
 }
 
 /* ================= OPEN POST ================= */
 function openPost(e,url,category){
-
 e.stopPropagation();
-
-trackBlog(category);
-
+trackEvent("blog_open", category);
 window.location.href = url;
 }
 
