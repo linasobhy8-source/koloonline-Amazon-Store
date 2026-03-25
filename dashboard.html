@@ -1,205 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+dotenv.config();
 
-<title>Dashboard V3 | Koloonline SaaS Analytics</title>
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+/* ================= MONGO CONNECT ================= */
+mongoose.connect(process.env.MONGODB_URI)
+.then(()=>console.log("MongoDB Connected"))
+.catch(err=>console.log(err));
 
-<style>
-body{
-font-family:Arial;
-margin:0;
-background:#0b1220;
-color:#fff;
+/* ================= SCHEMA ================= */
+const AnalyticsSchema = new mongoose.Schema({
+asin:String,
+click:Number,
+cart:Number,
+whatsapp:Number,
+country:Object,
+createdAt:{type:Date,default:Date.now}
+});
+
+const Analytics = mongoose.model("Analytics",AnalyticsSchema);
+
+/* ================= TRACK EVENT API ================= */
+app.post("/track", async (req,res)=>{
+try{
+
+const {asin,type,country} = req.body;
+
+let doc = await Analytics.findOne({asin});
+
+if(!doc){
+doc = new Analytics({
+asin,
+click:0,
+cart:0,
+whatsapp:0,
+country:{}
+});
 }
 
-header{
-background:#111827;
-padding:18px;
-text-align:center;
-font-size:20px;
-font-weight:bold;
+if(type){
+doc[type] = (doc[type]||0) + 1;
 }
 
-.container{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:15px;
-padding:15px;
+if(country){
+doc.country[country] = (doc.country[country]||0)+1;
 }
 
-.card{
-background:#1f2937;
-padding:15px;
-border-radius:12px;
-box-shadow:0 4px 10px rgba(0,0,0,0.3);
-}
+await doc.save();
 
-h3{margin-top:0;color:#facc15}
+res.json({success:true});
 
-canvas{
-background:#111827;
-border-radius:10px;
-padding:10px;
-}
-
-.small{
-font-size:14px;
-color:#9ca3af;
-}
-
-.kpi{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-}
-
-.kpi div{
-background:#111827;
-padding:10px;
-border-radius:10px;
-flex:1;
-text-align:center;
-}
-</style>
-
-</head>
-
-<body>
-
-<header>🔥 Koloonline Dashboard V3 (Advanced Analytics)</header>
-
-<div class="container">
-
-<!-- ================= SUMMARY ================= -->
-<div class="card">
-<h3>📊 Summary</h3>
-<div class="kpi" id="summary"></div>
-</div>
-
-<!-- ================= FUNNEL ================= -->
-<div class="card">
-<h3>🎯 Conversion Funnel</h3>
-<canvas id="funnelChart"></canvas>
-</div>
-
-<!-- ================= PRODUCTS ================= -->
-<div class="card">
-<h3>📦 Top Products</h3>
-<canvas id="productChart"></canvas>
-</div>
-
-<!-- ================= COUNTRIES ================= -->
-<div class="card">
-<h3>🌍 Countries</h3>
-<canvas id="countryChart"></canvas>
-</div>
-
-</div>
-
-<script>
-
-/* ================= SAFE LOAD ================= */
-let data = JSON.parse(localStorage.getItem("analytics") || "{}");
-
-/* ================= DEFAULT VALUES ================= */
-let totalClick = 0;
-let totalCart = 0;
-let totalWhats = 0;
-
-let productLabels = [];
-let clickData = [];
-
-let countryMap = {};
-
-/* ================= PROCESS DATA ================= */
-for(let key in data){
-
-let p = data[key] || {};
-
-totalClick += p.click || 0;
-totalCart += p.cart || 0;
-totalWhats += p.whatsapp || 0;
-
-productLabels.push(key);
-clickData.push(p.click || 0);
-
-// countries safe check
-if(p.country && typeof p.country === "object"){
-for(let c in p.country){
-countryMap[c] = (countryMap[c] || 0) + p.country[c];
-}
-}
-
-}
-
-/* ================= SUMMARY UI ================= */
-const conversion = totalClick ? ((totalWhats / totalClick) * 100).toFixed(2) : 0;
-
-document.getElementById("summary").innerHTML = `
-<div>👆 Clicks: <b>${totalClick}</b></div>
-<div>🛒 Cart: <b>${totalCart}</b></div>
-<div>💬 Orders: <b>${totalWhats}</b></div>
-<div>📈 Conv: <b>${conversion}%</b></div>
-`;
-
-/* ================= FUNNEL ================= */
-new Chart(document.getElementById("funnelChart"),{
-type:'bar',
-data:{
-labels:["Clicks","Cart","Orders"],
-datasets:[{
-label:"Conversion Funnel",
-data:[totalClick,totalCart,totalWhats],
-backgroundColor:["#3b82f6","#f59e0b","#10b981"]
-}]
-},
-options:{
-responsive:true,
-plugins:{
-legend:{display:false}
-}
+}catch(err){
+res.json({success:false});
 }
 });
 
-/* ================= PRODUCTS ================= */
-new Chart(document.getElementById("productChart"),{
-type:'bar',
-data:{
-labels:productLabels.length ? productLabels : ["No Data"],
-datasets:[{
-label:"Product Clicks",
-data:clickData.length ? clickData : [0],
-backgroundColor:"#facc15"
-}]
-},
-options:{
-responsive:true
-}
+/* ================= GET DASHBOARD DATA ================= */
+app.get("/analytics", async (req,res)=>{
+const data = await Analytics.find();
+res.json(data);
 });
 
-/* ================= COUNTRIES ================= */
-new Chart(document.getElementById("countryChart"),{
-type:'pie',
-data:{
-labels:Object.keys(countryMap).length ? Object.keys(countryMap) : ["No Data"],
-datasets:[{
-data:Object.values(countryMap).length ? Object.values(countryMap) : [1],
-backgroundColor:[
-"#ef4444","#3b82f6","#22c55e","#eab308","#a855f7","#06b6d4"
-]
-}]
-},
-options:{
-responsive:true
-}
-});
-
-</script>
-
-</body>
-  </html>
+/* ================= SERVER ================= */
+app.listen(5000, ()=> console.log("Server running on port 5000"));

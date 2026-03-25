@@ -1,0 +1,3 @@
+MONGODB_URI=mongodb+srv://linasobhy8_db_user:viE2xl8MbXBCe39p@cluster0.mlhkqd8.mongodb.net/?appName=Cluster0
+
+SERPAPI_KEY=5ea494ff1f72f935c16b73f42f4940b7a321fbf5f35b301435d2fe0e885aa420
