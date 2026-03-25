@@ -34,61 +34,28 @@ gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 </script>
 
-<!-- AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
-crossorigin="anonymous"></script>
-
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
 header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;font-weight:bold;}
 .container{padding:20px;max-width:1100px;margin:auto;}
 .card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-h1,h2{color:#111;}
 button{background:#ff9900;border:none;padding:10px 15px;font-weight:bold;cursor:pointer;border-radius:5px;margin:5px;}
 .review{background:#fafafa;padding:10px;border-left:4px solid #ff9900;margin:10px 0;}
-
-footer{
-background:#232f3e;
-color:#fff;
-text-align:center;
-padding:20px;
-margin-top:30px
-}
-
-footer a{
-color:#fff;
-margin:0 10px;
-text-decoration:none
-}
+footer{background:#232f3e;color:#fff;text-align:center;padding:20px;margin-top:30px}
+footer a{color:#fff;margin:0 10px;text-decoration:none}
 </style>
 
 </head>
 
 <body>
 
-<!-- GTM noscript -->
-<noscript>
-<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
-height="0" width="0" style="display:none;visibility:hidden"></iframe>
-</noscript>
-
 <header>🔥 Best Smart Watches 2026</header>
 
 <div class="container">
 
-<!-- 🔥 TOP AD -->
-<div style="text-align:center;margin:20px 0;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="1614162350"
-data-ad-format="auto"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
 <div class="card">
 <h1>🔥 Best Smart Watches in 2026</h1>
-<p>Discover top-rated smart watches with the best Amazon deals and features.</p>
+<p>Discover top-rated smart watches with Amazon deals and features.</p>
 </div>
 
 <div class="card">
@@ -106,16 +73,6 @@ data-ad-format="auto"></ins>
 
 </div>
 
-<!-- 🔥 MIDDLE AD -->
-<div style="text-align:center;margin:20px 0;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="8707151914"
-data-ad-format="auto"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
 <div class="card">
 <h2>📦 Features</h2>
 <p>✔ Health tracking</p>
@@ -129,47 +86,15 @@ data-ad-format="auto"></ins>
 <div class="review">⭐ 4.8/5 Great value</div>
 </div>
 
-<!-- 🔥 INTERNAL LINKS -->
-<div class="card">
-<h3>📚 Related Articles</h3>
-<p>
-<a href="post2.html">Best Earbuds</a><br>
-<a href="post3.html">Top Gadgets</a>
-</p>
 </div>
 
-<!-- 🔥 BOTTOM AD -->
-<div style="text-align:center;margin:20px 0;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="5949126633"
-data-ad-format="auto"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
-</div>
-
-<!-- 🔥 FOOTER (تم إضافة الصفحات) -->
 <footer>
-
-<img src="logo.png" style="height:35px"><br><br>
-
-<p>Koloonline - Best Amazon Deals 2026</p>
-
-<a href="about.html">About Us</a> |
-<a href="contact.html">Contact</a> |
-<a href="privacy.html">Privacy Policy</a>
-
-<p style="margin-top:10px;font-size:12px;">
-This site contains affiliate links. We may earn commission from purchases.
-</p>
-
+<p>© 2026 Koloonline SaaS</p>
 </footer>
 
 <script>
 
-// Affiliate + tracking
+/* ================= AFFILIATE LINKS ================= */
 function buyNow(asin, country){
 
 let links = {
@@ -179,10 +104,10 @@ pl: `https://www.amazon.pl/dp/${asin}?tag=koloonline-21`
 };
 
 trackClick(asin);
-window.open(links[country]);
+window.open(links[country], "_blank");
 }
 
-// tracking
+/* ================= TRACKING ================= */
 function trackClick(asin){
 let clicks = JSON.parse(localStorage.getItem("clicks") || "{}");
 let dailyClicks = JSON.parse(localStorage.getItem("dailyClicks") || "{}");
@@ -196,14 +121,16 @@ localStorage.setItem("clicks", JSON.stringify(clicks));
 localStorage.setItem("dailyClicks", JSON.stringify(dailyClicks));
 }
 
-// WhatsApp
+/* ================= WHATSAPP (SAFE PLACEHOLDER) ================= */
 function orderWhatsApp(product){
-let phone = "201XXXXXXXXX";
+
+let phone = "XXXXXXXXXXX"; // 👈 حطي رقمك هنا محليًا فقط
 let msg = `I want to order: ${product}`;
+
 window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
 }
 
 </script>
 
 </body>
-  </html>
+</html>
