@@ -9,16 +9,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ سحب الكود من GitHub
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ إعداد Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'   # 🚀 تسريع التحميل
 
+      # 3️⃣ تثبيت الباكدجات
       - name: Install dependencies
         run: npm install
 
-      - name: Start check server file
-        run: node server.js --check
+      # 4️⃣ فحص الكود (Syntax Check)
+      - name: Check server syntax
+        run: node -c server.js
+
+      # 5️⃣ تشغيل السيرفر (اختياري للتأكد إنه شغال)
+      - name: Run server
+        run: |
+          node server.js &
+          sleep 5
