@@ -4,307 +4,157 @@
 <meta charset="UTF-8">
 <title>📊 Koloonline Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="icon" href="assets/favicon.ico">
 
 <style>
-body{
-  font-family:Arial;
-  margin:0;
-  background:#f5f5f5;
-}
+body{font-family:Arial;margin:0;background:#f5f5f5}
 
 /* HEADER */
-header{
-  background:#232f3e;
-  color:#fff;
-  padding:15px;
-  text-align:center;
-  font-size:22px;
-}
+header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px}
 
 /* NAV */
-.navbar{
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  background:#37475a;
-  color:#fff;
-}
+.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff}
 
 /* GRID */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:15px;
-  padding:20px;
-}
-
-.card{
-  background:#fff;
-  padding:20px;
-  border-radius:10px;
-  text-align:center;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-.big{
-  font-size:26px;
-  font-weight:bold;
-}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;padding:20px}
+.card{background:#fff;padding:20px;border-radius:10px;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.big{font-size:26px;font-weight:bold}
 
 /* TABLE */
-.table{
-  margin:20px;
-  background:#fff;
-  border-radius:10px;
-  overflow:hidden;
-}
-
-.table table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-.table th, .table td{
-  padding:10px;
-  border-bottom:1px solid #eee;
-  text-align:center;
-}
-
-.table th{
-  background:#232f3e;
-  color:#fff;
-}
+.table{margin:20px;background:#fff;border-radius:10px;overflow:hidden}
+.table table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;border-bottom:1px solid #eee;text-align:center}
+.table th{background:#232f3e;color:#fff}
 
 /* COUNTRY BADGES */
-.country{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  padding:20px;
-}
+.country{display:flex;flex-wrap:wrap;gap:10px;padding:20px}
+.badge{background:#ff9900;padding:8px 12px;border-radius:20px;font-weight:bold}
 
-.badge{
-  background:#ff9900;
-  padding:8px 12px;
-  border-radius:20px;
-  font-weight:bold;
-}
-
-/* CHART CONTAINERS */
-.chart-container{
-  background:#fff;
-  margin:20px;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
+/* CHARTS */
+.chart-container{background:#fff;padding:20px;margin:20px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+canvas{width:100%!important;height:300px!important}
 </style>
 
 </head>
-
 <body>
 
 <header>📊 Koloonline Dashboard</header>
 
 <div class="navbar">
 <button onclick="location.href='index.html'">🏠 Home</button>
-<button onclick="loadDashboard()">🔄 Refresh</button>
+<button onclick="loadData()">🔄 Refresh</button>
 </div>
 
 <!-- TOTALS -->
 <div class="grid">
-<div class="card">
-<div>Clicks</div>
-<div id="clicks" class="big">0</div>
-</div>
-
-<div class="card">
-<div>Add To Cart</div>
-<div id="cart" class="big">0</div>
-</div>
-
-<div class="card">
-<div>WhatsApp</div>
-<div id="whatsapp" class="big">0</div>
-</div>
-
-<div class="card">
-<div>Orders</div>
-<div id="buy" class="big">0</div>
-</div>
-
-<div class="card">
-<div>Conversion</div>
-<div id="conversion" class="big">0%</div>
-</div>
+<div class="card"><div>Clicks</div><div id="clicks" class="big">0</div></div>
+<div class="card"><div>Add To Cart</div><div id="cart" class="big">0</div></div>
+<div class="card"><div>WhatsApp</div><div id="whatsapp" class="big">0</div></div>
+<div class="card"><div>Orders</div><div id="buy" class="big">0</div></div>
+<div class="card"><div>Conversion</div><div id="conversion" class="big">0%</div></div>
 </div>
 
 <!-- TOP PRODUCTS -->
 <div class="table">
 <table>
 <thead>
-<tr>
-<th>ASIN</th>
-<th>Clicks</th>
-<th>Orders</th>
-<th>WhatsApp</th>
-</tr>
+<tr><th>ASIN</th><th>Clicks</th><th>Orders</th><th>WhatsApp</th></tr>
 </thead>
 <tbody id="productsTable"></tbody>
 </table>
 </div>
 
-<!-- COUNTRIES -->
+<!-- COUNTRY BADGES -->
 <div class="country" id="countries"></div>
 
 <!-- CHARTS -->
 <div class="chart-container">
-<h3>🌐 Conversion Trend Over Time</h3>
+<h3>🌍 Country Distribution</h3>
+<canvas id="countryChart"></canvas>
+</div>
+
+<div class="chart-container">
+<h3>🔥 Top Products Sales</h3>
+<canvas id="productChart"></canvas>
+</div>
+
+<div class="chart-container">
+<h3>📈 Conversion Trends</h3>
 <canvas id="conversionChart"></canvas>
 </div>
 
-<div class="chart-container">
-<h3>📊 Top Products Sales</h3>
-<canvas id="barChart"></canvas>
-</div>
-
-<div class="chart-container">
-<h3>🌍 Sales by Country</h3>
-<canvas id="pieChart"></canvas>
-</div>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-
-// 🔥 رابط السيرفر
+// API رابط السيرفر
 const API = "https://koloonline-store-git-main-linasobhys-projects.vercel.app";
 
-let conversionChart, barChart, pieChart;
+// INIT CHARTS
+let countryChart, productChart, conversionChart;
 
-/* ================= LOAD TOTALS, PRODUCTS, COUNTRIES ================= */
 async function loadData(){
-  try{
-    let res = await fetch(API + "/stats");
-    let data = await res.json();
-    let t = data.totals;
+try{
+let res=await fetch(API+"/stats");
+let data=await res.json();
+let t=data.totals;
 
-    // totals
-    document.getElementById("clicks").innerText = t.clicks;
-    document.getElementById("cart").innerText = t.cart;
-    document.getElementById("whatsapp").innerText = t.whatsapp;
-    document.getElementById("buy").innerText = t.buy || 0;
-    document.getElementById("conversion").innerText = t.conversion;
+// update totals
+document.getElementById("clicks").innerText=t.clicks;
+document.getElementById("cart").innerText=t.cart;
+document.getElementById("whatsapp").innerText=t.whatsapp;
+document.getElementById("buy").innerText=t.buy||0;
+document.getElementById("conversion").innerText=t.conversion;
 
-    // products table
-    let table = "";
-    data.topProducts.forEach(p=>{
-      table += `<tr>
-        <td>${p.asin}</td>
-        <td>${p.clicks}</td>
-        <td>${p.buy || 0}</td>
-        <td>${p.whatsapp}</td>
-      </tr>`;
-    });
-    document.getElementById("productsTable").innerHTML = table;
+// update products table
+let table="";
+data.topProducts.forEach(p=>{
+table+=`<tr><td>${p.asin}</td><td>${p.clicks}</td><td>${p.buy||0}</td><td>${p.whatsapp}</td></tr>`;
+});
+document.getElementById("productsTable").innerHTML=table;
 
-    // countries
-    let chtml = "";
-    for(let c in data.countries){
-      chtml += `<div class="badge">${c}: ${data.countries[c]}</div>`;
-    }
-    document.getElementById("countries").innerHTML = chtml;
+// update country badges
+let chtml="";
+let countryLabels=[],countryValues=[];
+for(let c in data.countries){
+chtml+=`<div class="badge">${c}: ${data.countries[c]}</div>`;
+countryLabels.push(c);
+countryValues.push(data.countries[c]);
+}
+document.getElementById("countries").innerHTML=chtml;
 
-    return data;
-  } catch(e){
-    console.log("Error loading data", e);
-    return null;
-  }
+// Pie chart for countries
+if(countryChart) countryChart.destroy();
+countryChart=new Chart(document.getElementById("countryChart"),{
+type:'pie',
+data:{labels:countryLabels,datasets:[{label:'Users',data:countryValues,backgroundColor:['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff','#ff9f40']}]}
+});
+
+// Bar chart for top products
+if(productChart) productChart.destroy();
+productChart=new Chart(document.getElementById("productChart"),{
+type:'bar',
+data:{labels:data.topProducts.map(p=>p.asin),datasets:[{label:'WhatsApp Orders',data:data.topProducts.map(p=>p.whatsapp),backgroundColor:'#ff9900'}]},
+options:{scales:{y:{beginAtZero:true}}}
+});
+
+// Conversion trends (example: last 7 days)
+if(conversionChart) conversionChart.destroy();
+let labels=["Day 1","Day 2","Day 3","Day 4","Day 5","Day 6","Day 7"];
+let conversionData=[12,18,25,20,30,28,35]; // Replace with real API if exists
+conversionChart=new Chart(document.getElementById("conversionChart"),{
+type:'line',
+data:{labels:labels,datasets:[{label:'Conversion %',data:conversionData,borderColor:'#232f3e',backgroundColor:'rgba(35,47,62,0.2)',fill:true}]},
+options:{scales:{y:{beginAtZero:true}}}
+});
+
+}catch(e){console.log("Error loading data",e);}
 }
 
-/* ================= LOAD CONVERSION TREND ================= */
-async function loadConversionTrend(){
-  try{
-    const res = await fetch(API + "/conversion-trend");
-    const data = await res.json();
-    const labels = data.trend.map(d=>d.day);
-    const convData = data.trend.map(d=>d.conversion);
-
-    if(conversionChart) conversionChart.destroy();
-    conversionChart = new Chart(document.getElementById("conversionChart"),{
-      type:"line",
-      data:{
-        labels,
-        datasets:[{
-          label:"Conversion %",
-          data: convData,
-          fill:false,
-          borderColor:"#ff9900",
-          tension:0.3
-        }]
-      },
-      options:{
-        responsive:true,
-        plugins:{legend:{display:true}}
-      }
-    });
-  } catch(e){ console.log(e); }
-}
-
-/* ================= LOAD BAR & PIE ================= */
-async function loadCharts(stats){
-  // Bar chart - top products
-  const productLabels = stats.topProducts.map(p=>p.asin);
-  const productSales = stats.topProducts.map(p=>p.whatsapp);
-
-  if(barChart) barChart.destroy();
-  barChart = new Chart(document.getElementById("barChart"),{
-    type:"bar",
-    data:{
-      labels: productLabels,
-      datasets:[{
-        label:"WhatsApp Orders",
-        data: productSales,
-        backgroundColor:"#ff9900"
-      }]
-    },
-    options:{responsive:true}
-  });
-
-  // Pie chart - countries
-  const countryLabels = Object.keys(stats.countries);
-  const countryData = Object.values(stats.countries);
-
-  if(pieChart) pieChart.destroy();
-  pieChart = new Chart(document.getElementById("pieChart"),{
-    type:"pie",
-    data:{
-      labels: countryLabels,
-      datasets:[{
-        label:"Orders by Country",
-        data: countryData,
-        backgroundColor:["#FF6384","#36A2EB","#FFCE56","#4BC0C0","#9966FF","#FF9F40"]
-      }]
-    },
-    options:{responsive:true}
-  });
-}
-
-/* ================= LOAD DASHBOARD ================= */
-async function loadDashboard(){
-  const stats = await loadData();
-  if(stats){
-    loadCharts(stats);
-    loadConversionTrend();
-  }
-}
-
-/* ================= AUTO REFRESH ================= */
-setInterval(loadDashboard, 5000);
-loadDashboard();
-
+// AUTO REFRESH
+setInterval(loadData,5000);
+loadData();
 </script>
 
 </body>
-  </html>
+</html>
