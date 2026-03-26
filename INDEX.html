@@ -7,7 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="index, follow">
 
-<link rel="icon" href="favicon.ico">
+<!-- Favicon -->
+<link rel="icon" href="https://github.com/linasobhy8-source/koloonline-Amazon-Store/blob/main/1000276894.png">
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5}
@@ -22,12 +23,12 @@ header img{height:40px}
 /* HERO */
 .hero{text-align:center;background:#fff;padding:25px}
 .hero img{height:80px}
+.hero button{cursor:pointer}
 
 /* NAV */
 .navbar{
-display:flex;justify-content:space-between;
-padding:10px;background:#37475a;flex-wrap:wrap;
-position:relative
+display:flex;justify-content:space-between;flex-wrap:wrap;
+padding:10px;background:#37475a;position:relative;
 }
 .navbar input{
 width:45%;padding:8px;border:none;border-radius:4px
@@ -47,6 +48,10 @@ box-shadow:0 4px 10px rgba(0,0,0,0.2)
 
 /* FILTER */
 .filters{text-align:center;padding:10px}
+.filters button{
+background:#ff9900;color:#fff;border:none;padding:8px;margin:4px;border-radius:6px;cursor:pointer;
+}
+.filters button:hover{background:#e68900}
 
 /* PRODUCTS */
 .products{
@@ -58,81 +63,66 @@ gap:20px;padding:20px
 .card{
 background:#fff;border-radius:10px;
 box-shadow:0 4px 10px rgba(0,0,0,0.1);
-overflow:hidden
+overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;
 }
 .card img{width:100%;height:200px;object-fit:contain}
 .card-content{text-align:center;padding:10px}
-.card-content p{color:#b12704;font-weight:bold}
+.card-content p{color:#b12704;font-weight:bold;margin:5px 0}
+.card-content h3{margin:5px 0;font-size:18px}
 
+/* BUTTONS */
 .buy-btn{
 background:#ff9900;border:none;
 width:90%;margin:5px auto;
 display:flex;align-items:center;justify-content:center;
 gap:6px;padding:10px;font-weight:bold;
-cursor:pointer;border-radius:6px
+cursor:pointer;border-radius:6px;transition:0.2s
 }
 .buy-btn img{height:18px}
+.buy-btn:hover{background:#e68900; transform:scale(1.05)}
 
 /* FOOTER */
 footer{
 background:#232f3e;color:#fff;
 text-align:center;padding:20px;margin-top:20px
 }
+footer img{height:30px;margin-bottom:5px}
 </style>
 </head>
 
 <body>
 
 <header>
-<img src="logo.png">
+<img src="https://github.com/linasobhy8-source/koloonline-Amazon-Store/blob/main/1000276894.png">
 <span>Koloonline</span>
 </header>
 
 <div class="hero">
-<img src="logo.png"><br><br>
+<img src="https://github.com/linasobhy8-source/koloonline-Amazon-Store/blob/main/1000276894.png"><br><br>
 <h2>Your Global Connection 🌍</h2>
 <button onclick="scrollToProducts()" class="buy-btn" style="width:auto">
-<img src="logo.png"> Shop Now
+<img src="https://github.com/linasobhy8-source/koloonline-Amazon-Store/blob/main/1000276894.png"> Shop Now
 </button>
 </div>
 
 <div class="navbar">
 <input type="text" id="searchInput" placeholder="Search..." oninput="smartSuggest()">
 <div id="suggestions"></div>
-<button>Cart 🛒 (<span id="cartCount">0</span>)</button>
+<button onclick="goToCart()">Cart 🛒 (<span id="cartCount">0</span>)</button>
 </div>
 
-<!-- إعلان فوق المنتجات -->
-<div style="text-align:center;margin:20px;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="1614162350"
-data-ad-format="auto"
-data-full-width-responsive="true"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
+<!-- Filters -->
 <div class="filters">
 <button onclick="filterCategory('all')">All</button>
-<button onclick="filterCategory('electronics')">الكترونيات</button>
-<button onclick="filterCategory('wearables')">ساعات</button>
+<button onclick="filterCategory('electronics')">Electronics</button>
+<button onclick="filterCategory('wearables')">Wearables</button>
 </div>
 
+<!-- Products Grid -->
 <div id="products" class="products"></div>
 
-<!-- إعلان تحت المنتجات -->
-<div style="text-align:center;margin:20px;">
-<ins class="adsbygoogle"
-style="display:block"
-data-ad-client="ca-pub-1294940976431468"
-data-ad-slot="5949126633"
-data-ad-format="auto"></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-
 <footer>
-<img src="logo.png" style="height:30px"><br>
+<img src="https://github.com/linasobhy8-source/koloonline-Amazon-Store/blob/main/1000276894.png"><br>
 <p>© 2026 Koloonline</p>
 </footer>
 
@@ -155,28 +145,26 @@ image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
 }
 ];
 
-// API
+// Load from API (optional)
 async function loadProducts(){
 try{
 let res=await fetch("/api/products");
 let data=await res.json();
-products=data.products;
-}catch(e){
-console.log("fallback products loaded");
-}
+if(data.products) products=data.products;
+}catch(e){ console.log("fallback products loaded"); }
 displayProducts(products);
 }
 loadProducts();
 
-// affiliate link
+// Build affiliate link
 function buildLink(asin){
 return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
 }
 
-// display
+// Display products
 function displayProducts(list){
 let html="";
-list.forEach((p,i)=>{
+list.forEach(p=>{
 html+=`
 <div class="card">
 <img src="${p.image}">
@@ -186,9 +174,9 @@ html+=`
 <p>⭐ 4.5 (1200 reviews) 🔥 Limited Offer</p>
 </div>
 <button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
-<img src="logo.png"> Add
+<img src="https://github.com/linasobhy8-source/koloonline-Amazon-Store/blob/main/1000276894.png"> Add
 </button>
-<button class="buy-btn" onclick='goToProduct("${p.asin}")'>
+<button class="buy-btn" onclick='buyNow("${p.asin}")'>
 🔥 Buy
 </button>
 </div>
@@ -197,8 +185,11 @@ html+=`
 document.getElementById("products").innerHTML=html;
 }
 
-// search
+// Search suggestions
+let timer;
 function smartSuggest(){
+clearTimeout(timer);
+timer=setTimeout(()=>{
 let q=document.getElementById("searchInput").value.toLowerCase();
 let results=products.filter(p=>p.title.toLowerCase().includes(q));
 displayProducts(results);
@@ -207,46 +198,53 @@ results.slice(0,5).forEach(p=>{
 sug+=`<div onclick="selectProduct('${p.title}')" style="padding:8px;cursor:pointer">${p.title}</div>`;
 });
 document.getElementById("suggestions").innerHTML=sug;
+},200);
 }
+
 function selectProduct(t){
 document.getElementById("searchInput").value=t;
 document.getElementById("suggestions").innerHTML="";
 smartSuggest();
 }
 
-// filter
+// Filter categories
 function filterCategory(cat){
 if(cat==="all"){displayProducts(products);return;}
 displayProducts(products.filter(p=>p.category===cat));
 }
 
-// cart
-let cart=JSON.parse(localStorage.getItem("cart"))||[];
+// Cart
+let cart=JSON.parse(localStorage.getItem("cart")||"[]");
 function addToCart(p){
 cart.push(p);
 localStorage.setItem("cart",JSON.stringify(cart));
 updateCart();
+trackEvent(p,"click");
 }
 function updateCart(){
 document.getElementById("cartCount").innerText=cart.length;
 }
 updateCart();
+function goToCart(){ window.location.href="/cart.html"; }
 
-// tracking clicks
-function trackClick(p){
-let clicks=JSON.parse(localStorage.getItem("clicks")||"{}");
-clicks[p.asin]=(clicks[p.asin]||0)+1;
-localStorage.setItem("clicks",JSON.stringify(clicks));
+// Buy now
+function buyNow(asin){
+trackEvent({asin,type:"click",country:"EG"});
+window.open(buildLink(asin),"_blank");
 }
 
-// go to product page
-function goToProduct(asin){
-window.location.href = "/product.html?asin=" + asin;
-}
-
-// scroll
+// Scroll
 function scrollToProducts(){
 document.getElementById("products").scrollIntoView({behavior:"smooth"});
+}
+
+// Tracking
+function trackEvent(p,type="click"){
+fetch("/track",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({asin:p.asin || p, type:type, country:"EG"})
+});
 }
 </script>
 
