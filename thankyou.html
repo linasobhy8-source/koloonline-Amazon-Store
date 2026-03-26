@@ -1,52 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ================= SEO BASIC ================= -->
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Koloonline Amazon Store | Smart Affiliate Shopping Deals</title>
-<meta name="description" content="Koloonline Amazon Store - اكتشف أفضل منتجات Amazon مع عروض حصرية، أسعار مميزة، وتجربة تسوق ذكية وسريعة مع نظام أفلييت احترافي.">
-<meta name="keywords" content="Amazon deals, affiliate store, smart shopping, online shopping Egypt, best products, Koloonline store">
-<meta name="author" content="Koloonline - Lina Sobhy">
+<title>🎉 Order Confirmed | Koloonline</title>
 
-<!-- ================= FAVICON ================= -->
-<link rel="icon" type="image/png" href="assets/1000276862.png">
-<link rel="shortcut icon" href="assets/1000276862.png">
-<link rel="apple-touch-icon" href="assets/1000276862.png">
-
-<!-- ================= OPEN GRAPH (Facebook / WhatsApp) ================= -->
-<meta property="og:title" content="Koloonline Amazon Store">
-<meta property="og:description" content="أفضل متجر أفلييت لمنتجات Amazon مع تتبع ذكي وتحويلات عالية.">
-<meta property="og:image" content="assets/1000276862.png">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://koloonline-store.vercel.app/">
-
-<!-- ================= TWITTER CARD ================= -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Koloonline Amazon Store">
-<meta name="twitter:description" content="Smart Amazon Affiliate Store with high converting products.">
-<meta name="twitter:image" content="assets/1000276862.png">
-
-<!-- ================= SEO PERFORMANCE ================= -->
-<meta name="theme-color" content="#000000">
-<meta name="robots" content="index, follow">
-
-<!-- ================= PRELOAD (Speed Boost) ================= -->
-<link rel="preload" as="image" href="assets/1000276862.png">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>🔥 Thank You - Koloonline Store</title>
-
-<meta name="description" content="Thank you for your order at Koloonline Store">
-<meta property="og:title" content="Koloonline Order Confirmed">
-<meta property="og:image" content="https://www.koloonline.online/favicon.ico">
+<meta name="description" content="Your order is confirmed. Enjoy exclusive offers and deals now.">
 
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="style.css">
 
-<!-- ================= FACEBOOK PIXEL ================= -->
+<!-- ================= FB PIXEL ================= -->
 <script>
 !function(f,b,e,v,n,t,s){
 if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -61,7 +26,7 @@ fbq('init','353894198840203');
 fbq('track','PageView');
 </script>
 
-<!-- ================= GOOGLE ANALYTICS ================= -->
+<!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -70,89 +35,135 @@ gtag('js', new Date());
 gtag('config','G-YS8L61XLPR');
 </script>
 
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5;text-align:center}
+
+header{
+background:#232f3e;color:#fff;
+padding:15px;font-size:22px;
+}
+
+.box{
+max-width:600px;margin:40px auto;
+background:#fff;padding:30px;
+border-radius:12px;
+box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+
+.buy-btn{
+background:#ff9900;border:none;
+padding:12px;width:100%;
+margin-top:10px;
+font-weight:bold;cursor:pointer;
+border-radius:6px;
+}
+
+.secondary{
+background:#333;color:#fff;
+}
+
+.trust{
+background:#e8f5e9;padding:10px;
+border-radius:6px;margin-top:15px;
+font-size:14px;
+}
+
+.upsell{
+margin-top:20px;
+padding:15px;
+background:#fff3cd;
+border-radius:8px;
+}
+</style>
+
 </head>
 
 <body>
 
-<header>🔥 Thank You!</header>
+<header>🎉 Thank You!</header>
 
-<section style="
-  max-width:600px;
-  margin:40px auto;
-  background:#fff;
-  padding:30px;
-  border-radius:12px;
-  box-shadow:0 4px 15px rgba(0,0,0,0.1);
-  text-align:center;
-">
+<div class="box">
 
-  <h2>🎉 Order Confirmed Successfully!</h2>
-  <p>Your order is being processed and will be shipped soon 🚚</p>
+<h2>Order Confirmed Successfully ✅</h2>
+<p>Your order is being processed 🚚</p>
 
-  <div id="orderInfo" style="margin:20px 0;font-weight:bold;"></div>
+<div id="orderInfo"></div>
+<div id="orderTotal" style="margin-top:10px;font-weight:bold;"></div>
 
-  <h3 style="margin-top:30px;">🔥 Special Limited Offer</h3>
-  <p>Unlock this exclusive deal before it expires!</p>
+<div class="trust">
+✔ Secure Checkout <br>
+✔ Fast Delivery <br>
+✔ Trusted Store
+</div>
 
-  <button class="buy-btn" onclick="upsell()">
-    🚀 Claim Your Offer
-  </button>
+<!-- 🔥 UPSELL -->
+<div class="upsell">
+<h3>🔥 Special Offer (Limited Time)</h3>
+<p>Get this trending product before it’s gone!</p>
 
-  <button class="buy-btn" onclick="goHome()" style="background:#333;margin-top:10px;">
-    🏠 Back to Store
-  </button>
+<button class="buy-btn" onclick="upsell()">
+🚀 Claim Offer Now
+</button>
+</div>
 
-</section>
+<button class="buy-btn secondary" onclick="goHome()">
+🏠 Back to Store
+</button>
+
+</div>
 
 <script>
 
-// ================= ORDER ID =================
-let orderId = localStorage.getItem("lastOrderId");
+/* ================= GET ORDER ================= */
+let orders = JSON.parse(localStorage.getItem("orders") || "[]");
+let lastOrder = orders[orders.length - 1] || {};
 
-if(!orderId){
-  orderId = "KO-" + Math.floor(Math.random() * 9999999);
-  localStorage.setItem("lastOrderId", orderId);
-}
+let orderId = lastOrder.id || ("KO-" + Math.floor(Math.random()*999999));
 
-// عرض رقم الطلب
+let total = lastOrder.totalPrice || 0;
+
+/* ================= SHOW ================= */
 document.getElementById("orderInfo").innerHTML =
-  "🧾 Order ID: " + orderId;
+"🧾 Order ID: " + orderId;
 
-// ================= TRACK PURCHASE =================
+document.getElementById("orderTotal").innerHTML =
+"💰 Total: $" + total.toFixed(2);
+
+/* ================= TRACK REAL PURCHASE ================= */
 fbq('track', 'Purchase', {
-  value: 0,
-  currency: 'USD',
-  order_id: orderId
+value: total,
+currency: 'USD',
+content_ids: lastOrder.items?.map(i=>i.asin) || []
 });
 
 gtag('event', 'purchase', {
-  transaction_id: orderId,
-  value: 0,
-  currency: 'USD'
+transaction_id: orderId,
+value: total,
+currency: 'USD'
 });
 
-// ================= UPSELL =================
+/* ================= SMART UPSELL ================= */
 function upsell(){
 
-  // مهم: هنا رابط أفلييت حقيقي
-  const upsellLink =
-    "https://www.amazon.com/dp/B08N5WRWNW?tag=koloonlinesto-20";
+let product = lastOrder.items?.[0];
 
-  fbq('track','InitiateCheckout');
-  gtag('event','begin_checkout');
+let asin = product?.asin || "B09V7Z4TJG";
 
-  window.location.href = upsellLink;
+let link = `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+
+fbq('track','InitiateCheckout');
+gtag('event','begin_checkout');
+
+window.location.href = link;
 }
 
-// ================= HOME =================
+/* ================= HOME ================= */
 function goHome(){
-  window.location.href = "index.html";
+window.location.href = "index.html";
 }
 
-// ================= PREVENT REORDER BUG =================
-if(localStorage.getItem("cart")){
-  localStorage.removeItem("cart");
-}
+/* ================= CLEAN CART ================= */
+localStorage.removeItem("cart");
 
 </script>
 
