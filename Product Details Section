@@ -1,3 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Product Details | Koloonline</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="description" content="Best Amazon deals and product details">
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5}
+
+/* HEADER */
+header{
+background:#232f3e;color:#fff;padding:12px;
+text-align:center
+}
+
+/* CONTAINER */
+.container{
+max-width:900px;margin:auto;background:#fff;
+padding:20px;border-radius:10px;
+margin-top:20px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1)
+}
+
+/* IMAGE */
+.product-img{
+width:100%;max-height:300px;object-fit:contain
+}
+
+/* PRICE */
+.price{
+color:#b12704;font-size:22px;font-weight:bold
+}
+
+/* BUTTON */
+.buy-btn{
+background:#ff9900;border:none;
+padding:12px;width:100%;
+margin-top:10px;
+cursor:pointer;font-size:16px;
+border-radius:6px
+}
+
+.whatsapp{
+background:green;color:#fff
+}
+
+/* SEO */
+.seo{
+margin-top:20px;line-height:1.6
+}
+
+/* TRUST */
+.trust{
+background:#e8f5e9;padding:10px;
+border-radius:6px;margin-top:15px
+}
+
+</style>
+</head>
+
+<body>
+
+<header>🔥 Koloonline Product</header>
+
+<div class="container">
+
+<img id="image" class="product-img">
+
+<h2 id="title"></h2>
+
+<p class="price" id="price"></p>
+
+<p>⭐ 4.5 (1200 reviews)</p>
+
+<div class="trust">
+✔ Secure Purchase <br>
+✔ Fast Delivery <br>
+✔ High Quality Product
+</div>
+
+<button class="buy-btn" onclick="buyNow()">🔥 Buy Now</button>
+
+<button class="buy-btn whatsapp" onclick="orderWhatsApp()">📲 Order via WhatsApp</button>
+
+<!-- SEO SECTION -->
 <section class="seo">
 
 <h2>Product Details</h2>
@@ -9,26 +97,74 @@ comfort, and overall user experience. Every detail is optimized for performance 
 
 <ul>
 <li>✔ Enhances comfort and improves your environment naturally</li>
-<li>✔ Available in multiple colors and modern designs to match your style</li>
-<li>✔ Complete package includes everything you need to start using immediately</li>
-<li>✔ Easy to use with beginner-friendly setup and instructions</li>
-<li>✔ Perfect for home, office, and personal lifestyle improvement</li>
-<li>✔ Ideal as a gift for friends and family with premium presentation</li>
-<li>✔ Built with durable materials for long-lasting performance</li>
+<li>✔ Available in multiple colors and modern designs</li>
+<li>✔ Easy to use with beginner-friendly setup</li>
+<li>✔ Perfect for home, office, and lifestyle</li>
+<li>✔ Ideal as a gift with premium look</li>
 </ul>
-
-<h3>What’s in the Box?</h3>
-
-<p>
-Each package includes all essential components required for full functionality.
-No additional purchases are needed to get started.
-</p>
 
 <h3>Why This Product?</h3>
 
 <p>
-This product is carefully selected based on quality, user satisfaction, and market trends.
-It delivers excellent value for money and a reliable user experience.
+Carefully selected based on quality, user satisfaction, and trending demand.
 </p>
 
 </section>
+
+</div>
+
+<script>
+
+/* ================= GET ASIN ================= */
+const params = new URLSearchParams(window.location.search);
+const asin = params.get("asin");
+
+/* ================= PRODUCTS ================= */
+let products = [
+{
+asin:"B09V7Z4TJG",
+title:"Smart Watch Pro",
+price:49.99,
+image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+},
+{
+asin:"B09B8Q3YHJ",
+title:"Echo Dot 5",
+price:39.99,
+image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+}
+];
+
+/* ================= LOAD PRODUCT ================= */
+let product = products.find(p => p.asin === asin) || products[0];
+
+document.getElementById("title").innerText = product.title;
+document.getElementById("price").innerText = "$" + product.price;
+document.getElementById("image").src = product.image;
+
+/* ================= AFFILIATE ================= */
+function getTag(){
+return "koloonlinesto-20";
+}
+
+/* ================= BUY ================= */
+function buyNow(){
+
+track("buy");
+
+window.open(
+`https://www.amazon.com/dp/${product.asin}?tag=${getTag()}`,
+"_blank"
+);
+}
+
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(){
+
+track("whatsapp");
+
+let msg = "I want to order: " + product.title;
+
+window.open(
+`https://wa.me/201XXXXXXXXX?text=${encodeURIComponent(msg)}`
+);
