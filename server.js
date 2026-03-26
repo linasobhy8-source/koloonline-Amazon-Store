@@ -32,14 +32,12 @@ const Analytics = mongoose.model("Analytics", AnalyticsSchema);
 app.post("/track", async (req, res) => {
   try {
     const { asin, type, country } = req.body;
-
     if (!asin || !type) return res.json({ success: false, message: "Missing data" });
 
     let doc = await Analytics.findOne({ asin });
     if (!doc) doc = new Analytics({ asin });
 
     if (["click", "cart", "whatsapp"].includes(type)) doc[type] += 1;
-
     if (country) doc.country[country] = (doc.country[country] || 0) + 1;
 
     await doc.save();
@@ -76,7 +74,6 @@ app.get("/stats", async (req, res) => {
       });
     });
 
-    // احسبي Conversion Rate لكل منتج
     topProducts.forEach(p => {
       p.conversionRate = p.clicks ? ((p.whatsapp / p.clicks) * 100).toFixed(2) : 0;
     });
