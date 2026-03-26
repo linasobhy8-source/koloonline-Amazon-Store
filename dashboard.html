@@ -2,166 +2,67 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard V2 | Koloonline SaaS</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<title>Koloonline Dashboard</title>
 <style>
-body{
-font-family:Arial;
-margin:0;
-background:#0f172a;
-color:#fff;
-}
-
-header{
-background:#111827;
-padding:15px;
-text-align:center;
-font-size:20px;
-font-weight:bold;
-}
-
-.container{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:15px;
-padding:15px;
-}
-
-.card{
-background:#1f2937;
-padding:15px;
-border-radius:12px;
-box-shadow:0 4px 10px rgba(0,0,0,0.3);
-}
-
-h3{margin-top:0;color:#facc15}
-
-canvas{background:#111827;border-radius:10px;padding:10px}
-
-.small{
-font-size:14px;color:#9ca3af;
-}
+body { font-family: Arial; background: #0f172a; color: white; padding: 20px; }
+h1 { margin-bottom: 20px; }
+.card { background: #1e293b; padding: 20px; border-radius: 12px; margin: 10px; display: inline-block; width: 220px; }
+.section { margin-top: 30px; }
+table { width: 100%; background: #1e293b; border-radius: 10px; overflow: hidden; }
+td, th { padding: 10px; text-align: left; }
+th { background: #334155; }
 </style>
 </head>
-
 <body>
 
-<header>🔥 Koloonline Dashboard V2 (SaaS Analytics)</header>
+<h1>🔥 Koloonline Dashboard</h1>
 
-<div class="container">
+<div id="stats"></div>
 
-<!-- ================= SUMMARY ================= -->
-<div class="card">
-<h3>📊 Summary</h3>
-<p class="small" id="summary"></p>
+<div class="section">
+  <h2>🏆 Top Products</h2>
+  <table id="productsTable"></table>
 </div>
 
-<!-- ================= FUNNEL ================= -->
-<div class="card">
-<h3>🎯 Conversion Funnel</h3>
-<canvas id="funnelChart"></canvas>
-</div>
-
-<!-- ================= PRODUCTS ================= -->
-<div class="card">
-<h3>📦 Top Products</h3>
-<canvas id="productChart"></canvas>
-</div>
-
-<!-- ================= COUNTRIES ================= -->
-<div class="card">
-<h3>🌍 Countries</h3>
-<canvas id="countryChart"></canvas>
-</div>
-
+<div class="section">
+  <h2>🌍 Top Countries</h2>
+  <table id="countriesTable"></table>
 </div>
 
 <script>
+const API = "https://YOUR-API-URL.com"; // 🔴 حطي رابط الـ Server النهائي
 
-/* ================= LOAD DATA ================= */
-let data = JSON.parse(localStorage.getItem("analytics") || "{}");
+async function loadDashboard() {
+  const res = await fetch(API + "/stats");
+  const data = await res.json();
+  if (!data.success) return;
 
-/* ================= AGGREGATION ================= */
-let totalClick=0;
-let totalCart=0;
-let totalWhats=0;
+  document.getElementById("stats").innerHTML = `
+    <div class="card">👆 Clicks: ${data.totals.clicks}</div>
+    <div class="card">🛒 Cart: ${data.totals.cart}</div>
+    <div class="card">📲 WhatsApp: ${data.totals.whatsapp}</div>
+  `;
 
-let productLabels=[];
-let clickData=[];
+  let productsHTML = `<tr><th>ASIN</th><th>Clicks</th><th>Cart</th><th>WhatsApp</th><th>Conversion %</th></tr>`;
+  data.topProducts.forEach(p => {
+    productsHTML += `<tr>
+      <td>${p.asin}</td>
+      <td>${p.clicks}</td>
+      <td>${p.cart}</td>
+      <td>${p.whatsapp}</td>
+      <td>${p.conversionRate}%</td>
+    </tr>`;
+  });
+  document.getElementById("productsTable").innerHTML = productsHTML;
 
-let countryMap={};
-
-for(let asin in data){
-
-let p = data[asin];
-
-totalClick += p.click || 0;
-totalCart += p.cart || 0;
-totalWhats += p.whatsapp || 0;
-
-// products
-productLabels.push(asin);
-clickData.push(p.click || 0);
-
-// countries
-if(p.country){
-for(let c in p.country){
-countryMap[c] = (countryMap[c]||0)+p.country[c];
-}
-}
+  let countriesHTML = `<tr><th>Country</th><th>Visits</th></tr>`;
+  for (let c in data.countries) {
+    countriesHTML += `<tr><td>${c}</td><td>${data.countries[c]}</td></tr>`;
+  }
+  document.getElementById("countriesTable").innerHTML = countriesHTML;
 }
 
-/* ================= SUMMARY ================= */
-document.getElementById("summary").innerHTML = `
-Clicks: ${totalClick}<br>
-Add to Cart: ${totalCart}<br>
-WhatsApp Orders: ${totalWhats}<br>
-Conversion Rate: ${totalClick ? ((totalWhats/totalClick)*100).toFixed(2) : 0}%
-`;
-
-/* ================= FUNNEL ================= */
-new Chart(document.getElementById("funnelChart"),{
-type:'bar',
-data:{
-labels:["Clicks","Cart","WhatsApp"],
-datasets:[{
-label:"Funnel",
-data:[totalClick,totalCart,totalWhats],
-backgroundColor:["#3b82f6","#f59e0b","#10b981"]
-}]
-}
-});
-
-/* ================= PRODUCTS ================= */
-new Chart(document.getElementById("productChart"),{
-type:'bar',
-data:{
-labels:productLabels,
-datasets:[{
-label:"Clicks per Product",
-data:clickData,
-backgroundColor:"#facc15"
-}]
-}
-});
-
-/* ================= COUNTRIES ================= */
-new Chart(document.getElementById("countryChart"),{
-type:'pie',
-data:{
-labels:Object.keys(countryMap),
-datasets:[{
-data:Object.values(countryMap),
-backgroundColor:[
-"#ef4444","#3b82f6","#22c55e","#eab308","#a855f7"
-]
-}]
-}
-});
-
+loadDashboard();
 </script>
 
 </body>
