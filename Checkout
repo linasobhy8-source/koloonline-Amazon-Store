@@ -7,15 +7,69 @@
 
 <title>Your Cart | Koloonline</title>
 
-<link rel="stylesheet" href="style.css">
-
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
-header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
-.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff;}
-.products{padding:20px;display:grid;gap:15px;}
-.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-.buy-btn{background:#ff9900;border:none;padding:10px;width:100%;margin:5px 0;border-radius:6px;font-weight:bold;cursor:pointer;}
+
+/* HEADER */
+header{
+background:#232f3e;color:#fff;
+padding:15px;text-align:center;font-size:22px;
+}
+
+/* NAV */
+.navbar{
+display:flex;justify-content:space-between;
+padding:10px;background:#37475a;color:#fff;
+flex-wrap:wrap;
+}
+
+.navbar button{
+background:#ff9900;border:none;padding:8px;
+border-radius:5px;font-weight:bold;cursor:pointer;
+}
+
+/* PRODUCTS */
+.products{
+padding:20px;display:grid;gap:15px;
+}
+
+/* CARD */
+.card{
+background:#fff;padding:15px;border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.card img{
+width:100%;height:180px;object-fit:contain;
+}
+
+.price{
+color:#b12704;font-weight:bold;
+}
+
+/* BUTTON */
+.buy-btn{
+background:#ff9900;border:none;
+padding:10px;width:100%;
+margin:5px 0;border-radius:6px;
+font-weight:bold;cursor:pointer;
+}
+
+.danger{background:#d9534f;color:#fff}
+.success{background:#28a745;color:#fff}
+
+/* SUMMARY */
+.summary{
+max-width:600px;margin:auto;
+}
+
+/* TRUST */
+.trust{
+background:#e8f5e9;padding:10px;
+border-radius:6px;margin-top:10px;
+font-size:14px;
+}
 </style>
 
 </head>
@@ -25,14 +79,13 @@ header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22
 <header>🛒 Your Cart</header>
 
 <div class="navbar">
-
 <button onclick="location.href='index.html'">🏠 Home</button>
 <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
-
 </div>
 
 <div id="cart" class="products"></div>
-<div id="summary" style="padding:20px;"></div>
+
+<div id="summary" class="summary"></div>
 
 <script>
 
@@ -50,7 +103,7 @@ body:JSON.stringify({
 event: eventType,
 data: data,
 page: "cart",
-timestamp: new Date().toISOString(),
+time: new Date().toISOString(),
 lang: navigator.language
 })
 });
@@ -64,7 +117,6 @@ console.log("tracking failed");
 function saveCart(){
 localStorage.setItem("cart", JSON.stringify(cart));
 renderCart();
-updateCartCount();
 }
 
 /* ================= RENDER ================= */
@@ -74,7 +126,7 @@ let container = document.getElementById("cart");
 let summary = document.getElementById("summary");
 
 if(cart.length === 0){
-container.innerHTML = "<div style='text-align:center;padding:50px'>🛒 Cart is empty</div>";
+container.innerHTML = "<div style='text-align:center;padding:50px'>🛒 Your cart is empty</div>";
 summary.innerHTML = "";
 return;
 }
@@ -85,24 +137,26 @@ let totalPrice = 0;
 
 cart.forEach((item,index)=>{
 
-if(!item.qty) item.qty = 1;
-if(!item.price) item.price = 0;
+item.qty = item.qty || 1;
+item.price = parseFloat(item.price || 0);
 
 totalItems += item.qty;
-totalPrice += parseFloat(item.price) * item.qty;
+totalPrice += item.price * item.qty;
 
 html += `
 <div class="card">
 
-<img src="${item.image}" style="width:100%;height:180px;object-fit:contain">
+<img src="${item.image}">
 
 <h3>${item.title}</h3>
-<p>💲 ${item.price}</p>
-<p>Qty: ${item.qty}</p>
+<p class="price">$${item.price}</p>
 
-<button class="buy-btn" onclick="increaseQty(${index})">➕</button>
-<button class="buy-btn" onclick="decreaseQty(${index})">➖</button>
-<button class="buy-btn" style="background:#d9534f" onclick="removeItem(${index})">❌ Remove</button>
+<p>Quantity: ${item.qty}</p>
+
+<button class="buy-btn" onclick="increaseQty(${index})">➕ Increase</button>
+<button class="buy-btn" onclick="decreaseQty(${index})">➖ Decrease</button>
+
+<button class="buy-btn danger" onclick="removeItem(${index})">❌ Remove</button>
 
 </div>
 `;
@@ -110,14 +164,28 @@ html += `
 
 container.innerHTML = html;
 
+/* SUMMARY */
 summary.innerHTML = `
 <div class="card">
 
-<h3>🛒 Total Items: ${totalItems}</h3>
-<h3>💰 Total Price: $${totalPrice.toFixed(2)}</h3>
+<h2>🛒 Order Summary</h2>
 
-<button class="buy-btn" onclick="checkout()">🚀 Checkout Now</button>
-<button class="buy-btn" style="background:#d9534f" onclick="clearCart()">🗑 Clear Cart</button>
+<p>Total Items: <b>${totalItems}</b></p>
+<p>Total Price: <b>$${totalPrice.toFixed(2)}</b></p>
+
+<div class="trust">
+✔ Secure Checkout <br>
+✔ Fast Shipping <br>
+✔ Trusted Products
+</div>
+
+<button class="buy-btn success" onclick="checkout()">
+🚀 Proceed to Checkout
+</button>
+
+<button class="buy-btn danger" onclick="clearCart()">
+🗑 Clear Cart
+</button>
 
 </div>
 `;
@@ -125,50 +193,41 @@ summary.innerHTML = `
 }
 
 /* ================= ACTIONS ================= */
+
 function removeItem(index){
-
 trackEvent("remove_item", cart[index]);
-
 cart.splice(index,1);
 saveCart();
-
 }
 
 function increaseQty(index){
-
-cart[index].qty = (cart[index].qty || 1) + 1;
-
-trackEvent("qty_increase", cart[index]);
-
+cart[index].qty += 1;
+trackEvent("increase_qty", cart[index]);
 saveCart();
-
 }
 
 function decreaseQty(index){
 
 if(cart[index].qty > 1){
 cart[index].qty -= 1;
-trackEvent("qty_decrease", cart[index]);
+trackEvent("decrease_qty", cart[index]);
 }else{
 trackEvent("remove_item", cart[index]);
 cart.splice(index,1);
 }
 
 saveCart();
-
 }
 
 function clearCart(){
-
 if(confirm("Clear all items?")){
 trackEvent("clear_cart", "all");
 cart = [];
 saveCart();
 }
-
 }
 
-/* ================= SAVE ORDER ================= */
+/* ================= ORDER ================= */
 function saveOrder(){
 
 let orders = JSON.parse(localStorage.getItem("orders") || "[]");
@@ -177,8 +236,8 @@ let order = {
 id: Date.now(),
 date: new Date().toISOString(),
 items: cart,
-totalItems: cart.reduce((s,i)=>s+(i.qty||1),0),
-totalPrice: cart.reduce((s,i)=>s+(parseFloat(i.price||0)*(i.qty||1)),0)
+totalItems: cart.reduce((s,i)=>s+i.qty,0),
+totalPrice: cart.reduce((s,i)=>s+(i.price*i.qty),0)
 };
 
 orders.push(order);
@@ -186,7 +245,6 @@ orders.push(order);
 localStorage.setItem("orders", JSON.stringify(orders));
 
 trackEvent("order_created", order);
-
 }
 
 /* ================= CHECKOUT ================= */
@@ -197,9 +255,7 @@ alert("Cart is empty 🛒");
 return;
 }
 
-trackEvent("checkout_start", {
-items: cart.length
-});
+trackEvent("checkout_start", {items: cart.length});
 
 saveOrder();
 
@@ -209,18 +265,10 @@ saveCart();
 alert("🎉 Order placed successfully!");
 
 window.location.href = "thankyou.html";
-
-}
-
-/* ================= COUNT ================= */
-function updateCartCount(){
-let count = cart.reduce((s,i)=>s+(i.qty||1),0);
-localStorage.setItem("cartCount", count);
 }
 
 /* ================= INIT ================= */
 renderCart();
-updateCartCount();
 
 </script>
 
