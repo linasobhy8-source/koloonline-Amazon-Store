@@ -5,6 +5,9 @@
 <title>📊 Koloonline Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body{
   font-family:Arial;
@@ -75,7 +78,7 @@ header{
   color:#fff;
 }
 
-/* COUNTRY */
+/* COUNTRY BADGES */
 .country{
   display:flex;
   flex-wrap:wrap;
@@ -89,6 +92,15 @@ header{
   border-radius:20px;
   font-weight:bold;
 }
+
+/* CHART CONTAINERS */
+.chart-container{
+  background:#fff;
+  margin:20px;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
 </style>
 
 </head>
@@ -99,12 +111,11 @@ header{
 
 <div class="navbar">
 <button onclick="location.href='index.html'">🏠 Home</button>
-<button onclick="loadData()">🔄 Refresh</button>
+<button onclick="loadDashboard()">🔄 Refresh</button>
 </div>
 
 <!-- TOTALS -->
 <div class="grid">
-
 <div class="card">
 <div>Clicks</div>
 <div id="clicks" class="big">0</div>
@@ -129,7 +140,6 @@ header{
 <div>Conversion</div>
 <div id="conversion" class="big">0%</div>
 </div>
-
 </div>
 
 <!-- TOP PRODUCTS -->
@@ -143,73 +153,158 @@ header{
 <th>WhatsApp</th>
 </tr>
 </thead>
-
 <tbody id="productsTable"></tbody>
-
 </table>
 </div>
 
 <!-- COUNTRIES -->
 <div class="country" id="countries"></div>
 
+<!-- CHARTS -->
+<div class="chart-container">
+<h3>🌐 Conversion Trend Over Time</h3>
+<canvas id="conversionChart"></canvas>
+</div>
+
+<div class="chart-container">
+<h3>📊 Top Products Sales</h3>
+<canvas id="barChart"></canvas>
+</div>
+
+<div class="chart-container">
+<h3>🌍 Sales by Country</h3>
+<canvas id="pieChart"></canvas>
+</div>
+
 <script>
 
-// 🔥 مهم: حطي رابط السيرفر بتاعك هنا
+// 🔥 رابط السيرفر
 const API = "https://koloonline-store-git-main-linasobhys-projects.vercel.app";
 
-/* ================= LOAD ================= */
+let conversionChart, barChart, pieChart;
+
+/* ================= LOAD TOTALS, PRODUCTS, COUNTRIES ================= */
 async function loadData(){
+  try{
+    let res = await fetch(API + "/stats");
+    let data = await res.json();
+    let t = data.totals;
 
-try{
+    // totals
+    document.getElementById("clicks").innerText = t.clicks;
+    document.getElementById("cart").innerText = t.cart;
+    document.getElementById("whatsapp").innerText = t.whatsapp;
+    document.getElementById("buy").innerText = t.buy || 0;
+    document.getElementById("conversion").innerText = t.conversion;
 
-let res = await fetch(API + "/stats");
-let data = await res.json();
+    // products table
+    let table = "";
+    data.topProducts.forEach(p=>{
+      table += `<tr>
+        <td>${p.asin}</td>
+        <td>${p.clicks}</td>
+        <td>${p.buy || 0}</td>
+        <td>${p.whatsapp}</td>
+      </tr>`;
+    });
+    document.getElementById("productsTable").innerHTML = table;
 
-let t = data.totals;
+    // countries
+    let chtml = "";
+    for(let c in data.countries){
+      chtml += `<div class="badge">${c}: ${data.countries[c]}</div>`;
+    }
+    document.getElementById("countries").innerHTML = chtml;
 
-/* ===== totals ===== */
-document.getElementById("clicks").innerText = t.clicks;
-document.getElementById("cart").innerText = t.cart;
-document.getElementById("whatsapp").innerText = t.whatsapp;
-document.getElementById("buy").innerText = t.buy;
-document.getElementById("conversion").innerText = t.conversion;
-
-/* ===== products ===== */
-let table = "";
-data.topProducts.forEach(p=>{
-table += `
-<tr>
-<td>${p.asin}</td>
-<td>${p.clicks}</td>
-<td>${p.buy}</td>
-<td>${p.whatsapp}</td>
-</tr>
-`;
-});
-
-document.getElementById("productsTable").innerHTML = table;
-
-/* ===== countries ===== */
-let chtml = "";
-for(let c in data.countries){
-chtml += `<div class="badge">${c}: ${data.countries[c]}</div>`;
+    return data;
+  } catch(e){
+    console.log("Error loading data", e);
+    return null;
+  }
 }
 
-document.getElementById("countries").innerHTML = chtml;
+/* ================= LOAD CONVERSION TREND ================= */
+async function loadConversionTrend(){
+  try{
+    const res = await fetch(API + "/conversion-trend");
+    const data = await res.json();
+    const labels = data.trend.map(d=>d.day);
+    const convData = data.trend.map(d=>d.conversion);
 
-}catch(e){
-console.log("error loading data");
+    if(conversionChart) conversionChart.destroy();
+    conversionChart = new Chart(document.getElementById("conversionChart"),{
+      type:"line",
+      data:{
+        labels,
+        datasets:[{
+          label:"Conversion %",
+          data: convData,
+          fill:false,
+          borderColor:"#ff9900",
+          tension:0.3
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{display:true}}
+      }
+    });
+  } catch(e){ console.log(e); }
 }
 
+/* ================= LOAD BAR & PIE ================= */
+async function loadCharts(stats){
+  // Bar chart - top products
+  const productLabels = stats.topProducts.map(p=>p.asin);
+  const productSales = stats.topProducts.map(p=>p.whatsapp);
+
+  if(barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById("barChart"),{
+    type:"bar",
+    data:{
+      labels: productLabels,
+      datasets:[{
+        label:"WhatsApp Orders",
+        data: productSales,
+        backgroundColor:"#ff9900"
+      }]
+    },
+    options:{responsive:true}
+  });
+
+  // Pie chart - countries
+  const countryLabels = Object.keys(stats.countries);
+  const countryData = Object.values(stats.countries);
+
+  if(pieChart) pieChart.destroy();
+  pieChart = new Chart(document.getElementById("pieChart"),{
+    type:"pie",
+    data:{
+      labels: countryLabels,
+      datasets:[{
+        label:"Orders by Country",
+        data: countryData,
+        backgroundColor:["#FF6384","#36A2EB","#FFCE56","#4BC0C0","#9966FF","#FF9F40"]
+      }]
+    },
+    options:{responsive:true}
+  });
+}
+
+/* ================= LOAD DASHBOARD ================= */
+async function loadDashboard(){
+  const stats = await loadData();
+  if(stats){
+    loadCharts(stats);
+    loadConversionTrend();
+  }
 }
 
 /* ================= AUTO REFRESH ================= */
-setInterval(loadData, 5000);
-
-/* ================= INIT ================= */
-loadData();
+setInterval(loadDashboard, 5000);
+loadDashboard();
 
 </script>
 
 </body>
-</html>
+  </html>
