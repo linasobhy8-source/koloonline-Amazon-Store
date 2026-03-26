@@ -12,13 +12,16 @@ app.use(cors());
 app.use(express.json());
 
 /* ================= CONNECT MONGO ================= */
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
 .then(() => console.log("MongoDB Connected 🚀"))
 .catch(err => console.log("MongoDB Error:", err));
 
 /* ================= SCHEMA ================= */
 const AnalyticsSchema = new mongoose.Schema({
-  asin: String,
+  asin: { type: String, required: true },
 
   click: { type: Number, default: 0 },
   cart: { type: Number, default: 0 },
@@ -31,33 +34,48 @@ const AnalyticsSchema = new mongoose.Schema({
 
 const Analytics = mongoose.model("Analytics", AnalyticsSchema);
 
+/* ================= RATE LIMIT (حماية بسيطة) ================= */
+const requestMap = {};
+
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+
+  if (!requestMap[ip]) {
+    requestMap[ip] = [];
+  }
+
+  requestMap[ip] = requestMap[ip].filter(t => now - t < 60000);
+
+  if (requestMap[ip].length > 100) {
+    return res.status(429).json({ error: "Too many requests" });
+  }
+
+  requestMap[ip].push(now);
+  next();
+});
+
 /* ================= TRACK EVENT ================= */
 app.post("/track", async (req, res) => {
   try {
     const { asin, type, country } = req.body;
 
     if (!asin || !type) {
-      return res.json({ success: false, message: "Missing data" });
+      return res.status(400).json({ success: false, message: "Missing asin or type" });
+    }
+
+    if (!["click", "cart", "whatsapp"].includes(type)) {
+      return res.status(400).json({ success: false, message: "Invalid event type" });
     }
 
     let doc = await Analytics.findOne({ asin });
 
     if (!doc) {
-      doc = new Analytics({
-        asin,
-        click: 0,
-        cart: 0,
-        whatsapp: 0,
-        country: {}
-      });
+      doc = new Analytics({ asin });
     }
 
-    /* ===== validate event type ===== */
-    if (["click", "cart", "whatsapp"].includes(type)) {
-      doc[type] += 1;
-    }
+    doc[type] += 1;
 
-    /* ===== country tracking ===== */
     if (country) {
       doc.country[country] = (doc.country[country] || 0) + 1;
     }
@@ -68,23 +86,73 @@ app.post("/track", async (req, res) => {
 
   } catch (err) {
     console.log("Track Error:", err);
-    res.json({ success: false });
+    res.status(500).json({ success: false });
   }
 });
 
-/* ================= DASHBOARD API ================= */
+/* ================= DASHBOARD (RAW DATA) ================= */
 app.get("/analytics", async (req, res) => {
+  try {
+    const data = await Analytics.find().sort({ createdAt: -1 });
+
+    res.json({ success: true, data });
+
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+/* ================= ADVANCED DASHBOARD ================= */
+app.get("/stats", async (req, res) => {
   try {
     const data = await Analytics.find();
 
+    let totalClick = 0;
+    let totalCart = 0;
+    let totalWhatsapp = 0;
+
+    let topProducts = [];
+    let countries = {};
+
+    data.forEach(item => {
+      totalClick += item.click;
+      totalCart += item.cart;
+      totalWhatsapp += item.whatsapp;
+
+      topProducts.push({
+        asin: item.asin,
+        clicks: item.click,
+        whatsapp: item.whatsapp
+      });
+
+      for (let c in item.country) {
+        countries[c] = (countries[c] || 0) + item.country[c];
+      }
+    });
+
+    /* ===== conversion rate ===== */
+    const conversionRate = totalClick
+      ? ((totalWhatsapp / totalClick) * 100).toFixed(2)
+      : 0;
+
+    /* ===== top products ===== */
+    topProducts.sort((a, b) => b.whatsapp - a.whatsapp);
+
     res.json({
       success: true,
-      data
+      totals: {
+        clicks: totalClick,
+        cart: totalCart,
+        whatsapp: totalWhatsapp,
+        conversionRate: conversionRate + "%"
+      },
+      topProducts: topProducts.slice(0, 5),
+      countries
     });
 
   } catch (err) {
     console.log(err);
-    res.json({ success: false, data: [] });
+    res.status(500).json({ success: false });
   }
 });
 
