@@ -3,116 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <title>Product Details | Koloonline</title>
-
 <meta name="description" content="Buy the best Amazon products with exclusive deals, reviews and full details. Limited offers available now.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link rel="icon" href="favicon.ico">
+
+<!-- ================= GTM ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8BN"></script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5}
-
-/* HEADER */
-header{
-background:#232f3e;
-color:#fff;
-padding:15px;
-font-size:22px;
-font-weight:bold;
-text-align:center;
-}
-
-/* NAV */
-.navbar{
-display:flex;
-justify-content:space-between;
-padding:10px;
-background:#37475a;
-color:#fff;
-flex-wrap:wrap;
-}
-
-/* CARD */
-.card{
-background:#fff;
-padding:20px;
-border-radius:10px;
-max-width:600px;
-margin:20px auto;
-text-align:center;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-.card img{
-width:100%;
-max-height:300px;
-object-fit:contain;
-}
-
-.price{
-color:#b12704;
-font-size:22px;
-font-weight:bold;
-}
-
-/* BUTTON */
-.buy-btn{
-background:#ff9900;
-border:none;
-width:100%;
-padding:12px;
-margin-top:10px;
-font-weight:bold;
-cursor:pointer;
-border-radius:6px;
-}
-
-.whatsapp{
-background:#25d366;
-color:#fff;
-}
-
-/* TRUST */
-.trust{
-background:#e8f5e9;
-padding:10px;
-margin-top:10px;
-border-radius:6px;
-font-size:14px;
-}
-
-/* SECTION */
-.section{
-background:#fff;
-margin:20px auto;
-padding:20px;
-max-width:700px;
-border-radius:10px;
-}
-
-.review{
-background:#f9f9f9;
-padding:10px;
-margin:10px 0;
-border-radius:8px;
-}
-
-/* URGENCY */
-.urgency{
-color:red;
-font-weight:bold;
-margin-top:10px;
-}
+header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bold;text-align:center;}
+.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff;flex-wrap:wrap;}
+.navbar button{background:#ff9900;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:5px;transition:0.2s;}
+.navbar button:hover{background:#e68a00;}
+.card{background:#fff;padding:20px;border-radius:10px;max-width:600px;margin:20px auto;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+.card img{width:100%;max-height:300px;object-fit:contain;border-radius:6px;}
+.price{color:#b12704;font-size:22px;font-weight:bold;}
+.buy-btn{background:#ff9900;border:none;width:100%;padding:12px;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;transition:0.2s;}
+.buy-btn:hover{background:#e68a00;}
+.whatsapp{background:#25d366;color:#fff;}
+.trust{background:#e8f5e9;padding:10px;margin-top:10px;border-radius:6px;font-size:14px;}
+.section{background:#fff;margin:20px auto;padding:20px;max-width:700px;border-radius:10px;}
+.review{background:#f9f9f9;padding:10px;margin:10px 0;border-radius:8px;}
+.urgency{color:red;font-weight:bold;margin-top:10px;}
+@media(max-width:600px){.card{padding:15px;}.card img{max-height:250px;}}
 </style>
 </head>
-
 <body>
 
 <header>🔥 Koloonline Product</header>
 
 <div class="navbar">
 🛒 Cart: <span id="cart-count">0</span>
-
 <div>
 <button onclick="location.href='index.html'">🏠 Home</button>
 <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
@@ -145,26 +76,22 @@ margin-top:10px;
 <!-- REVIEWS -->
 <div class="section">
 <h2>⭐ Customer Reviews</h2>
-
 <div class="review">⭐⭐⭐⭐⭐ Amazing product! Worth every penny.</div>
 <div class="review">⭐⭐⭐⭐ Good quality and fast delivery.</div>
 <div class="review">⭐⭐⭐⭐⭐ Highly recommended!</div>
-
 </div>
 
 <!-- FAQ -->
 <div class="section">
 <h2>❓ FAQ</h2>
-
 <p><b>Is this original?</b><br>Yes, 100% original.</p>
 <p><b>Shipping time?</b><br>3–7 days depending on location.</p>
-
 </div>
 
 <!-- RELATED PRODUCTS -->
 <div class="section">
 <h2>🔥 Related Products</h2>
-<div id="related"></div>
+<div id="related" style="display:flex;gap:15px;flex-wrap:wrap;justify-content:center;"></div>
 </div>
 
 <footer style="text-align:center;padding:20px;background:#232f3e;color:#fff;">
@@ -174,131 +101,87 @@ margin-top:10px;
 </footer>
 
 <script>
-
-/* PRODUCTS */
-const products = [
-{
-id:"1",
-title:"Echo Dot 5 🔥 30% OFF",
-asin:"B09B8Q3YHJ",
-price:39.99,
-image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
-},
-{
-id:"2",
-title:"Smart Watch Pro 🔥 Deal",
-asin:"B09V7Z4TJG",
-price:49.99,
-image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
-}
+(function(){
+/* ================= PRODUCTS ================= */
+const products=[
+{id:"1",title:"Echo Dot 5 🔥 30% OFF",asin:"B09B8Q3YHJ",price:39.99,image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"},
+{id:"2",title:"Smart Watch Pro 🔥 Deal",asin:"B09V7Z4TJG",price:49.99,image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"}
 ];
 
-/* CART */
-let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+/* ================= CART ================= */
+let cart=JSON.parse(localStorage.getItem("cart")||"[]");
+function updateCartCount(){document.getElementById("cart-count").innerText=cart.length;}
+function addToCart(p){cart.push(p);localStorage.setItem("cart",JSON.stringify(cart));updateCartCount();alert("Added to cart 🛒");}
 
-function updateCartCount(){
-document.getElementById("cart-count").innerText = cart.length;
-}
-
-/* ADD CART */
-function addToCart(product){
-cart.push(product);
-localStorage.setItem("cart", JSON.stringify(cart));
-updateCartCount();
-alert("Added to cart 🛒");
-}
-
-/* GEO + AFFILIATE */
+/* ================= GEO + AFFILIATE ================= */
 function getCountry(){
-let lang = navigator.language || "en-US";
-return lang.includes("ar") ? "EG" : "US";
+let lang=navigator.language||"en-US";
+if(lang.includes("ar")) return "EG";
+if(lang.includes("pl")) return "PL";
+if(lang.includes("en-CA")) return "CA";
+return "US";
 }
-
 function buildAffiliateLink(asin){
-let c = getCountry();
-let domain = c==="EG" ? "amazon.eg" : "amazon.com";
-let tag = c==="EG" ? "onlinesh03f31-21" : "koloonlinesto-20";
-return `https://www.${domain}/dp/${asin}?tag=${tag}`;
+let c=getCountry();
+let domain="amazon.com"; let tag="koloonlinesto-20";
+if(c==="EG"){domain="amazon.eg";tag="onlinesh03f31-21";}
+if(c==="CA"){domain="amazon.ca";tag="linasobhy20d8-20";}
+if(c==="PL"){domain="amazon.pl";tag="koloonline-21";}
+return `https://${domain}/dp/${asin}?tag=${tag}`;
 }
 
-/* TRACK */
+/* ================= TRACK ================= */
 function track(type, asin){
-let data = JSON.parse(localStorage.getItem("track")||"{}");
-data[type] = (data[type]||0)+1;
-localStorage.setItem("track", JSON.stringify(data));
+let data=JSON.parse(localStorage.getItem("track")||"{}");
+data[type]=(data[type]||0)+1;
+localStorage.setItem("track",JSON.stringify(data));
 }
 
-/* BUY */
-function buyNow(asin){
-track("buy", asin);
-window.open(buildAffiliateLink(asin), "_blank");
-}
+/* ================= BUY ================= */
+function buyNow(asin){track("buy",asin);window.open(buildAffiliateLink(asin),"_blank");}
 
-/* LOAD PRODUCT */
+/* ================= LOAD PRODUCT ================= */
 function loadProduct(){
+const params=new URLSearchParams(window.location.search);
+const asin=params.get("asin");
+const p=products.find(x=>x.asin===asin)||products[0];
 
-const params = new URLSearchParams(window.location.search);
-const asin = params.get("asin");
-
-const p = products.find(x => x.asin === asin) || products[0];
-
-document.getElementById("product").innerHTML = `
+document.getElementById("product").innerHTML=`
 <div class="card">
-
-<img src="${p.image}">
-
+<img src="${p.image}" alt="${p.title}">
 <h1>${p.title}</h1>
-
 <p class="price">$${p.price}</p>
-
 <p>⭐ 4.5 (1200 reviews)</p>
-
 <p class="urgency">🔥 Only few items left!</p>
-
-<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>
-🛒 Add to Cart
-</button>
-
-<button class="buy-btn" onclick="buyNow('${p.asin}')">
-🔥 Buy Now
-</button>
-
-<button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')">
-📲 Order via WhatsApp
-</button>
-
-</div>
-`;
+<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>🛒 Add to Cart</button>
+<button class="buy-btn" onclick="buyNow('${p.asin}')">🔥 Buy Now</button>
+<button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')">📲 Order via WhatsApp</button>
+</div>`;
 }
 
-/* WHATSAPP */
+/* ================= WHATSAPP ================= */
 function orderWhatsApp(name){
-let msg = "I want to order: " + name;
-window.open("https://wa.me/201XXXXXXXXX?text=" + encodeURIComponent(msg));
+let msg="I want to order: "+name;
+window.open("https://wa.me/201XXXXXXXXX?text="+encodeURIComponent(msg));
 }
 
-/* RELATED */
+/* ================= RELATED ================= */
 function loadRelated(){
 let html="";
 products.forEach(p=>{
-html+=`
-<div style="margin:10px">
-<img src="${p.image}" style="width:100px">
-<br>
-<button onclick="location.href='product.html?asin=${p.asin}'">
-View
-</button>
-</div>
-`;
+html+=`<div style="margin:10px;text-align:center;">
+<img src="${p.image}" style="width:100px;height:100px;object-fit:contain;"><br>
+<button onclick="location.href='product.html?asin=${p.asin}'">View</button>
+</div>`;
 });
-document.getElementById("related").innerHTML = html;
+document.getElementById("related").innerHTML=html;
 }
 
-/* INIT */
+/* ================= INIT ================= */
 loadProduct();
 loadRelated();
 updateCartCount();
-
+})();
 </script>
 
 </body>
