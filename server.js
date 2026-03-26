@@ -56,10 +56,17 @@ app.post("/track", async (req, res) => {
 
 /* ================= DASHBOARD ================= */
 app.get("/analytics", async (req, res) => {
-  const data = await Analytics.find();
-  res.json(data);
+  try {
+    const data = await Analytics.find();
+    res.json(data);
+  } catch (err) {
+    res.json({ error: "Error fetching analytics" });
+  }
 });
 
-/* ================= START ================= */
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("Server running on " + PORT));
+/* ================= START SERVER ================= */
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} 🔥`);
+});
