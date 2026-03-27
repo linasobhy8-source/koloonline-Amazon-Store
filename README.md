@@ -1,7 +1,7 @@
 # Koloonline Amazon Store
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/USERNAME/Koloonline-Store?style=flat-square)
-![GitHub stars](https://img.shields.io/github/stars/USERNAME/Koloonline-Store?style=flat-square)
+![GitHub stars](https://img.shields.io/gith ub/stars/USERNAME/Koloonline-Store?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/USERNAME/Koloonline-Store?style=flat-square)
 ![GitHub license](https://img.shields.io/github/license/USERNAME/Koloonline-Store?style=flat-square)
 
