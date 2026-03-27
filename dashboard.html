@@ -6,38 +6,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="assets/favicon.ico">
 
-<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5}
-
-/* HEADER */
 header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px}
-
-/* NAV */
 .navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff}
-
-/* GRID */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;padding:20px}
 .card{background:#fff;padding:20px;border-radius:10px;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
 .big{font-size:26px;font-weight:bold}
-
-/* TABLE */
 .table{margin:20px;background:#fff;border-radius:10px;overflow:hidden}
 .table table{width:100%;border-collapse:collapse}
 .table th,.table td{padding:10px;border-bottom:1px solid #eee;text-align:center}
 .table th{background:#232f3e;color:#fff}
-
-/* COUNTRY BADGES */
 .country{display:flex;flex-wrap:wrap;gap:10px;padding:20px}
 .badge{background:#ff9900;padding:8px 12px;border-radius:20px;font-weight:bold}
-
-/* CHARTS */
 .chart-container{background:#fff;padding:20px;margin:20px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
 canvas{width:100%!important;height:300px!important}
 </style>
-
 </head>
 <body>
 
@@ -48,7 +34,6 @@ canvas{width:100%!important;height:300px!important}
 <button onclick="loadData()">🔄 Refresh</button>
 </div>
 
-<!-- TOTALS -->
 <div class="grid">
 <div class="card"><div>Clicks</div><div id="clicks" class="big">0</div></div>
 <div class="card"><div>Add To Cart</div><div id="cart" class="big">0</div></div>
@@ -57,7 +42,6 @@ canvas{width:100%!important;height:300px!important}
 <div class="card"><div>Conversion</div><div id="conversion" class="big">0%</div></div>
 </div>
 
-<!-- TOP PRODUCTS -->
 <div class="table">
 <table>
 <thead>
@@ -67,10 +51,8 @@ canvas{width:100%!important;height:300px!important}
 </table>
 </div>
 
-<!-- COUNTRY BADGES -->
 <div class="country" id="countries"></div>
 
-<!-- CHARTS -->
 <div class="chart-container">
 <h3>🌍 Country Distribution</h3>
 <canvas id="countryChart"></canvas>
@@ -82,92 +64,66 @@ canvas{width:100%!important;height:300px!important}
 </div>
 
 <script>
-// ================= DUMMY DATA API SIMULATION =================
-// Replace this fetch URL with your real API endpoint
 async function fetchDashboardData(){
-  // Example API response
-  return {
-    totals: {clicks: 2500, cart: 450, whatsapp: 320, buy: 210, conversion: 8.4},
-    products: [
-      {asin:"B09B8Q3YHJ", clicks:500, orders:60, whatsapp:40},
-      {asin:"B08N5WRWNW", clicks:400, orders:50, whatsapp:35},
-      {asin:"B07FZ8S74R", clicks:300, orders:30, whatsapp:25}
-    ],
-    countries: {"EG":1000,"US":800,"PL":400,"CA":300},
-    trends: [
-      {date:"2026-03-20", conversion:5},
-      {date:"2026-03-21", conversion:6},
-      {date:"2026-03-22", conversion:7},
-      {date:"2026-03-23", conversion:8},
-      {date:"2026-03-24", conversion:9},
-      {date:"2026-03-25", conversion:8},
-      {date:"2026-03-26", conversion:8.4}
-    ]
-  };
+  const res = await fetch("/analytics");
+  const json = await res.json();
+  if(!json.success) return {totals:{click:0,cart:0,whatsapp:0,buy:0,conversion:0},products:[],countries:{},trends:[]};
+
+  // Prepare top products array
+  const products = json.topProducts.map(p=>({
+    asin:p.asin, clicks:p.clicks, orders:p.cart, whatsapp:p.whatsapp
+  }));
+
+  // Prepare countries
+  const countries = json.countries;
+
+  // Dummy trends for last 7 days
+  const trends = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const date = d.toISOString().split("T")[0];
+    trends.push({date, conversion: (Math.random()*10).toFixed(2)});
+  }
+
+  return {totals:json.totals,products,countries,trends};
 }
 
-// ================= LOAD DASHBOARD =================
 async function loadData(){
   const data = await fetchDashboardData();
 
-  // Totals
-  document.getElementById("clicks").innerText = data.totals.clicks;
+  document.getElementById("clicks").innerText = data.totals.click;
   document.getElementById("cart").innerText = data.totals.cart;
   document.getElementById("whatsapp").innerText = data.totals.whatsapp;
   document.getElementById("buy").innerText = data.totals.buy;
-  document.getElementById("conversion").innerText = data.totals.conversion + "%";
+  document.getElementById("conversion").innerText = data.totals.conversion+"%";
 
-  // Top Products
   const tbody = document.getElementById("productsTable");
-  tbody.innerHTML = "";
+  tbody.innerHTML="";
   data.products.forEach(p=>{
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${p.asin}</td><td>${p.clicks}</td><td>${p.orders}</td><td>${p.whatsapp}</td>`;
+    tr.innerHTML=`<td>${p.asin}</td><td>${p.clicks}</td><td>${p.orders}</td><td>${p.whatsapp}</td>`;
     tbody.appendChild(tr);
   });
 
-  // Countries
-  const countriesDiv = document.getElementById("countries");
-  countriesDiv.innerHTML = "";
+  const countriesDiv=document.getElementById("countries");
+  countriesDiv.innerHTML="";
   Object.keys(data.countries).forEach(c=>{
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    badge.innerText = `${c}: ${data.countries[c]}`;
+    const badge=document.createElement("span");
+    badge.className="badge";
+    badge.innerText=`${c}: ${data.countries[c]}`;
     countriesDiv.appendChild(badge);
   });
 
-  // Country Chart
-  const ctxCountry = document.getElementById("countryChart").getContext("2d");
+  const ctxCountry=document.getElementById("countryChart").getContext("2d");
   if(window.countryChart) window.countryChart.destroy();
-  window.countryChart = new Chart(ctxCountry,{
-    type:'pie',
-    data:{
-      labels:Object.keys(data.countries),
-      datasets:[{data:Object.values(data.countries),backgroundColor:["#ff9900","#232f3e","#0073e6","#28a745"]}]
-    }
-  });
+  window.countryChart=new Chart(ctxCountry,{type:'pie',data:{labels:Object.keys(data.countries),datasets:[{data:Object.values(data.countries),backgroundColor:["#ff9900","#232f3e","#0073e6","#28a745"]}]}});
 
-  // Conversion Trend Chart
-  const ctxConv = document.getElementById("conversionChart").getContext("2d");
+  const ctxConv=document.getElementById("conversionChart").getContext("2d");
   if(window.conversionChart) window.conversionChart.destroy();
-  window.conversionChart = new Chart(ctxConv,{
-    type:'line',
-    data:{
-      labels:data.trends.map(t=>t.date),
-      datasets:[{
-        label:"Conversion %",
-        data:data.trends.map(t=>t.conversion),
-        borderColor:"#ff9900",
-        backgroundColor:"rgba(255,153,0,0.2)",
-        fill:true,
-        tension:0.3
-      }]
-    },
-    options:{scales:{y:{beginAtZero:true}}}
-  });
+  window.conversionChart=new Chart(ctxConv,{type:'line',data:{labels:data.trends.map(t=>t.date),datasets:[{label:"Conversion %",data:data.trends.map(t=>t.conversion),borderColor:"#ff9900",backgroundColor:"rgba(255,153,0,0.2)",fill:true,tension:0.3}]},options:{scales:{y:{beginAtZero:true}}}});
 }
 
-// Initial load
 loadData();
 </script>
 
