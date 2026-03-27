@@ -1,41 +1,157 @@
-<section class="seo">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koloonline Store - Best Deals & FAQ</title>
+<meta name="description" content="Dynamic Amazon products, live updates, affiliate links, and FAQ section">
+<link rel="icon" href="favicon.ico">
 
-<h2>Frequently Asked Questions (FAQ)</h2>
+<!-- ================= GTM ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8BN"></script>
 
-<p>
-Here you will find answers to the most common questions about product quality, ordering process, shipping, and returns.
-This helps you make a confident and informed purchase decision.
-</p>
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config','G-YS8L61XLPR');
+</script>
 
-<div class="faq">
+<style>
+body { font-family: Arial, sans-serif; margin:0; background:#f5f5f5; }
+header { background:#232f3e; color:#fff; padding:16px; text-align:center; font-size:26px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+.container { max-width:1200px; margin:20px auto; background:#fff; padding:25px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; margin-top:20px;}
+.product-card { background:#fff; border-radius:10px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center;}
+.product-card img { width:100%; max-height:200px; object-fit:contain; border-radius:6px;}
+.product-card h3 { font-size:18px; margin:10px 0 5px;}
+.product-card .price { font-size:20px; font-weight:bold; color:#b12704;}
+.product-card .stars { color:#f0c14b; font-weight:bold;}
+.product-card button { width:100%; margin-top:8px; padding:10px; font-size:15px; border-radius:6px; cursor:pointer; border:none; transition:0.2s;}
+.product-card button.buy-btn { background:#ff9900;}
+.product-card button.buy-btn:hover { background:#e68a00;}
+.product-card button.whatsapp { background:#25D366; color:#fff;}
+section.seo {margin-top:40px;}
+section.seo h2 {font-size:22px; margin-bottom:10px;}
+section.seo p {margin-bottom:15px; line-height:1.6;}
+.faq p {margin-bottom:10px; background:#f9f9f9; padding:10px; border-radius:6px;}
+@media(max-width:600px){ .container { padding:15px; margin:15px;} .product-card img { max-height:150px;} }
+</style>
+</head>
+<body>
 
-<p><strong>Q: Are these products original?</strong><br>
-Yes, all products listed are sourced directly from Amazon and trusted suppliers ensuring authenticity and quality.
-</p>
+<header>🔥 Koloonline Products</header>
 
-<p><strong>Q: How does shipping work?</strong><br>
-All orders are processed through Amazon’s official delivery system, ensuring fast and secure shipping to your location.
-</p>
+<div class="container">
+  <section class="products-section">
+    <h2>Featured Products (Dynamic)</h2>
+    <div class="grid" id="productsGrid"></div>
+  </section>
 
-<p><strong>Q: Can I return or refund the product?</strong><br>
-Yes, returns and refunds are handled according to Amazon’s official return policy depending on the product category.
-</p>
+  <section class="seo">
+    <h2>Frequently Asked Questions (FAQ)</h2>
+    <p>Here you will find answers to the most common questions about product quality, ordering process, shipping, and returns. This helps you make a confident and informed purchase decision.</p>
 
-<p><strong>Q: Are prices the same as Amazon?</strong><br>
-Yes, prices are based on Amazon listings and may include affiliate tracking links without affecting your purchase price.
-</p>
+    <div class="faq" id="faqSection"></div>
 
-<p><strong>Q: Is my order secure?</strong><br>
-Absolutely. All transactions are processed through Amazon secure checkout systems.
-</p>
-
+    <h3>Need More Help?</h3>
+    <p>If you have any additional questions, feel free to contact us through the Contact page. We are here to help you choose the best products with confidence.</p>
+  </section>
 </div>
 
-<h3>Need More Help?</h3>
+<script>
+/* ================= PRODUCTS ديناميكية بالكامل ================= */
+const products = [
+  {
+    asin:"B09V7Z4TJG",
+    title:"Smart Watch Pro",
+    price:49.99,
+    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
+    rating:4.5,
+    reviews:1200,
+    video:"",
+    tags: { egypt:"onlinesh03f31-21", canada:"linasobhy20d8-20", usa:"koloonlinesto-20", poland:"koloonline-21" },
+    logo:"https://yourcdn.com/logo.png"
+  },
+  {
+    asin:"B09B8Q3YHJ",
+    title:"Echo Dot 5",
+    price:39.99,
+    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
+    rating:4.6,
+    reviews:980,
+    video:"",
+    tags: { egypt:"onlinesh03f31-21", canada:"linasobhy20d8-20", usa:"koloonlinesto-20", poland:"koloonline-21" },
+    logo:"https://yourcdn.com/logo.png"
+  }
+];
 
-<p>
-If you have any additional questions, feel free to contact us through the Contact page.
-We are here to help you choose the best products with confidence.
-</p>
+function getCountry(){
+  let lang=navigator.language||"en-US";
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("pl")) return "PL";
+  if(lang.includes("en-CA")) return "CA";
+  return "US";
+}
 
-</section>
+function getAffiliateLink(product){
+  const country = getCountry();
+  let domain="amazon.com", tag="koloonlinesto-20";
+  if(country==="EG"){domain="amazon.eg";tag=product.tags.egypt;}
+  if(country==="CA"){domain="amazon.ca";tag=product.tags.canada;}
+  if(country==="PL"){domain="amazon.pl";tag=product.tags.poland;}
+  return `https://${domain}/dp/${product.asin}?tag=${tag}`;
+}
+
+function displayProducts(products){
+  const grid = document.getElementById("productsGrid");
+  grid.innerHTML = '';
+  products.forEach(product=>{
+    const card = document.createElement("div");
+    card.className = "product-card";
+    const logoImg = product.logo ? `<img src="${product.logo}" style="width:20px;vertical-align:middle;margin-right:5px;">` : "";
+    card.innerHTML = `
+      <img src="${product.image}" alt="${product.title}">
+      <h3>${product.title}</h3>
+      <p class="price">$${product.price}</p>
+      <p class="stars">⭐ ${product.rating} (${product.reviews} reviews)</p>
+      <button class="buy-btn" onclick="window.open('${getAffiliateLink(product)}','_blank')">${logoImg}🔥 Buy Now</button>
+      <button class="whatsapp" onclick="orderWhatsApp('${product.title}')">📲 WhatsApp</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(title){
+  window.open("https://wa.me/201XXXXXXXXX?text="+encodeURIComponent("I want to order: "+title));
+}
+
+/* ================= FAQ ديناميكي بالكامل ================= */
+const faqs = [
+  {q:"Are these products original?", a:"Yes, all products listed are sourced directly from Amazon and trusted suppliers ensuring authenticity and quality."},
+  {q:"How does shipping work?", a:"All orders are processed through Amazon’s official delivery system, ensuring fast and secure shipping to your location."},
+  {q:"Can I return or refund the product?", a:"Yes, returns and refunds are handled according to Amazon’s official return policy depending on the product category."},
+  {q:"Are prices the same as Amazon?", a:"Yes, prices are based on Amazon listings and may include affiliate tracking links without affecting your purchase price."},
+  {q:"Is my order secure?", a:"Absolutely. All transactions are processed through Amazon secure checkout systems."}
+];
+
+function renderFAQ(){
+  const container = document.getElementById("faqSection");
+  container.innerHTML = "";
+  faqs.forEach(f=>{
+    const p = document.createElement("p");
+    p.innerHTML = `<strong>Q: ${f.q}</strong><br>${f.a}`;
+    container.appendChild(p);
+  });
+}
+
+/* ================= INIT ================= */
+displayProducts(products);
+renderFAQ();
+</script>
+
+</body>
+</html>
