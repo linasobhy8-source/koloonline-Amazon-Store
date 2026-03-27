@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <title>Koloonline Store - Best Amazon Deals</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Latest Amazon deals, top-rated products with reviews, prices, and fast shipping. Updated automatically.">
+<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products with fast access and exclusive offers.">
 <meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.koloonline.online/">
 <link rel="icon" href="favicon.ico">
 
 <!-- ================= Google Tag Manager ================= -->
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
 
-<!-- ================= Google Analytics 4 ================= -->
+<!-- ================= Google Analytics ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -22,123 +23,43 @@ gtag('config', 'G-YS8L61XLPR');
 
 <!-- ================= CSS ================= -->
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f5f5f5;
-}
-header {
-  background: #232f3e;
-  color: white;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-header img { height: 50px; border-radius: 6px; }
-.navbar {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  background: #37475a;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.navbar input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-}
-.navbar button {
-  background: #ff9900;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-.products {
-  display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(250px,1fr));
-  gap: 20px;
-  padding: 20px;
-}
-.card {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-}
-.card img {
-  width: 100%;
-  height: 200px;
-  object-fit: contain;
-  border-radius: 6px;
-}
-.price {
-  color: #b12704;
-  font-weight: bold;
-  margin: 8px 0;
-}
-.buy-btn {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
-  font-weight: bold;
-  transition: transform 0.2s;
-}
-.buy-btn:hover {
-  transform: scale(1.03);
-}
-.amazon { background: #ff9900; }
-.cod { background: #25d366; color: white; }
-.video-btn { background: #232f3e; color: #fff; margin-top:5px; display:flex; justify-content:center; align-items:center; gap:5px; }
-#suggestBox {
-  position: absolute;
-  background: white;
-  width: 60%;
-  display: none;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.2);
-  border-radius: 6px;
-  z-index: 1000;
-}
-#suggestBox div {
-  padding: 10px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-}
-#suggestBox div:hover {
-  background: #f5f5f5;
-}
-@media(max-width:600px){
-  .navbar input { flex-basis: 100%; margin-bottom: 8px; }
-  #suggestBox { width: 90%; }
-}
+body { font-family: Arial, sans-serif; margin:0; background:#f5f5f5; }
+header { background:#232f3e; padding:15px; text-align:center; }
+header img { height:70px; }
+.navbar { display:flex; gap:10px; padding:10px; background:#37475a; flex-wrap:wrap; justify-content:center; }
+.navbar input { flex:1; padding:10px; border-radius:6px; border:none; min-width:200px; }
+.navbar button { background:#ff9900; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; transition:0.2s; }
+.navbar button:hover { background:#e68a00; }
+.products { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; padding:20px; }
+.card { background:white; border-radius:10px; padding:15px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.2s, box-shadow 0.2s; }
+.card:hover { transform: translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
+.card img { width:100%; height:200px; object-fit:contain; }
+.price { color:#b12704; font-weight:bold; margin:8px 0; }
+.buy-btn { width:100%; padding:10px; margin-top:8px; border:none; cursor:pointer; border-radius:6px; font-weight:bold; transition:transform 0.2s; }
+.buy-btn:hover { transform: scale(1.03); }
+.amazon { background:#ff9900; }
+.cod { background:#25d366; color:white; }
+#suggestBox { position:absolute; background:white; width:60%; display:none; box-shadow:0 5px 10px rgba(0,0,0,0.2); border-radius:6px; z-index:1000; max-height:250px; overflow-y:auto; }
+#suggestBox div { padding:10px; cursor:pointer; border-bottom:1px solid #eee; }
+#suggestBox div:hover { background:#f5f5f5; }
+@media(max-width:600px){ .navbar input { flex-basis:100%; margin-bottom:8px; } #suggestBox { width:90%; } }
 </style>
 </head>
-
 <body>
 
+<!-- ================= HEADER ================= -->
 <header>
-  <img src="logo.png" alt="Koloonline Logo">
-  <span>Koloonline Store</span>
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo">
 </header>
 
+<!-- ================= NAVBAR ================= -->
 <div class="navbar">
   <input type="text" id="searchInput" placeholder="Search products...">
   <button onclick="fetchProducts(searchInput.value)">Search</button>
-  <span style="color:white;">🛒 <span id="cart-count">0</span></span>
+  <button onclick="viewCart()">
+    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Cart" style="height:25px; vertical-align:middle;">
+  </button>
+  <span id="cart-count">0</span>
 </div>
 
 <div id="suggestBox"></div>
@@ -153,85 +74,90 @@ const affiliateTags = {
   PL: "koloonline-21"
 };
 
-// ================= GEO =================
-function getCountry(){
-  let lang=navigator.language||"en-US";
+// ================= HELPER FUNCTIONS =================
+function getCountry() {
+  let lang = navigator.language || "en-US";
   if(lang.includes("ar")) return "EG";
   if(lang.includes("pl")) return "PL";
   if(lang.includes("en-CA")) return "CA";
   return "US";
 }
 
-// ================= FETCH PRODUCTS (PAAPI SIMULATED) =================
-let allProducts = [];
-async function fetchProducts(query=""){
-  try{
-    // هنا يمكن ربط API حقيقي من Amazon PAAPI
-    const res = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    allProducts = data;
-    renderProducts(data);
-    updateCartCount();
-  }catch(err){ console.error(err); }
+function buildAffiliateLink(asin) {
+  const c = getCountry();
+  let domain = "amazon.com";
+  if(c==="EG") domain="amazon.eg";
+  if(c==="CA") domain="amazon.ca";
+  if(c==="PL") domain="amazon.pl";
+  const tag = affiliateTags[c] || affiliateTags["US"];
+  return `https://${domain}/dp/${asin}?tag=${tag}`;
 }
 
 // ================= CART =================
-function updateCartCount(){
+let allProducts = [];
+function updateCartCount() {
   let cart = JSON.parse(localStorage.getItem("cart")||"[]");
   document.getElementById("cart-count").innerText = cart.length;
 }
-function addToCart(product){
+function addToCart(product) {
   let cart = JSON.parse(localStorage.getItem("cart")||"[]");
   cart.push(product);
-  localStorage.setItem("cart",JSON.stringify(cart));
+  localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
   alert("Added to cart 🛒");
 }
+function viewCart() {
+  alert("Cart has "+(JSON.parse(localStorage.getItem("cart")||"[]").length)+" items.");
+}
 
-// ================= AFFILIATE LINK =================
-function buildLink(url){
-  let c = getCountry();
-  return url + `?tag=${affiliateTags[c]}`;
+// ================= FETCH PRODUCTS =================
+async function fetchProducts(query="") {
+  try {
+    const res = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    allProducts = data;
+    render(data);
+    updateCartCount();
+  } catch(err) { console.error("Error fetching products:", err); }
 }
 
 // ================= RENDER PRODUCTS =================
-function renderProducts(products){
+function render(products) {
   const grid = document.getElementById("productGrid");
   grid.innerHTML = "";
   products.forEach(p=>{
     grid.innerHTML += `
       <div class="card">
-        <img src="${p.img||p.image}" alt="${p.title}">
+        <img src="${p.img || p.image}" alt="${p.title}">
         <h3>${p.title}</h3>
         <p class="price">${p.price}</p>
-        <button class="buy-btn amazon" onclick="window.open('${buildLink(p.url)}','_blank')">🛒 Buy from Amazon</button>
-        <button class="buy-btn cod" onclick="location.href='https://shop.koloonline.online'">📦 Order Cash</button>
-        <button class="buy-btn video-btn" onclick="window.open('${p.video||'#'}','_blank')">
-          <img src="logo.png" alt="Video" style="height:20px;"> ▶ Watch Video
+        <button class="buy-btn amazon" onclick="window.open('${buildAffiliateLink(p.asin)}','_blank')">
+          🛒 Buy from Amazon
+        </button>
+        <button class="buy-btn cod" onclick="addToCart(${JSON.stringify(p)})">
+          📦 Add to Cart
         </button>
       </div>
     `;
   });
 }
 
-// ================= SEARCH SUGGESTION =================
+// ================= SEARCH & SUGGESTION =================
 const input = document.getElementById("searchInput");
 const suggest = document.getElementById("suggestBox");
-
 input.addEventListener("input", ()=>{
   const value = input.value.toLowerCase();
-  if(!value){ suggest.style.display='none'; renderProducts(allProducts); return; }
-  const filtered = allProducts.filter(p => p.title.toLowerCase().includes(value));
-  renderProducts(filtered);
-
-  suggest.innerHTML='';
+  if(!value){ suggest.style.display='none'; render(allProducts); return; }
+  const filtered = allProducts.filter(p=>p.title.toLowerCase().includes(value));
+  render(filtered);
+  suggest.innerHTML = '';
   filtered.forEach(p=>{
     const div = document.createElement("div");
     div.innerText = p.title;
-    div.onclick = ()=>{ input.value=p.title; renderProducts([p]); suggest.style.display='none'; };
+    div.onclick = ()=>{ input.value=p.title; render([p]); suggest.style.display='none'; };
     suggest.appendChild(div);
   });
-  suggest.style.display = filtered.length ? 'block' : 'none';
+  suggest.style.display = filtered.length ? 'block':'none';
 });
 
 // ================= INIT =================
