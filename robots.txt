@@ -19,10 +19,4 @@
     <priority>0.5</priority>
   </url>
 
-  <url>
-    <loc>https://www.koloonline.online/index.html</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-
 </urlset>
