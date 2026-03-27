@@ -1,4 +1,5 @@
 export default function handler(req, res) {
+
   const posts = [
     {
       id: 1,
@@ -18,7 +19,6 @@ Top recommendation: Smart Watch Pro 2026
       image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
       affiliate: "https://www.amazon.eg/dp/B09V7Z4TJG?tag=onlinesh03f31-21"
     },
-
     {
       id: 2,
       title: "Top Amazon Gadgets 2026",
@@ -37,5 +37,18 @@ Popular categories:
     }
   ];
 
-  res.status(200).json(posts);
+  // ================= METHOD CHECK =================
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      success: false,
+      message: "Method Not Allowed"
+    });
+  }
+
+  // ================= RESPONSE =================
+  return res.status(200).json({
+    success: true,
+    count: posts.length,
+    posts
+  });
 }
