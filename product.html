@@ -28,7 +28,7 @@ header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bol
 .card{background:#fff;padding:20px;border-radius:10px;max-width:600px;margin:20px auto;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
 .card img{width:100%;max-height:300px;object-fit:contain;border-radius:6px;}
 .price{color:#b12704;font-size:22px;font-weight:bold;}
-.buy-btn{background:#ff9900;border:none;width:100%;padding:12px;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;transition:0.2s;}
+.buy-btn{background:#ff9900;border:none;width:100%;padding:12px;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
 .buy-btn:hover{background:#e68a00;}
 .whatsapp{background:#25d366;color:#fff;}
 .trust{background:#e8f5e9;padding:10px;margin-top:10px;border-radius:6px;font-size:14px;}
@@ -102,9 +102,11 @@ header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bol
 
 <script>
 (function(){
-/* ================= PRODUCTS ================= */
+/* ================= كل حاجه ديناميكية بالكامل ================= */
+const logoURL="https://i.ibb.co/XYZ/logo.png"; // Put your logo URL here
+
 const products=[
-{id:"1",title:"Echo Dot 5 🔥 30% OFF",asin:"B09B8Q3YHJ",price:39.99,image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"},
+{id:"1",title:"Echo Dot 5 🔥 30% OFF",asin:"B09B8Q3YHJ",price:39.99,image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",video:"https://www.youtube.com/embed/dQw4w9WgXcQ"},
 {id:"2",title:"Smart Watch Pro 🔥 Deal",asin:"B09V7Z4TJG",price:49.99,image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"}
 ];
 
@@ -145,6 +147,7 @@ function loadProduct(){
 const params=new URLSearchParams(window.location.search);
 const asin=params.get("asin");
 const p=products.find(x=>x.asin===asin)||products[0];
+let videoHTML=p.video?`<iframe width="100%" height="200" src="${p.video}" frameborder="0" allowfullscreen style="border-radius:6px;margin-top:10px;"></iframe>`:"";
 
 document.getElementById("product").innerHTML=`
 <div class="card">
@@ -153,9 +156,10 @@ document.getElementById("product").innerHTML=`
 <p class="price">$${p.price}</p>
 <p>⭐ 4.5 (1200 reviews)</p>
 <p class="urgency">🔥 Only few items left!</p>
-<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'>🛒 Add to Cart</button>
-<button class="buy-btn" onclick="buyNow('${p.asin}')">🔥 Buy Now</button>
-<button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')">📲 Order via WhatsApp</button>
+${videoHTML}
+<button class="buy-btn" onclick='addToCart(${JSON.stringify(p)})'><img src="${logoURL}" style="width:20px;height:20px;"> 🛒 Add to Cart</button>
+<button class="buy-btn" onclick="buyNow('${p.asin}')"><img src="${logoURL}" style="width:20px;height:20px;"> 🔥 Buy Now</button>
+<button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')"><img src="${logoURL}" style="width:20px;height:20px;"> 📲 WhatsApp</button>
 </div>`;
 }
 
@@ -170,8 +174,8 @@ function loadRelated(){
 let html="";
 products.forEach(p=>{
 html+=`<div style="margin:10px;text-align:center;">
-<img src="${p.image}" style="width:100px;height:100px;object-fit:contain;"><br>
-<button onclick="location.href='product.html?asin=${p.asin}'">View</button>
+<img src="${p.image}" style="width:100px;height:100px;object-fit:contain;border-radius:6px;"><br>
+<button onclick="location.href='product.html?asin=${p.asin}'"><img src="${logoURL}" style="width:16px;height:16px;"> View</button>
 </div>`;
 });
 document.getElementById("related").innerHTML=html;
