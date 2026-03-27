@@ -99,10 +99,9 @@
 </footer>
 
 <script>
-/* ================= TRACK SYSTEM ================= */
 async function trackEvent(type, category){
   try{
-    await fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
+    await fetch("/api/track",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({
@@ -116,19 +115,14 @@ async function trackEvent(type, category){
   }catch(e){console.log("tracking error ignored");}
 }
 
-/* ================= BLOG CLICK ================= */
-function trackBlog(category){
-  trackEvent("blog_click", category);
-}
+function trackBlog(category){ trackEvent("blog_click", category); }
 
-/* ================= OPEN POST ================= */
 function openPost(e,url,category){
   e.stopPropagation();
   trackEvent("blog_open", category);
   window.location.href = url;
 }
 
-/* ================= PAGE VIEW ================= */
 trackEvent("page_view","blog_home");
 </script>
 
