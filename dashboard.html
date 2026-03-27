@@ -6,6 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="assets/favicon.ico">
 
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5}
 
@@ -74,85 +77,97 @@ canvas{width:100%!important;height:300px!important}
 </div>
 
 <div class="chart-container">
-<h3>🔥 Top Products Sales</h3>
-<canvas id="productChart"></canvas>
-</div>
-
-<div class="chart-container">
-<h3>📈 Conversion Trends</h3>
+<h3>📈 Conversion Trends (Last 7 Days)</h3>
 <canvas id="conversionChart"></canvas>
 </div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-// API رابط السيرفر
-const API = "https://koloonline-store-git-main-linasobhys-projects.vercel.app";
+// ================= DUMMY DATA API SIMULATION =================
+// Replace this fetch URL with your real API endpoint
+async function fetchDashboardData(){
+  // Example API response
+  return {
+    totals: {clicks: 2500, cart: 450, whatsapp: 320, buy: 210, conversion: 8.4},
+    products: [
+      {asin:"B09B8Q3YHJ", clicks:500, orders:60, whatsapp:40},
+      {asin:"B08N5WRWNW", clicks:400, orders:50, whatsapp:35},
+      {asin:"B07FZ8S74R", clicks:300, orders:30, whatsapp:25}
+    ],
+    countries: {"EG":1000,"US":800,"PL":400,"CA":300},
+    trends: [
+      {date:"2026-03-20", conversion:5},
+      {date:"2026-03-21", conversion:6},
+      {date:"2026-03-22", conversion:7},
+      {date:"2026-03-23", conversion:8},
+      {date:"2026-03-24", conversion:9},
+      {date:"2026-03-25", conversion:8},
+      {date:"2026-03-26", conversion:8.4}
+    ]
+  };
+}
 
-// INIT CHARTS
-let countryChart, productChart, conversionChart;
-
+// ================= LOAD DASHBOARD =================
 async function loadData(){
-try{
-let res=await fetch(API+"/stats");
-let data=await res.json();
-let t=data.totals;
+  const data = await fetchDashboardData();
 
-// update totals
-document.getElementById("clicks").innerText=t.clicks;
-document.getElementById("cart").innerText=t.cart;
-document.getElementById("whatsapp").innerText=t.whatsapp;
-document.getElementById("buy").innerText=t.buy||0;
-document.getElementById("conversion").innerText=t.conversion;
+  // Totals
+  document.getElementById("clicks").innerText = data.totals.clicks;
+  document.getElementById("cart").innerText = data.totals.cart;
+  document.getElementById("whatsapp").innerText = data.totals.whatsapp;
+  document.getElementById("buy").innerText = data.totals.buy;
+  document.getElementById("conversion").innerText = data.totals.conversion + "%";
 
-// update products table
-let table="";
-data.topProducts.forEach(p=>{
-table+=`<tr><td>${p.asin}</td><td>${p.clicks}</td><td>${p.buy||0}</td><td>${p.whatsapp}</td></tr>`;
-});
-document.getElementById("productsTable").innerHTML=table;
+  // Top Products
+  const tbody = document.getElementById("productsTable");
+  tbody.innerHTML = "";
+  data.products.forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p.asin}</td><td>${p.clicks}</td><td>${p.orders}</td><td>${p.whatsapp}</td>`;
+    tbody.appendChild(tr);
+  });
 
-// update country badges
-let chtml="";
-let countryLabels=[],countryValues=[];
-for(let c in data.countries){
-chtml+=`<div class="badge">${c}: ${data.countries[c]}</div>`;
-countryLabels.push(c);
-countryValues.push(data.countries[c]);
+  // Countries
+  const countriesDiv = document.getElementById("countries");
+  countriesDiv.innerHTML = "";
+  Object.keys(data.countries).forEach(c=>{
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.innerText = `${c}: ${data.countries[c]}`;
+    countriesDiv.appendChild(badge);
+  });
+
+  // Country Chart
+  const ctxCountry = document.getElementById("countryChart").getContext("2d");
+  if(window.countryChart) window.countryChart.destroy();
+  window.countryChart = new Chart(ctxCountry,{
+    type:'pie',
+    data:{
+      labels:Object.keys(data.countries),
+      datasets:[{data:Object.values(data.countries),backgroundColor:["#ff9900","#232f3e","#0073e6","#28a745"]}]
+    }
+  });
+
+  // Conversion Trend Chart
+  const ctxConv = document.getElementById("conversionChart").getContext("2d");
+  if(window.conversionChart) window.conversionChart.destroy();
+  window.conversionChart = new Chart(ctxConv,{
+    type:'line',
+    data:{
+      labels:data.trends.map(t=>t.date),
+      datasets:[{
+        label:"Conversion %",
+        data:data.trends.map(t=>t.conversion),
+        borderColor:"#ff9900",
+        backgroundColor:"rgba(255,153,0,0.2)",
+        fill:true,
+        tension:0.3
+      }]
+    },
+    options:{scales:{y:{beginAtZero:true}}}
+  });
 }
-document.getElementById("countries").innerHTML=chtml;
 
-// Pie chart for countries
-if(countryChart) countryChart.destroy();
-countryChart=new Chart(document.getElementById("countryChart"),{
-type:'pie',
-data:{labels:countryLabels,datasets:[{label:'Users',data:countryValues,backgroundColor:['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff','#ff9f40']}]}
-});
-
-// Bar chart for top products
-if(productChart) productChart.destroy();
-productChart=new Chart(document.getElementById("productChart"),{
-type:'bar',
-data:{labels:data.topProducts.map(p=>p.asin),datasets:[{label:'WhatsApp Orders',data:data.topProducts.map(p=>p.whatsapp),backgroundColor:'#ff9900'}]},
-options:{scales:{y:{beginAtZero:true}}}
-});
-
-// Conversion trends (example: last 7 days)
-if(conversionChart) conversionChart.destroy();
-let labels=["Day 1","Day 2","Day 3","Day 4","Day 5","Day 6","Day 7"];
-let conversionData=[12,18,25,20,30,28,35]; // Replace with real API if exists
-conversionChart=new Chart(document.getElementById("conversionChart"),{
-type:'line',
-data:{labels:labels,datasets:[{label:'Conversion %',data:conversionData,borderColor:'#232f3e',backgroundColor:'rgba(35,47,62,0.2)',fill:true}]},
-options:{scales:{y:{beginAtZero:true}}}
-});
-
-}catch(e){console.log("Error loading data",e);}
-}
-
-// AUTO REFRESH
-setInterval(loadData,5000);
+// Initial load
 loadData();
 </script>
 
