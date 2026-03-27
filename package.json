@@ -1,5 +1,5 @@
 {
-  "name": "koloonline-saas",
+  "name": "koloonline_saas",
   "version": "1.0.0",
   "description": "Koloonline SaaS Tracking System",
   "main": "server.js",
@@ -9,7 +9,7 @@
     "dev": "nodemon server.js"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "dependencies": {
     "cors": "^2.8.5",
