@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- ================= SEO BASIC ================= -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Koloonline Amazon Store | Top Amazon Gadgets 2026</title>
+  <meta name="description" content="Koloonline Amazon Store - اكتشف أفضل أجهزة Amazon الذكية مع عروض حصرية وتجربة تسوق سريعة مع نظام أفلييت احترافي.">
+  <meta name="keywords" content="amazon gadgets, smart devices, tech 2026, affiliate store">
+  <meta name="author" content="Koloonline - Lina Sobhy">
+
+  <!-- ================= FAVICON ================= -->
+  <link rel="icon" type="image/png" href="assets/1000276862.png">
+  <link rel="shortcut icon" href="assets/1000276862.png">
+  <link rel="apple-touch-icon" href="assets/1000276862.png">
+
+  <!-- ================= OPEN GRAPH ================= -->
+  <meta property="og:title" content="Koloonline Amazon Store">
+  <meta property="og:description" content="أفضل متجر أفلييت لمنتجات Amazon مع تتبع ذكي وتحويلات عالية.">
+  <meta property="og:image" content="assets/1000276862.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://koloonline-store.vercel.app/">
+
+  <!-- ================= TWITTER CARD ================= -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Koloonline Amazon Store">
+  <meta name="twitter:description" content="Smart Amazon Affiliate Store with high converting products.">
+  <meta name="twitter:image" content="assets/1000276862.png">
+
+  <!-- ================= SEO PERFORMANCE ================= -->
+  <meta name="theme-color" content="#000000">
+  <meta name="robots" content="index, follow">
+
+  <!-- GTM -->
+  <script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;
+    j.src='https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN'+dl;
+    f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KNQM8KBN');
+  </script>
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YS8L61XLPR');
+  </script>
+
+  <style>
+    body{font-family:Arial;margin:0;background:#f5f5f5;}
+    header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
+    .container{max-width:900px;margin:auto;padding:20px;}
+    .card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+    .btn{background:#ff9900;border:none;padding:10px;width:100%;margin:10px 0;cursor:pointer;border-radius:6px;font-weight:bold;}
+    footer{background:#232f3e;color:#fff;text-align:center;padding:20px;margin-top:30px}
+    a{color:#ff9900;text-decoration:none;}
+  </style>
+
+</head>
+<body>
+
+<noscript>
+  <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+  height="0" width="0" style="display:none"></iframe>
+</noscript>
+
+<header>🔥 Top Amazon Gadgets 2026</header>
+
+<div class="container">
+
+  <!-- SEO -->
+  <div class="card">
+    <h1>Top Amazon Gadgets 2026</h1>
+    <p>Discover trending Amazon tech products and smart devices with real tracking & affiliate links.</p>
+  </div>
+
+  <!-- PRODUCT -->
+  <div class="card">
+    <h2>🔥 Echo Dot Smart Speaker</h2>
+    <img src="https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg" width="100%">
+    <p>✔ Voice control<br>✔ Smart home integration<br>✔ Compact design</p>
+    <button class="btn" onclick="buyNow('B09B8Q3YHJ','Echo Dot Smart Speaker')">🔥 Buy on Amazon</button>
+    <button class="btn" onclick="orderWhatsApp('Echo Dot Smart Speaker')">📲 WhatsApp Order</button>
+  </div>
+
+  <!-- RELATED -->
+  <div class="card">
+    <h3>📚 Related Posts</h3>
+    <a href="post1.html">Smart Watches</a><br>
+    <a href="post2.html">Best Deals</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 Koloonline</p>
+</footer>
+
+<script>
+/* ================= TRACKING API ================= */
+async function trackEvent(eventType, data){
+  try{
+    await fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        event: eventType,
+        data: data,
+        page: "post",
+        timestamp: new Date().toISOString(),
+        country: navigator.language
+      })
+    });
+  }catch(e){console.log("tracking failed");}
+}
+
+/* ================= BUY ================= */
+function buyNow(asin, title){
+  trackEvent("amazon_click", asin);
+  window.open(`https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`, "_blank");
+}
