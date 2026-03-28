@@ -1,227 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 Your Cart | Koloonline</title>
 
-<title>Your Cart | Koloonline</title>
+<!-- ================= GTM ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8BN"></script>
 
-<link rel="stylesheet" href="style.css">
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YS8L61XLPR');
+</script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
-header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
-.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff;}
+header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff;flex-wrap:wrap;}
+.navbar button{background:#ff9900;border:none;padding:8px;border-radius:5px;font-weight:bold;cursor:pointer;margin:2px;}
 .products{padding:20px;display:grid;gap:15px;}
-.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-.buy-btn{background:#ff9900;border:none;padding:10px;width:100%;margin:5px 0;border-radius:6px;font-weight:bold;cursor:pointer;}
+.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1);text-align:center;}
+.card img{width:100%;height:180px;object-fit:contain;border-radius:6px;}
+.price{color:#b12704;font-weight:bold;font-size:18px;}
+.buy-btn{background:#ff9900;border:none;padding:10px;width:100%;margin:5px 0;border-radius:6px;font-weight:bold;cursor:pointer;transition:0.2s;}
+.buy-btn:hover{background:#e68a00;}
+.buy-btn.whatsapp{background:#25D366;color:#fff;}
+.buy-btn.success{background:#28a745;color:#fff;}
+.buy-btn.danger{background:#d9534f;color:#fff;}
+.summary{max-width:600px;margin:auto;}
+.trust{background:#e8f5e9;padding:10px;border-radius:6px;margin-top:10px;font-size:14px;}
+@media(max-width:600px){.products{grid-template-columns:1fr;}.card img{height:150px;}}
 </style>
-
 </head>
-
 <body>
 
 <header>🛒 Your Cart</header>
 
 <div class="navbar">
-
 <button onclick="location.href='index.html'">🏠 Home</button>
 <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
-
 </div>
 
 <div id="cart" class="products"></div>
-<div id="summary" style="padding:20px;"></div>
+<div id="summary" class="summary"></div>
 
 <script>
-
 /* ================= CART ================= */
-let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+let cart = JSON.parse(localStorage.getItem("cart")||"[]");
 
 /* ================= TRACKING ================= */
-async function trackEvent(eventType, data){
-
+async function trackEvent(eventType,data){
 try{
 await fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
 method:"POST",
-headers:{ "Content-Type":"application/json" },
-body:JSON.stringify({
-event: eventType,
-data: data,
-page: "cart",
-timestamp: new Date().toISOString(),
-lang: navigator.language
-})
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({event:eventType,data:data,page:"cart",time:new Date().toISOString(),lang:navigator.language})
 });
-}catch(e){
-console.log("tracking failed");
+}catch(e){console.log("tracking failed");}
 }
 
-}
+/* ================= SAVE CART ================= */
+function saveCart(){localStorage.setItem("cart",JSON.stringify(cart));renderCart();}
 
-/* ================= SAVE ================= */
-function saveCart(){
-localStorage.setItem("cart", JSON.stringify(cart));
-renderCart();
-updateCartCount();
-}
+/* ================= AFFILIATE LINK ================= */
+function getCountry(){let lang=navigator.language||"en-US"; if(lang.includes("ar")) return "EG"; if(lang.includes("pl")) return "PL"; if(lang.includes("en-CA")) return "CA"; return "US";}
+function getAffiliateLink(item){const country=getCountry(); let domain="amazon.com", tag=item.tags?.usa||"koloonlinesto-20"; if(country==="EG"){domain="amazon.eg";tag=item.tags?.egypt;} if(country==="CA"){domain="amazon.ca";tag=item.tags?.canada;} if(country==="PL"){domain="amazon.pl";tag=item.tags?.poland;} return `https://${domain}/dp/${item.asin}?tag=${tag}`;}
 
-/* ================= RENDER ================= */
+/* ================= RENDER CART ================= */
 function renderCart(){
+let container=document.getElementById("cart");
+let summary=document.getElementById("summary");
 
-let container = document.getElementById("cart");
-let summary = document.getElementById("summary");
+if(cart.length===0){container.innerHTML="<div style='text-align:center;padding:50px'>🛒 Your cart is empty</div>";summary.innerHTML="";return;}
 
-if(cart.length === 0){
-container.innerHTML = "<div style='text-align:center;padding:50px'>🛒 Cart is empty</div>";
-summary.innerHTML = "";
-return;
-}
-
-let html = "";
-let totalItems = 0;
-let totalPrice = 0;
+let html="";
+let totalItems=0,totalPrice=0;
 
 cart.forEach((item,index)=>{
+item.qty=item.qty||1;
+item.price=parseFloat(item.price||0);
+totalItems+=item.qty;
+totalPrice+=item.price*item.qty;
 
-if(!item.qty) item.qty = 1;
-if(!item.price) item.price = 0;
+let logoImg = item.logo ? `<img src="${item.logo}" style="width:20px;vertical-align:middle;margin-right:5px;">` : "";
 
-totalItems += item.qty;
-totalPrice += parseFloat(item.price) * item.qty;
-
-html += `
+html+=`
 <div class="card">
-
-<img src="${item.image}" style="width:100%;height:180px;object-fit:contain">
-
+<img src="${item.image}">
 <h3>${item.title}</h3>
-<p>💲 ${item.price}</p>
-<p>Qty: ${item.qty}</p>
+<p class="price">$${item.price}</p>
+<p>Quantity: ${item.qty}</p>
 
-<button class="buy-btn" onclick="increaseQty(${index})">➕</button>
-<button class="buy-btn" onclick="decreaseQty(${index})">➖</button>
-<button class="buy-btn" style="background:#d9534f" onclick="removeItem(${index})">❌ Remove</button>
+<button class="buy-btn" onclick="increaseQty(${index})">➕ Increase</button>
+<button class="buy-btn" onclick="decreaseQty(${index})">➖ Decrease</button>
+<button class="buy-btn danger" onclick="removeItem(${index})">❌ Remove</button>
 
+<button class="buy-btn" onclick="window.open('${getAffiliateLink(item)}','_blank')">${logoImg}🔥 Buy Now</button>
+<button class="buy-btn whatsapp" onclick="orderWhatsApp('${item.title}')">📲 WhatsApp</button>
 </div>
 `;
 });
 
-container.innerHTML = html;
+container.innerHTML=html;
 
-summary.innerHTML = `
+/* SUMMARY */
+summary.innerHTML=`
 <div class="card">
+<h2>🛒 Order Summary</h2>
+<p>Total Items: <b>${totalItems}</b></p>
+<p>Total Price: <b>$${totalPrice.toFixed(2)}</b></p>
 
-<h3>🛒 Total Items: ${totalItems}</h3>
-<h3>💰 Total Price: $${totalPrice.toFixed(2)}</h3>
+<div class="trust">
+✔ Secure Checkout <br>
+✔ Fast Shipping <br>
+✔ Trusted Products
+</div>
 
-<button class="buy-btn" onclick="checkout()">🚀 Checkout Now</button>
-<button class="buy-btn" style="background:#d9534f" onclick="clearCart()">🗑 Clear Cart</button>
-
+<button class="buy-btn success" onclick="checkout()">🚀 Proceed to Checkout</button>
+<button class="buy-btn danger" onclick="clearCart()">🗑 Clear Cart</button>
 </div>
 `;
-
 }
 
 /* ================= ACTIONS ================= */
-function removeItem(index){
+function removeItem(index){trackEvent("remove_item",cart[index]);cart.splice(index,1);saveCart();}
+function increaseQty(index){cart[index].qty+=1;trackEvent("increase_qty",cart[index]);saveCart();}
+function decreaseQty(index){if(cart[index].qty>1){cart[index].qty-=1;trackEvent("decrease_qty",cart[index]);}else{trackEvent("remove_item",cart[index]);cart.splice(index,1);}saveCart();}
+function clearCart(){if(confirm("Clear all items?")){trackEvent("clear_cart","all");cart=[];saveCart();}}
 
-trackEvent("remove_item", cart[index]);
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(title){window.open("https://wa.me/201XXXXXXXXX?text="+encodeURIComponent("I want to order: "+title));}
 
-cart.splice(index,1);
-saveCart();
-
-}
-
-function increaseQty(index){
-
-cart[index].qty = (cart[index].qty || 1) + 1;
-
-trackEvent("qty_increase", cart[index]);
-
-saveCart();
-
-}
-
-function decreaseQty(index){
-
-if(cart[index].qty > 1){
-cart[index].qty -= 1;
-trackEvent("qty_decrease", cart[index]);
-}else{
-trackEvent("remove_item", cart[index]);
-cart.splice(index,1);
-}
-
-saveCart();
-
-}
-
-function clearCart(){
-
-if(confirm("Clear all items?")){
-trackEvent("clear_cart", "all");
-cart = [];
-saveCart();
-}
-
-}
-
-/* ================= SAVE ORDER ================= */
+/* ================= ORDER ================= */
 function saveOrder(){
-
-let orders = JSON.parse(localStorage.getItem("orders") || "[]");
-
-let order = {
-id: Date.now(),
-date: new Date().toISOString(),
-items: cart,
-totalItems: cart.reduce((s,i)=>s+(i.qty||1),0),
-totalPrice: cart.reduce((s,i)=>s+(parseFloat(i.price||0)*(i.qty||1)),0)
-};
-
+let orders=JSON.parse(localStorage.getItem("orders")||"[]");
+let order={id:Date.now(),date:new Date().toISOString(),items:cart,totalItems:cart.reduce((s,i)=>s+i.qty,0),totalPrice:cart.reduce((s,i)=>s+(i.price*i.qty),0)};
 orders.push(order);
-
-localStorage.setItem("orders", JSON.stringify(orders));
-
-trackEvent("order_created", order);
-
+localStorage.setItem("orders",JSON.stringify(orders));
+trackEvent("order_created",order);
 }
 
 /* ================= CHECKOUT ================= */
 function checkout(){
-
-if(cart.length === 0){
-alert("Cart is empty 🛒");
-return;
-}
-
-trackEvent("checkout_start", {
-items: cart.length
-});
-
+if(cart.length===0){alert("Cart is empty 🛒");return;}
+trackEvent("checkout_start",{items:cart.length});
 saveOrder();
-
-cart = [];
-saveCart();
-
+cart=[];saveCart();
 alert("🎉 Order placed successfully!");
-
-window.location.href = "thankyou.html";
-
-}
-
-/* ================= COUNT ================= */
-function updateCartCount(){
-let count = cart.reduce((s,i)=>s+(i.qty||1),0);
-localStorage.setItem("cartCount", count);
+window.location.href="thankyou.html";
 }
 
 /* ================= INIT ================= */
 renderCart();
-updateCartCount();
-
 </script>
 
 </body>

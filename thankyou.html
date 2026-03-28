@@ -1,52 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ================= SEO BASIC ================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Koloonline Amazon Store | Smart Affiliate Shopping Deals</title>
-<meta name="description" content="Koloonline Amazon Store - اكتشف أفضل منتجات Amazon مع عروض حصرية، أسعار مميزة، وتجربة تسوق ذكية وسريعة مع نظام أفلييت احترافي.">
-<meta name="keywords" content="Amazon deals, affiliate store, smart shopping, online shopping Egypt, best products, Koloonline store">
-<meta name="author" content="Koloonline - Lina Sobhy">
-
-<!-- ================= FAVICON ================= -->
-<link rel="icon" type="image/png" href="assets/1000276862.png">
-<link rel="shortcut icon" href="assets/1000276862.png">
-<link rel="apple-touch-icon" href="assets/1000276862.png">
-
-<!-- ================= OPEN GRAPH (Facebook / WhatsApp) ================= -->
-<meta property="og:title" content="Koloonline Amazon Store">
-<meta property="og:description" content="أفضل متجر أفلييت لمنتجات Amazon مع تتبع ذكي وتحويلات عالية.">
-<meta property="og:image" content="assets/1000276862.png">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://koloonline-store.vercel.app/">
-
-<!-- ================= TWITTER CARD ================= -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Koloonline Amazon Store">
-<meta name="twitter:description" content="Smart Amazon Affiliate Store with high converting products.">
-<meta name="twitter:image" content="assets/1000276862.png">
-
-<!-- ================= SEO PERFORMANCE ================= -->
-<meta name="theme-color" content="#000000">
-<meta name="robots" content="index, follow">
-
-<!-- ================= PRELOAD (Speed Boost) ================= -->
-<link rel="preload" as="image" href="assets/1000276862.png">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>🔥 Thank You - Koloonline Store</title>
-
-<meta name="description" content="Thank you for your order at Koloonline Store">
-<meta property="og:title" content="Koloonline Order Confirmed">
-<meta property="og:image" content="https://www.koloonline.online/favicon.ico">
-
+<title>🎉 Order Confirmed | Koloonline</title>
+<meta name="description" content="Your order is confirmed. Enjoy exclusive offers and deals now.">
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="style.css">
 
-<!-- ================= FACEBOOK PIXEL ================= -->
+<!-- ================= FB PIXEL ================= -->
 <script>
 !function(f,b,e,v,n,t,s){
 if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -56,12 +17,11 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window,document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-
 fbq('init','353894198840203');
 fbq('track','PageView');
 </script>
 
-<!-- ================= GOOGLE ANALYTICS ================= -->
+<!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -70,90 +30,127 @@ gtag('js', new Date());
 gtag('config','G-YS8L61XLPR');
 </script>
 
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5;text-align:center;}
+header{background:#232f3e;color:#fff;padding:15px;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+.box{max-width:600px;margin:40px auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+.buy-btn{background:#ff9900;border:none;padding:12px;width:100%;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;transition:0.2s;}
+.buy-btn:hover{background:#e68a00;}
+.buy-btn.secondary{background:#333;color:#fff;}
+.trust{background:#e8f5e9;padding:10px;border-radius:6px;margin-top:15px;font-size:14px;}
+.upsell{margin-top:20px;padding:15px;background:#fff3cd;border-radius:8px;}
+.products{display:grid;gap:15px;margin-top:15px;}
+.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;}
+.card img{width:100%;height:180px;object-fit:contain;border-radius:6px;}
+.price{color:#b12704;font-weight:bold;font-size:18px;}
+.buy-btn.whatsapp{background:#25D366;color:#fff;}
+</style>
 </head>
 
 <body>
 
-<header>🔥 Thank You!</header>
+<header>🎉 Thank You!</header>
 
-<section style="
-  max-width:600px;
-  margin:40px auto;
-  background:#fff;
-  padding:30px;
-  border-radius:12px;
-  box-shadow:0 4px 15px rgba(0,0,0,0.1);
-  text-align:center;
-">
+<div class="box">
+<h2>Order Confirmed Successfully ✅</h2>
+<p>Your order is being processed 🚚</p>
 
-  <h2>🎉 Order Confirmed Successfully!</h2>
-  <p>Your order is being processed and will be shipped soon 🚚</p>
+<div id="orderInfo"></div>
+<div id="orderTotal" style="margin-top:10px;font-weight:bold;"></div>
 
-  <div id="orderInfo" style="margin:20px 0;font-weight:bold;"></div>
+<div class="trust">
+✔ Secure Checkout <br>
+✔ Fast Delivery <br>
+✔ Trusted Store
+</div>
 
-  <h3 style="margin-top:30px;">🔥 Special Limited Offer</h3>
-  <p>Unlock this exclusive deal before it expires!</p>
+<!-- 🔥 UPSELL -->
+<div class="upsell">
+<h3>🔥 Special Offer (Limited Time)</h3>
+<p>Get this trending product before it’s gone!</p>
+<div id="upsellProducts" class="products"></div>
+</div>
 
-  <button class="buy-btn" onclick="upsell()">
-    🚀 Claim Your Offer
-  </button>
-
-  <button class="buy-btn" onclick="goHome()" style="background:#333;margin-top:10px;">
-    🏠 Back to Store
-  </button>
-
-</section>
+<button class="buy-btn secondary" onclick="goHome()">🏠 Back to Store</button>
+</div>
 
 <script>
+/* ================= GET LAST ORDER ================= */
+let orders = JSON.parse(localStorage.getItem("orders") || "[]");
+let lastOrder = orders[orders.length - 1] || {};
+let orderId = lastOrder.id || ("KO-" + Math.floor(Math.random()*999999));
+let total = lastOrder.totalPrice || 0;
 
-// ================= ORDER ID =================
-let orderId = localStorage.getItem("lastOrderId");
+/* ================= SHOW ORDER INFO ================= */
+document.getElementById("orderInfo").innerHTML = "🧾 Order ID: " + orderId;
+document.getElementById("orderTotal").innerHTML = "💰 Total: $" + total.toFixed(2);
 
-if(!orderId){
-  orderId = "KO-" + Math.floor(Math.random() * 9999999);
-  localStorage.setItem("lastOrderId", orderId);
-}
-
-// عرض رقم الطلب
-document.getElementById("orderInfo").innerHTML =
-  "🧾 Order ID: " + orderId;
-
-// ================= TRACK PURCHASE =================
-fbq('track', 'Purchase', {
-  value: 0,
-  currency: 'USD',
-  order_id: orderId
+/* ================= TRACK PURCHASE ================= */
+fbq('track','Purchase',{
+value: total,
+currency:'USD',
+content_ids: lastOrder.items?.map(i=>i.asin) || []
 });
 
-gtag('event', 'purchase', {
-  transaction_id: orderId,
-  value: 0,
-  currency: 'USD'
+gtag('event','purchase',{
+transaction_id:orderId,
+value:total,
+currency:'USD'
 });
 
-// ================= UPSELL =================
-function upsell(){
+/* ================= UPSALE PRODUCTS ================= */
+const upsellProducts = lastOrder.items || [];
 
-  // مهم: هنا رابط أفلييت حقيقي
-  const upsellLink =
-    "https://www.amazon.com/dp/B08N5WRWNW?tag=koloonlinesto-20";
-
-  fbq('track','InitiateCheckout');
-  gtag('event','begin_checkout');
-
-  window.location.href = upsellLink;
+function getCountry(){
+  let lang=navigator.language||"en-US";
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("pl")) return "PL";
+  if(lang.includes("en-CA")) return "CA";
+  return "US";
 }
 
-// ================= HOME =================
-function goHome(){
-  window.location.href = "index.html";
+function getAffiliateLink(product){
+  const country = getCountry();
+  let domain="amazon.com", tag="koloonlinesto-20";
+  if(country==="EG"){domain="amazon.eg";tag=product.tags?.egypt;}
+  if(country==="CA"){domain="amazon.ca";tag=product.tags?.canada;}
+  if(country==="PL"){domain="amazon.pl";tag=product.tags?.poland;}
+  return `https://${domain}/dp/${product.asin}?tag=${tag}`;
 }
 
-// ================= PREVENT REORDER BUG =================
-if(localStorage.getItem("cart")){
-  localStorage.removeItem("cart");
+function renderUpsell(){
+  const container = document.getElementById("upsellProducts");
+  container.innerHTML = "";
+  upsellProducts.forEach(p=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    const logoImg = p.logo ? `<img src="${p.logo}" style="width:20px;vertical-align:middle;margin-right:5px;">` : "";
+    card.innerHTML = `
+      <img src="${p.image}" alt="${p.title}">
+      <h4>${p.title}</h4>
+      <p class="price">$${p.price}</p>
+      <button class="buy-btn" onclick="window.open('${getAffiliateLink(p)}','_blank')">
+        ${logoImg}🔥 Buy Now
+      </button>
+      <button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')">📲 WhatsApp</button>
+    `;
+    container.appendChild(card);
+  });
 }
 
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(title){
+  window.open("https://wa.me/201XXXXXXXXX?text="+encodeURIComponent("I want to order: "+title));
+}
+
+/* ================= HOME ================= */
+function goHome(){window.location.href="index.html";}
+
+/* ================= CLEAN CART ================= */
+localStorage.removeItem("cart");
+
+/* ================= INIT ================= */
+renderUpsell();
 </script>
 
 </body>

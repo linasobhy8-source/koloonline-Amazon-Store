@@ -41,14 +41,42 @@ body{
   margin: auto;
   padding: 20px;
   line-height: 1.7;
-  background:#fff;
+  background:#f5f5f5;
+  color:#111;
+}
+
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  font-size:22px;
+  border-radius:8px;
+  text-align:center;
 }
 
 h1{
   color:#111;
+  margin-top:20px;
 }
 
 h2{
+  margin-top:25px;
+  color:#222;
+}
+
+ul{
+  margin-left:20px;
+}
+
+li{
+  margin-bottom:10px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.1);
   margin-top:20px;
 }
 </style>
@@ -57,7 +85,9 @@ h2{
 
 <body>
 
-<!-- ================= CONTENT ================= -->
+<header>🏬 Koloonline Store | About Us</header>
+
+<div class="card">
 
 <h1>About Us</h1>
 
@@ -85,6 +115,15 @@ We carefully select and review products to ensure they meet quality standards an
 <p>
 To become one of the top online platforms for smart shopping and tech product discovery.
 </p>
+
+</div>
+
+<!-- ================= OPTIONAL ADSENSE PLACEMENT ================= -->
+<div id="about-top-ad" style="margin:20px 0; text-align:center;"></div>
+<script src="adsense-dynamic.js"></script>
+<script>
+  loadAd("about-top-ad", "ca-pub-1294940976431468", "1614162350");
+</script>
 
 </body>
 </html>
