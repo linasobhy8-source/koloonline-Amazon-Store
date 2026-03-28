@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- ================= SEO BASIC ================= -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Koloonline Amazon Store | Smart Affiliate Shopping Deals</title>
+  <meta name="description" content="Koloonline Amazon Store - اكتشف أفضل منتجات Amazon مع عروض حصرية، أسعار مميزة، وتجربة تسوق ذكية وسريعة مع نظام أفلييت احترافي.">
+  <meta name="keywords" content="Amazon deals, affiliate store, smart shopping, online shopping Egypt, best products, Koloonline store">
+  <meta name="author" content="Koloonline - Lina Sobhy">
+
+  <!-- ================= FAVICON ================= -->
+  <link rel="icon" type="image/png" href="assets/1000276862.png">
+  <link rel="shortcut icon" href="assets/1000276862.png">
+  <link rel="apple-touch-icon" href="assets/1000276862.png">
+
+  <!-- ================= OPEN GRAPH ================= -->
+  <meta property="og:title" content="Koloonline Amazon Store">
+  <meta property="og:description" content="أفضل متجر أفلييت لمنتجات Amazon مع تتبع ذكي وتحويلات عالية.">
+  <meta property="og:image" content="assets/1000276862.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://koloonline-store.vercel.app/">
+
+  <!-- ================= TWITTER CARD ================= -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Koloonline Amazon Store">
+  <meta name="twitter:description" content="Smart Amazon Affiliate Store with high converting products.">
+  <meta name="twitter:image" content="assets/1000276862.png">
+
+  <!-- ================= SEO PERFORMANCE ================= -->
+  <meta name="theme-color" content="#000000">
+  <meta name="robots" content="index, follow">
+
+  <!-- ================= PRELOAD (Speed Boost) ================= -->
+  <link rel="preload" as="image" href="assets/1000276862.png">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- GTM -->
+  <script>
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN'+dl;
+  f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-KNQM8KBN');
+  </script>
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YS8L61XLPR');
+  </script>
+
+  <style>
+  body{font-family:Arial;margin:0;background:#f5f5f5;}
+  header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
+  .navbar{display:flex;justify-content:space-between;flex-wrap:wrap;padding:10px;background:#37475a;color:#fff;}
+  .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;padding:20px;}
+  .card{background:#fff;border-radius:10px;padding:15px;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+  .btn{background:#ff9900;border:none;padding:10px;width:90%;margin:5px auto;cursor:pointer;border-radius:6px;font-weight:bold;}
+  footer{background:#232f3e;color:#fff;text-align:center;padding:20px;margin-top:30px}
+  </style>
+
+</head>
+
+<body>
+
+<header>🔥 Koloonline Smart Deals 2026</header>
+
+<div class="navbar">
+  🛒 Cart: <span id="cart-count">0</span>
+  <div>
+    <button onclick="location.href='index.html'">🏠 Home</button>
+    <button onclick="location.href='blog.html'">📰 Blog</button>
+  </div>
+</div>
+
+<!-- SEO -->
+<section style="padding:20px;max-width:900px;margin:auto;">
+  <h1>Top Trending Smart Products 2026</h1>
+  <p>Best Amazon gadgets with real tracking + SaaS analytics system.</p>
+</section>
+
+<div id="product" class="products"></div>
+
+<footer>
+  <p>© 2026 Koloonline SaaS</p>
+</footer>
+
+<script>
+/* ================= PRODUCTS ================= */
+const products = [
+  {
+    title:"Smart Watch Pro",
+    asin:"B09V7Z4TJG",
+    price:"$49.99",
+    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+  },
+  {
+    title:"Wireless Earbuds",
+    asin:"B08J5F3G18",
+    price:"$39.99",
+    image:"https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg"
+  }
+];
+
+/* ================= CART ================= */
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+function updateCart(){document.getElementById("cart-count").innerText = cart.length;}
+
+/* ================= SAAS TRACKING ================= */
+async function trackEvent(eventType, data){
+  try{
+    await fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        event: eventType,
+        data: data,
+        page: "product",
+        timestamp: new Date().toISOString(),
+        lang: navigator.language
+      })
+    });
+  }catch(e){console.log("tracking skipped");}
+}
+
+/* ================= ACTIONS ================= */
+function addToCart(product){
+  cart.push(product);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCart();
+  trackEvent("add_to_cart", product.asin);
+}
+
+function buyNow(asin){
+  trackEvent("amazon_click", asin);
+  let link = `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+  window.open(link, "_blank");
+}
+
+function orderWhatsApp(product){
+  trackEvent("whatsapp_click", product);
+  let phone = "XXXXXXXXXXX"; // 👈 ضع رقمك هنا
+  let msg = `Order request: ${product}`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+}
+
+/* ================= RENDER ================= */
+function render(){
+  document.getElementById("product").innerHTML = products.map(p=>`
+    <div class="card">
+      <img src="${p.image}" style="width:100%;height:200px;object-fit:contain">
+      <h3>${p.title}</h3>
+      <p>${p.price}</p>
+      <button class="btn" onclick='addToCart(${JSON.stringify(p)})'>🛒 Add to Cart</button>
+      <button class="btn" onclick="buyNow('${p.asin}')">🔥 Buy Now</button>
+      <button class="btn" onclick="orderWhatsApp('${p.title}')">📲 WhatsApp</button>
+    </div>
+  `).join("");
+}
+
+render();
+updateCart();
+</script>
+
+</body>
+</html>
