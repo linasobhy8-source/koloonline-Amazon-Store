@@ -1,20 +1,30 @@
 import mongoose from "mongoose";
 
-// ================= CONNECT TO MONGODB =================
+// ================= CONNECT =================
 const MONGO_URI = process.env.MONGODB_URI;
 
-let isConnected = false;
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 async function connectDB() {
-  if (isConnected) return;
+  if (cached.conn) return cached.conn;
 
   if (!MONGO_URI) {
-    throw new Error("❌ MONGODB_URI is not defined");
+    throw new Error("❌ MONGODB_URI not found");
   }
 
-  await mongoose.connect(MONGO_URI);
-  isConnected = true;
-  console.log("✅ MongoDB Connected");
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGO_URI, {
+      bufferCommands: false
+    }).then(m => m);
+  }
+
+  cached.conn = await cached.promise;
+  console.log("✅ Mongo Connected");
+  return cached.conn;
 }
 
 // ================= SCHEMA =================
@@ -33,11 +43,11 @@ const Analytics =
 
 // ================= HANDLER =================
 export default async function handler(req, res) {
-  await connectDB();
+  try {
+    await connectDB();
 
-  // ================= TRACK =================
-  if (req.method === "POST") {
-    try {
+    // ================= POST =================
+    if (req.method === "POST") {
       const { asin, type, country } = req.body;
 
       if (!asin || !type) {
@@ -64,19 +74,10 @@ export default async function handler(req, res) {
       await doc.save();
 
       return res.json({ success: true });
-
-    } catch (err) {
-      console.error("❌ Track Error:", err);
-      return res.status(500).json({
-        success: false,
-        error: err.message
-      });
     }
-  }
 
-  // ================= ANALYTICS =================
-  if (req.method === "GET") {
-    try {
+    // ================= GET =================
+    if (req.method === "GET") {
       const data = await Analytics.find();
 
       const totals = {
@@ -116,18 +117,16 @@ export default async function handler(req, res) {
         countries,
         topProducts
       });
-
-    } catch (err) {
-      console.error("❌ Analytics Error:", err);
-      return res.status(500).json({
-        success: false,
-        totals: {},
-        countries: {},
-        topProducts: []
-      });
     }
-  }
 
-  // ================= DEFAULT =================
-  return res.status(200).send("Koloonline API Running 🚀");
-        }
+    // ================= DEFAULT =================
+    return res.status(200).send("Koloonline API Running 🚀");
+
+  } catch (err) {
+    console.error("❌ API Error:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+    }
