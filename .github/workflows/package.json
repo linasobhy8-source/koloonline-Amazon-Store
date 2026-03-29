@@ -1,0 +1,25 @@
+{
+  "name": "koloonline-store",
+  "version": "1.0.0",
+  "description": "Koloonline Amazon Store Express + Webpack",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "webpack --mode production",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Lina Sobhy",
+  "license": "MIT"
+}
