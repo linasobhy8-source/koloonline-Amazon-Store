@@ -1,57 +1,42 @@
-export default function handler(req, res) {
+// pages/api/products.js
+import { MongoClient } from "mongodb";
 
-  const products = [
-    {
-      id: 1,
-      asin: "B09V7Z4TJG",
-      title: "Smart Watch Pro",
-      price: 39.99,
-      image: "https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
-      link: "https://www.amazon.eg/dp/B09V7Z4TJG?tag=onlinesh03f31-21",
-      category: "electronics",
-      affiliateRate: 0.06,
-      rating: 4.5,
-      priority: 10
-    },
-    {
-      id: 2,
-      asin: "B07ZNT7PRL",
-      title: "Anker Bluetooth Speaker",
-      price: 49.99,
-      image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
-      link: "https://www.amazon.eg/dp/B07ZNT7PRL?tag=onlinesh03f31-21",
-      category: "audio",
-      affiliateRate: 0.07,
-      rating: 4.7,
-      priority: 9
-    },
-    {
-      id: 3,
-      asin: "B08N5WRWNW",
-      title: "Echo Dot (Smart Speaker)",
-      price: 29.99,
-      image: "https://m.media-amazon.com/images/I/71d5l8Zg2cL._AC_SL1500_.jpg",
-      link: "https://www.amazon.eg/dp/B08N5WRWNW?tag=onlinesh03f31-21",
-      category: "smart-home",
-      affiliateRate: 0.08,
-      rating: 4.6,
-      priority: 8
-    }
-  ];
+const client = new MongoClient(process.env.MONGODB_URI);
 
-  // ================= SORT BY PROFIT POTENTIAL =================
-  const sorted = products.sort((a, b) => {
+export default async function handler(req, res) {
+  try {
+    await client.connect();
+    const db = client.db("koloonline"); // اسم قاعدة البيانات
+    const collection = db.collection("products"); // اسم مجموعة المنتجات
 
-    const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
-    const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
+    // اختياري: اختيار الدولة لتحديد رابط الأفلييت
+    const country = req.query.country || "EG";
 
-    return scoreB - scoreA;
-  });
+    // جلب كل المنتجات من MongoDB
+    const products = await collection.find({}).toArray();
 
-  // ================= RESPONSE =================
-  res.status(200).json({
-    success: true,
-    total: sorted.length,
-    products: sorted
-  });
-    }
+    // تعديل رابط الأفلييت حسب الدولة
+    const mappedProducts = products.map(product => {
+      product.link = `https://www.amazon.${country.toLowerCase()}/dp/${product.asin}?tag=${product.affiliate[country] || product.affiliate.EG}`;
+      return product;
+    });
+
+    // تصنيف حسب ربحية العمولة + التقييم + الأولوية
+    const sorted = mappedProducts.sort((a, b) => {
+      const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
+      const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
+      return scoreB - scoreA;
+    });
+
+    res.status(200).json({
+      success: true,
+      total: sorted.length,
+      products: sorted
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server Error", error: err.message });
+  } finally {
+    await client.close();
+  }
+        }
