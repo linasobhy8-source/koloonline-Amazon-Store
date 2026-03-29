@@ -1,13 +1,15 @@
-# .github/workflows/vercel-deploy.yml
+# =========================
+# GitHub Actions Workflow: Deploy to Vercel
+# =========================
 name: Deploy to Vercel
 
 on:
   push:
     branches:
-      - main  # أي push على الفرع main سيؤدي إلى النشر التلقائي
+      - main  # النشر التلقائي عند أي push على الفرع main
   pull_request:
     branches:
-      - main
+      - main  # نشر معاينة عند PR على main
 
 jobs:
   deploy:
@@ -18,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ إعداد Node.js
+      # 2️⃣ إعداد Node.js (مطلوب لو عندك أي وظائف Serverless أو npm scripts)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -26,11 +28,16 @@ jobs:
 
       # 3️⃣ تثبيت الباكدجات
       - name: Install dependencies
-        run: npm install
+        run: npm ci || npm install
 
-      # 4️⃣ Build المشروع إذا موجود (React / Next.js أو أي frontend build)
+      # 4️⃣ Build المشروع إذا موجود (HTML ثابت غالبًا لا يحتاج build)
       - name: Build project
-        run: npm run build || echo "No build script found, skipping"
+        run: |
+          if [ -f package.json ] && grep -q "\"build\"" package.json; then
+            npm run build
+          else
+            echo "No build script found, skipping build."
+          fi
 
       # 5️⃣ نشر المشروع على Vercel
       - name: Deploy to Vercel
@@ -39,10 +46,22 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          prod: true
+          working-directory: ./   # مسار المشروع الجذر
+          prod: true               # نشر على البيئة الإنتاجية
+        env:
+          # تأكد أن جميع المتغيرات السرية موجودة في Secrets الخاصة بـ GitHub
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+          FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+          AMAZON_US: ${{ secrets.AMAZON_US }}
+          AMAZON_CA: ${{ secrets.AMAZON_CA }}
+          AMAZON_EG: ${{ secrets.AMAZON_EG }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
-      # 6️⃣ اختبار endpoint بعد النشر
+      # 6️⃣ اختبار الموقع بعد النشر للتأكد من أنه يعمل
       - name: Test deployed site
         run: |
-          curl -f https://koloonline-store.vercel.app || exit 1
+          URL=$(npx vercel --token ${{ secrets.VERCEL_TOKEN }} inspect ${{ secrets.VERCEL_PROJECT_ID }} --json | jq -r '.url')
+          echo "Testing deployed URL: $URL"
+          curl -f "https://$URL" || exit 1
