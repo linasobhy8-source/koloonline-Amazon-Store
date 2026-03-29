@@ -1,20 +1,27 @@
 // server.js
 const express = require("express");
 const path = require("path");
-require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ملفات الـ static (HTML, CSS, JS, assets)
-app.use(express.static(path.join(__dirname, "public")));
+// تحديد مسار ملفات الموقع
+const publicPath = path.join(__dirname, "public");
 
-// جميع الطلبات الأخرى ترجع index.html
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// عرض الملفات الثابتة
+app.use(express.static(publicPath));
+
+// الصفحة الرئيسية
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicPath, "index.html"));
 });
 
-// بدء السيرفر
+// fallback لأي route
+app.get("*", (req, res) => {
+  res.sendFile(path.join(publicPath, "index.html"));
+});
+
+// تشغيل السيرفر
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
