@@ -1,4 +1,6 @@
-# node.js.yml
+# =========================
+# Node.js CI/CD + Vercel Deployment
+# =========================
 name: Node.js CI/CD - Koloonline
 
 on:
@@ -12,42 +14,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ سحب الكود من GitHub
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ إعداد Node.js
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
-      # 3️⃣ تثبيت الباكدجات
+      # 3️⃣ Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: npm ci || npm install
 
-      # 4️⃣ فحص الكود (Syntax & Lint)
+      # 4️⃣ Lint & Syntax check
       - name: Run lint and syntax check
         run: |
           npm run lint || echo "Lint check failed but continue"
           node -c server.js || echo "Syntax OK"
 
-      # 5️⃣ تشغيل السيرفر محليًا لاختبار endpoint
-      - name: Run server for test
+      # 5️⃣ Run server locally for test
+      - name: Run server for local test
         run: |
-          node server.js &
+          nohup node server.js &
           sleep 5
           curl -f http://localhost:3000 || exit 1
 
-      # 6️⃣ Build الواجهة الأمامية إذا موجودة
+      # 6️⃣ Build frontend if exists
       - name: Build frontend
         run: |
-          if [ -f package.json ]; then
+          if [ -f package.json ] && grep -q "\"build\"" package.json; then
             npm run build || exit 1
+          else
+            echo "No frontend build script found, skipping."
           fi
 
-      # 7️⃣ نشر تلقائي على Vercel
+      # 7️⃣ Deploy to Vercel
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -56,8 +60,19 @@ jobs:
           working-directory: .
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+          FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+          AMAZON_US: ${{ secrets.AMAZON_US }}
+          AMAZON_CA: ${{ secrets.AMAZON_CA }}
+          AMAZON_EG: ${{ secrets.AMAZON_EG }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
-      # 8️⃣ اختبار النشر النهائي
+      # 8️⃣ Test deployed site
       - name: Test deployed endpoint
         run: |
-          curl -f https://koloonline-store.vercel.app || exit 1
+          DEPLOYED_URL=$(npx vercel inspect ${{ secrets.VERCEL_PROJECT_ID }} --token ${{ secrets.VERCEL_TOKEN }} --json | jq -r '.url')
+          echo "Testing deployed URL: $DEPLOYED_URL"
+          curl -f "https://$DEPLOYED_URL" || exit 1
