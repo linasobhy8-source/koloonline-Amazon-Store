@@ -1,0 +1,36 @@
+# .github/workflows/workflow.yml
+name: Deploy HTML + Env to Vercel
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Deploy to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-args: "--prod"
+          working-directory: .
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+          FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+          AMAZON_US: ${{ secrets.AMAZON_US }}
+          AMAZON_CA: ${{ secrets.AMAZON_CA }}
+          AMAZON_EG: ${{ secrets.AMAZON_EG }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
