@@ -1,0 +1,123 @@
+.header {
+    background-color: #232F3E;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    height: 50px;
+}
+
+.navbar {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+
+.navbar li {
+    display: inline;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+}
+
+.search-bar {
+    display: flex;
+    gap: 10px;
+}
+
+.search-input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.product-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: scale(1.05);
+}
+
+.slider {
+    position: relative;
+}
+
+.slider img {
+    width: 100%;
+    border-radius: 5px;
+}
+
+.accordion {
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    margin: 10px 0;
+}
+
+.accordion-title {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.customer-reviews {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.review {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.star-rating {
+    color: gold;
+}
+
+.footer {
+    background-color: #232F3E;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.button {
+    background-color: #FF9900;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+    .header, .footer {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .navbar {
+        flex-direction: column;
+    }
+}
