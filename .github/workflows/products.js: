@@ -1,0 +1,35 @@
+export default async function handler(req, res) {
+  // 1️⃣ تحديد الدولة من الاستعلام، افتراضيًا "us"
+  const country = req.query.country || "us";
+
+  // 2️⃣ تعريف العلامات التابعة لكل دولة
+  const affiliateTags = {
+    us: "koloonlinesto-20",
+    ca: "onlinesho0429-20",
+    pl: "koloonline-21",
+    eg: "onlinesh03f31-21"
+  };
+
+  // 3️⃣ قائمة المنتجات مع روابط تابعة مخصصة لكل دولة
+  const products = [
+    {
+      // اسم المنتج
+      title: "سماعة Anker مكبر الصوت",
+      // رابط الصورة
+      image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
+      // رقم ASIN الخاص بالمنتج على Amazon
+      asin: "B07ZNT7PRL",
+      // رابط الشراء مع العلامة التابعة حسب الدولة
+      affiliate_link: `https://www.amazon.${country === "eg" ? "eg" : country === "pl" ? "pl" : country === "ca" ? "ca" : "com"}/dp/B07ZNT7PRL?tag=${affiliateTags[country]}`
+    },
+    {
+      title: "سكين HOSHANHO",
+      image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
+      asin: "B0CKMF6GPZ",
+      affiliate_link: `https://www.amazon.${country === "eg" ? "eg" : country === "pl" ? "pl" : country === "ca" ? "ca" : "com"}/dp/B0CKMF6GPZ?tag=${affiliateTags[country]}`
+    }
+  ];
+
+  // 4️⃣ إعادة البيانات كـ JSON للعميل
+  res.status(200).json(products);
+}
