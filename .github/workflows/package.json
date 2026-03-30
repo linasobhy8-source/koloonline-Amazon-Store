@@ -1,22 +1,12 @@
 {
   "name": "koloonline-store",
   "version": "1.0.0",
-  "description": "Koloonline Amazon Store (Express Static)",
-  "main": "server.js",
+  "description": "Koloonline Amazon Store (Vercel Serverless)",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "build": "echo build complete"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
+  "dependencies": {},
   "engines": {
-    "node": ">=18.0.0"
-  },
-  "author": "Lina Sobhy",
-  "license": "MIT"
+    "node": ">=18"
+  }
 }
