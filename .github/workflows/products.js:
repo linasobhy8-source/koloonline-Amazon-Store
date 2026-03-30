@@ -1,73 +1,56 @@
-export default async function handler(req, res) {
-  try {
-    // 1️⃣ تحديد الدولة (مع fallback آمن)
-    const country = (req.query.country || "us").toLowerCase();
+export default function handler(req, res) {
 
-    // 2️⃣ العلامات التابعة لكل دولة
-    const affiliateTags = {
-      us: "koloonlinesto-20",
-      ca: "onlinesho0429-20",
-      pl: "koloonline-21",
-      eg: "onlinesh03f31-21"
-    };
+  const country = (req.query.country || "us").toLowerCase();
 
-    // 3️⃣ تحديد الدومين حسب الدولة
-    const getAmazonDomain = (c) => {
-      switch (c) {
-        case "eg": return "eg";
-        case "pl": return "pl";
-        case "ca": return "ca";
-        default: return "com";
-      }
-    };
+  const affiliateTags = {
+    us: "koloonlinesto-20",
+    ca: "onlinesho0429-20",
+    pl: "koloonline-21",
+    eg: "onlinesh03f31-21"
+  };
 
-    const domain = getAmazonDomain(country);
+  const domain =
+    country === "eg" ? "eg" :
+    country === "pl" ? "pl" :
+    country === "ca" ? "ca" :
+    "com";
 
-    // 4️⃣ fallback لو الدولة مش موجودة
-    const tag = affiliateTags[country] || affiliateTags["us"];
+  const products = [
+    {
+      id: 1,
+      title: "سماعة Anker مكبر الصوت",
+      image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
+      asin: "B07ZNT7PRL",
+      rating: 4.5,
+      priority: 5,
+      affiliateRate: 0.08
+    },
+    {
+      id: 2,
+      title: "سكين HOSHANHO",
+      image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
+      asin: "B0CKMF6GPZ",
+      rating: 4.2,
+      priority: 4,
+      affiliateRate: 0.07
+    }
+  ];
 
-    // 5️⃣ دالة بناء رابط الأفلييت
-    const buildLink = (asin) => {
-      return `https://www.amazon.${domain}/dp/${asin}?tag=${tag}`;
-    };
+  const mappedProducts = products.map(product => ({
+    ...product,
+    link: `https://www.amazon.${domain}/dp/${product.asin}?tag=${affiliateTags[country] || affiliateTags.us}`
+  }));
 
-    // 6️⃣ المنتجات
-    const products = [
-      {
-        id: 1,
-        title: "سماعة Anker مكبر الصوت",
-        image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
-        asin: "B07ZNT7PRL",
-        affiliate_link: buildLink("B07ZNT7PRL"),
-        price_range: "$20 - $40",
-        category: "audio"
-      },
-      {
-        id: 2,
-        title: "سكين HOSHANHO",
-        image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
-        asin: "B0CKMF6GPZ",
-        affiliate_link: buildLink("B0CKMF6GPZ"),
-        price_range: "$30 - $60",
-        category: "kitchen"
-      }
-    ];
+  const sortedProducts = mappedProducts.sort((a, b) => {
+    const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
+    const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
+    return scoreB - scoreA;
+  });
 
-    // 7️⃣ Response احترافي
-    res.status(200).json({
-      success: true,
-      country: country,
-      domain: domain,
-      total: products.length,
-      products: products
-    });
-
-  } catch (error) {
-    // Error handling احترافي
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message
-    });
-  }
+  res.status(200).json({
+    success: true,
+    country,
+    total: sortedProducts.length,
+    products: sortedProducts
+  });
 }
