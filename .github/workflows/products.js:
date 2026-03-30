@@ -1,35 +1,73 @@
 export default async function handler(req, res) {
-  // 1️⃣ تحديد الدولة من الاستعلام، افتراضيًا "us"
-  const country = req.query.country || "us";
+  try {
+    // 1️⃣ تحديد الدولة (مع fallback آمن)
+    const country = (req.query.country || "us").toLowerCase();
 
-  // 2️⃣ تعريف العلامات التابعة لكل دولة
-  const affiliateTags = {
-    us: "koloonlinesto-20",
-    ca: "onlinesho0429-20",
-    pl: "koloonline-21",
-    eg: "onlinesh03f31-21"
-  };
+    // 2️⃣ العلامات التابعة لكل دولة
+    const affiliateTags = {
+      us: "koloonlinesto-20",
+      ca: "onlinesho0429-20",
+      pl: "koloonline-21",
+      eg: "onlinesh03f31-21"
+    };
 
-  // 3️⃣ قائمة المنتجات مع روابط تابعة مخصصة لكل دولة
-  const products = [
-    {
-      // اسم المنتج
-      title: "سماعة Anker مكبر الصوت",
-      // رابط الصورة
-      image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
-      // رقم ASIN الخاص بالمنتج على Amazon
-      asin: "B07ZNT7PRL",
-      // رابط الشراء مع العلامة التابعة حسب الدولة
-      affiliate_link: `https://www.amazon.${country === "eg" ? "eg" : country === "pl" ? "pl" : country === "ca" ? "ca" : "com"}/dp/B07ZNT7PRL?tag=${affiliateTags[country]}`
-    },
-    {
-      title: "سكين HOSHANHO",
-      image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
-      asin: "B0CKMF6GPZ",
-      affiliate_link: `https://www.amazon.${country === "eg" ? "eg" : country === "pl" ? "pl" : country === "ca" ? "ca" : "com"}/dp/B0CKMF6GPZ?tag=${affiliateTags[country]}`
-    }
-  ];
+    // 3️⃣ تحديد الدومين حسب الدولة
+    const getAmazonDomain = (c) => {
+      switch (c) {
+        case "eg": return "eg";
+        case "pl": return "pl";
+        case "ca": return "ca";
+        default: return "com";
+      }
+    };
 
-  // 4️⃣ إعادة البيانات كـ JSON للعميل
-  res.status(200).json(products);
+    const domain = getAmazonDomain(country);
+
+    // 4️⃣ fallback لو الدولة مش موجودة
+    const tag = affiliateTags[country] || affiliateTags["us"];
+
+    // 5️⃣ دالة بناء رابط الأفلييت
+    const buildLink = (asin) => {
+      return `https://www.amazon.${domain}/dp/${asin}?tag=${tag}`;
+    };
+
+    // 6️⃣ المنتجات
+    const products = [
+      {
+        id: 1,
+        title: "سماعة Anker مكبر الصوت",
+        image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
+        asin: "B07ZNT7PRL",
+        affiliate_link: buildLink("B07ZNT7PRL"),
+        price_range: "$20 - $40",
+        category: "audio"
+      },
+      {
+        id: 2,
+        title: "سكين HOSHANHO",
+        image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
+        asin: "B0CKMF6GPZ",
+        affiliate_link: buildLink("B0CKMF6GPZ"),
+        price_range: "$30 - $60",
+        category: "kitchen"
+      }
+    ];
+
+    // 7️⃣ Response احترافي
+    res.status(200).json({
+      success: true,
+      country: country,
+      domain: domain,
+      total: products.length,
+      products: products
+    });
+
+  } catch (error) {
+    // Error handling احترافي
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
 }
