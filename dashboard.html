@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js library for charts -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        canvas { max-width: 600px; display: block; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Real-Time Analytics Dashboard</h1>
+    <h2>Traffic Overview</h2>
+    <canvas id="trafficChart"></canvas>
+
+    <h2>Country Distribution</h2>
+    <canvas id="countryChart"></canvas>
+
+    <h2>Product Performance</h2>
+    <canvas id="productPerformanceChart"></canvas>
+
+    <h2>Conversion Funnel</h2>
+    <canvas id="conversionFunnelChart"></canvas>
+
+    <h2>Top Products</h2>
+    <table id="topProductsTable">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Sales</th>
+                <th>Revenue</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function fetchData() {
+            // Fetch data from MongoDB API
+            const response = await fetch('YOUR_MONGODB_API_URL'); // Replace with your MongoDB API URL
+            const data = await response.json();
+            return data;
+        }
+        
+        function renderCharts(data) {
+            // Prepare and render charts with fetched data
+            const ctxTraffic = document.getElementById('trafficChart').getContext('2d');
+            const trafficChart = new Chart(ctxTraffic, { /* Traffic Chart configuration with data */ });
+            
+            const ctxCountry = document.getElementById('countryChart').getContext('2d');
+            const countryChart = new Chart(ctxCountry, { /* Country Distribution Chart configuration with data */ });
+            
+            const ctxProductPerformance = document.getElementById('productPerformanceChart').getContext('2d');
+            const productPerformanceChart = new Chart(ctxProductPerformance, { /* Product Performance Chart configuration with data */ });
+            
+            const ctxConversionFunnel = document.getElementById('conversionFunnelChart').getContext('2d');
+            const conversionFunnelChart = new Chart(ctxConversionFunnel, { /* Conversion Funnel Chart configuration with data */ });
+
+            const tableBody = document.querySelector('#topProductsTable tbody');
+            data.topProducts.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${product.name}</td><td>${product.sales}</td><td>${product.revenue}</td>`;
+                tableBody.appendChild(row);
+            });
+        }
+
+        fetchData().then(data => renderCharts(data)).catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>
