@@ -1,42 +1,63 @@
-// pages/api/products.js
-import { MongoClient } from "mongodb";
+export default function handler(req, res) {
 
-const client = new MongoClient(process.env.MONGODB_URI);
+  // تحديد الدولة (افتراضي us)
+  const country = (req.query.country || "us").toLowerCase();
 
-export default async function handler(req, res) {
-  try {
-    await client.connect();
-    const db = client.db("koloonline"); // اسم قاعدة البيانات
-    const collection = db.collection("products"); // اسم مجموعة المنتجات
+  // Affiliate tags لكل دولة
+  const affiliateTags = {
+    us: "koloonlinesto-20",
+    ca: "onlinesho0429-20",
+    pl: "koloonline-21",
+    eg: "onlinesh03f31-21"
+  };
 
-    // اختياري: اختيار الدولة لتحديد رابط الأفلييت
-    const country = req.query.country || "EG";
+  // تحديد الدومين الصحيح لأمازون
+  const domain =
+    country === "eg" ? "eg" :
+    country === "pl" ? "pl" :
+    country === "ca" ? "ca" :
+    "com";
 
-    // جلب كل المنتجات من MongoDB
-    const products = await collection.find({}).toArray();
+  // المنتجات (مؤقتة - بدل MongoDB)
+  const products = [
+    {
+      id: 1,
+      title: "سماعة Anker مكبر الصوت",
+      image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
+      asin: "B07ZNT7PRL",
+      rating: 4.5,
+      priority: 5,
+      affiliateRate: 0.08
+    },
+    {
+      id: 2,
+      title: "سكين HOSHANHO",
+      image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
+      asin: "B0CKMF6GPZ",
+      rating: 4.2,
+      priority: 4,
+      affiliateRate: 0.07
+    }
+  ];
 
-    // تعديل رابط الأفلييت حسب الدولة
-    const mappedProducts = products.map(product => {
-      product.link = `https://www.amazon.${country.toLowerCase()}/dp/${product.asin}?tag=${product.affiliate[country] || product.affiliate.EG}`;
-      return product;
-    });
+  // إضافة رابط الأفلييت
+  const mappedProducts = products.map(product => ({
+    ...product,
+    link: `https://www.amazon.${domain}/dp/${product.asin}?tag=${affiliateTags[country] || affiliateTags.us}`
+  }));
 
-    // تصنيف حسب ربحية العمولة + التقييم + الأولوية
-    const sorted = mappedProducts.sort((a, b) => {
-      const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
-      const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
-      return scoreB - scoreA;
-    });
+  // ترتيب المنتجات حسب الربحية + التقييم + الأولوية
+  const sortedProducts = mappedProducts.sort((a, b) => {
+    const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
+    const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
+    return scoreB - scoreA;
+  });
 
-    res.status(200).json({
-      success: true,
-      total: sorted.length,
-      products: sorted
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server Error", error: err.message });
-  } finally {
-    await client.close();
-  }
-        }
+  // الرد النهائي
+  res.status(200).json({
+    success: true,
+    country: country,
+    total: sortedProducts.length,
+    products: sortedProducts
+  });
+}
