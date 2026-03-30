@@ -1,0 +1,1 @@
+{\n  "rewrites": [\n    {\n      "source": "/api/(.*)",\n      "destination": "/api/$1"\n    }\n  ],\n  "routes": [\n    {\n      "src": "/static/(.*)",\n      "dest": "/static/$1"\n    }\n  ],\n  "error": {\n    "404": "/404.html",\n    "500": "/500.html"\n  }\n}
