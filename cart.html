@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .cart {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .item-name {
+            flex: 2;
+        }
+        .item-qty {
+            flex: 1;
+            text-align: center;
+        }
+        .item-price {
+            flex: 1;
+            text-align: center;
+        }
+        .checkout {
+            margin-top: 20px;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="cart">
+        <h2>Shopping Cart</h2>
+        <div id="cart-items"></div>
+        <button class="checkout" onclick="checkout()">Checkout</button>
+    </div>
+
+    <script>
+        function loadCart() {
+            const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartContainer = document.getElementById('cart-items');
+            cartContainer.innerHTML = '';
+
+            cartItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'cart-item';
+                itemDiv.innerHTML = `
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-qty">
+                        <input type="number" value="${item.quantity}" min="1" onchange="updateQuantity('${item.id}', this.value)">
+                    </div>
+                    <div class="item-price">$${item.price.toFixed(2)}</div>
+                    <button onclick="removeItem('${item.id}')">Remove</button>
+                `;
+                cartContainer.appendChild(itemDiv);
+            });
+        }
+
+        function updateQuantity(id, quantity) {
+            let cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            cartItems = cartItems.map(item => {
+                if (item.id === id) {
+                    return { ...item, quantity: Number(quantity) };
+                }
+                return item;
+            });
+            localStorage.setItem('cart', JSON.stringify(cartItems));
+            loadCart();
+        }
+
+        function removeItem(id) {
+            let cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            cartItems = cartItems.filter(item => item.id !== id);
+            localStorage.setItem('cart', JSON.stringify(cartItems));
+            loadCart();
+        }
+
+        function checkout() {
+            alert('Proceeding to checkout...');
+        }
+
+        // Load cart on initial page load
+        loadCart();
+    </script>
+</body>
+</html>
