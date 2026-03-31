@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>📊 Koloonline Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="assets/favicon.ico">
+
+<!-- ================= Vercel Web Analytics ================= -->
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5}
+header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px}
+.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;padding:20px}
+.card{background:#fff;padding:20px;border-radius:10px;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.big{font-size:26px;font-weight:bold}
+.table{margin:20px;background:#fff;border-radius:10px;overflow:hidden}
+.table table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;border-bottom:1px solid #eee;text-align:center}
+.table th{background:#232f3e;color:#fff}
+.country{display:flex;flex-wrap:wrap;gap:10px;padding:20px}
+.badge{background:#ff9900;padding:8px 12px;border-radius:20px;font-weight:bold}
+.chart-container{background:#fff;padding:20px;margin:20px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+canvas{width:100%!important;height:300px!important}
+</style>
+</head>
+<body>
+
+<header>📊 Koloonline Dashboard</header>
+
+<div class="navbar">
+<button onclick="location.href='index.html'">🏠 Home</button>
+<button onclick="loadData()">🔄 Refresh</button>
+</div>
+
+<div class="grid">
+<div class="card"><div>Clicks</div><div id="clicks" class="big">0</div></div>
+<div class="card"><div>Add To Cart</div><div id="cart" class="big">0</div></div>
+<div class="card"><div>WhatsApp</div><div id="whatsapp" class="big">0</div></div>
+<div class="card"><div>Orders</div><div id="buy" class="big">0</div></div>
+<div class="card"><div>Conversion</div><div id="conversion" class="big">0%</div></div>
+</div>
+
+<div class="table">
+<table>
+<thead>
+<tr><th>ASIN</th><th>Clicks</th><th>Orders</th><th>WhatsApp</th></tr>
+</thead>
+<tbody id="productsTable"></tbody>
+</table>
+</div>
+
+<div class="country" id="countries"></div>
+
+<div class="chart-container">
+<h3>🌍 Country Distribution</h3>
+<canvas id="countryChart"></canvas>
+</div>
+
+<div class="chart-container">
+<h3>📈 Conversion Trends (Last 7 Days)</h3>
+<canvas id="conversionChart"></canvas>
+</div>
+
+<script>
+async function fetchDashboardData(){
+  const res = await fetch("/analytics");
+  const json = await res.json();
+  if(!json.success) return {totals:{click:0,cart:0,whatsapp:0,buy:0,conversion:0},products:[],countries:{},trends:[]};
+
+  // Prepare top products array
+  const products = json.topProducts.map(p=>({
+    asin:p.asin, clicks:p.clicks, orders:p.cart, whatsapp:p.whatsapp
+  }));
+
+  // Prepare countries
+  const countries = json.countries;
+
+  // Dummy trends for last 7 days
+  const trends = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const date = d.toISOString().split("T")[0];
+    trends.push({date, conversion: (Math.random()*10).toFixed(2)});
+  }
+
+  return {totals:json.totals,products,countries,trends};
+}
+
+async function loadData(){
+  const data = await fetchDashboardData();
+
+  document.getElementById("clicks").innerText = data.totals.click;
+  document.getElementById("cart").innerText = data.totals.cart;
+  document.getElementById("whatsapp").innerText = data.totals.whatsapp;
+  document.getElementById("buy").innerText = data.totals.buy;
+  document.getElementById("conversion").innerText = data.totals.conversion+"%";
+
+  const tbody = document.getElementById("productsTable");
+  tbody.innerHTML="";
+  data.products.forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML=`<td>${p.asin}</td><td>${p.clicks}</td><td>${p.orders}</td><td>${p.whatsapp}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const countriesDiv=document.getElementById("countries");
+  countriesDiv.innerHTML="";
+  Object.keys(data.countries).forEach(c=>{
+    const badge=document.createElement("span");
+    badge.className="badge";
+    badge.innerText=`${c}: ${data.countries[c]}`;
+    countriesDiv.appendChild(badge);
+  });
+
+  const ctxCountry=document.getElementById("countryChart").getContext("2d");
+  if(window.countryChart) window.countryChart.destroy();
+  window.countryChart=new Chart(ctxCountry,{type:'pie',data:{labels:Object.keys(data.countries),datasets:[{data:Object.values(data.countries),backgroundColor:["#ff9900","#232f3e","#0073e6","#28a745"]}]}});
+
+  const ctxConv=document.getElementById("conversionChart").getContext("2d");
+  if(window.conversionChart) window.conversionChart.destroy();
+  window.conversionChart=new Chart(ctxConv,{type:'line',data:{labels:data.trends.map(t=>t.date),datasets:[{label:"Conversion %",data:data.trends.map(t=>t.conversion),borderColor:"#ff9900",backgroundColor:"rgba(255,153,0,0.2)",fill:true,tension:0.3}]},options:{scales:{y:{beginAtZero:true}}}});
+}
+
+loadData();
+</script>
+
+</body>
+</html>
