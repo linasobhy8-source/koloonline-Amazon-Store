@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ سحب الكود من GitHub
+      # 1️⃣ سحب الكود
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ إعداد Node.js حديث (>=20)
+      # 2️⃣ إعداد Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -25,7 +25,7 @@ jobs:
 
       # 3️⃣ تثبيت الاعتمادات
       - name: Install dependencies
-        run: npm install
+        run: npm ci || npm install
 
       # 4️⃣ نشر المشروع على Vercel
       - name: Deploy to Vercel
@@ -35,7 +35,7 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           working-directory: ./
-          vercel-args: "--prod"   # نشر على Production
+          vercel-args: "--prod --force"
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
