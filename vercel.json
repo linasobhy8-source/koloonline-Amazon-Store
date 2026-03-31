@@ -1,1 +1,13 @@
-{\n  "rewrites": [\n    {\n      "source": "/api/(.*)",\n      "destination": "/api/$1"\n    }\n  ],\n  "routes": [\n    {\n      "src": "/static/(.*)",\n      "dest": "/static/$1"\n    }\n  ],\n  "error": {\n    "404": "/404.html",\n    "500": "/500.html"\n  }\n}
+{
+  "version": 2,
+  "builds": [
+    { "src": "app.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/cart", "dest": "/cart.html" },
+    { "src": "/dashboard", "dest": "/dashboard.html" },
+    { "src": "/api/(.*)", "dest": "/app.js" }
+  ]
+}
