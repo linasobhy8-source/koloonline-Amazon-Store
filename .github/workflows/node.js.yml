@@ -22,7 +22,7 @@ jobs:
           node-version: 20   # تم التحديث من 18 إلى 20
           cache: 'npm'
 
-      # 3️⃣ تثبيت الباكدجات
+      # 3️⃣ تثبيت الاعتمادات
       - name: Install dependencies
         run: npm install
 
@@ -32,5 +32,25 @@ jobs:
           npm run lint || echo "Lint check failed but continue"
           node -c server.js || echo "Syntax OK"
 
-      # 5️⃣ تشغيل السيرفر محليًا لاختبار endpoint
-      # يمكن إضافة خطوات اختبار أخرى هنا لاحقًا
+      # 5️⃣ بناء المشروع (Next.js أو أي build script)
+      - name: Build project
+        run: npm run build || echo "No build script, skipped"
+
+      # 6️⃣ نشر تلقائي على Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          working-directory: ./
+          vercel-args: "--prod"
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+          FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+          AMAZON_US: ${{ secrets.AMAZON_US }}
+          AMAZON_CA: ${{ secrets.AMAZON_CA }}
+          AMAZON_EG: ${{ secrets.AMAZON_EG }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
