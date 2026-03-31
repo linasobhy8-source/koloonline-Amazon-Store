@@ -33,7 +33,7 @@ header img { height:70px; }
 .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; padding:20px; }
 .card { background:white; border-radius:10px; padding:15px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.2s, box-shadow 0.2s; }
 .card:hover { transform: translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
-.card img { width:100%; height:200px; object-fit:contain; }
+.card img { width:100%; height:200px; object-fit:contain; border-radius:6px; }
 .price { color:#b12704; font-weight:bold; margin:8px 0; }
 .buy-btn { width:100%; padding:10px; margin-top:8px; border:none; cursor:pointer; border-radius:6px; font-weight:bold; transition:transform 0.2s; }
 .buy-btn:hover { transform: scale(1.03); }
@@ -75,22 +75,9 @@ const affiliateTags = {
   PL: "koloonline-21"
 };
 
-// ================= TRACKING (إضافة فقط) =================
-function trackEvent(asin, type){
-  fetch('/api/analytics', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      asin: asin,
-      type: type,
-      country: getCountry()
-    })
-  });
-}
-
 // ================= HELPER FUNCTIONS =================
 function getCountry() {
-  let lang = navigator.language || "en-US";
+  const lang = navigator.language || "en-US";
   if(lang.includes("ar")) return "EG";
   if(lang.includes("pl")) return "PL";
   if(lang.includes("en-CA")) return "CA";
@@ -98,59 +85,73 @@ function getCountry() {
 }
 
 function buildAffiliateLink(asin) {
-  const c = getCountry();
+  const country = getCountry();
   let domain = "amazon.com";
-  if(c==="EG") domain="amazon.eg";
-  if(c==="CA") domain="amazon.ca";
-  if(c==="PL") domain="amazon.pl";
-  const tag = affiliateTags[c] || affiliateTags["US"];
+  if(country === "EG") domain = "amazon.eg";
+  if(country === "CA") domain = "amazon.ca";
+  if(country === "PL") domain = "amazon.pl";
+  const tag = affiliateTags[country] || affiliateTags["US"];
   return `https://${domain}/dp/${asin}?tag=${tag}`;
 }
 
+// ================= PRODUCTS =================
+let allProducts = [
+  {
+    asin:"B09V7Z4TJG",
+    title:"Smart Watch Pro",
+    price:"$49.99",
+    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+  },
+  {
+    asin:"B09B8Q3YHJ",
+    title:"Echo Dot 5",
+    price:"$39.99",
+    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+  },
+  {
+    asin:"B08N5WRWNW",
+    title:"Fire TV Stick 4K",
+    price:"$59.99",
+    image:"https://m.media-amazon.com/images/I/51CgKGfMelL._AC_SL1000_.jpg"
+  }
+];
+
 // ================= CART =================
-let allProducts = [];
 function updateCartCount() {
   let cart = JSON.parse(localStorage.getItem("cart")||"[]");
   document.getElementById("cart-count").innerText = cart.length;
 }
+
 function addToCart(product) {
-  trackEvent(product.asin, "cart"); // إضافة
   let cart = JSON.parse(localStorage.getItem("cart")||"[]");
   cart.push(product);
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
   alert("Added to cart 🛒");
 }
+
 function viewCart() {
   alert("Cart has "+(JSON.parse(localStorage.getItem("cart")||"[]").length)+" items.");
 }
 
-// ================= FETCH PRODUCTS =================
-async function fetchProducts(query="") {
-  try {
-    const res = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    allProducts = data;
-    render(data);
-    updateCartCount();
-  } catch(err) { console.error("Error fetching products:", err); }
-}
-
-// ================= RENDER PRODUCTS =================
+// ================= RENDER =================
 function render(products) {
   const grid = document.getElementById("productGrid");
   grid.innerHTML = "";
-  products.forEach(p=>{
+  products.forEach(p => {
     grid.innerHTML += `
       <div class="card">
-        <img src="${p.img || p.image}" alt="${p.title}">
+        <img src="${p.image}" alt="${p.title}">
         <h3>${p.title}</h3>
         <p class="price">${p.price}</p>
-        <button class="buy-btn amazon" onclick="trackEvent('${p.asin}','click'); window.open('${buildAffiliateLink(p.asin)}','_blank')">
+        <button class="buy-btn amazon" onclick="window.open('${buildAffiliateLink(p.asin)}','_blank')">
           🛒 Buy from Amazon
         </button>
         <button class="buy-btn cod" onclick='addToCart(${JSON.stringify(p)})'>
           📦 Add to Cart
+        </button>
+        <button class="buy-btn whatsapp" style="background:#25D366; color:white; margin-top:5px;" onclick="window.open('https://wa.me/201XXXXXXXXX?text=I want to order: ${encodeURIComponent(p.title)}')">
+          📲 Order via WhatsApp
         </button>
       </div>
     `;
@@ -176,7 +177,7 @@ input.addEventListener("input", ()=>{
 });
 
 // ================= INIT =================
-fetchProducts();
+render(allProducts);
 updateCartCount();
 </script>
 
