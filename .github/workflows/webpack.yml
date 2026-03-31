@@ -1,4 +1,3 @@
-# linasobhy8-source/express-js-on-vercel/webpack.yml
 name: Build & Deploy ExpressJS with Webpack
 
 on:
@@ -12,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 24.x]  # اختبارات على عدة نسخ Node.js
+        node-version: [20.x, 24.x]  # استبعاد Node.js 18.x لأنه يسبب فشل Next.js
     steps:
       # 1. استيراد الكود
       - name: Checkout repository
