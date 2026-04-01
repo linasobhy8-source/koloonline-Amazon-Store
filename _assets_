@@ -1,0 +1,40 @@
+  Koloonline Store
+</header>
+
+<div class="navbar">
+  <button onclick="location.href='index.html'">🏠 Home</button>
+  <button onclick="location.href='blog.html'">📰 Blog</button>
+  <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
+</div>
+
+<div class="container">
+  <div class="card" onclick="trackProduct('B09V7Z4TJG')">
+    <h2>🔥 Smart Watch Pro</h2>
+    <p>Top smart watches with fitness tracking, health features and battery life.</p>
+    <button onclick="openProduct(event,'product.html','B09V7Z4TJG')">📖 View Product</button>
+  </div>
+  <div class="card" onclick="trackProduct('B08G9P7N2X')">
+    <h2>📱 Wireless Earbuds</h2>
+    <p>High quality sound, low price, best Amazon picks.</p>
+    <button onclick="openProduct(event,'product.html','B08G9P7N2X')">📖 View Product</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Koloonline Store by Lina Sobhy</p>
+</footer>
+
+<script>
+function trackEvent(type, category){
+  fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({event:type,category:category,page:"index",timestamp:new Date().toISOString(),lang:navigator.language})
+  }).catch(e=>console.log("tracking error"));
+}
+function trackProduct(asin){trackEvent("product_click",asin);}
+function openProduct(e,url,asin){e.stopPropagation();trackEvent("product_open",asin);window.location.href=url;}
+</script>
+
+</body>
+</html>
