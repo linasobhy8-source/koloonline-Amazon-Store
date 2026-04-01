@@ -1,0 +1,12 @@
+{
+  "name": "koloonline-store",
+  "version": "1.0.0",
+  "description": "Koloonline Amazon Store (Vercel Serverless)",
+  "scripts": {
+    "build": "echo build complete"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
+}
