@@ -22,49 +22,28 @@ gtag('config', 'G-YS8L61XLPR');
 </script>
 
 <!-- ================= CSS ================= -->
-<style>
-body { font-family: Arial, sans-serif; margin:0; background:#f5f5f5; }
-header { background:#232f3e; padding:15px; text-align:center; }
-header img { height:70px; }
-.navbar { display:flex; gap:10px; padding:10px; background:#37475a; flex-wrap:wrap; justify-content:center; }
-.navbar input { flex:1; padding:10px; border-radius:6px; border:none; min-width:200px; }
-.navbar button { background:#ff9900; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; transition:0.2s; }
-.navbar button:hover { background:#e68a00; }
-.products { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; padding:20px; }
-.card { background:white; border-radius:10px; padding:15px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.2s, box-shadow 0.2s; }
-.card:hover { transform: translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
-.card img { width:100%; height:200px; object-fit:contain; }
-.price { color:#b12704; font-weight:bold; margin:8px 0; }
-.buy-btn { width:100%; padding:10px; margin-top:8px; border:none; cursor:pointer; border-radius:6px; font-weight:bold; transition:transform 0.2s; }
-.buy-btn:hover { transform: scale(1.03); }
-.amazon { background:#ff9900; }
-.cod { background:#25d366; color:white; }
-#suggestBox { position:absolute; background:white; width:60%; display:none; box-shadow:0 5px 10px rgba(0,0,0,0.2); border-radius:6px; z-index:1000; max-height:250px; overflow-y:auto; }
-#suggestBox div { padding:10px; cursor:pointer; border-bottom:1px solid #eee; }
-#suggestBox div:hover { background:#f5f5f5; }
-@media(max-width:600px){ .navbar input { flex-basis:100%; margin-bottom:8px; } #suggestBox { width:90%; } }
-</style>
+<link rel="stylesheet" href="_assets_/css/style.css">
 
 <!-- ================= Vercel Web Analytics ================= -->
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
 <body>
 
-<header>
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo">
+<header class="header">
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" class="logo">
 </header>
 
-<div class="navbar">
-  <input type="text" id="searchInput" placeholder="Search products...">
-  <button onclick="fetchProducts(searchInput.value)">Search</button>
-  <button onclick="viewCart()">
+<nav class="navbar">
+  <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
+  <button class="button" onclick="fetchProducts(searchInput.value)">Search</button>
+  <button class="button" onclick="viewCart()">
     <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Cart" style="height:25px; vertical-align:middle;">
   </button>
   <span id="cart-count">0</span>
-</div>
+</nav>
 
 <div id="suggestBox"></div>
-<div class="products" id="productGrid"></div>
+<div class="product-grid" id="productGrid"></div>
 
 <script>
 // ================= CONFIG =================
@@ -75,7 +54,7 @@ const affiliateTags = {
   PL: "koloonline-21"
 };
 
-// ================= TRACKING (إضافة فقط) =================
+// ================= TRACKING =================
 function trackEvent(asin, type){
   fetch('/api/analytics', {
     method: 'POST',
@@ -114,7 +93,7 @@ function updateCartCount() {
   document.getElementById("cart-count").innerText = cart.length;
 }
 function addToCart(product) {
-  trackEvent(product.asin, "cart"); // إضافة
+  trackEvent(product.asin, "cart");
   let cart = JSON.parse(localStorage.getItem("cart")||"[]");
   cart.push(product);
   localStorage.setItem("cart", JSON.stringify(cart));
@@ -142,14 +121,14 @@ function render(products) {
   grid.innerHTML = "";
   products.forEach(p=>{
     grid.innerHTML += `
-      <div class="card">
+      <div class="product-card card">
         <img src="${p.img || p.image}" alt="${p.title}">
         <h3>${p.title}</h3>
         <p class="price">${p.price}</p>
-        <button class="buy-btn amazon" onclick="trackEvent('${p.asin}','click'); window.open('${buildAffiliateLink(p.asin)}','_blank')">
+        <button class="buy-btn button amazon" onclick="trackEvent('${p.asin}','click'); window.open('${buildAffiliateLink(p.asin)}','_blank')">
           🛒 Buy from Amazon
         </button>
-        <button class="buy-btn cod" onclick='addToCart(${JSON.stringify(p)})'>
+        <button class="buy-btn button cod" onclick='addToCart(${JSON.stringify(p)})'>
           📦 Add to Cart
         </button>
       </div>
