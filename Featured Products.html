@@ -1,8 +1,7 @@
 <section class="seo">
   <h2>Featured Products</h2>
-
   <p>
-    Discover our handpicked collection of high-performance products designed for everyday use, fitness, and smart lifestyle upgrades.  
+    Discover our handpicked collection of high-performance products for everyday use, fitness, and smart lifestyle upgrades.  
     Each item is selected based on quality, durability, and user experience.
   </p>
 
@@ -26,41 +25,77 @@
     From smart gadgets to lifestyle essentials, everything is curated for performance.
   </p>
 
-  <!-- ======= Grid Products Section (كل حاجه) ======= -->
-  <div class="product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;">
-    <!-- Example product card -->
-    <div class="product-card" style="border:1px solid #ddd;padding:15px;border-radius:12px;box-shadow:0 4px 8px rgba(0,0,0,0.05);transition:transform 0.2s;">
-      <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Product Image" style="width:100%;border-radius:12px;">
-      <h4>Smart Watch Pro</h4>
-      <p>High-performance smartwatch for fitness and daily use.</p>
+  <!-- ======= Products Grid ======= -->
+  <div class="product-grid" id="featuredProductsGrid"></div>
 
-      <!-- Amazon Rating -->
-      <div class="rating">
-        ⭐⭐⭐⭐☆ (4.5) | 324 Reviews
-      </div>
-
-      <!-- Video Preview if available -->
-      <div class="product-video" style="margin-top:10px;">
-        <iframe width="100%" height="200" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Product Video" frameborder="0" allowfullscreen></iframe>
-      </div>
-
-      <!-- Buy Buttons with Affiliate Links لكل بلد -->
-      <div class="buy-buttons" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;">
-        <a href="https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonlinesto-20" target="_blank" style="background-color:#FF9900;color:white;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:bold;">Buy in USA</a>
-        <a href="https://www.amazon.ca/dp/B09V7Z4TJG?tag=linasobhy20d8-20" target="_blank" style="background-color:#FF9900;color:white;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:bold;">Buy in Canada</a>
-        <a href="https://www.amazon.pl/dp/B09V7Z4TJG?tag=koloonline-21" target="_blank" style="background-color:#FF9900;color:white;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:bold;">Buy in Poland</a>
-        <a href="https://www.amazon.eg/dp/B09V7Z4TJG?tag=onlinesh03f31-21" target="_blank" style="background-color:#FF9900;color:white;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:bold;">Buy in Egypt</a>
-      </div>
-    </div>
-
-    <!-- Add more product cards here dynamically via Amazon API or JSON feed -->
-  </div>
-
-  <p style="margin-top:20px; font-size:14px; color:#555;">
-    All products are updated automatically daily from Amazon with the latest deals, reviews, and videos.  
+  <p class="note">
+    All products are updated daily from Amazon with the latest deals, reviews, and videos.  
     Tracking GTM: GTM-KNQM8KBN | GA4: G-YS8L61XLPR
   </p>
 </section>
 
 <style>
-  .product-card:hover { transform: translateY(-5px); box-shadow:0 6px
+.seo h2 { font-size:28px; margin-bottom:15px; color:#232F3E; text-align:center; }
+.seo h3 { color:#232F3E; margin-top:20px; }
+.seo p, .seo ul { max-width:900px; margin:auto; color:#555; line-height:1.6; }
+.seo ul { list-style:none; padding:0; }
+.seo ul li { padding:5px 0; position:relative; padding-left:25px; }
+.seo ul li::before { content:"✔"; position:absolute; left:0; color:#FF9900; }
+.product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; margin:20px 0; }
+.product-card { background:#fff; border-radius:12px; padding:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.2s, box-shadow 0.2s; display:flex; flex-direction:column; }
+.product-card:hover { transform: translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
+.product-card img { width:100%; height:200px; object-fit:contain; border-radius:10px; margin-bottom:10px; }
+.product-card h4 { font-size:18px; margin:8px 0; color:#232F3E; }
+.product-card p { font-size:14px; color:#555; flex:1; }
+.rating { margin:8px 0; color:#FF9900; font-weight:bold; }
+.buy-buttons { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.buy-btn { text-align:center; padding:10px; border-radius:8px; font-weight:bold; color:#fff; text-decoration:none; cursor:pointer; transition:transform 0.2s, background 0.2s; }
+.buy-btn.amazon { background-color:#FF9900; }
+.buy-btn.amazon:hover { background-color:#e68a00; transform:scale(1.05); }
+.buy-btn.cod { background-color:#25d366; }
+.buy-btn.cod:hover { background-color:#1da851; transform:scale(1.05); }
+.product-video iframe { border-radius:8px; margin-top:10px; }
+@media(max-width:768px){ .product-grid { grid-template-columns:1fr 1fr; } }
+@media(max-width:480px){ .product-grid { grid-template-columns:1fr; } }
+</style>
+
+<script>
+// ================= CONFIG =================
+const affiliateTags = { EG:"onlinesh03f31-21", CA:"linasobhy20d8-20", US:"koloonlinesto-20", PL:"koloonline-21" };
+function getCountry(){ let lang=navigator.language||"en-US"; if(lang.includes("ar")) return "EG"; if(lang.includes("pl")) return "PL"; if(lang.includes("en-CA")) return "CA"; return "US"; }
+function buildAffiliateLink(asin,country){ let domain="amazon.com"; if(country==="EG") domain="amazon.eg"; if(country==="CA") domain="amazon.ca"; if(country==="PL") domain="amazon.pl"; const tag=affiliateTags[country]||affiliateTags["US"]; return `https://${domain}/dp/${asin}?tag=${tag}`; }
+function trackEvent(asin,type){ fetch('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({asin,type,country:getCountry()})}); }
+function addToCart(product){ trackEvent(product.asin,"cart"); let cart=JSON.parse(localStorage.getItem("cart")||"[]"); cart.push(product); localStorage.setItem("cart",JSON.stringify(cart)); alert("Added to cart 🛒"); }
+
+// ================= DYNAMIC RENDER =================
+function renderFeaturedProducts(products){
+  const grid=document.getElementById("featuredProductsGrid");
+  grid.innerHTML="";
+  products.forEach(p=>{
+    const card=document.createElement("div");
+    card.className="product-card";
+    card.innerHTML=`
+      <img src="${p.img||p.image}" alt="${p.title}">
+      <h4>${p.title}</h4>
+      <p>${p.description||p.title}</p>
+      <div class="rating">${p.rating||"⭐⭐⭐⭐☆"} (${p.reviews||0} Reviews)</div>
+      ${p.video?`<div class="product-video"><iframe width="100%" height="200" src="${p.video}" title="${p.title} Video" frameborder="0" allowfullscreen></iframe></div>`:""}
+      <div class="buy-buttons">
+        <a href="${buildAffiliateLink(p.asin,'US')}" target="_blank" class="buy-btn amazon" onclick="trackEvent('${p.asin}','click')">Buy in USA</a>
+        <a href="${buildAffiliateLink(p.asin,'CA')}" target="_blank" class="buy-btn amazon" onclick="trackEvent('${p.asin}','click')">Buy in Canada</a>
+        <a href="${buildAffiliateLink(p.asin,'PL')}" target="_blank" class="buy-btn amazon" onclick="trackEvent('${p.asin}','click')">Buy in Poland</a>
+        <a href="${buildAffiliateLink(p.asin,'EG')}" target="_blank" class="buy-btn amazon" onclick="trackEvent('${p.asin}','click')">Buy in Egypt</a>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ================= INIT SAMPLE =================
+const sampleProducts=[
+  {asin:"B09V7Z4TJG",title:"Smart Watch Pro",description:"High-performance smartwatch for fitness and daily use.",rating:"⭐⭐⭐⭐☆",reviews:324,img:"https://i.postimg.cc/9fVfC1Y4/1000276862.png",video:"https://www.youtube.com/embed/dQw4w9WgXcQ"},
+  {asin:"B08L5TNJHG",title:"Wireless Earbuds X",description:"Noise-cancelling wireless earbuds with high fidelity sound.",rating:"⭐⭐⭐⭐☆",reviews:289,img:"https://i.postimg.cc/9fVfC1Y4/1000276862.png"}
+];
+
+renderFeaturedProducts(sampleProducts);
+</script>

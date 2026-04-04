@@ -1,3 +1,8 @@
+function trackEvent(type, category){
+  fetch("/api/track", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
 <!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -54,7 +59,11 @@
         category: category,
         page: "index",
         timestamp: new Date().toISOString(),
-        lang: navigator.language
+        lang: navigator.language https/www.koloonline.online
+    })
+  }).catch(e => console.log("tracking error"));
+}
+
       })
     }).catch(e => console.log("tracking error"));
   }
@@ -69,6 +78,14 @@
     window.location.href = url;
   }
 </script>
+ mainhttps/github.com/linasobhy8-source/koloonline-Amazon-Store
 
-</body>
-</html>
+function trackProduct(asin){
+    trackEvent("product_click", asin);
+}
+
+function openProduct(e, url, asin){
+    e.stopPropagation();
+    trackEvent("product_open", asin);
+    window.location.href = url;
+}
