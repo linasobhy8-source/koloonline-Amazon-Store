@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koloonline Amazon Store | Smart Affiliate Shopping Deals</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="assets/1000276862.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/1000276862.png">
+<link rel="apple-touch-icon" href="assets/1000276862.png">
+
+<!-- SEO -->
+<meta name="description" content="Koloonline Amazon Store - اكتشف أفضل منتجات Amazon مع عروض حصرية، أسعار مميزة، وتجربة تسوق ذكية وسريعة مع نظام أفلييت احترافي.">
+<meta name="keywords" content="Amazon deals, affiliate store, smart shopping, online shopping Egypt, best products, Koloonline store">
+<meta name="author" content="Koloonline - Lina Sobhy">
+
+<!-- Open Graph -->
+<meta property="og:title" content="Koloonline Amazon Store">
+<meta property="og:description" content="أفضل متجر أفلييت لمنتجات Amazon مع تتبع ذكي وتحويلات عالية.">
+<meta property="og:image" content="assets/1000276862.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://koloonline-store.vercel.app/">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Koloonline Amazon Store">
+<meta name="twitter:description" content="Smart Amazon Affiliate Store with high converting products.">
+<meta name="twitter:image" content="assets/1000276862.png">
+
+<!-- GTM & GA4 -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<style>
+body{font-family:Arial;background:#f5f5f5;margin:0;}
+header{
+  background:#232f3e;color:white;
+  display:flex;align-items:center;gap:10px;
+  padding:15px;font-size:22px;
+}
+header img{height:50px;}
+.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff;}
+.container{padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
+.card{background:white;padding:20px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1);transition:0.3s;cursor:pointer;}
+.card:hover{transform:scale(1.02);}
+.card button{background:#ff9900;border:none;padding:10px;width:100%;border-radius:6px;cursor:pointer;font-weight:bold;}
+footer{background:#232f3e;color:white;text-align:center;padding:20px;margin-top:20px;}
+</style>
+
+</head>
+<body>
+
+<header>
+  <img src="assets/1000276862.png" alt="Koloonline Logo">
+  Koloonline Store
+</header>
+
+<div class="navbar">
+  <button onclick="location.href='index.html'">🏠 Home</button>
+  <button onclick="location.href='blog.html'">📰 Blog</button>
+  <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
+</div>
+
+<div class="container">
+  <div class="card" onclick="trackProduct('B09V7Z4TJG')">
+    <h2>🔥 Smart Watch Pro</h2>
+    <p>Top smart watches with fitness tracking, health features and battery life.</p>
+    <button onclick="openProduct(event,'product.html','B09V7Z4TJG')">📖 View Product</button>
+  </div>
+  <div class="card" onclick="trackProduct('B08G9P7N2X')">
+    <h2>📱 Wireless Earbuds</h2>
+    <p>High quality sound, low price, best Amazon picks.</p>
+    <button onclick="openProduct(event,'product.html','B08G9P7N2X')">📖 View Product</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Koloonline Store by Lina Sobhy</p>
+</footer>
+
+<script>
+function trackEvent(type, category){
+  fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({event:type,category:category,page:"index",timestamp:new Date().toISOString(),lang:navigator.language})
+  }).catch(e=>console.log("tracking error"));
+}
+function trackProduct(asin){trackEvent("product_click",asin);}
+function openProduct(e,url,asin){e.stopPropagation();trackEvent("product_open",asin);window.location.href=url;}
+</script>
+
+</body>
+</html>
