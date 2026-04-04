@@ -69,7 +69,7 @@ function trackEvent(asin, type){
 
 // ================= HELPER FUNCTIONS =================
 function getCountry() {
-  let lang = navigator.language || "en-US";
+  const lang = navigator.language || "en-US";
   if(lang.includes("ar")) return "EG";
   if(lang.includes("pl")) return "PL";
   if(lang.includes("en-CA")) return "CA";
@@ -89,19 +89,20 @@ function buildAffiliateLink(asin) {
 // ================= CART =================
 let allProducts = [];
 function updateCartCount() {
-  let cart = JSON.parse(localStorage.getItem("cart")||"[]");
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   document.getElementById("cart-count").innerText = cart.length;
 }
 function addToCart(product) {
   trackEvent(product.asin, "cart");
-  let cart = JSON.parse(localStorage.getItem("cart")||"[]");
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   cart.push(product);
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
   alert("Added to cart 🛒");
 }
 function viewCart() {
-  alert("Cart has "+(JSON.parse(localStorage.getItem("cart")||"[]").length)+" items.");
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  alert("Cart has " + cart.length + " items.");
 }
 
 // ================= FETCH PRODUCTS =================
@@ -110,16 +111,18 @@ async function fetchProducts(query="") {
     const res = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
     const data = await res.json();
     allProducts = data;
-    render(data);
+    renderProducts(data);
     updateCartCount();
-  } catch(err) { console.error("Error fetching products:", err); }
+  } catch(err) {
+    console.error("Error fetching products:", err);
+  }
 }
 
 // ================= RENDER PRODUCTS =================
-function render(products) {
+function renderProducts(products) {
   const grid = document.getElementById("productGrid");
   grid.innerHTML = "";
-  products.forEach(p=>{
+  products.forEach(p => {
     grid.innerHTML += `
       <div class="product-card card">
         <img src="${p.img || p.image}" alt="${p.title}">
@@ -136,22 +139,30 @@ function render(products) {
   });
 }
 
-// ================= SEARCH =================
+// ================= SEARCH & SUGGEST =================
 const input = document.getElementById("searchInput");
 const suggest = document.getElementById("suggestBox");
-input.addEventListener("input", ()=>{
+input.addEventListener("input", () => {
   const value = input.value.toLowerCase();
-  if(!value){ suggest.style.display='none'; render(allProducts); return; }
-  const filtered = allProducts.filter(p=>p.title.toLowerCase().includes(value));
-  render(filtered);
+  if (!value) {
+    suggest.style.display = 'none';
+    renderProducts(allProducts);
+    return;
+  }
+  const filtered = allProducts.filter(p => p.title.toLowerCase().includes(value));
+  renderProducts(filtered);
   suggest.innerHTML = '';
-  filtered.forEach(p=>{
+  filtered.forEach(p => {
     const div = document.createElement("div");
     div.innerText = p.title;
-    div.onclick = ()=>{ input.value=p.title; render([p]); suggest.style.display='none'; };
+    div.onclick = () => {
+      input.value = p.title;
+      renderProducts([p]);
+      suggest.style.display = 'none';
+    };
     suggest.appendChild(div);
   });
-  suggest.style.display = filtered.length ? 'block':'none';
+  suggest.style.display = filtered.length ? 'block' : 'none';
 });
 
 // ================= INIT =================
@@ -160,4 +171,4 @@ updateCartCount();
 </script>
 
 </body>
-</html>
+  </html>
