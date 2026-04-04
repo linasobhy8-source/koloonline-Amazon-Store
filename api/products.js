@@ -1,63 +1,152 @@
-export default function handler(req, res) {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Koloonline Store - Best Amazon Deals</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products with fast access and exclusive offers.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.koloonline.online/">
+<link rel="icon" href="favicon.ico">
 
-  // تحديد الدولة (افتراضي us)
-  const country = (req.query.country || "us").toLowerCase();
+<!-- ================= Google Tag Manager ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
 
-  // Affiliate tags لكل دولة
-  const affiliateTags = {
-    us: "koloonlinesto-20",
-    ca: "onlinesho0429-20",
-    pl: "koloonline-21",
-    eg: "onlinesh03f31-21"
-  };
+<!-- ================= Google Analytics ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
 
-  // تحديد الدومين الصحيح لأمازون
-  const domain =
-    country === "eg" ? "eg" :
-    country === "pl" ? "pl" :
-    country === "ca" ? "ca" :
-    "com";
+<!-- ================= CSS ================= -->
+<style>
+body { font-family: Arial,sans-serif; margin:0; background:#f5f5f5; }
+header { background:#232f3e; padding:15px; text-align:center; }
+header img { height:70px; }
+.navbar { display:flex; gap:10px; padding:10px; background:#37475a; flex-wrap:wrap; justify-content:center; }
+.navbar input { flex:1; padding:10px; border-radius:6px; border:none; min-width:200px; }
+.navbar button { background:#ff9900; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; transition:0.2s; }
+.navbar button:hover { background:#e68a00; }
+.product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; padding:20px; }
+.product-card { background:white; border-radius:12px; padding:15px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.2s; }
+.product-card:hover { transform:translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
+.product-card img { width:100%; height:200px; object-fit:contain; border-radius:12px; }
+.price { color:#b12704; font-weight:bold; margin:8px 0; }
+.buy-btn { width:100%; padding:10px; margin-top:8px; border:none; cursor:pointer; border-radius:6px; font-weight:bold; transition:transform 0.2s; text-decoration:none; display:block; text-align:center; color:white; }
+.buy-btn.amazon { background:#ff9900; }
+.buy-btn.cod { background:#25d366; }
+.buy-btn:hover { transform: scale(1.03); }
+#suggestBox { position:absolute; background:white; width:60%; display:none; box-shadow:0 5px 10px rgba(0,0,0,0.2); border-radius:6px; z-index:1000; max-height:250px; overflow-y:auto; }
+#suggestBox div { padding:10px; cursor:pointer; border-bottom:1px solid #eee; }
+#suggestBox div:hover { background:#f5f5f5; }
+@media(max-width:600px){ .navbar input { flex-basis:100%; margin-bottom:8px; } #suggestBox { width:90%; } }
+</style>
 
-  // المنتجات (مؤقتة - بدل MongoDB)
-  const products = [
-    {
-      id: 1,
-      title: "سماعة Anker مكبر الصوت",
-      image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
-      asin: "B07ZNT7PRL",
-      rating: 4.5,
-      priority: 5,
-      affiliateRate: 0.08
-    },
-    {
-      id: 2,
-      title: "سكين HOSHANHO",
-      image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
-      asin: "B0CKMF6GPZ",
-      rating: 4.2,
-      priority: 4,
-      affiliateRate: 0.07
-    }
-  ];
+<!-- ================= Vercel Web Analytics ================= -->
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+</head>
+<body>
 
-  // إضافة رابط الأفلييت
-  const mappedProducts = products.map(product => ({
-    ...product,
-    link: `https://www.amazon.${domain}/dp/${product.asin}?tag=${affiliateTags[country] || affiliateTags.us}`
-  }));
+<header>
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo">
+</header>
 
-  // ترتيب المنتجات حسب الربحية + التقييم + الأولوية
-  const sortedProducts = mappedProducts.sort((a, b) => {
-    const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
-    const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
-    return scoreB - scoreA;
-  });
+<div class="navbar">
+  <input type="text" id="searchInput" placeholder="Search products...">
+  <button onclick="fetchProducts(searchInput.value)">Search</button>
+  <button onclick="viewCart()">
+    🛒 Cart
+  </button>
+  <span id="cart-count">0</span>
+</div>
 
-  // الرد النهائي
-  res.status(200).json({
-    success: true,
-    country: country,
-    total: sortedProducts.length,
-    products: sortedProducts
+<div id="suggestBox"></div>
+<div class="product-grid" id="productGrid"></div>
+
+<script>
+// ================= HELPER FUNCTIONS =================
+function getCountry() {
+  let lang = navigator.language || "en-US";
+  if(lang.includes("ar")) return "eg";
+  if(lang.includes("pl")) return "pl";
+  if(lang.includes("en-CA")) return "ca";
+  return "us";
+}
+
+function updateCartCount() {
+  let cart = JSON.parse(localStorage.getItem("cart")||"[]");
+  document.getElementById("cart-count").innerText = cart.length;
+}
+
+function addToCart(product) {
+  let cart = JSON.parse(localStorage.getItem("cart")||"[]");
+  cart.push(product);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  alert("Added to cart 🛒");
+}
+
+function viewCart() {
+  let cart = JSON.parse(localStorage.getItem("cart")||"[]");
+  alert("Cart has "+cart.length+" items.");
+}
+
+// ================= FETCH PRODUCTS FROM API =================
+let allProducts = [];
+async function fetchProducts(query="") {
+  const country = getCountry();
+  try {
+    const res = await fetch(`/api/products?country=${country}&search=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    allProducts = data.products;
+    renderProducts(allProducts);
+    updateCartCount();
+  } catch(err) { console.error(err); }
+}
+
+// ================= RENDER PRODUCTS =================
+function renderProducts(products) {
+  const grid = document.getElementById("productGrid");
+  grid.innerHTML = "";
+  products.forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "product-card";
+    div.innerHTML = `
+      <img src="${p.image}" alt="${p.title}">
+      <h3>${p.title}</h3>
+      <p class="price">$${p.price || "N/A"}</p>
+      <a href="${p.link}" target="_blank" class="buy-btn amazon">🛒 Buy from Amazon</a>
+      <button class="buy-btn cod" onclick='addToCart(${JSON.stringify(p)})'>📦 Add to Cart</button>
+    `;
+    grid.appendChild(div);
   });
 }
+
+// ================= SEARCH SUGGESTION =================
+const input = document.getElementById("searchInput");
+const suggest = document.getElementById("suggestBox");
+input.addEventListener("input", ()=>{
+  const value = input.value.toLowerCase();
+  if(!value){ suggest.style.display='none'; renderProducts(allProducts); return; }
+  const filtered = allProducts.filter(p=>p.title.toLowerCase().includes(value));
+  renderProducts(filtered);
+  suggest.innerHTML = '';
+  filtered.forEach(p=>{
+    const div = document.createElement("div");
+    div.innerText = p.title;
+    div.onclick = ()=>{ input.value=p.title; renderProducts([p]); suggest.style.display='none'; };
+    suggest.appendChild(div);
+  });
+  suggest.style.display = filtered.length ? 'block':'none';
+});
+
+// ================= INIT =================
+fetchProducts();
+updateCartCount();
+</script>
+
+</body>
+</html>
