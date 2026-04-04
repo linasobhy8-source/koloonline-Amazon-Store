@@ -1,4 +1,23 @@
-  Koloonline Store
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koloonline Store</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+    .navbar { display: flex; background: #333; padding: 10px; }
+    .navbar button { color: #fff; background: #444; border: none; margin-right: 10px; padding: 10px; cursor: pointer; }
+    .container { display: flex; flex-wrap: wrap; padding: 20px; gap: 20px; }
+    .card { background: #fff; padding: 20px; border-radius: 10px; width: 300px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .card h2 { margin-top: 0; }
+    footer { text-align: center; padding: 20px; background: #333; color: #fff; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Koloonline Store</h1>
 </header>
 
 <div class="navbar">
@@ -25,15 +44,30 @@
 </footer>
 
 <script>
-function trackEvent(type, category){
-  fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({event:type,category:category,page:"index",timestamp:new Date().toISOString(),lang:navigator.language})
-  }).catch(e=>console.log("tracking error"));
-}
-function trackProduct(asin){trackEvent("product_click",asin);}
-function openProduct(e,url,asin){e.stopPropagation();trackEvent("product_open",asin);window.location.href=url;}
+  // تتبع الأحداث بدون كشف أي أسرار
+  function trackEvent(type, category){
+    fetch("/api/track", { // استخدم مسار نسبي للـ API بدون وضع أي مفاتيح مباشرة
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: type,
+        category: category,
+        page: "index",
+        timestamp: new Date().toISOString(),
+        lang: navigator.language
+      })
+    }).catch(e => console.log("tracking error"));
+  }
+
+  function trackProduct(asin) {
+    trackEvent("product_click", asin);
+  }
+
+  function openProduct(e, url, asin) {
+    e.stopPropagation();
+    trackEvent("product_open", asin);
+    window.location.href = url;
+  }
 </script>
 
 </body>
