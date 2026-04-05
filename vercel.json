@@ -9,11 +9,15 @@
       }
     },
     {
-      "src": "_assets_/css/*.css",
+      "src": "**/*.html",
       "use": "@vercel/static"
     },
     {
-      "src": "index.html",
+      "src": "**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "**/*.js",
       "use": "@vercel/static"
     }
   ],
