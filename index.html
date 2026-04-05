@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Koloonline Store - Best Amazon Deals</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products with fast access and exclusive offers.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.koloonline.online/">
+<link rel="icon" href="favicon.ico">
+
+<!-- Google Tag Manager -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<!-- CSS -->
+<link rel="stylesheet" href="_assets_/css/style.css">
+
+<!-- Vercel Analytics -->
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+</head>
+
+<body>
+
+<header class="header">
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" class="logo">
+</header>
+
+<nav class="navbar">
+  <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
+  <button class="button" id="searchBtn">Search</button>
+  <button class="button" id="cartBtn">
+    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Cart" style="height:25px;">
+  </button>
+  <span id="cart-count">0</span>
+</nav>
+
+<div id="suggestBox"></div>
+<div class="product-grid" id="productGrid"></div>
+
+<!-- ================= JS ================= -->
+<script>
+
+// ================= CONFIG =================
+const affiliateTags = {
+  EG: "onlinesh03f31-21",
+  CA: "linasobhy20d8-20",
+  US: "koloonlinesto-20",
+  PL: "koloonline-21"
+};
+
+// ================= HELPERS =================
+function getCountry() {
+  const lang = navigator.language || "en-US";
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("pl")) return "PL";
+  if(lang.includes("en-CA")) return "CA";
+  return "US";
+}
+
+function buildAffiliateLink(asin) {
+  const c = getCountry();
+  let domain = "amazon.com";
+  if(c==="EG") domain
