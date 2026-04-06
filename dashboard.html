@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,107 +30,128 @@ canvas{max-width:100%;margin:20px auto;display:block;}
 <header>📊 Koloonline Dashboard</header>
 
 <div class="navbar">
-<div>
-<button onclick="location.href='index.html'">🏠 Home</button>
-</div>
+  <div>
+    <button onclick="location.href='index.html'">🏠 Home</button>
+  </div>
 </div>
 
 <!-- ================= STATS ================= -->
 <div class="section">
-<h2>Overall Stats</h2>
-<div class="stats">
-<div class="stat-card">
-<h3 id="clicks">0</h3>
-<p>Clicks</p>
-</div>
-<div class="stat-card">
-<h3 id="carts">0</h3>
-<p>Orders</p>
-</div>
-<div class="stat-card">
-<h3 id="whatsapp">0</h3>
-<p>WhatsApp Orders</p>
-</div>
-<div class="stat-card">
-<h3 id="conversion">0%</h3>
-<p>Conversion Rate</p>
-</div>
-</div>
+  <h2>Overall Stats</h2>
+  <div class="stats">
+    <div class="stat-card">
+      <h3 id="clicks">0</h3>
+      <p>Clicks</p>
+    </div>
+    <div class="stat-card">
+      <h3 id="carts">0</h3>
+      <p>Orders</p>
+    </div>
+    <div class="stat-card">
+      <h3 id="whatsapp">0</h3>
+      <p>WhatsApp Orders</p>
+    </div>
+    <div class="stat-card">
+      <h3 id="conversion">0%</h3>
+      <p>Conversion Rate</p>
+    </div>
+  </div>
 </div>
 
 <!-- ================= CHARTS ================= -->
 <div class="section">
-<h2>Traffic Overview</h2>
-<canvas id="trafficChart"></canvas>
-<h2>Country Distribution</h2>
-<canvas id="countryChart"></canvas>
-<h2>Top Products Performance</h2>
-<canvas id="productPerformanceChart"></canvas>
-<h2>Conversion Funnel</h2>
-<canvas id="conversionFunnelChart"></canvas>
+  <h2>Traffic Overview</h2>
+  <canvas id="trafficChart"></canvas>
+
+  <h2>Country Distribution</h2>
+  <canvas id="countryChart"></canvas>
+
+  <h2>Top Products Performance</h2>
+  <canvas id="productPerformanceChart"></canvas>
+
+  <h2>Conversion Funnel</h2>
+  <canvas id="conversionFunnelChart"></canvas>
 </div>
 
 <!-- ================= TOP PRODUCTS TABLE ================= -->
 <div class="section">
-<h2>Top Products</h2>
-<table class="table" id="topProductsTable">
-<thead>
-<tr><th>ASIN</th><th>Clicks</th><th>Orders</th><th>WhatsApp Orders</th></tr>
-</thead>
-<tbody></tbody>
-</table>
+  <h2>Top Products</h2>
+  <table class="table" id="topProductsTable">
+    <thead>
+      <tr><th>ASIN</th><th>Clicks</th><th>Orders</th><th>WhatsApp Orders</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
 async function fetchAnalytics(){
-try {
-const res=await fetch('/api/analytics'); 
-const data=await res.json();
-if(!data.success) throw new Error("Failed to load analytics");
+  try {
+    const res=await fetch('/api/analytics'); 
+    const data=await res.json();
+    if(!data.success) throw new Error("Failed to load analytics");
 
-// ================= UPDATE STATS =================
-document.getElementById("clicks").innerText=data.totals.click;
-document.getElementById("carts").innerText=data.totals.cart;
-document.getElementById("whatsapp").innerText=data.totals.whatsapp;
-document.getElementById("conversion").innerText=data.totals.conversion+"%";
+    // ================= UPDATE STATS =================
+    document.getElementById("clicks").innerText=data.totals.click;
+    document.getElementById("carts").innerText=data.totals.cart;
+    document.getElementById("whatsapp").innerText=data.totals.whatsapp;
+    document.getElementById("conversion").innerText=data.totals.conversion+"%";
 
-// ================= TOP PRODUCTS =================
-const tableBody=document.querySelector('#topProductsTable tbody');
-tableBody.innerHTML="";
-data.topProducts.forEach(p=>{
-const row=document.createElement("tr");
-row.innerHTML=`<td>${p.asin}</td><td>${p.clicks}</td><td>${p.orders}</td><td>${p.whatsapp}</td>`;
-tableBody.appendChild(row);
-});
+    // ================= TOP PRODUCTS =================
+    const tableBody=document.querySelector('#topProductsTable tbody');
+    tableBody.innerHTML="";
+    data.topProducts.forEach(p=>{
+      const row=document.createElement("tr");
+      row.innerHTML=`<td>${p.asin}</td><td>${p.clicks}</td><td>${p.orders}</td><td>${p.whatsapp}</td>`;
+      tableBody.appendChild(row);
+    });
 
-// ================= CHARTS =================
-const trafficCtx=document.getElementById('trafficChart').getContext('2d');
-new Chart(trafficCtx,{type:'line',data:{
-labels:data.topProducts.map(p=>p.asin),
-datasets:[
-{label:'Clicks',data:data.topProducts.map(p=>p.clicks),borderColor:'blue',fill:false},
-{label:'Orders',data:data.topProducts.map(p=>p.orders),borderColor:'green',fill:false}
-]
-}});
+    // ================= CHARTS =================
+    const trafficCtx=document.getElementById('trafficChart').getContext('2d');
+    new Chart(trafficCtx,{
+      type:'line',
+      data:{
+        labels:data.topProducts.map(p=>p.asin),
+        datasets:[
+          {label:'Clicks',data:data.topProducts.map(p=>p.clicks),borderColor:'blue',fill:false},
+          {label:'Orders',data:data.topProducts.map(p=>p.orders),borderColor:'green',fill:false}
+        ]
+      }
+    });
 
-const countryCtx=document.getElementById('countryChart').getContext('2d');
-new Chart(countryCtx,{type:'bar',data:{
-labels:Object.keys(data.countries),
-datasets:[{label:'Clicks',data:Object.values(data.countries),backgroundColor:'orange'}]
-}});
+    const countryCtx=document.getElementById('countryChart').getContext('2d');
+    new Chart(countryCtx,{
+      type:'bar',
+      data:{
+        labels:Object.keys(data.countries),
+        datasets:[{label:'Clicks',data:Object.values(data.countries),backgroundColor:'orange'}]
+      }
+    });
 
-const productCtx=document.getElementById('productPerformanceChart').getContext('2d');
-new Chart(productCtx,{type:'bar',data:{
-labels:data.topProducts.map(p=>p.asin),
-datasets:[{label:'WhatsApp Orders',data:data.topProducts.map(p=>p.whatsapp),backgroundColor:'green'}]
-}});
+    const productCtx=document.getElementById('productPerformanceChart').getContext('2d');
+    new Chart(productCtx,{
+      type:'bar',
+      data:{
+        labels:data.topProducts.map(p=>p.asin),
+        datasets:[{label:'WhatsApp Orders',data:data.topProducts.map(p=>p.whatsapp),backgroundColor:'green'}]
+      }
+    });
 
-const funnelCtx=document.getElementById('conversionFunnelChart').getContext('2d');
-new Chart(funnelCtx,{type:'doughnut',data:{
-labels:['Clicks','Orders','WhatsApp Orders'],
-datasets:[{data:[data.totals.click,data.totals.cart,data.totals.whatsapp],backgroundColor:['blue','green','red'] }]
-}});
-}catch(err){console.error(err);}
+    const funnelCtx=document.getElementById('conversionFunnelChart').getContext('2d');
+    new Chart(funnelCtx,{
+      type:'doughnut',
+      data:{
+        labels:['Clicks','Orders','WhatsApp Orders'],
+        datasets:[{
+          data:[data.totals.click,data.totals.cart,data.totals.whatsapp],
+          backgroundColor:['blue','green','red']
+        }]
+      }
+    });
+
+  } catch(err){
+    console.error(err);
+  }
 }
 
 // ================= INIT =================
