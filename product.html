@@ -104,10 +104,8 @@ header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bol
 </footer>
 
 <script>
-(function(){
-/* ================= كل حاجه ديناميكية بالكامل ================= */
-const logoURL="https://i.ibb.co/XYZ/logo.png"; // Put your logo URL here
-
+/* ================= CONFIG ================= */
+const logoURL="https://i.ibb.co/XYZ/logo.png"; // ضع شعارك هنا
 const products=[
 {id:"1",title:"Echo Dot 5 🔥 30% OFF",asin:"B09B8Q3YHJ",price:39.99,image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",video:"https://www.youtube.com/embed/dQw4w9WgXcQ"},
 {id:"2",title:"Smart Watch Pro 🔥 Deal",asin:"B09V7Z4TJG",price:49.99,image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"}
@@ -169,7 +167,7 @@ ${videoHTML}
 /* ================= WHATSAPP ================= */
 function orderWhatsApp(name){
 let msg="I want to order: "+name;
-window.open("https://wa.me/201XXXXXXXXX?text="+encodeURIComponent(msg));
+window.open("https://wa.me/201XXXXXXXXX?text="+encodeURIComponent(msg)); // عدلي الرقم
 }
 
 /* ================= RELATED ================= */
@@ -188,7 +186,6 @@ document.getElementById("related").innerHTML=html;
 loadProduct();
 loadRelated();
 updateCartCount();
-})();
 </script>
 
 </body>
