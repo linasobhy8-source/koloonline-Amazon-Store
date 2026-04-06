@@ -1,174 +1,215 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>Koloonline Store - Best Amazon Deals</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Best Amazon deals, smart watches, gadgets and trending products with fast access and exclusive offers.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://www.koloonline.online/">
+<title>Koloonline Store</title>
 <link rel="icon" href="favicon.ico">
+<style>
+/* ================= BODY ================= */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f5f5f5;
+}
 
-<!-- ================= Google Tag Manager ================= -->
-<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
+/* ================= HEADER ================= */
+header {
+  background: #232f3e;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+header img {
+  height: 50px;
+  margin-bottom: 5px;
+}
+header p {
+  margin: 5px 0 0;
+  font-size: 14px;
+}
 
-<!-- ================= Google Analytics ================= -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-YS8L61XLPR');
-</script>
+/* ================= NAVBAR ================= */
+.navbar {
+  display: flex;
+  justify-content: center;
+  background: #37475a;
+  flex-wrap: wrap;
+}
+.navbar button {
+  color: #fff;
+  background: #ff9900;
+  border: none;
+  margin: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: 0.2s;
+}
+.navbar button:hover {
+  background: #e68a00;
+}
 
-<!-- ================= CSS ================= -->
-<link rel="stylesheet" href="_assets_/css/style.css">
+/* ================= CONTAINER ================= */
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px;
+  gap: 20px;
+  justify-content: center;
+}
 
-<!-- ================= Vercel Web Analytics ================= -->
-<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+/* ================= CARD ================= */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  width: 280px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+  padding: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.card h2 {
+  margin: 10px 0 5px;
+  font-size: 18px;
+}
+.card p {
+  font-size: 13px;
+  color: #555;
+}
+.stat-badge {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  font-size: 12px;
+  background: #e8f5e9;
+  padding: 5px;
+  border-radius: 6px;
+}
+.stat-badge span { display: flex; align-items: center; gap:3px; }
+.card button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  background: #25d366;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.card button:hover {
+  background: #1ebe5d;
+}
+
+/* ================= FOOTER ================= */
+footer {
+  text-align: center;
+  padding: 20px;
+  background: #232f3e;
+  color: #fff;
+  margin-top: 20px;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:600px){
+  .card { width: 90%; }
+  .navbar { flex-direction: column; align-items: center; }
+}
+</style>
 </head>
 <body>
 
-<header class="header">
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" class="logo">
+<header>
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo">
+  <p>📞 واتس: <a href="https://wa.me/201205271929" style="color:#25d366;">01205271929</a></p>
 </header>
 
-<nav class="navbar">
-  <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
-  <button class="button" onclick="fetchProducts(searchInput.value)">Search</button>
-  <button class="button" onclick="viewCart()">
-    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Cart" style="height:25px; vertical-align:middle;">
-  </button>
-  <span id="cart-count">0</span>
-</nav>
+<div class="navbar">
+  <button onclick="location.href='index.html'">🏠 Home</button>
+  <button onclick="location.href='dashboard.html'">📊 Dashboard</button>
+</div>
 
-<div id="suggestBox"></div>
-<div class="product-grid" id="productGrid"></div>
+<div class="container" id="productsContainer">
+  <!-- المنتجات ستظهر هنا ديناميكي -->
+</div>
+
+<footer>
+  <p>© 2026 Koloonline Store by Lina Sobhy</p>
+</footer>
 
 <script>
-// ================= CONFIG =================
-const affiliateTags = {
-  EG: "onlinesh03f31-21",
-  CA: "linasobhy20d8-20",
-  US: "koloonlinesto-20",
-  PL: "koloonline-21"
-};
+const products = [
+  {asin:"B09V7Z4TJG",title:"🔥 Smart Watch Pro",desc:"Top smart watches with fitness tracking, health features and battery life.",image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"},
+  {asin:"B08G9P7N2X",title:"📱 Wireless Earbuds",desc:"High quality sound, low price, best Amazon picks.",image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"}
+];
 
-// ================= TRACKING =================
-function trackEvent(asin, type){
-  fetch('/api/analytics', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      asin: asin,
-      type: type,
-      country: getCountry()
-    })
-  });
-}
+async function loadProducts(){
+  const container=document.getElementById("productsContainer");
+  container.innerHTML="";
+  let stats={};
+  try{
+    const res=await fetch("/api/analytics");
+    const data=await res.json();
+    if(data.success) stats=data.topProducts.reduce((acc,p)=>{acc[p.asin]={clicks:p.clicks,orders:p.orders,whatsapp:p.whatsapp};return acc;},{});
+  }catch(e){ console.log("Error fetching stats"); }
 
-// ================= HELPER FUNCTIONS =================
-function getCountry() {
-  const lang = navigator.language || "en-US";
-  if(lang.includes("ar")) return "EG";
-  if(lang.includes("pl")) return "PL";
-  if(lang.includes("en-CA")) return "CA";
-  return "US";
-}
-
-function buildAffiliateLink(asin) {
-  const c = getCountry();
-  let domain = "amazon.com";
-  if(c==="EG") domain="amazon.eg";
-  if(c==="CA") domain="amazon.ca";
-  if(c==="PL") domain="amazon.pl";
-  const tag = affiliateTags[c] || affiliateTags["US"];
-  return `https://${domain}/dp/${asin}?tag=${tag}`;
-}
-
-// ================= CART =================
-let allProducts = [];
-function updateCartCount() {
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  document.getElementById("cart-count").innerText = cart.length;
-}
-function addToCart(product) {
-  trackEvent(product.asin, "cart");
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  cart.push(product);
-  localStorage.setItem("cart", JSON.stringify(cart));
-  updateCartCount();
-  alert("Added to cart 🛒");
-}
-function viewCart() {
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  alert("Cart has " + cart.length + " items.");
-}
-
-// ================= FETCH PRODUCTS =================
-async function fetchProducts(query="") {
-  try {
-    const res = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    allProducts = data;
-    renderProducts(data);
-    updateCartCount();
-  } catch(err) {
-    console.error("Error fetching products:", err);
-  }
-}
-
-// ================= RENDER PRODUCTS =================
-function renderProducts(products) {
-  const grid = document.getElementById("productGrid");
-  grid.innerHTML = "";
-  products.forEach(p => {
-    grid.innerHTML += `
-      <div class="product-card card">
-        <img src="${p.img || p.image}" alt="${p.title}">
-        <h3>${p.title}</h3>
-        <p class="price">${p.price}</p>
-        <button class="buy-btn button amazon" onclick="trackEvent('${p.asin}','click'); window.open('${buildAffiliateLink(p.asin)}','_blank')">
-          🛒 Buy from Amazon
-        </button>
-        <button class="buy-btn button cod" onclick='addToCart(${JSON.stringify(p)})'>
-          📦 Add to Cart
-        </button>
+  products.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="card";
+    div.onclick=()=>openProduct(event,p.asin);
+    const clickCount=stats[p.asin]?.clicks||0;
+    const orderCount=stats[p.asin]?.orders||0;
+    const waCount=stats[p.asin]?.whatsapp||0;
+    div.innerHTML=`
+      <img src="${p.image}" alt="${p.title}">
+      <h2>${p.title}</h2>
+      <p>${p.desc}</p>
+      <div class="stat-badge">
+        <span>🖱️ ${clickCount}</span>
+        <span>🛒 ${orderCount}</span>
+        <span>📲 ${waCount}</span>
       </div>
+      <button onclick="orderWhatsApp(event,'${p.title}')">📲 طلب عبر واتس</button>
     `;
+    container.appendChild(div);
   });
 }
 
-// ================= SEARCH & SUGGEST =================
-const input = document.getElementById("searchInput");
-const suggest = document.getElementById("suggestBox");
-input.addEventListener("input", () => {
-  const value = input.value.toLowerCase();
-  if (!value) {
-    suggest.style.display = 'none';
-    renderProducts(allProducts);
-    return;
-  }
-  const filtered = allProducts.filter(p => p.title.toLowerCase().includes(value));
-  renderProducts(filtered);
-  suggest.innerHTML = '';
-  filtered.forEach(p => {
-    const div = document.createElement("div");
-    div.innerText = p.title;
-    div.onclick = () => {
-      input.value = p.title;
-      renderProducts([p]);
-      suggest.style.display = 'none';
-    };
-    suggest.appendChild(div);
-  });
-  suggest.style.display = filtered.length ? 'block' : 'none';
-});
+function trackEvent(type, asin){
+  fetch("/api/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:type,asin:asin,timestamp:new Date().toISOString()})}).catch(e=>console.log("tracking error"));
+}
 
-// ================= INIT =================
-fetchProducts();
-updateCartCount();
+function openProduct(e, asin){
+  e.stopPropagation();
+  trackEvent("product_open", asin);
+  window.location.href="product.html?asin="+asin;
+}
+
+function orderWhatsApp(e,name){
+  e.stopPropagation();
+  trackEvent("whatsapp_order",name);
+  window.open("https://wa.me/201205271929?text="+encodeURIComponent("أريد طلب: "+name)," _blank");
+}
+
+loadProducts();
 </script>
 
 </body>
-  </html>
+</html>

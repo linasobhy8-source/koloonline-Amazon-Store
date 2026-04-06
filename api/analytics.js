@@ -1,3 +1,4 @@
+// api/analytics.js
 import mongoose from "mongoose";
 
 // ================= CONNECT =================
@@ -38,8 +39,7 @@ const AnalyticsSchema = new mongoose.Schema({
 });
 
 const Analytics =
-  mongoose.models.Analytics ||
-  mongoose.model("Analytics", AnalyticsSchema);
+  mongoose.models.Analytics || mongoose.model("Analytics", AnalyticsSchema);
 
 // ================= HANDLER =================
 export default async function handler(req, res) {
@@ -57,15 +57,15 @@ export default async function handler(req, res) {
         });
       }
 
-      // العثور على المنتج أو إنشاء جديد
+      // تحديث أو إنشاء جديد
+      const update = { $inc: { [type]: 1 } };
+      if (country) {
+        update.$inc[`country.${country.toLowerCase()}`] = 1;
+      }
+
       const doc = await Analytics.findOneAndUpdate(
         { asin },
-        {
-          $inc: {
-            [type]: 1,
-            [`country.${country}`]: country ? 1 : 0
-          }
-        },
+        update,
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
 
@@ -119,4 +119,4 @@ export default async function handler(req, res) {
       error: err.message
     });
   }
-  }
+          }

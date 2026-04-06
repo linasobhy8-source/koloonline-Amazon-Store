@@ -1,29 +1,27 @@
-function trackEvent(type, category){
-  fetch("/api/track", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Koloonline Store</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-    .navbar { display: flex; background: #333; padding: 10px; }
-    .navbar button { color: #fff; background: #444; border: none; margin-right: 10px; padding: 10px; cursor: pointer; }
-    .container { display: flex; flex-wrap: wrap; padding: 20px; gap: 20px; }
-    .card { background: #fff; padding: 20px; border-radius: 10px; width: 300px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .card h2 { margin-top: 0; }
-    footer { text-align: center; padding: 20px; background: #333; color: #fff; margin-top: 20px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koloonline Store</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+  header { text-align: center; padding: 20px; background: #232f3e; color: #fff; font-size: 24px; font-weight: bold; }
+  .navbar { display: flex; background: #333; padding: 10px; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .navbar button { color: #fff; background: #444; border: none; padding: 10px 15px; cursor: pointer; border-radius: 6px; transition: 0.2s; }
+  .navbar button:hover { background: #555; }
+  .container { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 20px; }
+  .card { background: #fff; padding: 20px; border-radius: 10px; width: 300px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: 0.2s; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .card h2 { margin-top: 0; font-size: 18px; }
+  .card button { margin-top: 10px; padding: 8px 12px; background: #ff9900; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .card button:hover { background: #e68a00; }
+  footer { text-align: center; padding: 20px; background: #232f3e; color: #fff; margin-top: 20px; }
+</style>
 </head>
 <body>
 
-<header>
-  <h1>Koloonline Store</h1>
-</header>
+<header>Koloonline Store</header>
 
 <div class="navbar">
   <button onclick="location.href='index.html'">🏠 Home</button>
@@ -37,6 +35,7 @@ function trackEvent(type, category){
     <p>Top smart watches with fitness tracking, health features and battery life.</p>
     <button onclick="openProduct(event,'product.html','B09V7Z4TJG')">📖 View Product</button>
   </div>
+
   <div class="card" onclick="trackProduct('B08G9P7N2X')">
     <h2>📱 Wireless Earbuds</h2>
     <p>High quality sound, low price, best Amazon picks.</p>
@@ -49,9 +48,9 @@ function trackEvent(type, category){
 </footer>
 
 <script>
-  // تتبع الأحداث بدون كشف أي أسرار
-  function trackEvent(type, category){
-    fetch("/api/track", { // استخدم مسار نسبي للـ API بدون وضع أي مفاتيح مباشرة
+  // ================= تتبع الأحداث =================
+  function trackEvent(type, category) {
+    fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -59,13 +58,9 @@ function trackEvent(type, category){
         category: category,
         page: "index",
         timestamp: new Date().toISOString(),
-        lang: navigator.language https/www.koloonline.online
-    })
-  }).catch(e => console.log("tracking error"));
-}
-
+        lang: navigator.language
       })
-    }).catch(e => console.log("tracking error"));
+    }).catch(e => console.log("Tracking error:", e));
   }
 
   function trackProduct(asin) {
@@ -73,19 +68,11 @@ function trackEvent(type, category){
   }
 
   function openProduct(e, url, asin) {
-    e.stopPropagation();
+    e.stopPropagation(); // لمنع تكرار الحدث عند الضغط على البطاقة
     trackEvent("product_open", asin);
     window.location.href = url;
   }
 </script>
- mainhttps/github.com/linasobhy8-source/koloonline-Amazon-Store
 
-function trackProduct(asin){
-    trackEvent("product_click", asin);
-}
-
-function openProduct(e, url, asin){
-    e.stopPropagation();
-    trackEvent("product_open", asin);
-    window.location.href = url;
-}
+</body>
+</html>
