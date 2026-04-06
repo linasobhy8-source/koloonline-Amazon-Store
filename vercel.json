@@ -3,13 +3,14 @@
   "builds": [
     {
       "src": "api/*.js",
-      "use": "@vercel/node@3.0.0",
-      "config": {
-        "runtime": "nodejs24.x"
-      }
+      "use": "@vercel/node"
     },
     {
-      "src": "**/*",
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/**/*",
       "use": "@vercel/static"
     }
   ],
