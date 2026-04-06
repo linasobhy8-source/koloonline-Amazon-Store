@@ -1,5 +1,28 @@
 {
-  "functions": {
-    "api/*.js": { "runtime": "nodejs20.x" }
-  }
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node@3.0.0",
+      "config": {
+        "runtime": "nodejs24.x"
+      }
+    },
+    {
+      "src": "**/*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "**/*.js",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1.js" },
+    { "src": "/(.*)", "dest": "/app.js" }
+  ]
 }
