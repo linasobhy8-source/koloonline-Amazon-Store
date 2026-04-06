@@ -6,26 +6,138 @@
 <title>Koloonline Store</title>
 <link rel="icon" href="favicon.ico">
 <style>
-body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-header { background: #232f3e; color: #fff; padding: 15px; font-size: 22px; font-weight: bold; text-align: center; }
-.navbar { display: flex; justify-content: space-between; padding: 10px; background: #37475a; color: #fff; flex-wrap: wrap; }
-.navbar button { color: #fff; background: #ff9900; border: none; margin-right: 10px; padding: 10px; cursor: pointer; border-radius:6px; font-weight:bold; transition:0.2s; }
-.navbar button:hover { background: #e68a00; }
-.container { display: flex; flex-wrap: wrap; padding: 20px; gap: 20px; justify-content: center; }
-.card { background: #fff; padding: 20px; border-radius: 10px; width: 300px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align:center; }
-.card img { width:100%; max-height:200px; object-fit:contain; border-radius:6px; }
-.card h2 { margin-top:10px; }
-.card p { font-size:14px; margin:10px 0; }
-.card button { background:#ff9900; color:#fff; border:none; padding:10px; cursor:pointer; border-radius:6px; font-weight:bold; width:100%; margin-top:10px; transition:0.2s; }
-.card button:hover { background:#e68a00; }
-footer { text-align:center; padding:20px; background:#232f3e; color:#fff; margin-top:20px; }
-.stat-badge { display:block; margin-top:5px; font-size:12px; color:#555; }
+/* ================= BODY ================= */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f5f5f5;
+}
+
+/* ================= HEADER ================= */
+header {
+  background: #232f3e;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+header img {
+  height: 50px;
+  margin-bottom: 5px;
+}
+header p {
+  margin: 5px 0 0;
+  font-size: 14px;
+}
+
+/* ================= NAVBAR ================= */
+.navbar {
+  display: flex;
+  justify-content: center;
+  background: #37475a;
+  flex-wrap: wrap;
+}
+.navbar button {
+  color: #fff;
+  background: #ff9900;
+  border: none;
+  margin: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: 0.2s;
+}
+.navbar button:hover {
+  background: #e68a00;
+}
+
+/* ================= CONTAINER ================= */
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px;
+  gap: 20px;
+  justify-content: center;
+}
+
+/* ================= CARD ================= */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  width: 280px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+  padding: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.card h2 {
+  margin: 10px 0 5px;
+  font-size: 18px;
+}
+.card p {
+  font-size: 13px;
+  color: #555;
+}
+.stat-badge {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  font-size: 12px;
+  background: #e8f5e9;
+  padding: 5px;
+  border-radius: 6px;
+}
+.stat-badge span { display: flex; align-items: center; gap:3px; }
+.card button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  background: #25d366;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.card button:hover {
+  background: #1ebe5d;
+}
+
+/* ================= FOOTER ================= */
+footer {
+  text-align: center;
+  padding: 20px;
+  background: #232f3e;
+  color: #fff;
+  margin-top: 20px;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:600px){
+  .card { width: 90%; }
+  .navbar { flex-direction: column; align-items: center; }
+}
 </style>
 </head>
 <body>
 
 <header>
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" style="height:50px;">
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo">
   <p>📞 واتس: <a href="https://wa.me/201205271929" style="color:#25d366;">01205271929</a></p>
 </header>
 
@@ -35,7 +147,7 @@ footer { text-align:center; padding:20px; background:#232f3e; color:#fff; margin
 </div>
 
 <div class="container" id="productsContainer">
-  <!-- المنتجات ستتحمل هنا ديناميكي -->
+  <!-- المنتجات ستظهر هنا ديناميكي -->
 </div>
 
 <footer>
@@ -43,36 +155,19 @@ footer { text-align:center; padding:20px; background:#232f3e; color:#fff; margin
 </footer>
 
 <script>
-const products=[
+const products = [
   {asin:"B09V7Z4TJG",title:"🔥 Smart Watch Pro",desc:"Top smart watches with fitness tracking, health features and battery life.",image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"},
   {asin:"B08G9P7N2X",title:"📱 Wireless Earbuds",desc:"High quality sound, low price, best Amazon picks.",image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"}
 ];
 
-// ================= TRACKING =================
-function trackEvent(type, asin){
-  fetch("/api/track",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({event:type,asin:asin,timestamp:new Date().toISOString()})
-  }).catch(e=>console.log("tracking error"));
-}
-
-function openProduct(e, asin){
-  e.stopPropagation();
-  trackEvent("product_open", asin);
-  window.location.href="product.html?asin="+asin;
-}
-
-// ================= LOAD PRODUCTS =================
 async function loadProducts(){
   const container=document.getElementById("productsContainer");
   container.innerHTML="";
-  // Fetch stats for badges
   let stats={};
   try{
     const res=await fetch("/api/analytics");
     const data=await res.json();
-    if(data.success) stats=data.topProducts.reduce((acc,p)=>{acc[p.asin]={clicks:p.clicks,orders:p.orders,whatsapp:p.whatsapp}; return acc;},{});
+    if(data.success) stats=data.topProducts.reduce((acc,p)=>{acc[p.asin]={clicks:p.clicks,orders:p.orders,whatsapp:p.whatsapp};return acc;},{});
   }catch(e){ console.log("Error fetching stats"); }
 
   products.forEach(p=>{
@@ -86,14 +181,33 @@ async function loadProducts(){
       <img src="${p.image}" alt="${p.title}">
       <h2>${p.title}</h2>
       <p>${p.desc}</p>
-      <span class="stat-badge">Clicks: ${clickCount} | Orders: ${orderCount} | WhatsApp: ${waCount}</span>
-      <button onclick="openProduct(event,'${p.asin}')">📖 View Product</button>
+      <div class="stat-badge">
+        <span>🖱️ ${clickCount}</span>
+        <span>🛒 ${orderCount}</span>
+        <span>📲 ${waCount}</span>
+      </div>
+      <button onclick="orderWhatsApp(event,'${p.title}')">📲 طلب عبر واتس</button>
     `;
     container.appendChild(div);
   });
 }
 
-// ================= INIT =================
+function trackEvent(type, asin){
+  fetch("/api/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:type,asin:asin,timestamp:new Date().toISOString()})}).catch(e=>console.log("tracking error"));
+}
+
+function openProduct(e, asin){
+  e.stopPropagation();
+  trackEvent("product_open", asin);
+  window.location.href="product.html?asin="+asin;
+}
+
+function orderWhatsApp(e,name){
+  e.stopPropagation();
+  trackEvent("whatsapp_order",name);
+  window.open("https://wa.me/201205271929?text="+encodeURIComponent("أريد طلب: "+name)," _blank");
+}
+
 loadProducts();
 </script>
 
