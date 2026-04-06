@@ -6,16 +6,40 @@
       "use": "@vercel/node"
     },
     {
-      "src": "index.html",
+      "src": "*.html",
       "use": "@vercel/static"
     },
     {
-      "src": "assets/**/*",
+      "src": "_assets_/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "styles.css",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1.js" },
+
+    { "src": "/index", "dest": "/index.html" },
+    { "src": "/FAQ", "dest": "/FAQ.html" },
+    { "src": "/Featured-Products", "dest": "/Featured Products.html" },
+    { "src": "/Post2", "dest": "/Post2.html" },
+    { "src": "/Product-Details", "dest": "/Product Details Section.html" },
+    { "src": "/about", "dest": "/about.html" },
+    { "src": "/blog", "dest": "/blog.html" },
+    { "src": "/cart", "dest": "/cart.html" },
+    { "src": "/checkout", "dest": "/checkout.html" },
+    { "src": "/contact", "dest": "/contact.html" },
+    { "src": "/dashboard", "dest": "/dashboard.html" },
+    { "src": "/post", "dest": "/post.html" },
+    { "src": "/post1", "dest": "/post1.html" },
+    { "src": "/post3", "dest": "/post3.html" },
+    { "src": "/privacy", "dest": "/privacy.html" },
+    { "src": "/product", "dest": "/product.html" },
+    { "src": "/terms", "dest": "/terms.html" },
+    { "src": "/thankyou", "dest": "/thankyou.html" },
+
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
