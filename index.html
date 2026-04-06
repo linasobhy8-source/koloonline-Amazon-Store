@@ -9,10 +9,10 @@
 <link rel="canonical" href="https://www.koloonline.online/">
 <link rel="icon" href="favicon.ico">
 
-<!-- ================= Google Tag Manager ================= -->
+<!-- Google Tag Manager -->
 <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN"></script>
 
-<!-- ================= Google Analytics ================= -->
+<!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -21,31 +21,37 @@ gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 </script>
 
-<!-- ================= CSS ================= -->
+<!-- CSS -->
 <link rel="stylesheet" href="_assets_/css/style.css">
 
-<!-- ================= Vercel Web Analytics ================= -->
+<!-- Vercel Analytics -->
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+
+<style>
+.product-grid { display:flex; flex-wrap:wrap; gap:15px; padding:15px; }
+.product-card { background:#fff; padding:10px; border-radius:10px; width:220px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+.product-card img { max-width:100%; border-radius:8px; }
+.button { padding:6px 10px; margin-top:5px; cursor:pointer; }
+</style>
+
 </head>
 <body>
 
 <header class="header">
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" class="logo">
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" class="logo">
 </header>
 
 <nav class="navbar">
-  <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
-  <button class="button" onclick="fetchProducts(searchInput.value)">Search</button>
-  <button class="button" onclick="viewCart()">
-    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Cart" style="height:25px; vertical-align:middle;">
-  </button>
+  <input type="text" id="searchInput" placeholder="Search products...">
+  <button onclick="handleSearch()">Search</button>
+  <button onclick="viewCart()">🛒</button>
   <span id="cart-count">0</span>
 </nav>
 
-<div id="suggestBox"></div>
-<div class="product-grid" id="productGrid"></div>
+<div id="productGrid" class="product-grid"></div>
 
 <script>
+
 // ================= CONFIG =================
 const affiliateTags = {
   EG: "onlinesh03f31-21",
@@ -54,20 +60,7 @@ const affiliateTags = {
   PL: "koloonline-21"
 };
 
-// ================= TRACKING =================
-function trackEvent(asin, type){
-  fetch('/api/analytics', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      asin: asin,
-      type: type,
-      country: getCountry()
-    })
-  });
-}
-
-// ================= HELPER FUNCTIONS =================
+// ================= HELPERS =================
 function getCountry() {
   const lang = navigator.language || "en-US";
   if(lang.includes("ar")) return "EG";
@@ -87,88 +80,94 @@ function buildAffiliateLink(asin) {
 }
 
 // ================= CART =================
-let allProducts = [];
 function updateCartCount() {
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   document.getElementById("cart-count").innerText = cart.length;
 }
+
 function addToCart(product) {
-  trackEvent(product.asin, "cart");
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   cart.push(product);
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
   alert("Added to cart 🛒");
 }
+
 function viewCart() {
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  alert("Cart has " + cart.length + " items.");
+  alert("Cart has " + cart.length + " items");
 }
 
-// ================= FETCH PRODUCTS =================
+// ================= FETCH =================
 async function fetchProducts(query="") {
   try {
-    const res = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
+    const country = getCountry().toLowerCase();
+
+    const res = await fetch(`/api/products?country=${country}`);
     const data = await res.json();
-    allProducts = data;
-    renderProducts(data);
+
+    let products = data.products || [];
+
+    // فلترة البحث
+    if(query){
+      products = products.filter(p =>
+        p.title.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    renderProducts(products);
     updateCartCount();
+
   } catch(err) {
-    console.error("Error fetching products:", err);
+    console.error(err);
+    document.getElementById("productGrid").innerHTML = "Error loading products";
   }
 }
 
-// ================= RENDER PRODUCTS =================
+// ================= RENDER =================
 function renderProducts(products) {
   const grid = document.getElementById("productGrid");
   grid.innerHTML = "";
+
+  if(products.length === 0){
+    grid.innerHTML = "<p>لا توجد منتجات</p>";
+    return;
+  }
+
   products.forEach(p => {
-    grid.innerHTML += `
-      <div class="product-card card">
-        <img src="${p.img || p.image}" alt="${p.title}">
-        <h3>${p.title}</h3>
-        <p class="price">${p.price}</p>
-        <button class="buy-btn button amazon" onclick="trackEvent('${p.asin}','click'); window.open('${buildAffiliateLink(p.asin)}','_blank')">
-          🛒 Buy from Amazon
-        </button>
-        <button class="buy-btn button cod" onclick='addToCart(${JSON.stringify(p)})'>
-          📦 Add to Cart
-        </button>
-      </div>
+    const card = document.createElement("div");
+    card.className = "product-card";
+
+    card.innerHTML = `
+      <img src="${p.image}" alt="${p.title}">
+      <h3>${p.title}</h3>
+      <p>⭐ ${p.rating}</p>
+
+      <button class="button" onclick="window.open('${buildAffiliateLink(p.asin)}','_blank')">
+        🛒 Buy from Amazon
+      </button>
+
+      <button class="button" onclick='addToCart(${JSON.stringify(p)})'>
+        ➕ Add to Cart
+      </button>
     `;
+
+    grid.appendChild(card);
   });
 }
 
-// ================= SEARCH & SUGGEST =================
-const input = document.getElementById("searchInput");
-const suggest = document.getElementById("suggestBox");
-input.addEventListener("input", () => {
-  const value = input.value.toLowerCase();
-  if (!value) {
-    suggest.style.display = 'none';
-    renderProducts(allProducts);
-    return;
-  }
-  const filtered = allProducts.filter(p => p.title.toLowerCase().includes(value));
-  renderProducts(filtered);
-  suggest.innerHTML = '';
-  filtered.forEach(p => {
-    const div = document.createElement("div");
-    div.innerText = p.title;
-    div.onclick = () => {
-      input.value = p.title;
-      renderProducts([p]);
-      suggest.style.display = 'none';
-    };
-    suggest.appendChild(div);
-  });
-  suggest.style.display = filtered.length ? 'block' : 'none';
-});
+// ================= SEARCH =================
+function handleSearch(){
+  const q = document.getElementById("searchInput").value;
+  fetchProducts(q);
+}
 
 // ================= INIT =================
-fetchProducts();
-updateCartCount();
+document.addEventListener("DOMContentLoaded", () => {
+  fetchProducts();
+});
+
 </script>
 
 </body>
-  </html>
+</html>
