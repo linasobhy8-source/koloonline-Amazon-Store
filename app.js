@@ -1,117 +1,31 @@
-// app.js
+const express = require("express");
+const path = require("path");
+const app = express();
+const port = process.env.PORT || 3000;
 
-// تحديد الدولة (ممكن تطوريه بعد كده)
-function detectUserCountry() {
-    return 'eg'; // مصر افتراضي
-}
+app.use(express.static(path.join(__dirname, "public")));
 
-// إنشاء رابط أفلييت
-function generateAffiliateLink(productId) {
-    return `https://www.koloonline.online/products/${productId}`;
-}
+// صفحة رئيسية
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/index.html"));
+});
 
-// جلب المنتجات من API الصحيح (Vercel)
-async function fetchProducts() {
-    try {
-        const response = await fetch('/api/products'); // ✅ تم التعديل هنا
-        if (!response.ok) throw new Error('Network response was not ok');
+// صفحات المنتجات ديناميك
+app.get("/products/:id", (req, res) => {
+  const productId = req.params.id;
+  res.sendFile(path.join(__dirname, `public/products/${productId}.html`));
+});
 
-        const products = await response.json();
-        displayProducts(products);
+// صفحة اتصل بنا
+app.get("/contact", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/contact.html"));
+});
 
-        return products; // ✅ مهم للفلترة
-    } catch (error) {
-        console.error('Error fetching products:', error);
-    }
-}
+// صفحة من نحن
+app.get("/about", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/about.html"));
+});
 
-// عرض المنتجات
-function displayProducts(products) {
-    const productContainer = document.getElementById('product-container');
-
-    if (!productContainer) {
-        console.error("product-container مش موجود في HTML");
-        return;
-    }
-
-    productContainer.innerHTML = '';
-
-    if (!products || products.length === 0) {
-        productContainer.innerHTML = "<p>لا توجد منتجات حالياً</p>";
-        return;
-    }
-
-    products.forEach(product => {
-        const productElement = document.createElement('div');
-        productElement.classList.add('product');
-
-        productElement.innerHTML = `
-            <div class="product-card">
-                <h3>${product.name || 'منتج'}</h3>
-                <p>${product.description || ''}</p>
-                <p><strong>${product.price || ''}</strong></p>
-                <a href="${generateAffiliateLink(product.id)}" target="_blank">
-                    🛒 شراء الآن
-                </a>
-            </div>
-        `;
-
-        productContainer.appendChild(productElement);
-    });
-}
-
-// تتبع الأحداث
-function trackEvent(event) {
-    console.log('Tracking event:', event);
-}
-
-// إدارة السلة
-const shoppingCart = {
-    addItem(product) {
-        const cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
-        cart.push(product);
-        localStorage.setItem('shoppingCart', JSON.stringify(cart));
-        trackEvent('Item added to cart');
-    },
-    getCart() {
-        return JSON.parse(localStorage.getItem('shoppingCart')) || [];
-    },
-    clearCart() {
-        localStorage.removeItem('shoppingCart');
-    }
-};
-
-// فلترة المنتجات
-function filterProductsByCategory(category) {
-    fetchProducts().then(products => {
-        if (!products) return;
-        const filtered = products.filter(p => p.category === category);
-        displayProducts(filtered);
-    });
-}
-
-// FAQ
-function toggleFAQ(faqElement) {
-    faqElement.classList.toggle('active');
-    const answer = faqElement.nextElementSibling;
-
-    if (answer.style.display === "block") {
-        answer.style.display = "none";
-    } else {
-        answer.style.display = "block";
-    }
-}
-
-// مراجعات العملاء
-function loadCustomerReviews() {
-    console.log('Loading customer reviews...');
-}
-
-// تشغيل الموقع
-function init() {
-    fetchProducts();
-    loadCustomerReviews();
-}
-
-// بدء التنفيذ
-document.addEventListener('DOMContentLoaded', init);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
