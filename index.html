@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
 <title>Koloonline Store - Best Amazon Deals</title>
@@ -22,51 +22,43 @@ gtag('config', 'G-YS8L61XLPR');
 </script>
 
 <!-- CSS -->
-<link rel="stylesheet" href="_assets_/css/style.css">
-
-<!-- Vercel Analytics -->
-<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f9f9f9; }
+header { background:#232f3e; color:white; padding:15px; text-align:center; }
+.logo { height:50px; }
+.navbar { display:flex; gap:10px; padding:10px; background:#fff; align-items:center; }
+.search-input { flex:1; padding:5px; }
+.button { padding:5px 10px; cursor:pointer; }
+#cart-count { margin-left:5px; font-weight:bold; }
+.product-grid { display:flex; flex-wrap:wrap; gap:15px; padding:15px; justify-content:center; }
+.product-card { background:white; border-radius:10px; padding:10px; width:220px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+.product-card img { max-width:100%; border-radius:8px; }
+.product-card a { display:inline-block; margin-top:10px; background:#ff9900; color:white; text-decoration:none; padding:8px 12px; border-radius:5px; }
+.product-card a:hover { background:#e68a00; }
+</style>
 </head>
-
 <body>
 
-<header class="header">
+<header>
   <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" class="logo">
 </header>
 
 <nav class="navbar">
   <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
   <button class="button" id="searchBtn">Search</button>
-  <button class="button" id="cartBtn">
-    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Cart" style="height:25px;">
-  </button>
+  <button class="button" id="cartBtn">Cart 🛒</button>
   <span id="cart-count">0</span>
+  <select id="country-select">
+    <option value="US">USA</option>
+    <option value="CA">Canada</option>
+    <option value="PL">Poland</option>
+    <option value="EG" selected>Egypt</option>
+  </select>
 </nav>
 
 <div id="suggestBox"></div>
-<div class="product-grid" id="productGrid"></div>
+<div class="product-grid" id="productGrid">Loading products...</div>
 
-<!-- ================= JS ================= -->
-<script>
-
-// ================= CONFIG =================
-const affiliateTags = {
-  EG: "onlinesh03f31-21",
-  CA: "linasobhy20d8-20",
-  US: "koloonlinesto-20",
-  PL: "koloonline-21"
-};
-
-// ================= HELPERS =================
-function getCountry() {
-  const lang = navigator.language || "en-US";
-  if(lang.includes("ar")) return "EG";
-  if(lang.includes("pl")) return "PL";
-  if(lang.includes("en-CA")) return "CA";
-  return "US";
-}
-
-function buildAffiliateLink(asin) {
-  const c = getCountry();
-  let domain = "amazon.com";
-  if(c==="EG") domain
+<script src="app.js"></script>
+</body>
+</html>
