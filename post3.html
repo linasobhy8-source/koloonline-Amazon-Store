@@ -1,129 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ================= SEO BASIC ================= -->
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Koloonline Amazon Store | Top Amazon Gadgets 2026</title>
-  <meta name="description" content="Koloonline Amazon Store - اكتشف أفضل أجهزة Amazon الذكية مع عروض حصرية وتجربة تسوق سريعة مع نظام أفلييت احترافي.">
-  <meta name="keywords" content="amazon gadgets, smart devices, tech 2026, affiliate store">
-  <meta name="author" content="Koloonline - Lina Sobhy">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ================= FAVICON ================= -->
-  <link rel="icon" type="image/png" href="assets/1000276862.png">
-  <link rel="shortcut icon" href="assets/1000276862.png">
-  <link rel="apple-touch-icon" href="assets/1000276862.png">
+<title>Koloonline Amazon Store | Top Amazon Gadgets 2026</title>
 
-  <!-- ================= OPEN GRAPH ================= -->
-  <meta property="og:title" content="Koloonline Amazon Store">
-  <meta property="og:description" content="أفضل متجر أفلييت لمنتجات Amazon مع تتبع ذكي وتحويلات عالية.">
-  <meta property="og:image" content="assets/1000276862.png">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://koloonline-store.vercel.app/">
+<!-- SEO -->
+<meta name="description" content="Koloonline Amazon Store - اكتشف أفضل أجهزة Amazon الذكية مع عروض حصرية وتجربة تسوق سريعة.">
 
-  <!-- ================= TWITTER CARD ================= -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Koloonline Amazon Store">
-  <meta name="twitter:description" content="Smart Amazon Affiliate Store with high converting products.">
-  <meta name="twitter:image" content="assets/1000276862.png">
+<link rel="icon" href="assets/1000276862.png">
 
-  <!-- ================= SEO PERFORMANCE ================= -->
-  <meta name="theme-color" content="#000000">
-  <meta name="robots" content="index, follow">
+<!-- ================= STYLE ================= -->
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5;}
 
-  <!-- GTM -->
-  <script>
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;
-    j.src='https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8KBN'+dl;
-    f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-KNQM8KBN');
-  </script>
+/* HEADER */
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  font-size:22px;
+}
 
-  <!-- GA4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-YS8L61XLPR');
-  </script>
+/* NAVBAR */
+.navbar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  background:#37475a;
+  padding:10px;
+}
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:6px;
+  font-weight:bold;
+}
+.navbar a:hover{background:#e68a00;}
+.navbar a.active{background:#ff9900;}
 
-  <style>
-    body{font-family:Arial;margin:0;background:#f5f5f5;}
-    header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
-    .container{max-width:900px;margin:auto;padding:20px;}
-    .card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
-    .btn{background:#ff9900;border:none;padding:10px;width:100%;margin:10px 0;cursor:pointer;border-radius:6px;font-weight:bold;}
-    footer{background:#232f3e;color:#fff;text-align:center;padding:20px;margin-top:30px}
-    a{color:#ff9900;text-decoration:none;}
-  </style>
+/* CONTAINER */
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
 
+/* CARD */
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
 
-<!-- ================= Vercel Web Analytics ================= -->
-<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+.btn{
+  background:#ff9900;
+  border:none;
+  padding:12px;
+  width:100%;
+  margin:10px 0;
+  cursor:pointer;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+/* FAQ */
+.faq{
+  max-width:900px;
+  margin:30px auto;
+}
+.faq p{
+  background:#fff;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+/* WHATSAPP FLOAT */
+.whatsapp-float{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#25D366;
+  color:#fff;
+  padding:12px 15px;
+  border-radius:50%;
+  font-size:22px;
+  text-decoration:none;
+}
+
+/* FOOTER */
+footer{
+  background:#232f3e;
+  color:#fff;
+  text-align:center;
+  padding:20px;
+}
+</style>
+
 </head>
-<body>
 
-<noscript>
-  <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
-  height="0" width="0" style="display:none"></iframe>
-</noscript>
+<body>
 
 <header>🔥 Top Amazon Gadgets 2026</header>
 
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <a href="index.html">🏠 الرئيسية</a>
+  <a href="index.html#productsContainer">📦 المنتجات</a>
+  <a href="cart.html">🛒 السلة</a>
+  <a href="blog.html">📰 المدونة</a>
+  <a href="contact.html">✉️ اتصل بنا</a>
+  <a href="dashboard.html">📊 لوحة التحكم</a>
+</nav>
+
+<script>
+const currentPath = window.location.pathname.toLowerCase();
+document.querySelectorAll('.navbar a').forEach(link=>{
+  if(currentPath.includes(link.getAttribute('href'))){
+    link.classList.add('active');
+  }
+});
+</script>
+
+<!-- ================= CONTENT ================= -->
 <div class="container">
 
-  <!-- SEO -->
-  <div class="card">
-    <h1>Top Amazon Gadgets 2026</h1>
-    <p>Discover trending Amazon tech products and smart devices with real tracking & affiliate links.</p>
-  </div>
+<div class="card">
+<h1>🔥 Echo Dot Smart Speaker</h1>
+<img src="https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg" width="100%">
+<p>✔ Voice control<br>✔ Smart home integration<br>✔ Compact design</p>
 
-  <!-- PRODUCT -->
-  <div class="card">
-    <h2>🔥 Echo Dot Smart Speaker</h2>
-    <img src="https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg" width="100%">
-    <p>✔ Voice control<br>✔ Smart home integration<br>✔ Compact design</p>
-    <button class="btn" onclick="buyNow('B09B8Q3YHJ','Echo Dot Smart Speaker')">🔥 Buy on Amazon</button>
-    <button class="btn" onclick="orderWhatsApp('Echo Dot Smart Speaker')">📲 WhatsApp Order</button>
-  </div>
+<button class="btn" onclick="buyNow('B09B8Q3YHJ')">🔥 Buy on Amazon</button>
+<button class="btn" onclick="orderWhatsApp('Echo Dot Smart Speaker')">📲 WhatsApp Order</button>
+</div>
 
-  <!-- RELATED -->
-  <div class="card">
-    <h3>📚 Related Posts</h3>
-    <a href="post1.html">Smart Watches</a><br>
-    <a href="post2.html">Best Deals</a>
-  </div>
+<div class="card">
+<h3>📚 Related Posts</h3>
+<a href="post1.html">Smart Watches</a><br>
+<a href="post2.html">Best Deals</a>
+</div>
 
 </div>
 
+<!-- ================= FAQ ================= -->
+<div class="faq" id="faq"></div>
+
+<!-- ================= WHATSAPP FLOAT ================= -->
+<a href="https://wa.me/201205271929" class="whatsapp-float">📲</a>
+
 <footer>
-  <p>© 2026 Koloonline</p>
+<p>© 2026 Koloonline</p>
 </footer>
 
 <script>
-/* ================= TRACKING API ================= */
-async function trackEvent(eventType, data){
-  try{
-    await fetch("https://koloonline-store-git-main-linasobhys-projects.vercel.app/api/track",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({
-        event: eventType,
-        data: data,
-        page: "post",
-        timestamp: new Date().toISOString(),
-        country: navigator.language
-      })
-    });
-  }catch(e){console.log("tracking failed");}
+
+/* ================= TRACKING ================= */
+function trackEvent(type,data){
+  fetch("/api/track",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      event:type,
+      data:data,
+      page:"landing",
+      time:new Date().toISOString()
+    })
+  }).catch(()=>{});
 }
 
 /* ================= BUY ================= */
-function buyNow(asin, title){
-  trackEvent("amazon_click", asin);
-  window.open(`https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`, "_blank");
+function buyNow(asin){
+  trackEvent("amazon_click",asin);
+  window.open(`https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`,"_blank");
 }
+
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(product){
+  trackEvent("whatsapp_click",product);
+  window.open("https://wa.me/201205271929?text="+encodeURIComponent("I want to order: "+product));
+}
+
+/* ================= FAQ ================= */
+const faqs=[
+{q:"هل المنتج أصلي؟",a:"نعم من Amazon مباشرة"},
+{q:"هل يوجد شحن؟",a:"حسب بلدك والبائع"},
+{q:"هل الدفع آمن؟",a:"نعم عبر Amazon"}
+];
+
+function loadFAQ(){
+  const container=document.getElementById("faq");
+  faqs.forEach(f=>{
+    const p=document.createElement("p");
+    p.innerHTML=`<b>${f.q}</b><br>${f.a}`;
+    container.appendChild(p);
+  });
+}
+
+loadFAQ();
+
+</script>
+
+</body>
+</html>
