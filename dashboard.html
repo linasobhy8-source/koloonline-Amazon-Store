@@ -20,6 +20,9 @@ header{
   padding:15px;
   text-align:center;
   font-size:22px;
+  position:sticky;
+  top:0;
+  z-index:1000;
 }
 
 /* NAVBAR */
@@ -94,6 +97,20 @@ header{
   margin-bottom:10px;
 }
 
+/* WHATSAPP FLOAT */
+.whatsapp-float{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#25d366;
+  color:#fff;
+  padding:12px 15px;
+  border-radius:50px;
+  font-weight:bold;
+  text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
 /* MOBILE */
 @media(max-width:600px){
   .cards{grid-template-columns:1fr;}
@@ -108,18 +125,18 @@ header{
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <a href="/">🏠 الرئيسية</a>
-  <a href="/products">📦 المنتجات</a>
-  <a href="/cart">🛒 السلة</a>
-  <a href="/blog">📰 المدونة</a>
-  <a href="/contact">✉️ اتصل بنا</a>
-  <a href="/dashboard">📊 لوحة التحكم</a>
+  <a href="index.html">🏠 الرئيسية</a>
+  <a href="products.html">📦 المنتجات</a>
+  <a href="cart.html">🛒 السلة</a>
+  <a href="blog.html">📰 المدونة</a>
+  <a href="contact.html">✉️ اتصل بنا</a>
+  <a href="dashboard.html">📊 لوحة التحكم</a>
 </nav>
 
 <script>
 const currentPath = window.location.pathname.toLowerCase();
 document.querySelectorAll('.navbar a').forEach(link=>{
-  if(link.getAttribute('href') === currentPath){
+  if(currentPath.includes(link.getAttribute('href'))){
     link.classList.add('active');
   }
 });
@@ -152,7 +169,28 @@ document.querySelectorAll('.navbar a').forEach(link=>{
 <!-- FAQ -->
 <div class="faq" id="faqSection"></div>
 
+<!-- WhatsApp Floating Button -->
+<a class="whatsapp-float" 
+   href="https://wa.me/201205271929" 
+   target="_blank">
+   📲 واتساب
+</a>
+
 <script>
+// ================= TRACKING =================
+function trackEvent(type,data){
+  fetch("/api/track",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      event:type,
+      data:data,
+      page:"dashboard",
+      time:new Date().toISOString()
+    })
+  }).catch(()=>{});
+}
+
 // ================= FETCH ANALYTICS =================
 async function fetchAnalytics(){
   try{
@@ -186,6 +224,9 @@ function renderProducts(products){
       <p>🖱️ Clicks: ${p.clicks}</p>
       <p>🛒 Orders: ${p.orders}</p>
       <p>📲 WhatsApp: ${p.whatsapp}</p>
+      <button onclick="trackEvent('product_view','${p.asin}')">
+        📊 Track
+      </button>
     `;
 
     container.appendChild(div);
@@ -196,7 +237,8 @@ function renderProducts(products){
 const faqs=[
 {q:"هل البيانات مباشرة؟",a:"نعم يتم التحديث كل 10 ثواني"},
 {q:"هل يمكن تتبع كل منتج؟",a:"نعم عبر Top Products"},
-{q:"هل يظهر الطلبات؟",a:"نعم في Orders"}
+{q:"هل يظهر الطلبات؟",a:"نعم في Orders"},
+{q:"هل يوجد تتبع واتساب؟",a:"نعم يتم تسجيل كل ضغطه"}
 ];
 
 function renderFAQ(){
