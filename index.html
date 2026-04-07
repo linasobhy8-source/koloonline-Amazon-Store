@@ -5,219 +5,197 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Koloonline Store</title>
 <link rel="icon" href="favicon.ico">
+
 <style>
-/* ================= BODY ================= */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f5f5f5;
-}
+body { font-family: Arial; margin:0; background:#f5f5f5; }
 
-/* ================= HEADER ================= */
-header {
-  background: #232f3e;
-  color: #fff;
-  padding: 15px;
-  text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+/* HEADER */
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  position:sticky;
+  top:0;
+  z-index:1000;
 }
-header img {
-  height: 50px;
-  margin-bottom: 5px;
-}
-header p {
-  margin: 5px 0 0;
-  font-size: 14px;
-}
+header img{height:50px}
 
-/* ================= NAVBAR ================= */
-.navbar {
+/* NAVBAR */
+.navbar{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
   gap:10px;
   background:#37475a;
-  padding:10px 0;
+  padding:10px;
 }
-.navbar a {
-  color:white;
+.navbar a{
+  color:#fff;
   text-decoration:none;
-  padding:8px 12px;
-  border-radius:5px;
-  transition:0.2s;
+  padding:8px 14px;
+  border-radius:6px;
   font-weight:bold;
+  transition:0.2s;
 }
-.navbar a:hover { background:#e68a00; }
-.navbar a.active { background:#ff9900; }
+.navbar a:hover{background:#ff9900}
+.navbar a.active{background:#ff9900}
 
-/* ================= CONTAINER ================= */
-.container {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 20px;
-  gap: 20px;
-  justify-content: center;
+/* PRODUCTS */
+.container{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  padding:20px;
+  justify-content:center;
 }
-
-/* ================= CARD ================= */
-.card {
-  background: #fff;
-  border-radius: 10px;
-  width: 280px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-align: center;
-  padding: 15px;
-  transition: transform 0.2s, box-shadow 0.2s;
+.card{
+  background:#fff;
+  border-radius:10px;
+  width:280px;
+  padding:15px;
+  text-align:center;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  transition:0.2s;
 }
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+.card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
-.card img {
-  width: 100%;
-  height: 200px;
-  object-fit: contain;
-  border-radius: 6px;
+.card img{
+  width:100%;
+  height:200px;
+  object-fit:contain;
 }
-.card h2 {
-  margin: 10px 0 5px;
-  font-size: 18px;
+.stat-badge{
+  display:flex;
+  justify-content:space-around;
+  background:#e8f5e9;
+  padding:5px;
+  border-radius:6px;
+  font-size:12px;
 }
-.card p {
-  font-size: 13px;
-  color: #555;
-}
-.stat-badge {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-  font-size: 12px;
-  background: #e8f5e9;
-  padding: 5px;
-  border-radius: 6px;
-}
-.stat-badge span { display: flex; align-items: center; gap:3px; }
-.card button {
-  margin-top: 10px;
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  background: #25d366;
-  color: #fff;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.card button:hover { background: #1ebe5d; }
-
-/* ================= FOOTER ================= */
-footer {
-  text-align: center;
-  padding: 20px;
-  background: #232f3e;
-  color: #fff;
-  margin-top: 20px;
+.card button{
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#25d366;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
 }
 
-/* ================= RESPONSIVE ================= */
-@media(max-width:600px){
-  .card { width: 90%; }
-  .navbar { flex-direction: column; align-items: center; }
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:20px;
+  background:#232f3e;
+  color:#fff;
 }
 </style>
 </head>
+
 <body>
 
 <header>
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo">
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png">
   <p>📞 واتس: <a href="https://wa.me/201205271929" style="color:#25d366;">01205271929</a></p>
 </header>
 
-<!-- ================= NAVBAR ================= -->
+<!-- ✅ NAVBAR FINAL -->
 <nav class="navbar">
-  <a href="/" class="">🏠 الرئيسية</a>
-  <a href="/products" class="">📦 المنتجات</a>
-  <a href="/cart" class="">🛒 سلة التسوق</a>
-  <a href="/blog" class="">📰 المدونة</a>
-  <a href="/contact" class="">✉️ اتصل بنا</a>
-  <a href="/dashboard" class="">📊 لوحة التحكم</a>
-  <a href="/thankyou" class="">🎉 شكرًا لك</a>
+  <a href="index.html">🏠 الرئيسية</a>
+  <a href="product.html">📦 المنتجات</a>
+  <a href="cart.html">🛒 سلة التسوق</a>
+  <a href="blog.html">📰 المدونة</a>
+  <a href="contact.html">✉️ اتصل بنا</a>
+  <a href="dashboard.html">📊 لوحة التحكم</a>
+  <a href="thankyou.html">🎉 شكرًا لك</a>
 </nav>
 
 <script>
-  // Highlight للصفحة الحالية
-  const currentPath = window.location.pathname.toLowerCase();
-  document.querySelectorAll('.navbar a').forEach(link=>{
-    if(link.getAttribute('href') === currentPath){
-      link.classList.add('active');
-    }
-  });
+// Highlight current page
+const path = window.location.pathname.split("/").pop();
+document.querySelectorAll(".navbar a").forEach(link=>{
+  if(link.getAttribute("href") === path){
+    link.classList.add("active");
+  }
+});
 </script>
 
-<div class="container" id="productsContainer">
-  <!-- المنتجات ستظهر هنا ديناميكي -->
-</div>
+<div class="container" id="productsContainer"></div>
 
 <footer>
-  <p>© 2026 Koloonline Store by Lina Sobhy</p>
+  <p>© 2026 Koloonline Store</p>
 </footer>
 
 <script>
 const products = [
-  {asin:"B09V7Z4TJG",title:"🔥 Smart Watch Pro",desc:"Top smart watches with fitness tracking, health features and battery life.",image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"},
-  {asin:"B08G9P7N2X",title:"📱 Wireless Earbuds",desc:"High quality sound, low price, best Amazon picks.",image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"}
+  {asin:"B09V7Z4TJG",title:"🔥 Smart Watch Pro",desc:"Top smart watches",image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"},
+  {asin:"B08G9P7N2X",title:"📱 Wireless Earbuds",desc:"High quality sound",image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"}
 ];
 
 async function loadProducts(){
   const container=document.getElementById("productsContainer");
-  container.innerHTML="";
   let stats={};
+
   try{
     const res=await fetch("/api/analytics");
     const data=await res.json();
-    if(data.success) stats=data.topProducts.reduce((acc,p)=>{acc[p.asin]={clicks:p.clicks,orders:p.orders,whatsapp:p.whatsapp};return acc;},{});
-  }catch(e){ console.log("Error fetching stats"); }
+    if(data.success){
+      stats=data.topProducts.reduce((acc,p)=>{
+        acc[p.asin]=p;
+        return acc;
+      },{});
+    }
+  }catch(e){}
 
   products.forEach(p=>{
     const div=document.createElement("div");
     div.className="card";
-    div.onclick=()=>openProduct(event,p.asin);
-    const clickCount=stats[p.asin]?.clicks||0;
-    const orderCount=stats[p.asin]?.orders||0;
-    const waCount=stats[p.asin]?.whatsapp||0;
+    div.onclick=(e)=>openProduct(e,p.asin);
+
+    const s=stats[p.asin]||{clicks:0,orders:0,whatsapp:0};
+
     div.innerHTML=`
-      <img src="${p.image}" alt="${p.title}">
+      <img src="${p.image}">
       <h2>${p.title}</h2>
       <p>${p.desc}</p>
+
       <div class="stat-badge">
-        <span>🖱️ ${clickCount}</span>
-        <span>🛒 ${orderCount}</span>
-        <span>📲 ${waCount}</span>
+        <span>🖱️ ${s.clicks}</span>
+        <span>🛒 ${s.orders}</span>
+        <span>📲 ${s.whatsapp}</span>
       </div>
-      <button onclick="orderWhatsApp(event,'${p.title}')">📲 طلب عبر واتس</button>
+
+      <button onclick="orderWhatsApp(event,'${p.title}')">📲 واتساب</button>
     `;
+
     container.appendChild(div);
   });
 }
 
-function trackEvent(type, asin){
-  fetch("/api/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:type,asin:asin,timestamp:new Date().toISOString()})}).catch(e=>console.log("tracking error"));
+function trackEvent(type,asin){
+  fetch("/api/track",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({event:type,asin})
+  });
 }
 
-function openProduct(e, asin){
+function openProduct(e,asin){
   e.stopPropagation();
-  trackEvent("product_open", asin);
-  window.location.href="product.html?asin="+asin;
+  trackEvent("open",asin);
+  window.location.href=`product.html?asin=${asin}`;
 }
 
 function orderWhatsApp(e,name){
   e.stopPropagation();
-  trackEvent("whatsapp_order",name);
-  window.open("https://wa.me/201205271929?text="+encodeURIComponent("أريد طلب: "+name)," _blank");
+  trackEvent("whatsapp",name);
+  window.open(`https://wa.me/201205271929?text=${encodeURIComponent(name)}`);
 }
 
 loadProducts();
