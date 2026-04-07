@@ -1,95 +1,85 @@
-// app.js
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
-// Function to detect user country/language
-function detectUserCountry() {
-    // Placeholder for user country detection logic
-    return 'us'; // Example: 'us' for USA
-}
+const app = express();
+app.use(express.json());
+app.use(cors());
 
-// Function to generate affiliate link based on country
-function generateAffiliateLink(productId) {
-    const country = detectUserCountry();
-    return `https://affiliate.example.com/${country}/product/${productId}`;
-}
+// ================= DB =================
+mongoose.connect(process.env.MONGODB_URI)
+.then(()=>console.log("✅ MongoDB Connected"))
+.catch(err=>console.log("❌ DB Error:",err));
 
-// Function to fetch products from the API
-async function fetchProducts() {
-    try {
-        const response = await fetch('https://api.example.com/products');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const products = await response.json();
-        displayProducts(products);
-    } catch (error) {
-        console.error('Error fetching products:', error);
-    }
-}
+// ================= MODELS =================
+const trackSchema = new mongoose.Schema({
+  event:String,
+  asin:String,
+  timestamp:String
+});
+const Track = mongoose.model("Track",trackSchema);
 
-// Function to display products
-function displayProducts(products) {
-    const productContainer = document.getElementById('product-container');
-    productContainer.innerHTML = '';
-    products.forEach(product => {
-        const productElement = document.createElement('div');
-        productElement.classList.add('product');
-        productElement.innerHTML = `
-            <h3>${product.name}</h3>
-            <p>${product.description}</p>
-            <a href="${generateAffiliateLink(product.id)}">Buy Now</a>
-        `;
-        productContainer.appendChild(productElement);
-    });
-}
-
-// Event tracking for clicks and cart additions
-function trackEvent(event) {
-    console.log('Tracking event:', event);
-}
-
-// Shopping cart management using localStorage
-const shoppingCart = {
-    addItem(product) {
-        const cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
-        cart.push(product);
-        localStorage.setItem('shoppingCart', JSON.stringify(cart));
-        trackEvent('Item added to cart');
+// ================= PRODUCTS API =================
+app.get("/api/products",(req,res)=>{
+  const products=[
+    {
+      asin:"B09V7Z4TJG",
+      title:"Smart Watch Pro",
+      image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
+      rating:"4.5"
     },
-    getCart() {
-        return JSON.parse(localStorage.getItem('shoppingCart')) || [];
-    },
-    clearCart() {
-        localStorage.removeItem('shoppingCart');
+    {
+      asin:"B08G9P7N2X",
+      title:"Wireless Earbuds",
+      image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
+      rating:"4.3"
     }
-};
+  ];
+  res.json({products});
+});
 
-// Product filtering by category
-function filterProductsByCategory(category) {
-    fetchProducts().then(products => {
-        return products.filter(product => product.category === category);
-    }).then(filteredProducts => displayProducts(filteredProducts));
-}
+// ================= TRACK =================
+app.post("/api/track", async (req,res)=>{
+  try{
+    await Track.create(req.body);
+    res.json({success:true});
+  }catch{
+    res.json({success:false});
+  }
+});
 
-// FAQ accordion toggle
-function toggleFAQ(faqElement) {
-    faqElement.classList.toggle('active');
-    const answer = faqElement.nextElementSibling;
-    if (answer.style.display === "block") {
-        answer.style.display = "none";
-    } else {
-        answer.style.display = "block";
+// ================= ANALYTICS =================
+app.get("/api/analytics", async (req,res)=>{
+  const data = await Track.find();
+
+  let totalClicks=0,totalOrders=0,totalWhatsApp=0;
+  let map={};
+
+  data.forEach(d=>{
+    if(!map[d.asin]) map[d.asin]={clicks:0,orders:0,whatsapp:0};
+
+    if(d.event==="product_open"){
+      totalClicks++;
+      map[d.asin].clicks++;
     }
-}
+    if(d.event==="order"){
+      totalOrders++;
+      map[d.asin].orders++;
+    }
+    if(d.event==="whatsapp"){
+      totalWhatsApp++;
+      map[d.asin].whatsapp++;
+    }
+  });
 
-// Load customer reviews
-function loadCustomerReviews() {
-    // Placeholder for customer review logic
-    console.log('Loading customer reviews...');
-}
+  res.json({
+    success:true,
+    totalClicks,
+    totalOrders,
+    totalWhatsApp,
+    topProducts:Object.keys(map).map(k=>({asin:k,...map[k]}))
+  });
+});
 
-// Initialize application
-function init() {
-    fetchProducts();
-    loadCustomerReviews();
-}
-
-// Execute initialization
-document.addEventListener('DOMContentLoaded', init);
+// ================= START =================
+app.listen(3000,()=>console.log("🚀 Server running"));

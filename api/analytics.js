@@ -1,3 +1,4 @@
+// api/analytics.js
 import mongoose from "mongoose";
 
 // ================= CONNECT =================
@@ -38,8 +39,7 @@ const AnalyticsSchema = new mongoose.Schema({
 });
 
 const Analytics =
-  mongoose.models.Analytics ||
-  mongoose.model("Analytics", AnalyticsSchema);
+  mongoose.models.Analytics || mongoose.model("Analytics", AnalyticsSchema);
 
 // ================= HANDLER =================
 export default async function handler(req, res) {
@@ -57,36 +57,26 @@ export default async function handler(req, res) {
         });
       }
 
-      let doc = await Analytics.findOne({ asin });
-
-      if (!doc) {
-        doc = new Analytics({ asin });
-      }
-
-      if (["click", "cart", "whatsapp"].includes(type)) {
-        doc[type] += 1;
-      }
-
+      // تحديث أو إنشاء جديد
+      const update = { $inc: { [type]: 1 } };
       if (country) {
-        doc.country[country] = (doc.country[country] || 0) + 1;
+        update.$inc[`country.${country.toLowerCase()}`] = 1;
       }
 
-      await doc.save();
+      const doc = await Analytics.findOneAndUpdate(
+        { asin },
+        update,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
 
-      return res.json({ success: true });
+      return res.json({ success: true, doc });
     }
 
     // ================= GET =================
     if (req.method === "GET") {
       const data = await Analytics.find();
 
-      const totals = {
-        click: 0,
-        cart: 0,
-        whatsapp: 0,
-        conversion: 0
-      };
-
+      const totals = { click: 0, cart: 0, whatsapp: 0, conversion: 0 };
       const countries = {};
       const topProducts = [];
 
@@ -120,7 +110,7 @@ export default async function handler(req, res) {
     }
 
     // ================= DEFAULT =================
-    return res.status(200).send("Koloonline API Running 🚀");
+    return res.status(200).send("Koloonline Analytics API Running 🚀");
 
   } catch (err) {
     console.error("❌ API Error:", err);
@@ -129,4 +119,4 @@ export default async function handler(req, res) {
       error: err.message
     });
   }
-    }
+          }

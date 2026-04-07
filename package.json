@@ -1,0 +1,17 @@
+{
+  "name": "koloonline-store",
+  "version": "1.0.0",
+  "main": "app.js",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "cors": "^2.8.5"
+  }
+}

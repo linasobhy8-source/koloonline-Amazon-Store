@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
 
 <!-- ================= BASIC SEO ================= -->
@@ -7,88 +7,123 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>About Us | Koloonline Amazon Store</title>
-<meta name="description" content="Learn more about Koloonline Store, a smart Amazon affiliate platform that helps users discover the best products, deals, and shopping experiences.">
-<meta name="keywords" content="about koloonline, amazon affiliate store, smart shopping, best product deals, online store egypt">
+<meta name="description" content="Learn more about Koloonline Store, a smart Amazon affiliate platform that helps users discover the best products.">
+<meta name="keywords" content="about koloonline, amazon affiliate store, smart shopping">
 <meta name="author" content="Koloonline - Lina Sobhy">
 
 <!-- ================= FAVICON ================= -->
 <link rel="icon" type="image/png" href="assets/1000276862.png">
-<link rel="shortcut icon" href="assets/1000276862.png">
-<link rel="apple-touch-icon" href="assets/1000276862.png">
-
-<!-- ================= OPEN GRAPH ================= -->
-<meta property="og:title" content="About Koloonline Store">
-<meta property="og:description" content="Discover more about Koloonline Amazon Affiliate Store and our mission to deliver smart shopping experiences.">
-<meta property="og:image" content="assets/1000276862.png">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://koloonline-store.vercel.app/about.html">
-
-<!-- ================= TWITTER CARD ================= -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="About Koloonline Store">
-<meta name="twitter:description" content="Learn more about Koloonline Amazon Affiliate Store and our mission.">
-<meta name="twitter:image" content="assets/1000276862.png">
-
-<!-- ================= SEO SETTINGS ================= -->
-<meta name="theme-color" content="#000000">
-<meta name="robots" content="index, follow">
 
 <!-- ================= STYLES ================= -->
 <style>
 body{
   font-family: Arial, sans-serif;
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
-  line-height: 1.7;
+  margin:0;
   background:#f5f5f5;
-  color:#111;
 }
 
+/* ================= HEADER ================= */
 header{
   background:#232f3e;
   color:#fff;
   padding:15px;
   font-size:22px;
-  border-radius:8px;
   text-align:center;
 }
 
-h1{
-  color:#111;
-  margin-top:20px;
+/* ================= NAVBAR ================= */
+.navbar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  background:#37475a;
+  padding:10px;
+}
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:6px;
+  font-weight:bold;
+  transition:0.2s;
+}
+.navbar a:hover{ background:#e68a00; }
+.navbar a.active{ background:#ff9900; }
+
+/* ================= CONTAINER ================= */
+.container{
+  max-width:900px;
+  margin:20px auto;
+  padding:20px;
 }
 
-h2{
-  margin-top:25px;
-  color:#222;
-}
-
-ul{
-  margin-left:20px;
-}
-
-li{
-  margin-bottom:10px;
-}
-
+/* ================= CARD ================= */
 .card{
   background:#fff;
   padding:20px;
   border-radius:10px;
   box-shadow:0 4px 15px rgba(0,0,0,0.1);
-  margin-top:20px;
+}
+
+/* ================= FAQ ================= */
+.faq p{
+  margin-bottom:10px;
+  background:#f9f9f9;
+  padding:10px;
+  border-radius:6px;
+}
+
+/* ================= BUTTON ================= */
+.whatsapp-btn{
+  display:block;
+  width:100%;
+  margin-top:15px;
+  padding:12px;
+  text-align:center;
+  background:#25D366;
+  color:#fff;
+  border-radius:6px;
+  font-weight:bold;
+  text-decoration:none;
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:600px){
+  .navbar{ flex-direction:column; align-items:center; }
 }
 </style>
 
-
-<!-- ================= Vercel Web Analytics ================= -->
+<!-- ================= VERCEL ANALYTICS ================= -->
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+
 </head>
 
 <body>
 
-<header>🏬 Koloonline Store | About Us</header>
+<header>🏬 Koloonline Store</header>
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <a href="/">🏠 الرئيسية</a>
+  <a href="/products">📦 المنتجات</a>
+  <a href="/cart">🛒 السلة</a>
+  <a href="/blog">📰 المدونة</a>
+  <a href="/contact">✉️ اتصل بنا</a>
+  <a href="/dashboard">📊 لوحة التحكم</a>
+  <a href="/about">ℹ️ من نحن</a>
+</nav>
+
+<script>
+const currentPath = window.location.pathname.toLowerCase();
+document.querySelectorAll('.navbar a').forEach(link=>{
+  if(link.getAttribute('href') === currentPath){
+    link.classList.add('active');
+  }
+});
+</script>
+
+<div class="container">
 
 <div class="card">
 
@@ -119,13 +154,40 @@ We carefully select and review products to ensure they meet quality standards an
 To become one of the top online platforms for smart shopping and tech product discovery.
 </p>
 
+<!-- ================= WHATSAPP ================= -->
+<a class="whatsapp-btn" href="https://wa.me/201205271929" target="_blank">
+📲 تواصل معنا عبر واتساب
+</a>
+
 </div>
 
-<!-- ================= OPTIONAL ADSENSE PLACEMENT ================= -->
-<div id="about-top-ad" style="margin:20px 0; text-align:center;"></div>
-<script src="adsense-dynamic.js"></script>
+<!-- ================= FAQ ================= -->
+<div class="card" style="margin-top:20px;">
+<h2>Frequently Asked Questions</h2>
+<div class="faq" id="faqSection"></div>
+</div>
+
+</div>
+
+<!-- ================= FAQ SCRIPT ================= -->
 <script>
-  loadAd("about-top-ad", "ca-pub-1294940976431468", "1614162350");
+const faqs = [
+  {q:"Is Koloonline a real store?", a:"Yes, Koloonline is an Amazon affiliate platform that helps you discover trusted products."},
+  {q:"Do you sell products directly?", a:"No, all purchases are completed through Amazon secure checkout."},
+  {q:"Are prices different?", a:"No, prices are exactly the same as Amazon."},
+  {q:"How can I contact support?", a:"You can contact us anytime through WhatsApp or Contact page."}
+];
+
+function renderFAQ(){
+  const container=document.getElementById("faqSection");
+  container.innerHTML="";
+  faqs.forEach(f=>{
+    const p=document.createElement("p");
+    p.innerHTML=`<strong>${f.q}</strong><br>${f.a}`;
+    container.appendChild(p);
+  });
+}
+renderFAQ();
 </script>
 
 </body>

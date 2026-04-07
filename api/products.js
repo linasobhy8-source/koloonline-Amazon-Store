@@ -1,9 +1,8 @@
 export default function handler(req, res) {
 
-  // تحديد الدولة (افتراضي us)
+  // ================= COUNTRY =================
   const country = (req.query.country || "us").toLowerCase();
 
-  // Affiliate tags لكل دولة
   const affiliateTags = {
     us: "koloonlinesto-20",
     ca: "onlinesho0429-20",
@@ -11,18 +10,17 @@ export default function handler(req, res) {
     eg: "onlinesh03f31-21"
   };
 
-  // تحديد الدومين الصحيح لأمازون
-  const domain =
-    country === "eg" ? "eg" :
-    country === "pl" ? "pl" :
-    country === "ca" ? "ca" :
-    "com";
+  // ================= DOMAIN =================
+  let domain = "amazon.com";
+  if (country === "eg") domain = "amazon.eg";
+  if (country === "ca") domain = "amazon.ca";
+  if (country === "pl") domain = "amazon.pl";
 
-  // المنتجات (مؤقتة - بدل MongoDB)
+  // ================= PRODUCTS =================
   const products = [
     {
       id: 1,
-      title: "سماعة Anker مكبر الصوت",
+      title: "🎧 سماعة Anker مكبر الصوت",
       image: "https://m.media-amazon.com/images/I/71tV4O0rO0L._AC_SL1500_.jpg",
       asin: "B07ZNT7PRL",
       rating: 4.5,
@@ -31,7 +29,7 @@ export default function handler(req, res) {
     },
     {
       id: 2,
-      title: "سكين HOSHANHO",
+      title: "🔪 سكين HOSHANHO احترافي",
       image: "https://m.media-amazon.com/images/I/81pZ9n52llL._AC_SL1500_.jpg",
       asin: "B0CKMF6GPZ",
       rating: 4.2,
@@ -40,24 +38,17 @@ export default function handler(req, res) {
     }
   ];
 
-  // إضافة رابط الأفلييت
-  const mappedProducts = products.map(product => ({
-    ...product,
-    link: `https://www.amazon.${domain}/dp/${product.asin}?tag=${affiliateTags[country] || affiliateTags.us}`
+  // ================= ADD AFFILIATE LINK =================
+  const finalProducts = products.map(p => ({
+    ...p,
+    link: `https://${domain}/dp/${p.asin}?tag=${affiliateTags[country]}`
   }));
 
-  // ترتيب المنتجات حسب الربحية + التقييم + الأولوية
-  const sortedProducts = mappedProducts.sort((a, b) => {
-    const scoreA = (a.affiliateRate * 100) + (a.rating * 10) + a.priority;
-    const scoreB = (b.affiliateRate * 100) + (b.rating * 10) + b.priority;
-    return scoreB - scoreA;
-  });
-
-  // الرد النهائي
+  // ================= RESPONSE =================
   res.status(200).json({
     success: true,
-    country: country,
-    total: sortedProducts.length,
-    products: sortedProducts
+    country,
+    count: finalProducts.length,
+    products: finalProducts
   });
 }
