@@ -20,11 +20,12 @@ gtag('config', 'G-YS8L61XLPR');
 </script>
 
 <style>
-body{font-family:Arial;margin:0;background:#f5f5f5}
+body{font-family:Arial;margin:0;background:#f5f5f5;line-height:1.6;color:#111;}
 header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bold;text-align:center;}
-.navbar{display:flex;justify-content:space-between;padding:10px;background:#37475a;color:#fff;flex-wrap:wrap;}
-.navbar button{background:#ff9900;border:none;padding:8px 12px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:5px;transition:0.2s;}
-.navbar button:hover{background:#e68a00;}
+.navbar{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;background:#37475a;padding:10px;margin-bottom:20px;}
+.navbar a{color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none;font-weight:bold;transition:0.2s;}
+.navbar a:hover{background:#e68a00;}
+.navbar a.active{background:#ff9900;}
 .card{background:#fff;padding:20px;border-radius:10px;max-width:600px;margin:20px auto;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
 .card img{width:100%;max-height:300px;object-fit:contain;border-radius:6px;}
 .price{color:#b12704;font-size:22px;font-weight:bold;}
@@ -35,25 +36,39 @@ header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bol
 .section{background:#fff;margin:20px auto;padding:20px;max-width:700px;border-radius:10px;}
 .review{background:#f9f9f9;padding:10px;margin:10px 0;border-radius:8px;}
 .urgency{color:red;font-weight:bold;margin-top:10px;}
+.faq p{background:#f9f9f9;padding:10px;border-radius:6px;margin-bottom:10px;}
+.whatsapp-float{position:fixed;bottom:20px;right:20px;background:#25D366;color:#fff;padding:12px 15px;border-radius:50%;font-size:22px;text-decoration:none;}
 @media(max-width:600px){.card{padding:15px;}.card img{max-height:250px;}}
 </style>
 
 <!-- ================= Vercel Web Analytics ================= -->
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+
 </head>
 <body>
 
 <header>🔥 Koloonline Product</header>
 
-<div class="navbar">
-🛒 Cart: <span id="cart-count">0</span>
-<div>
-<button onclick="location.href='index.html'">🏠 Home</button>
-<button onclick="location.href='dashboard.html'">📊 Dashboard</button>
-</div>
-</div>
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <a href="index.html">🏠 Home</a>
+  <a href="index.html#productsContainer">📦 Products</a>
+  <a href="cart.html">🛒 Cart</a>
+  <a href="blog.html">📰 Blog</a>
+  <a href="contact.html">✉️ Contact</a>
+  <a href="privacy.html">🔒 Privacy</a>
+</nav>
 
-<!-- PRODUCT -->
+<script>
+const currentPath = window.location.pathname.toLowerCase();
+document.querySelectorAll('.navbar a').forEach(link=>{
+  if(currentPath.includes(link.getAttribute('href'))){
+    link.classList.add('active');
+  }
+});
+</script>
+
+<!-- ================= PRODUCT ================= -->
 <div id="product"></div>
 
 <!-- TRUST -->
@@ -85,17 +100,16 @@ header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bol
 </div>
 
 <!-- FAQ -->
-<div class="section">
-<h2>❓ FAQ</h2>
-<p><b>Is this original?</b><br>Yes, 100% original.</p>
-<p><b>Shipping time?</b><br>3–7 days depending on location.</p>
-</div>
+<div class="section" id="faq"></div>
 
 <!-- RELATED PRODUCTS -->
 <div class="section">
 <h2>🔥 Related Products</h2>
 <div id="related" style="display:flex;gap:15px;flex-wrap:wrap;justify-content:center;"></div>
 </div>
+
+<!-- WHATSAPP FLOAT -->
+<a href="https://wa.me/201205271929" class="whatsapp-float">📲</a>
 
 <footer style="text-align:center;padding:20px;background:#232f3e;color:#fff;">
 <a href="privacy.html" style="color:#fff">Privacy</a> |
@@ -105,8 +119,8 @@ header{background:#232f3e;color:#fff;padding:15px;font-size:22px;font-weight:bol
 
 <script>
 /* ================= CONFIG ================= */
-const logoURL="https://i.postimg.cc/9fVfC1Y4/1000276862.png"; // شعارك الجديد
-const whatsappNumber="201205271929"; // رقم WhatsApp مصر مع كود الدولة
+const logoURL="https://i.postimg.cc/9fVfC1Y4/1000276862.png";
+const whatsappNumber="201205271929";
 const products=[
 {id:"1",title:"Echo Dot 5 🔥 30% OFF",asin:"B09B8Q3YHJ",price:39.99,image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",video:"https://www.youtube.com/embed/dQw4w9WgXcQ"},
 {id:"2",title:"Smart Watch Pro 🔥 Deal",asin:"B09V7Z4TJG",price:49.99,image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"}
@@ -114,7 +128,7 @@ const products=[
 
 /* ================= CART ================= */
 let cart=JSON.parse(localStorage.getItem("cart")||"[]");
-function updateCartCount(){document.getElementById("cart-count").innerText=cart.length;}
+function updateCartCount(){document.getElementById("cart-count")?.innerText=cart.length;}
 function addToCart(p){cart.push(p);localStorage.setItem("cart",JSON.stringify(cart));updateCartCount();alert("Added to cart 🛒");}
 
 /* ================= GEO + AFFILIATE ================= */
@@ -183,9 +197,25 @@ html+=`<div style="margin:10px;text-align:center;">
 document.getElementById("related").innerHTML=html;
 }
 
+/* ================= FAQ ================= */
+const faqs=[
+{q:"Is this original?",a:"Yes, 100% original."},
+{q:"Shipping time?",a:"3–7 days depending on location."},
+{q:"Return policy?",a:"30-day return policy for unused products."}
+];
+function loadFAQ(){
+const container=document.getElementById("faq");
+faqs.forEach(f=>{
+const p=document.createElement("p");
+p.innerHTML=`<b>${f.q}</b><br>${f.a}`;
+container.appendChild(p);
+});
+}
+
 /* ================= INIT ================= */
 loadProduct();
 loadRelated();
+loadFAQ();
 updateCartCount();
 </script>
 
