@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Koloonline Store</title>
-<link rel="icon" href="favicon.ico">
+<link rel="icon" href="/favicon.ico">
 
 <style>
 body { font-family: Arial; margin:0; background:#f5f5f5; }
@@ -36,7 +36,6 @@ header img{height:50px}
   padding:8px 14px;
   border-radius:6px;
   font-weight:bold;
-  transition:0.2s;
 }
 .navbar a:hover{background:#ff9900}
 .navbar a.active{background:#ff9900}
@@ -57,11 +56,9 @@ header img{height:50px}
   text-align:center;
   cursor:pointer;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
-  transition:0.2s;
 }
 .card:hover{
   transform:translateY(-5px);
-  box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
 .card img{
   width:100%;
@@ -101,36 +98,34 @@ footer{
 <body>
 
 <header>
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png">
+  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="logo">
   <p>📞 واتس: <a href="https://wa.me/201205271929" style="color:#25d366;">01205271929</a></p>
 </header>
 
-<!-- ✅ NAVBAR FINAL -->
 <nav class="navbar">
-  <a href="index.html">🏠 الرئيسية</a>
-  <a href="product.html">📦 المنتجات</a>
-  <a href="cart.html">🛒 سلة التسوق</a>
-  <a href="blog.html">📰 المدونة</a>
-  <a href="contact.html">✉️ اتصل بنا</a>
-  <a href="dashboard.html">📊 لوحة التحكم</a>
-  <a href="thankyou.html">🎉 شكرًا لك</a>
+  <a href="/">🏠 الرئيسية</a>
+  <a href="/product.html">📦 المنتجات</a>
+  <a href="/cart.html">🛒 السلة</a>
+  <a href="/blog.html">📰 المدونة</a>
+  <a href="/contact.html">✉️ اتصل بنا</a>
+  <a href="/dashboard.html">📊 لوحة التحكم</a>
 </nav>
-
-<script>
-// Highlight current page
-const path = window.location.pathname.split("/").pop();
-document.querySelectorAll(".navbar a").forEach(link=>{
-  if(link.getAttribute("href") === path){
-    link.classList.add("active");
-  }
-});
-</script>
 
 <div class="container" id="productsContainer"></div>
 
 <footer>
   <p>© 2026 Koloonline Store</p>
 </footer>
+
+<script>
+// Highlight current page
+const path = window.location.pathname.split("/").pop() || "";
+document.querySelectorAll(".navbar a").forEach(link=>{
+  if(link.getAttribute("href").includes(path)){
+    link.classList.add("active");
+  }
+});
+</script>
 
 <script>
 const products = [
@@ -143,25 +138,24 @@ async function loadProducts(){
   let stats={};
 
   try{
-    const res=await fetch("/api/analytics");
+    const res=await fetch("/api/stats"); // ✅ كان غلط
     const data=await res.json();
-    if(data.success){
-      stats=data.topProducts.reduce((acc,p)=>{
-        acc[p.asin]=p;
-        return acc;
-      },{});
+
+    if(data.success && data.stats){
+      stats = data.stats;
     }
-  }catch(e){}
+  }catch(e){
+    console.log("API error", e);
+  }
 
   products.forEach(p=>{
     const div=document.createElement("div");
     div.className="card";
-    div.onclick=(e)=>openProduct(e,p.asin);
 
-    const s=stats[p.asin]||{clicks:0,orders:0,whatsapp:0};
+    const s = stats[p.asin] || {clicks:0,orders:0,whatsapp:0};
 
     div.innerHTML=`
-      <img src="${p.image}">
+      <img src="${p.image}" alt="">
       <h2>${p.title}</h2>
       <p>${p.desc}</p>
 
@@ -171,30 +165,20 @@ async function loadProducts(){
         <span>📲 ${s.whatsapp}</span>
       </div>
 
-      <button onclick="orderWhatsApp(event,'${p.title}')">📲 واتساب</button>
+      <button onclick="orderWhatsApp('${p.title}')">📲 واتساب</button>
     `;
+
+    div.addEventListener("click", ()=>openProduct(p.asin));
 
     container.appendChild(div);
   });
 }
 
-function trackEvent(type,asin){
-  fetch("/api/track",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({event:type,asin})
-  });
+function openProduct(asin){
+  window.location.href=`/product.html?asin=${asin}`;
 }
 
-function openProduct(e,asin){
-  e.stopPropagation();
-  trackEvent("open",asin);
-  window.location.href=`product.html?asin=${asin}`;
-}
-
-function orderWhatsApp(e,name){
-  e.stopPropagation();
-  trackEvent("whatsapp",name);
+function orderWhatsApp(name){
   window.open(`https://wa.me/201205271929?text=${encodeURIComponent(name)}`);
 }
 
