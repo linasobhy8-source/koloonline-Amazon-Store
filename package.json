@@ -1,23 +1,25 @@
 {
-  "name": "koloonline-vercel",
+  "name": "@linasobhy8-source/express-js-on-vercel",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Koloonline Express.js project deployed on Vercel",
+  "main": "index.js",
   "scripts": {
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node index.js",
+    "test": "exit 0",
     "build": "tsc"
   },
+  "publishConfig": {
+    "@linasobhy8-source:registry": "https://npm.pkg.github.com"
+  },
+  "keywords": ["express", "vercel", "koloonline"],
+  "author": "Lina Sobhy",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
     "@types/node": "^20.5.1",
-    "@types/express": "^4.17.21",
-    "ts-node": "^10.9.1"
-  },
-  "engines": {
-    "node": "24.x"
+    "typescript": "^5.9.3"
   }
 }
