@@ -1,0 +1,21 @@
+version: 2
+updates:
+
+تحديث GitHub Actions المستخدمة في المشروع
+
+package-ecosystem: "github-actions"
+directory: "/"  # موقع ملفات workflow
+schedule:
+interval: "weekly"
+commit-message:
+prefix: "chore"
+include: "scope"
+allow:
+
+dependency-name: "actions/checkout"
+
+dependency-name: "actions/setup-node"
+
+dependency-name: "amondnet/vercel-action"
+
+
