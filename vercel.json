@@ -4,123 +4,118 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Koloonline Store</title>
-<meta name="description" content="Koloonline Amazon Store - اكتشف أفضل منتجات Amazon مع عروض حصرية، أسعار مميزة، وتجربة تسوق ذكية وسريعة مع نظام أفلييت احترافي.">
-<link rel="icon" href="favicon.ico">
+<meta name="description" content="Koloonline Amazon Store - اكتشف أفضل منتجات Amazon مع عروض حصرية وأسعار مميزة.">
+<link rel="icon" href="/favicon.ico">
 
 <style>
-/* ===== GLOBAL ===== */
 body{font-family:Arial,margin:0;background:#f5f5f5;}
 a{text-decoration:none;color:#fff;}
 .header-main{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:15px 30px;background:#232f3e;color:#fff;}
 .logo{height:50px;max-width:150px;}
 .navbar{list-style:none;padding:0;margin:0;display:flex;gap:20px;flex-wrap:wrap;}
 .navbar li{display:inline;}
-.navbar a{color:#fff;font-weight:500;transition:color 0.3s;}
+.navbar a{color:#fff;font-weight:500;}
 .navbar a:hover{color:#FF9900;}
 .search-bar{display:flex;gap:10px;flex-wrap:wrap;}
-.search-input{padding:10px 15px;border:1px solid #ccc;border-radius:25px;width:200px;transition:border 0.3s;}
-.search-input:focus{border-color:#FF9900;outline:none;}
-.products{display:grid;gap:15px;margin:20px 0;}
+.search-input{padding:10px;border:1px solid #ccc;border-radius:25px;width:200px;}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;margin:20px 0;}
 .card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;}
-.card img{width:100%;height:180px;object-fit:contain;border-radius:6px;}
-.price{color:#b12704;font-weight:bold;font-size:18px;}
-.buy-btn{background:#ff9900;border:none;padding:12px;width:100%;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;transition:0.2s;}
-.buy-btn:hover{background:#e68a00;}
+.card img{width:100%;height:180px;object-fit:contain;}
+.price{color:#b12704;font-weight:bold;}
+.buy-btn{background:#ff9900;border:none;padding:10px;width:100%;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;}
 .buy-btn.whatsapp{background:#25D366;color:#fff;}
-.trust{background:#e8f5e9;padding:10px;border-radius:6px;margin-top:15px;font-size:14px;}
-.box{max-width:900px;margin:30px auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
-@media(max-width:768px){.header-main{flex-direction:column;align-items:center;text-align:center;gap:10px;}.navbar{flex-direction:column;gap:10px;}.search-input{width:100%;max-width:300px;}}
+.box{max-width:1000px;margin:30px auto;background:#fff;padding:20px;border-radius:12px;}
 </style>
-
 </head>
+
 <body>
 
-<!-- ================= HEADER + NAVBAR ================= -->
+<!-- HEADER -->
 <div class="header-main">
-    <img src="assets/1000276862.png" alt="Koloonline Logo" class="logo">
-    <ul class="navbar">
-        <li><a href="/index">🏠 Home</a></li>
-        <li><a href="/product">🛒 Products</a></li>
-        <li><a href="/blog">📚 Blog</a></li>
-        <li><a href="/FAQ">❓ FAQ</a></li>
-        <li><a href="/contact">✉ Contact</a></li>
-        <li class="cart">Cart: <span id="cart-count">0</span></li>
-    </ul>
-    <div class="search-bar">
-        <input type="text" id="search" class="search-input" placeholder="Search products...">
-        <button onclick="searchProducts()">🔍 Search</button>
-    </div>
+  <img src="/assets/1000276862.png" alt="Koloonline Logo" class="logo">
+
+  <ul class="navbar">
+    <li><a href="/">🏠 Home</a></li>
+    <li><a href="/products">🛒 Products</a></li>
+    <li><a href="/blog">📚 Blog</a></li>
+    <li><a href="/faq">❓ FAQ</a></li>
+    <li><a href="/contact">✉ Contact</a></li>
+    <li>Cart: <span id="cart-count">0</span></li>
+  </ul>
+
+  <div class="search-bar">
+    <input type="text" id="search" class="search-input" placeholder="Search products...">
+    <button onclick="searchProducts()">🔍</button>
+  </div>
 </div>
 
-<!-- ================= PAGE CONTENT ================= -->
+<!-- CONTENT -->
 <div class="box">
 <h1>Welcome to Koloonline Store</h1>
-<p>Explore our trending products below:</p>
+<p>Explore trending products 👇</p>
 
 <div id="productsContainer" class="products"></div>
 </div>
 
 <script>
-/* ================= CART ================= */
+// CART
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-function updateCartCount(){document.getElementById("cart-count").innerText = cart.length;}
+function updateCartCount(){
+  document.getElementById("cart-count").textContent = cart.length;
+}
 updateCartCount();
 
-/* ================= PRODUCTS ================= */
+// PRODUCTS
 const products = [
-    {id:"1", title:"Echo Dot 5 🔥 30% OFF", price:49.99, asin:"B09B8Q3YHJ", tags:{egypt:"onlinesh03f31-21", canada:"onlinesho0429-20", poland:"koloonline-21"}, image:"assets/product1.jpg"},
-    {id:"2", title:"Smart Watch Pro 🔥 Deal", price:79.99, asin:"B09V7Z4TJG", tags:{egypt:"onlinesh03f31-21", canada:"onlinesho0429-20", poland:"koloonline-21"}, image:"assets/product2.jpg"},
-    {id:"3", title:"Fire TV Stick 4K", price:39.99, asin:"B08XJG8MQM", tags:{egypt:"onlinesh03f31-21", canada:"onlinesho0429-20", poland:"koloonline-21"}, image:"assets/product3.jpg"}
+  {id:"1", title:"Echo Dot 5", price:49.99, asin:"B09B8Q3YHJ", image:"/assets/product1.jpg"},
+  {id:"2", title:"Smart Watch Pro", price:79.99, asin:"B09V7Z4TJG", image:"/assets/product2.jpg"},
+  {id:"3", title:"Fire TV Stick 4K", price:39.99, asin:"B08XJG8MQM", image:"/assets/product3.jpg"}
 ];
 
-function getCountry(){
-  let lang=navigator.language||"en-US";
-  if(lang.includes("ar")) return "EG";
-  if(lang.includes("pl")) return "PL";
-  if(lang.includes("en-CA")) return "CA";
-  return "US";
+// AFFILIATE LINK
+function getAffiliateLink(asin){
+  return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
 }
 
-function getAffiliateLink(product){
-  const country = getCountry();
-  let domain="amazon.com", tag="koloonlinesto-20";
-  if(country==="EG"){domain="amazon.eg";tag=product.tags?.egypt;}
-  if(country==="CA"){domain="amazon.ca";tag=product.tags?.canada;}
-  if(country==="PL"){domain="amazon.pl";tag=product.tags?.poland;}
-  return `https://${domain}/dp/${product.asin}?tag=${tag}`;
-}
-
-function renderProducts(){
+// RENDER
+function renderProducts(list = products){
   const container = document.getElementById("productsContainer");
-  container.innerHTML="";
-  products.forEach(p=>{
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`
+  container.innerHTML = "";
+
+  list.forEach(p=>{
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
       <img src="${p.image}" alt="${p.title}">
       <h4>${p.title}</h4>
       <p class="price">$${p.price}</p>
-      <button class="buy-btn" onclick="window.open('${getAffiliateLink(p)}','_blank')">🔥 Buy Now</button>
+      <button class="buy-btn" onclick="buyProduct('${p.asin}')">🔥 Buy</button>
       <button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')">📲 WhatsApp</button>
     `;
+
     container.appendChild(card);
   });
 }
 
-/* ================= WHATSAPP ================= */
+// BUY
+function buyProduct(asin){
+  window.open(getAffiliateLink(asin), "_blank");
+}
+
+// WHATSAPP
 function orderWhatsApp(title){
-  window.open("https://wa.me/201205271929?text="+encodeURIComponent("I want to order: "+title));
+  window.open(`https://wa.me/201205271929?text=${encodeURIComponent("I want: "+title)}`);
 }
 
-/* ================= SEARCH ================= */
+// SEARCH
 function searchProducts(){
-  let query=document.getElementById("search").value.toLowerCase();
-  let filtered=products.filter(p=>p.title.toLowerCase().includes(query));
-  if(filtered.length>0){alert("Found: "+filtered.map(p=>p.title).join(", "));}
-  else{alert("No products found.");}
+  const q = document.getElementById("search").value.toLowerCase();
+  const filtered = products.filter(p => p.title.toLowerCase().includes(q));
+  renderProducts(filtered);
 }
 
-/* ================= INIT ================= */
+// INIT
 renderProducts();
 </script>
 
