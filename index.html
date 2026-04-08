@@ -56,6 +56,7 @@ header img{height:50px}
   text-align:center;
   cursor:pointer;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  transition:0.2s;
 }
 .card:hover{
   transform:translateY(-5px);
@@ -128,24 +129,36 @@ document.querySelectorAll(".navbar a").forEach(link=>{
 </script>
 
 <script>
+// PRODUCTS
 const products = [
-  {asin:"B09V7Z4TJG",title:"🔥 Smart Watch Pro",desc:"Top smart watches",image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"},
-  {asin:"B08G9P7N2X",title:"📱 Wireless Earbuds",desc:"High quality sound",image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"}
+  {
+    asin:"B09V7Z4TJG",
+    title:"🔥 Smart Watch Pro",
+    desc:"Top smart watches",
+    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
+  },
+  {
+    asin:"B08G9P7N2X",
+    title:"📱 Wireless Earbuds",
+    desc:"High quality sound",
+    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+  }
 ];
 
+// LOAD PRODUCTS
 async function loadProducts(){
   const container=document.getElementById("productsContainer");
   let stats={};
 
   try{
-    const res=await fetch("/api/stats"); // ✅ كان غلط
+    const res=await fetch("/api/stats");
     const data=await res.json();
 
     if(data.success && data.stats){
       stats = data.stats;
     }
   }catch(e){
-    console.log("API error", e);
+    console.log("API error:", e);
   }
 
   products.forEach(p=>{
@@ -174,14 +187,17 @@ async function loadProducts(){
   });
 }
 
+// OPEN PRODUCT
 function openProduct(asin){
   window.location.href=`/product.html?asin=${asin}`;
 }
 
+// WHATSAPP
 function orderWhatsApp(name){
   window.open(`https://wa.me/201205271929?text=${encodeURIComponent(name)}`);
 }
 
+// INIT
 loadProducts();
 </script>
 
