@@ -17,6 +17,12 @@ header {
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
+/* LOGO */
+.logo {
+  height: 55px;
+  margin-bottom: 10px;
+}
+
 /* ================= NAVBAR ================= */
 .navbar {
   display: flex;
@@ -51,9 +57,10 @@ header {
 
 .search-input {
   padding: 10px;
-  width: 250px;
+  width: 260px;
   border-radius: 6px;
   border: 1px solid #ccc;
+  outline: none;
 }
 
 /* ================= BUTTON ================= */
