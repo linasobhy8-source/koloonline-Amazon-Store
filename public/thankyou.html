@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎉 Order Confirmed | Koloonline</title>
+<meta name="description" content="Your order is confirmed. Enjoy exclusive offers and deals now.">
+<link rel="icon" href="favicon.ico">
+
+<!-- ================= FB PIXEL ================= -->
+<script>
+!function(f,b,e,v,n,t,s){
+if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','353894198840203');
+fbq('track','PageView');
+</script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config','G-YS8L61XLPR');
+</script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5;text-align:center;}
+header{background:#232f3e;color:#fff;padding:15px;font-size:22px;box-shadow:0 2px 6px rgba(0,0,0,0.2);}
+.header-main{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:15px 30px;background:#232f3e;color:#fff;}
+.logo{height:50px;max-width:150px;}
+.navbar{list-style:none;padding:0;margin:0;display:flex;gap:20px;flex-wrap:wrap;}
+.navbar li{display:inline;}
+.navbar a{color:#fff;text-decoration:none;font-weight:500;transition:color 0.3s;}
+.navbar a:hover{color:#FF9900;}
+.search-bar{display:flex;gap:10px;flex-wrap:wrap;}
+.search-input{padding:10px 15px;border:1px solid #ccc;border-radius:25px;width:200px;transition:border 0.3s;}
+.search-input:focus{border-color:#FF9900;outline:none;}
+
+.box{max-width:600px;margin:40px auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+.buy-btn{background:#ff9900;border:none;padding:12px;width:100%;margin-top:10px;font-weight:bold;cursor:pointer;border-radius:6px;transition:0.2s;}
+.buy-btn:hover{background:#e68a00;}
+.buy-btn.secondary{background:#333;color:#fff;}
+.trust{background:#e8f5e9;padding:10px;border-radius:6px;margin-top:15px;font-size:14px;}
+.upsell{margin-top:20px;padding:15px;background:#fff3cd;border-radius:8px;}
+.products{display:grid;gap:15px;margin-top:15px;}
+.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;}
+.card img{width:100%;height:180px;object-fit:contain;border-radius:6px;}
+.price{color:#b12704;font-weight:bold;font-size:18px;}
+.buy-btn.whatsapp{background:#25D366;color:#fff;}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+.header-main{flex-direction:column;align-items:center;text-align:center;gap:10px;}
+.navbar{flex-direction:column;gap:10px;}
+.search-input{width:100%;max-width:300px;}
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- ================= HEADER + NAVBAR ================= -->
+<div class="header-main">
+    <img src="assets/1000276862.png" alt="Koloonline Logo" class="logo">
+    <ul class="navbar">
+        <li><a href="index.html">🏠 Home</a></li>
+        <li><a href="products.html">🛒 Products</a></li>
+        <li><a href="blog.html">📚 Blog</a></li>
+        <li><a href="faq.html">❓ FAQ</a></li>
+        <li><a href="contact.html">✉ Contact</a></li>
+        <li class="cart">Cart: <span id="cart-count">0</span></li>
+    </ul>
+    <div class="search-bar">
+        <input type="text" id="search" class="search-input" placeholder="Search products...">
+        <button onclick="searchProducts()">🔍 Search</button>
+    </div>
+</div>
+
+<header>🎉 Thank You!</header>
+
+<div class="box">
+<h2>Order Confirmed Successfully ✅</h2>
+<p>Your order is being processed 🚚</p>
+
+<div id="orderInfo"></div>
+<div id="orderTotal" style="margin-top:10px;font-weight:bold;"></div>
+
+<div class="trust">
+✔ Secure Checkout <br>
+✔ Fast Delivery <br>
+✔ Trusted Store
+</div>
+
+<!-- 🔥 UPSELL -->
+<div class="upsell">
+<h3>🔥 Special Offer (Limited Time)</h3>
+<p>Get this trending product before it’s gone!</p>
+<div id="upsellProducts" class="products"></div>
+</div>
+
+<button class="buy-btn secondary" onclick="goHome()">🏠 Back to Store</button>
+</div>
+
+<script>
+/* ================= CART ================= */
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+function updateCartCount() {
+    document.getElementById("cart-count").innerText = cart.length;
+}
+updateCartCount();
+
+/* ================= PRODUCTS SEARCH ================= */
+const products = [
+    {id:"1", title:"Echo Dot 5 🔥 30% OFF", asin:"B09B8Q3YHJ", tags:{egypt:"onlinesh03f31-21", canada:"onlinesho0429-20", poland:"koloonline-21"}},
+    {id:"2", title:"Smart Watch Pro 🔥 Deal", asin:"B09V7Z4TJG", tags:{egypt:"onlinesh03f31-21", canada:"onlinesho0429-20", poland:"koloonline-21"}},
+    {id:"3", title:"Fire TV Stick 4K", asin:"B08XJG8MQM", tags:{egypt:"onlinesh03f31-21", canada:"onlinesho0429-20", poland:"koloonline-21"}}
+];
+
+function searchProducts(){
+    let query = document.getElementById("search").value.toLowerCase();
+    let filtered = products.filter(p => p.title.toLowerCase().includes(query));
+    if(filtered.length > 0){
+        alert("Found: " + filtered.map(p=>p.title).join(", "));
+    }else{
+        alert("No products found.");
+    }
+}
+
+/* ================= GET LAST ORDER ================= */
+let orders = JSON.parse(localStorage.getItem("orders") || "[]");
+let lastOrder = orders[orders.length - 1] || {};
+let orderId = lastOrder.id || ("KO-" + Math.floor(Math.random()*999999));
+let total = lastOrder.totalPrice || 0;
+
+/* ================= SHOW ORDER INFO ================= */
+document.getElementById("orderInfo").innerHTML = "🧾 Order ID: " + orderId;
+document.getElementById("orderTotal").innerHTML = "💰 Total: $" + total.toFixed(2);
+
+/* ================= TRACK PURCHASE ================= */
+fbq('track','Purchase',{
+value: total,
+currency:'USD',
+content_ids: lastOrder.items?.map(i=>i.asin) || []
+});
+gtag('event','purchase',{
+transaction_id:orderId,
+value:total,
+currency:'USD'
+});
+
+/* ================= UPSALE PRODUCTS ================= */
+const upsellProducts = lastOrder.items || [];
+
+function getCountry(){
+  let lang=navigator.language||"en-US";
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("pl")) return "PL";
+  if(lang.includes("en-CA")) return "CA";
+  return "US";
+}
+
+function getAffiliateLink(product){
+  const country = getCountry();
+  let domain="amazon.com", tag="koloonlinesto-20";
+  if(country==="EG"){domain="amazon.eg";tag=product.tags?.egypt;}
+  if(country==="CA"){domain="amazon.ca";tag=product.tags?.canada;}
+  if(country==="PL"){domain="amazon.pl";tag=product.tags?.poland;}
+  return `https://${domain}/dp/${product.asin}?tag=${tag}`;
+}
+
+function renderUpsell(){
+  const container = document.getElementById("upsellProducts");
+  container.innerHTML = "";
+  upsellProducts.forEach(p=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${p.image}" alt="${p.title}">
+      <h4>${p.title}</h4>
+      <p class="price">$${p.price}</p>
+      <button class="buy-btn" onclick="window.open('${getAffiliateLink(p)}','_blank')">🔥 Buy Now</button>
+      <button class="buy-btn whatsapp" onclick="orderWhatsApp('${p.title}')">📲 WhatsApp</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+/* ================= WHATSAPP ================= */
+function orderWhatsApp(title){
+  window.open("https://wa.me/201205271929?text="+encodeURIComponent("I want to order: "+title));
+}
+
+/* ================= HOME ================= */
+function goHome(){window.location.href="index.html";}
+
+/* ================= CLEAN CART ================= */
+localStorage.removeItem("cart");
+
+/* ================= INIT ================= */
+renderUpsell();
+</script>
+
+</body>
+</html>
