@@ -4,27 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Koloonline Store</title>
-<link rel="icon" href="/favicon.ico">
 
 <style>
 body { font-family: Arial; margin:0; background:#f5f5f5; }
 
-/* HEADER */
 header{
   background:#232f3e;
   color:#fff;
   padding:15px;
   text-align:center;
-  position:sticky;
-  top:0;
-  z-index:1000;
 }
-header img{height:50px}
-
-/* NAVBAR */
 .navbar{
   display:flex;
-  flex-wrap:wrap;
   justify-content:center;
   gap:10px;
   background:#37475a;
@@ -35,12 +26,9 @@ header img{height:50px}
   text-decoration:none;
   padding:8px 14px;
   border-radius:6px;
-  font-weight:bold;
 }
 .navbar a:hover{background:#ff9900}
-.navbar a.active{background:#ff9900}
 
-/* PRODUCTS */
 .container{
   display:flex;
   flex-wrap:wrap;
@@ -54,25 +42,12 @@ header img{height:50px}
   width:280px;
   padding:15px;
   text-align:center;
-  cursor:pointer;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
-  transition:0.2s;
-}
-.card:hover{
-  transform:translateY(-5px);
 }
 .card img{
   width:100%;
   height:200px;
   object-fit:contain;
-}
-.stat-badge{
-  display:flex;
-  justify-content:space-around;
-  background:#e8f5e9;
-  padding:5px;
-  border-radius:6px;
-  font-size:12px;
 }
 .card button{
   width:100%;
@@ -83,15 +58,6 @@ header img{height:50px}
   background:#25d366;
   color:#fff;
   font-weight:bold;
-  cursor:pointer;
-}
-
-/* FOOTER */
-footer{
-  text-align:center;
-  padding:20px;
-  background:#232f3e;
-  color:#fff;
 }
 </style>
 </head>
@@ -99,106 +65,44 @@ footer{
 <body>
 
 <header>
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="logo">
-  <p>📞 واتس: <a href="https://wa.me/201205271929" style="color:#25d366;">01205271929</a></p>
+  <h1>🛒 Koloonline Store</h1>
 </header>
 
 <nav class="navbar">
-  <a href="/">🏠 الرئيسية</a>
-  <a href="/product.html">📦 المنتجات</a>
-  <a href="/cart.html">🛒 السلة</a>
-  <a href="/blog.html">📰 المدونة</a>
-  <a href="/contact.html">✉️ اتصل بنا</a>
-  <a href="/dashboard.html">📊 لوحة التحكم</a>
+  <a href="/">الرئيسية</a>
 </nav>
 
 <div class="container" id="productsContainer"></div>
 
-<footer>
-  <p>© 2026 Koloonline Store</p>
-</footer>
-
 <script>
-// Highlight current page
-const path = window.location.pathname.split("/").pop() || "";
-document.querySelectorAll(".navbar a").forEach(link=>{
-  if(link.getAttribute("href").includes(path)){
-    link.classList.add("active");
-  }
-});
-</script>
-
-<script>
-// PRODUCTS
 const products = [
   {
-    asin:"B09V7Z4TJG",
-    title:"🔥 Smart Watch Pro",
-    desc:"Top smart watches",
+    title:"🔥 Smart Watch",
+    link:"https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonlinesto-20",
     image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
   },
   {
-    asin:"B08G9P7N2X",
-    title:"📱 Wireless Earbuds",
-    desc:"High quality sound",
+    title:"🎧 Earbuds",
+    link:"https://www.amazon.com/dp/B08G9P7N2X?tag=koloonlinesto-20",
     image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
   }
 ];
 
-// LOAD PRODUCTS
-async function loadProducts(){
-  const container=document.getElementById("productsContainer");
-  let stats={};
+const container=document.getElementById("productsContainer");
 
-  try{
-    const res=await fetch("/api/stats");
-    const data=await res.json();
+products.forEach(p=>{
+  const div=document.createElement("div");
+  div.className="card";
 
-    if(data.success && data.stats){
-      stats = data.stats;
-    }
-  }catch(e){
-    console.log("API error:", e);
-  }
+  div.innerHTML=`
+    <img src="${p.image}">
+    <h2>${p.title}</h2>
+    <button>اشتري الآن</button>
+  `;
 
-  products.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="card";
-
-    const s = stats[p.asin] || {clicks:0,orders:0,whatsapp:0};
-
-    div.innerHTML=`
-      <img src="${p.image}" alt="">
-      <h2>${p.title}</h2>
-      <p>${p.desc}</p>
-
-      <div class="stat-badge">
-        <span>🖱️ ${s.clicks}</span>
-        <span>🛒 ${s.orders}</span>
-        <span>📲 ${s.whatsapp}</span>
-      </div>
-
-      <button onclick="orderWhatsApp('${p.title}')">📲 واتساب</button>
-    `;
-
-    div.addEventListener("click", ()=>openProduct(p.asin));
-
-    container.appendChild(div);
-  });
-}
-
-// OPEN PRODUCT
-function openProduct(asin){
-  window.location.href=`/product.html?asin=${asin}`;
-}
-
-// WHATSAPP
-function orderWhatsApp(name){
-  window.open(`https://wa.me/201205271929?text=${encodeURIComponent(name)}`);
-}
-
-// INIT
-loadProducts();
+  div.onclick=()=>window.open(p.link);
+  container.appendChild(div);
+});
 </script>
 
 </body>
