@@ -1,108 +1,144 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Koloonline Store</title>
 
+<link rel="stylesheet" href="/assets/css/styles.css">
+
 <style>
-body { font-family: Arial; margin:0; background:#f5f5f5; }
-
-header{
-  background:#232f3e;
-  color:#fff;
-  padding:15px;
-  text-align:center;
-}
-.navbar{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  background:#37475a;
-  padding:10px;
-}
-.navbar a{
-  color:#fff;
-  text-decoration:none;
-  padding:8px 14px;
-  border-radius:6px;
-}
-.navbar a:hover{background:#ff9900}
-
-.container{
+.product-grid{
   display:flex;
   flex-wrap:wrap;
   gap:20px;
-  padding:20px;
   justify-content:center;
+  padding:20px;
 }
-.card{
+
+.product-card{
   background:#fff;
+  width:260px;
   border-radius:10px;
-  width:280px;
   padding:15px;
-  text-align:center;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  text-align:center;
 }
-.card img{
+
+.product-card img{
   width:100%;
-  height:200px;
+  height:180px;
   object-fit:contain;
 }
-.card button{
+
+.button{
   width:100%;
-  margin-top:10px;
+  margin-top:8px;
   padding:10px;
   border:none;
   border-radius:6px;
-  background:#25d366;
-  color:#fff;
+  cursor:pointer;
+  background:#ff9900;
   font-weight:bold;
 }
+
+.button.whatsapp{
+  background:#25d366;
+}
+
+.search-bar{
+  text-align:center;
+  margin:10px;
+}
+
+.search-input{
+  padding:8px;
+  width:200px;
+}
 </style>
+
 </head>
 
 <body>
 
 <header>
+  <img src="/assets/images/logo.png" width="80">
   <h1>🛒 Koloonline Store</h1>
 </header>
 
-<nav class="navbar">
-  <a href="/">الرئيسية</a>
-</nav>
+<div class="search-bar">
+  <input type="text" id="search" class="search-input" placeholder="Search products...">
+  <button class="button" onclick="searchProducts()">Search</button>
+</div>
 
-<div class="container" id="productsContainer"></div>
+<div class="product-grid" id="product-grid"></div>
 
 <script>
+
+const whatsappNumber = "201205271929";
+
 const products = [
   {
-    title:"🔥 Smart Watch",
-    link:"https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonlinesto-20",
+    title:"Echo Dot 5 🔥",
+    asin:"B09B8Q3YHJ",
+    price:39.99,
+    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+  },
+  {
+    title:"Smart Watch Pro 🔥",
+    asin:"B09V7Z4TJG",
+    price:49.99,
     image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
   },
   {
-    title:"🎧 Earbuds",
-    link:"https://www.amazon.com/dp/B08G9P7N2X?tag=koloonlinesto-20",
-    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+    title:"Fire TV Stick",
+    asin:"B08XJG8MQM",
+    price:29.99,
+    image:"https://m.media-amazon.com/images/I/51Z58KXJ6SL._AC_SL1000_.jpg"
   }
 ];
 
-const container=document.getElementById("productsContainer");
+function buildAffiliateLink(asin){
+  return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+}
 
-products.forEach(p=>{
-  const div=document.createElement("div");
-  div.className="card";
+function render(list){
+  const container = document.getElementById("product-grid");
+  container.innerHTML = "";
 
-  div.innerHTML=`
-    <img src="${p.image}">
-    <h2>${p.title}</h2>
-    <button>اشتري الآن</button>
-  `;
+  list.forEach((p, index)=>{
+    const card = document.createElement("div");
+    card.className = "product-card";
 
-  div.onclick=()=>window.open(p.link);
-  container.appendChild(div);
-});
+    card.innerHTML = `
+      <img src="${p.image}">
+      <h3>${p.title}</h3>
+      <p>$${p.price}</p>
+
+      <button class="button" onclick="buy('${p.asin}')">🔥 Buy Now</button>
+      <button class="button whatsapp" onclick="wa('${p.title}')">📲 WhatsApp</button>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function buy(asin){
+  window.open(buildAffiliateLink(asin), "_blank");
+}
+
+function wa(name){
+  window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(name)}`);
+}
+
+function searchProducts(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const filtered = products.filter(p => p.title.toLowerCase().includes(q));
+  render(filtered);
+}
+
+render(products);
+
 </script>
 
 </body>
