@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Koloonline Product</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Best Amazon deals and product details">
+
+<!-- ================= GTM ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8BN"></script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<style>
+body { font-family: Arial, sans-serif; margin:0; background:#f5f5f5; }
+
+header {
+  background:#232f3e;
+  color:#fff;
+  padding:16px;
+  text-align:center;
+  font-size:26px;
+  font-weight:bold;
+}
+
+.navbar {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  background:#37475a;
+  padding:10px 0;
+}
+
+.navbar a {
+  color:white;
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:5px;
+  font-weight:bold;
+}
+
+.navbar a:hover { background:#e68a00; }
+.navbar a.active { background:#ff9900; }
+
+.container {
+  max-width:900px;
+  margin:20px auto;
+  background:#fff;
+  padding:25px;
+  border-radius:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+.product-img {
+  width:100%;
+  max-height:320px;
+  object-fit:contain;
+}
+
+.price {
+  color:#b12704;
+  font-size:22px;
+  font-weight:bold;
+  margin:10px 0;
+}
+
+.buy-btn {
+  background:#ff9900;
+  border:none;
+  padding:12px;
+  width:100%;
+  margin-top:10px;
+  cursor:pointer;
+  font-size:16px;
+  border-radius:6px;
+}
+
+.buy-btn:hover { background:#e68a00; }
+
+.whatsapp { background:#25D366; color:#fff; }
+
+.trust {
+  background:#e8f5e9;
+  padding:12px;
+  border-radius:6px;
+  margin-top:15px;
+}
+
+.faq p {
+  background:#f9f9f9;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>🔥 Koloonline Product</header>
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <a href="/" class="nav-link">🏠 Home</a>
+  <a href="/products.html" class="nav-link">📦 Products</a>
+  <a href="/cart.html" class="nav-link">🛒 Cart</a>
+  <a href="/blog.html" class="nav-link">📰 Blog</a>
+  <a href="/contact.html" class="nav-link">✉️ Contact</a>
+</nav>
+
+<div class="container">
+
+<img id="image" class="product-img" alt="">
+<h1 id="title"></h1>
+<p class="price" id="price"></p>
+
+<div class="trust">
+✔ Secure Purchase <br>
+✔ Fast Delivery <br>
+✔ High Quality Product
+</div>
+
+<button class="buy-btn" onclick="buyNow()">🔥 Buy Now</button>
+<button class="buy-btn whatsapp" onclick="orderWhatsApp()">📲 Order via WhatsApp</button>
+
+<h2>Product Details</h2>
+<p>High-quality product selected for performance and user satisfaction.</p>
+
+<h2>FAQ</h2>
+<div id="faqSection"></div>
+
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const asin = params.get("asin");
+
+const products = [
+  {
+    asin:"B09V7Z4TJG",
+    title:"Smart Watch Pro",
+    price:49.99,
+    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
+    tags:{ usa:"koloonlinesto-20" }
+  },
+  {
+    asin:"B09B8Q3YHJ",
+    title:"Echo Dot 5",
+    price:39.99,
+    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
+    tags:{ usa:"koloonlinesto-20" }
+  }
+];
+
+const product = products.find(p => p.asin === asin);
+
+if(!product){
+  document.body.innerHTML = "<h2 style='text-align:center'>Product Not Found</h2>";
+  throw new Error("Invalid ASIN");
+}
+
+document.getElementById("title").innerText = product.title;
+document.getElementById("price").innerText = "$" + product.price;
+document.getElementById("image").src = product.image;
+
+function buyNow(){
+  const tag = product.tags.usa;
+  window.open(`https://www.amazon.com/dp/${product.asin}?tag=${tag}`, "_blank");
+}
+
+function orderWhatsApp(){
+  const msg = "I want to order: " + product.title;
+  window.open(`https://wa.me/201205271929?text=${encodeURIComponent(msg)}`);
+}
+
+/* ================= FAQ ================= */
+const faqs = [
+  {q:"Is this product original?", a:"Yes, it is sourced from trusted suppliers."},
+  {q:"Shipping time?", a:"Fast delivery via Amazon system."},
+  {q:"Return policy?", a:"Standard Amazon return policy applies."}
+];
+
+const faqSection = document.getElementById("faqSection");
+faqs.forEach(f=>{
+  const p=document.createElement("p");
+  p.innerHTML = `<b>Q:</b> ${f.q}<br>${f.a}`;
+  faqSection.appendChild(p);
+});
+
+/* ================= ACTIVE NAV ================= */
+const path = window.location.pathname;
+document.querySelectorAll(".nav-link").forEach(a=>{
+  if(path.includes(a.getAttribute("href").replace("/",""))){
+    a.classList.add("active");
+  }
+});
+</script>
+
+</body>
+  </html>
