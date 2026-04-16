@@ -1,10 +1,11 @@
 {
   "routes": [
-    { "src": "/", "dest": "/public/index.html" },
-    { "src": "/product", "dest": "/public/product.html" },
-    { "src": "/cart", "dest": "/public/cart.html" },
-    { "src": "/blog", "dest": "/public/blog.html" },
-    { "src": "/contact", "dest": "/public/contact.html" },
-    { "src": "/dashboard", "dest": "/public/dashboard.html" }
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/product", "dest": "/product.html" },
+    { "src": "/cart", "dest": "/cart.html" },
+    { "src": "/blog", "dest": "/blog.html" },
+    { "src": "/contact", "dest": "/contact.html" },
+    { "src": "/dashboard", "dest": "/dashboard.html" },
+    { "src": "/thankyou", "dest": "/thankyou.html" }
   ]
 }
