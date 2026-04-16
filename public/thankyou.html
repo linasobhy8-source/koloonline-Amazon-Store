@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شكراً لطلبك</title>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+// ✅ Conversion Event
+gtag('event', 'conversion', {
+  send_to: 'G-YS8L61XLPR',
+  value: 1,
+  currency: 'USD'
+});
+</script>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial;
+  background:#f5f5f5;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+/* BOX */
+.box{
+  background:#fff;
+  padding:30px;
+  border-radius:12px;
+  text-align:center;
+  box-shadow:0 4px 15px rgba(0,0,0,0.1);
+  max-width:400px;
+}
+
+/* ICON */
+.icon{
+  font-size:60px;
+  color:#25d366;
+}
+
+/* TITLE */
+h1{
+  margin:15px 0;
+  color:#232f3e;
+}
+
+/* TEXT */
+p{
+  color:#555;
+}
+
+/* BUTTON */
+.btn{
+  margin-top:20px;
+  padding:12px 20px;
+  border:none;
+  border-radius:6px;
+  background:#ff9900;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.btn:hover{
+  background:#e68a00;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <div class="icon">✅</div>
+
+  <h1>تم استلام طلبك 🎉</h1>
+
+  <p>
+    شكراً لاختيارك <strong>Koloonline</strong><br>
+    سيتم التواصل معك قريباً عبر واتساب.
+  </p>
+
+  <button class="btn" onclick="goHome()">🏠 الرجوع للرئيسية</button>
+
+</div>
+
+<script>
+// ================= TRACK EVENT =================
+fetch("/api/analytics", {
+  method:"POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    event:"order",
+    page:"thankyou",
+    timestamp:new Date().toISOString()
+  })
+}).catch(()=>{});
+
+// ================= GO HOME =================
+function goHome(){
+  window.location.href = "/";
+}
+</script>
+
+</body>
+</html>
