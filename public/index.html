@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Koloonline SaaS Store</title>
+<title>Koloonline Store</title>
 
 <style>
 body{
@@ -12,17 +12,15 @@ body{
   background:#eaeded;
 }
 
-/* ================= HEADER ================= */
+/* HEADER */
 header{
   background:#131921;
   color:white;
   padding:10px 15px;
 }
 
-/* LOGO */
 .logo{
   height:50px;
-  vertical-align:middle;
 }
 
 /* HEADER FLEX */
@@ -57,7 +55,7 @@ header{
   font-weight:bold;
 }
 
-/* ================= NAVBAR ================= */
+/* NAVBAR */
 .navbar{
   background:#232f3e;
   display:flex;
@@ -69,14 +67,13 @@ header{
 .navbar a{
   color:white;
   text-decoration:none;
-  font-size:14px;
 }
 
 .navbar a:hover{
   text-decoration:underline;
 }
 
-/* ================= PRODUCTS ================= */
+/* PRODUCTS */
 .container{
   display:flex;
   flex-wrap:wrap;
@@ -91,12 +88,6 @@ header{
   padding:10px;
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.card:hover{
-  transform:translateY(-5px);
 }
 
 .card img{
@@ -124,34 +115,33 @@ header{
 
 <body>
 
-<!-- ================= HEADER ================= -->
+<!-- HEADER -->
 <header>
-
   <div class="header-top">
 
     <!-- LOGO -->
     <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" class="logo">
 
-    <!-- SEARCH AMAZON STYLE -->
+    <!-- SEARCH -->
     <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="🔍 Search Amazon products...">
+      <input type="text" id="searchInput" placeholder="🔍 Search products...">
       <button onclick="searchProducts()">Search</button>
     </div>
 
   </div>
-
 </header>
 
-<!-- ================= NAVBAR ================= -->
+<!-- NAVBAR (مهم: بدون .html) -->
 <nav class="navbar">
-  <a href="#">🏠 Home</a>
-  <a href="#">🔥 Deals</a>
-  <a href="#">📦 Products</a>
-  <a href="#">🛒 Cart</a>
-  <a href="#">📞 Contact</a>
+  <a href="/">🏠 Home</a>
+  <a href="/product">📦 Products</a>
+  <a href="/cart">🛒 Cart</a>
+  <a href="/blog">📰 Blog</a>
+  <a href="/contact">📞 Contact</a>
+  <a href="/dashboard">📊 Dashboard</a>
 </nav>
 
-<!-- ================= PRODUCTS ================= -->
+<!-- PRODUCTS -->
 <div class="container" id="products"></div>
 
 <script>
@@ -160,14 +150,19 @@ const products = [
   {
     title:"🔥 Smart Watch Pro",
     image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
-    link:"https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonlinesto-20"
+    asin:"B09V7Z4TJG"
   },
   {
     title:"🎧 Wireless Earbuds",
     image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
-    link:"https://www.amazon.com/dp/B08G9P7N2X?tag=koloonlinesto-20"
+    asin:"B08G9P7N2X"
   }
 ];
+
+// ================= AFFILIATE =================
+function getLink(asin){
+  return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+}
 
 // ================= LOAD =================
 function load(){
@@ -179,7 +174,8 @@ function load(){
       <div class="card">
         <img src="${p.image}">
         <h3>${p.title}</h3>
-        <button onclick="window.open('${p.link}','_blank')">
+
+        <button onclick="window.open('${getLink(p.asin)}','_blank')">
           🛒 Buy on Amazon
         </button>
       </div>
@@ -199,7 +195,8 @@ function searchProducts(){
       <div class="card">
         <img src="${p.image}">
         <h3>${p.title}</h3>
-        <button onclick="window.open('${p.link}','_blank')">
+
+        <button onclick="window.open('${getLink(p.asin)}','_blank')">
           🛒 Buy on Amazon
         </button>
       </div>
