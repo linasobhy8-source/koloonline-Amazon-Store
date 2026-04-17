@@ -1,13 +1,31 @@
 export default async function handler(req, res) {
   try {
-    // هنا مستقبلًا هتربطيه بقاعدة بيانات (Supabase / MongoDB / Firebase)
-    // دلوقتي بنخليه هيكل احترافي + جاهز للتوسعة
-
     const GA_MEASUREMENT_ID = "G-YS8L61XLPR";
     const GTM_ID = "GTM-KNQM8KBN";
 
     const stats = {
       success: true,
+
+      overview: {
+        totalClicks: 205,
+        totalOrders: 25,
+        totalWhatsApp: 40,
+      },
+
+      topProducts: [
+        {
+          asin: "B09V7Z4TJG",
+          clicks: 120,
+          orders: 15,
+          whatsapp: 30,
+        },
+        {
+          asin: "B08G9P7N2X",
+          clicks: 85,
+          orders: 10,
+          whatsapp: 20,
+        },
+      ],
 
       meta: {
         ga4: GA_MEASUREMENT_ID,
@@ -15,16 +33,8 @@ export default async function handler(req, res) {
         generatedAt: new Date().toISOString(),
       },
 
-      overview: {
-        totalClicks: 0,        // هيتحسب من tracking فعلي
-        totalOrders: 0,        // Amazon affiliate / webhook لاحقًا
-        totalWhatsApp: 0,      // من click tracking
-      },
-
-      topProducts: [],
-
       note:
-        "This endpoint is ready but requires event tracking integration (GA4 / GTM / DB).",
+        "This endpoint is a mock analytics layer and should be connected to real tracking (GA4 / GTM / DB).",
     };
 
     return res.status(200).json(stats);
