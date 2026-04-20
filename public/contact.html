@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Contact Us | Koloonline Store</title>
-<meta name="description" content="اتصل بنا لأي استفسارات حول منتجات Koloonline وعروض Amazon.">
+<title>Support | Koloonline Store</title>
+<meta name="description" content="الدعم والمساعدة لمنتجات Koloonline وعروض Amazon.">
 
 <style>
 body {
@@ -79,12 +79,12 @@ button{
 }
 button:hover{background:#e68a00;}
 
-.whatsapp-btn{
+.amazon-btn{
   margin-top:10px;
-  background:#25D366;
+  background:#131921;
+  color:#fff;
 }
 
-/* FAQ */
 .faq{
   max-width:600px;
   margin:20px auto;
@@ -96,7 +96,6 @@ button:hover{background:#e68a00;}
   margin-bottom:10px;
 }
 
-/* STATUS */
 #status{
   text-align:center;
   margin-top:10px;
@@ -108,7 +107,7 @@ button:hover{background:#e68a00;}
 
 <body>
 
-<header>📞 Koloonline Contact</header>
+<header>🛒 Koloonline Support</header>
 
 <!-- NAVBAR -->
 <nav class="navbar">
@@ -116,7 +115,7 @@ button:hover{background:#e68a00;}
   <a href="/products">📦 المنتجات</a>
   <a href="/cart">🛒 السلة</a>
   <a href="/blog">📰 المدونة</a>
-  <a href="/contact">✉️ اتصل بنا</a>
+  <a href="/contact">✉️ الدعم</a>
   <a href="/dashboard">📊 لوحة التحكم</a>
 </nav>
 
@@ -129,19 +128,19 @@ document.querySelectorAll('.navbar a').forEach(link=>{
 });
 </script>
 
-<!-- CONTACT FORM -->
+<!-- SUPPORT -->
 <div class="container">
   <div class="card">
 
-    <h1>Contact Us</h1>
+    <h1>الدعم والمساعدة</h1>
 
     <form onsubmit="sendMessage(event)">
-      <input type="text" id="name" placeholder="Your Name" required>
-      <input type="email" id="email" placeholder="Your Email" required>
-      <textarea id="message" rows="5" placeholder="Your Message" required></textarea>
+      <input type="text" id="name" placeholder="اسمك" required>
+      <input type="email" id="email" placeholder="بريدك الإلكتروني" required>
+      <textarea id="message" rows="5" placeholder="اكتب سؤالك أو استفسارك" required></textarea>
 
-      <button type="submit">📩 Send Message</button>
-      <button type="button" class="whatsapp-btn" onclick="sendWhatsApp()">📲 WhatsApp</button>
+      <button type="submit">🔍 عرض أفضل منتج لك</button>
+      <button type="button" class="amazon-btn" onclick="goAmazon()">🛒 تصفح المنتجات الآن</button>
     </form>
 
     <p id="status"></p>
@@ -153,7 +152,12 @@ document.querySelectorAll('.navbar a').forEach(link=>{
 <div class="faq" id="faqSection"></div>
 
 <script>
-// ================= SEND FORM =================
+// ================= AMAZON REDIRECT =================
+function goAmazon(){
+  window.open("https://www.amazon.com/?tag=koloonlinesto-20","_blank");
+}
+
+// ================= FORM =================
 function sendMessage(e){
   e.preventDefault();
 
@@ -162,30 +166,31 @@ function sendMessage(e){
   const message=document.getElementById("message").value.trim();
 
   if(!name||!email||!message){
-    document.getElementById("status").innerText="⚠️ املأ كل البيانات";
+    document.getElementById("status").innerText="⚠️ من فضلك املأ كل البيانات";
     return;
   }
 
-  console.log({name,email,message});
+  document.getElementById("status").innerText =
+  "🛒 جاري تحويلك لأفضل العروض على Amazon...";
 
-  document.getElementById("status").innerText="✅ تم إرسال الرسالة بنجاح";
+  // 🔥 تحويل مباشر لمنتج
+  const asin = "B09V7Z4TJG";
 
+  setTimeout(()=>{
+    window.open(`https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`,"_blank");
+  },1500);
+
+  // reset
   document.getElementById("name").value="";
   document.getElementById("email").value="";
   document.getElementById("message").value="";
 }
 
-// ================= WHATSAPP =================
-function sendWhatsApp(){
-  const msg="Hello, I want to ask about your products";
-  window.open("https://wa.me/201205271929?text="+encodeURIComponent(msg));
-}
-
 // ================= FAQ =================
 const faqs=[
-{q:"كم وقت الرد؟",a:"عادة خلال 24 ساعة"},
-{q:"هل يمكن الطلب عبر واتساب؟",a:"نعم متاح"},
-{q:"هل المنتجات أصلية؟",a:"من أمازون مباشرة"}
+{q:"كيف أشتري المنتج؟",a:"اضغط على زر الشراء وسيتم تحويلك مباشرة إلى Amazon"},
+{q:"هل المنتجات أصلية؟",a:"نعم جميع المنتجات من Amazon الرسمي"},
+{q:"هل يوجد شحن؟",a:"الشحن يتم من خلال Amazon حسب بلدك"}
 ];
 
 function renderFAQ(){
