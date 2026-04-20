@@ -2,7 +2,6 @@
 <html lang="ar">
 <head>
 
-<!-- ================= BASIC SEO ================= -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -11,10 +10,38 @@
 <meta name="keywords" content="about koloonline, amazon affiliate store, smart shopping">
 <meta name="author" content="Koloonline - Lina Sobhy">
 
-<!-- ================= FAVICON ================= -->
 <link rel="icon" type="image/png" href="assets/1000276862.png">
 
-<!-- ================= STYLES ================= -->
+<!-- ================= GTM ================= -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-KNQM8BN"></script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+
+/* ================= TRACK EVENT ================= */
+function trackEvent(eventName, params = {}) {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: eventName,
+    ...params
+  });
+
+  if (typeof gtag === "function") {
+    gtag('event', eventName, params);
+  }
+}
+
+/* ================= PAGE VIEW ================= */
+trackEvent("page_view", {
+  page: "about"
+});
+</script>
+
 <style>
 body{
   font-family: Arial, sans-serif;
@@ -22,7 +49,6 @@ body{
   background:#f5f5f5;
 }
 
-/* ================= HEADER ================= */
 header{
   background:#232f3e;
   color:#fff;
@@ -31,7 +57,6 @@ header{
   text-align:center;
 }
 
-/* ================= NAVBAR ================= */
 .navbar{
   display:flex;
   flex-wrap:wrap;
@@ -40,25 +65,24 @@ header{
   background:#37475a;
   padding:10px;
 }
+
 .navbar a{
   color:#fff;
   text-decoration:none;
   padding:8px 12px;
   border-radius:6px;
   font-weight:bold;
-  transition:0.2s;
 }
+
 .navbar a:hover{ background:#e68a00; }
 .navbar a.active{ background:#ff9900; }
 
-/* ================= CONTAINER ================= */
 .container{
   max-width:900px;
   margin:20px auto;
   padding:20px;
 }
 
-/* ================= CARD ================= */
 .card{
   background:#fff;
   padding:20px;
@@ -66,7 +90,6 @@ header{
   box-shadow:0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* ================= FAQ ================= */
 .faq p{
   margin-bottom:10px;
   background:#f9f9f9;
@@ -74,7 +97,6 @@ header{
   border-radius:6px;
 }
 
-/* ================= BUTTON ================= */
 .whatsapp-btn{
   display:block;
   width:100%;
@@ -87,14 +109,8 @@ header{
   font-weight:bold;
   text-decoration:none;
 }
-
-/* ================= RESPONSIVE ================= */
-@media(max-width:600px){
-  .navbar{ flex-direction:column; align-items:center; }
-}
 </style>
 
-<!-- ================= VERCEL ANALYTICS ================= -->
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 
 </head>
@@ -103,7 +119,6 @@ header{
 
 <header>🏬 Koloonline Store</header>
 
-<!-- ================= NAVBAR ================= -->
 <nav class="navbar">
   <a href="/">🏠 الرئيسية</a>
   <a href="/products">📦 المنتجات</a>
@@ -155,13 +170,15 @@ To become one of the top online platforms for smart shopping and tech product di
 </p>
 
 <!-- ================= WHATSAPP ================= -->
-<a class="whatsapp-btn" href="https://wa.me/201205271929" target="_blank">
+<a class="whatsapp-btn"
+   href="https://wa.me/201205271929"
+   target="_blank"
+   onclick="trackEvent('whatsapp_click', {page:'about'})">
 📲 تواصل معنا عبر واتساب
 </a>
 
 </div>
 
-<!-- ================= FAQ ================= -->
 <div class="card" style="margin-top:20px;">
 <h2>Frequently Asked Questions</h2>
 <div class="faq" id="faqSection"></div>
@@ -169,18 +186,16 @@ To become one of the top online platforms for smart shopping and tech product di
 
 </div>
 
-<!-- ================= FAQ SCRIPT ================= -->
 <script>
 const faqs = [
-  {q:"Is Koloonline a real store?", a:"Yes, Koloonline is an Amazon affiliate platform that helps you discover trusted products."},
-  {q:"Do you sell products directly?", a:"No, all purchases are completed through Amazon secure checkout."},
-  {q:"Are prices different?", a:"No, prices are exactly the same as Amazon."},
-  {q:"How can I contact support?", a:"You can contact us anytime through WhatsApp or Contact page."}
+  {q:"Is Koloonline a real store?", a:"Yes, Koloonline is an Amazon affiliate platform."},
+  {q:"Do you sell products directly?", a:"No, all purchases are through Amazon."},
+  {q:"Are prices different?", a:"No, same Amazon prices."},
+  {q:"How can I contact support?", a:"Via WhatsApp or Contact page."}
 ];
 
 function renderFAQ(){
   const container=document.getElementById("faqSection");
-  container.innerHTML="";
   faqs.forEach(f=>{
     const p=document.createElement("p");
     p.innerHTML=`<strong>${f.q}</strong><br>${f.a}`;
