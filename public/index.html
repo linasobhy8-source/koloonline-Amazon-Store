@@ -5,6 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Koloonline Store</title>
 
+<!-- ================= TRACKING SYSTEM ================= -->
+
+<!-- Google Tag Manager -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+</script>
+
+<!-- GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<!-- 🔥 Tracking Helper -->
+<script>
+function trackEvent(type, value){
+  if(typeof gtag === "function"){
+    gtag('event', type, {
+      event_category: "engagement",
+      event_label: value
+    });
+  }
+
+  if(window.dataLayer){
+    window.dataLayer.push({
+      event: type,
+      value: value
+    });
+  }
+
+  console.log("Tracked:", type, value);
+}
+
+// page view
+trackEvent("page_view", window.location.pathname);
+</script>
+
 <style>
 body{
   margin:0;
@@ -119,10 +164,8 @@ header{
 <header>
   <div class="header-top">
 
-    <!-- LOGO -->
     <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" class="logo">
 
-    <!-- SEARCH -->
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="🔍 Search products...">
       <button onclick="searchProducts()">Search</button>
@@ -131,7 +174,7 @@ header{
   </div>
 </header>
 
-<!-- NAVBAR (مهم: بدون .html) -->
+<!-- NAVBAR -->
 <nav class="navbar">
   <a href="/">🏠 Home</a>
   <a href="/product">📦 Products</a>
@@ -175,7 +218,7 @@ function load(){
         <img src="${p.image}">
         <h3>${p.title}</h3>
 
-        <button onclick="window.open('${getLink(p.asin)}','_blank')">
+        <button onclick="trackEvent('product_click','${p.asin}'); window.open('${getLink(p.asin)}','_blank')">
           🛒 Buy on Amazon
         </button>
       </div>
@@ -189,6 +232,8 @@ function searchProducts(){
   const container=document.getElementById("products");
   container.innerHTML="";
 
+  trackEvent("search", q);
+
   products.filter(p=>p.title.toLowerCase().includes(q))
   .forEach(p=>{
     container.innerHTML += `
@@ -196,7 +241,7 @@ function searchProducts(){
         <img src="${p.image}">
         <h3>${p.title}</h3>
 
-        <button onclick="window.open('${getLink(p.asin)}','_blank')">
+        <button onclick="trackEvent('product_click','${p.asin}'); window.open('${getLink(p.asin)}','_blank')">
           🛒 Buy on Amazon
         </button>
       </div>
