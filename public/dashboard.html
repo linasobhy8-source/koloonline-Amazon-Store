@@ -10,6 +10,7 @@
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 </script>
@@ -17,10 +18,15 @@ gtag('config', 'G-YS8L61XLPR');
 <!-- ================= GTM ================= -->
 <script>
 (function(w,d,s,l,i){
-w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+w[l]=w[l]||[];
+w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+
 var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
-j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+j=d.createElement(s), dl=l!='dataLayer'?'&l='+l:'';
+
+j.async=true;
+j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+
 f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-KNQM8KBN');
 </script>
@@ -32,7 +38,6 @@ body{
   background:#f5f5f5;
 }
 
-/* HEADER */
 header{
   background:#131921;
   color:white;
@@ -41,7 +46,6 @@ header{
   font-size:20px;
 }
 
-/* CARDS */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
@@ -63,7 +67,6 @@ header{
   color:#ff9900;
 }
 
-/* TABLE */
 table{
   width:95%;
   margin:20px auto;
@@ -82,7 +85,6 @@ th{
   color:white;
 }
 
-/* NAV */
 .nav{
   display:flex;
   justify-content:center;
@@ -106,7 +108,7 @@ th{
 height="0" width="0" style="display:none;visibility:hidden"></iframe>
 </noscript>
 
-<header>📊 Koloonline Analytics Dashboard</header>
+<header>📊 Koloonline Live Analytics</header>
 
 <nav class="nav">
   <a href="/">Store</a>
@@ -129,6 +131,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>
     <p>WhatsApp Leads</p>
     <h2 id="whatsapp">0</h2>
   </div>
+
+  <div class="card">
+    <p>Revenue (est.)</p>
+    <h2 id="revenue">$0</h2>
+  </div>
 </div>
 
 <!-- ================= TABLE ================= -->
@@ -149,10 +156,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>
 const GA_ID = "G-YS8L61XLPR";
 const GTM_ID = "GTM-KNQM8KBN";
 
-/* ================= TRACK PAGE VIEW ================= */
+/* ================= COUNTRY DETECTION ================= */
+function getCountry(){
+  const lang = navigator.language || "en-US";
+
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("en-CA")) return "CA";
+  if(lang.includes("pl")) return "PL";
+  return "US";
+}
+
+/* ================= TRACK DASHBOARD VIEW ================= */
 gtag('event','dashboard_view', {
   page: 'dashboard',
-  source: document.referrer || 'direct'
+  country: getCountry(),
+  time: new Date().toISOString()
 });
 
 /* ================= FETCH ANALYTICS ================= */
@@ -161,12 +179,14 @@ async function loadAnalytics(){
     const res = await fetch("/api/analytics");
     const data = await res.json();
 
-    // Overview
     document.getElementById("clicks").innerText = data.overview?.totalClicks || 0;
     document.getElementById("orders").innerText = data.overview?.totalOrders || 0;
     document.getElementById("whatsapp").innerText = data.overview?.totalWhatsApp || 0;
 
-    // Table
+    // fake revenue calc (replace later from Firebase)
+    const revenue = (data.overview?.totalOrders || 0) * 12;
+    document.getElementById("revenue").innerText = "$" + revenue;
+
     const table = document.getElementById("table");
     table.innerHTML = "";
 
@@ -186,12 +206,16 @@ async function loadAnalytics(){
   }
 }
 
-/* ================= TRACK PRODUCT CLICK ================= */
+/* ================= PRODUCT CLICK TRACKING ================= */
 function trackProduct(asin){
-  gtag('event','product_click',{
+
+  gtag('event','affiliate_click',{
     asin: asin,
+    country: getCountry(),
     source: 'dashboard'
   });
+
+  console.log("Tracked:", asin);
 }
 
 /* ================= AUTO REFRESH ================= */
