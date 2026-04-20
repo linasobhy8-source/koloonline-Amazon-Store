@@ -3,7 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SaaS Dashboard</title>
+<title>SaaS Dashboard | Koloonline</title>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<!-- ================= GTM ================= -->
+<script>
+(function(w,d,s,l,i){
+w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+</script>
 
 <style>
 body{
@@ -80,11 +100,17 @@ th{
 
 <body>
 
-<header>📊 Koloonline SaaS Dashboard</header>
+<!-- GTM NOSCRIPT -->
+<noscript>
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+
+<header>📊 Koloonline Analytics Dashboard</header>
 
 <nav class="nav">
   <a href="/">Store</a>
-  <a href="/dashboard.html">Dashboard</a>
+  <a href="/dashboard">Dashboard</a>
 </nav>
 
 <!-- ================= STATS ================= -->
@@ -119,22 +145,34 @@ th{
 </table>
 
 <script>
-// ================= LOAD ANALYTICS =================
+
+const GA_ID = "G-YS8L61XLPR";
+const GTM_ID = "GTM-KNQM8KBN";
+
+/* ================= TRACK PAGE VIEW ================= */
+gtag('event','dashboard_view', {
+  page: 'dashboard',
+  source: document.referrer || 'direct'
+});
+
+/* ================= FETCH ANALYTICS ================= */
 async function loadAnalytics(){
   try{
     const res = await fetch("/api/analytics");
     const data = await res.json();
 
-    document.getElementById("clicks").innerText = data.totalClicks;
-    document.getElementById("orders").innerText = data.totalOrders;
-    document.getElementById("whatsapp").innerText = data.totalWhatsApp;
+    // Overview
+    document.getElementById("clicks").innerText = data.overview?.totalClicks || 0;
+    document.getElementById("orders").innerText = data.overview?.totalOrders || 0;
+    document.getElementById("whatsapp").innerText = data.overview?.totalWhatsApp || 0;
 
+    // Table
     const table = document.getElementById("table");
     table.innerHTML = "";
 
-    data.topProducts.forEach(p=>{
+    (data.topProducts || []).forEach(p=>{
       table.innerHTML += `
-        <tr>
+        <tr onclick="trackProduct('${p.asin}')">
           <td>${p.asin}</td>
           <td>${p.clicks}</td>
           <td>${p.orders}</td>
@@ -148,7 +186,18 @@ async function loadAnalytics(){
   }
 }
 
+/* ================= TRACK PRODUCT CLICK ================= */
+function trackProduct(asin){
+  gtag('event','product_click',{
+    asin: asin,
+    source: 'dashboard'
+  });
+}
+
+/* ================= AUTO REFRESH ================= */
+setInterval(loadAnalytics, 10000);
 loadAnalytics();
+
 </script>
 
 </body>
