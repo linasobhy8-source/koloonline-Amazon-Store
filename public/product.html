@@ -12,10 +12,23 @@
 <!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+
+/* ================= TRACK EVENT ================= */
+function trackEvent(eventName, params = {}) {
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-YS8L61XLPR');
+  window.dataLayer.push({
+    event: eventName,
+    ...params
+  });
+
+  if (typeof gtag === "function") {
+    gtag('event', eventName, params);
+  }
+}
 </script>
 
 <style>
@@ -93,13 +106,6 @@ header {
   border-radius:6px;
   margin-top:15px;
 }
-
-.faq p {
-  background:#f9f9f9;
-  padding:10px;
-  border-radius:6px;
-  margin-bottom:10px;
-}
 </style>
 </head>
 
@@ -107,7 +113,6 @@ header {
 
 <header>🔥 Koloonline Product</header>
 
-<!-- ================= NAVBAR ================= -->
 <nav class="navbar">
   <a href="/" class="nav-link">🏠 Home</a>
   <a href="/products.html" class="nav-link">📦 Products</a>
@@ -118,7 +123,7 @@ header {
 
 <div class="container">
 
-<img id="image" class="product-img" alt="">
+<img id="image" class="product-img">
 <h1 id="title"></h1>
 <p class="price" id="price"></p>
 
@@ -149,14 +154,14 @@ const products = [
     title:"Smart Watch Pro",
     price:49.99,
     image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
-    tags:{ usa:"koloonlinesto-20" }
+    tag:"koloonlinesto-20"
   },
   {
     asin:"B09B8Q3YHJ",
     title:"Echo Dot 5",
     price:39.99,
     image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
-    tags:{ usa:"koloonlinesto-20" }
+    tag:"koloonlinesto-20"
   }
 ];
 
@@ -167,25 +172,50 @@ if(!product){
   throw new Error("Invalid ASIN");
 }
 
+/* ================= PAGE VIEW ================= */
+trackEvent("page_view", {
+  page: "product",
+  asin: product.asin,
+  title: product.title
+});
+
+/* ================= PRODUCT VIEW ================= */
+trackEvent("product_view", {
+  asin: product.asin,
+  title: product.title
+});
+
 document.getElementById("title").innerText = product.title;
 document.getElementById("price").innerText = "$" + product.price;
 document.getElementById("image").src = product.image;
 
+/* ================= BUY NOW ================= */
 function buyNow(){
-  const tag = product.tags.usa;
-  window.open(`https://www.amazon.com/dp/${product.asin}?tag=${tag}`, "_blank");
+  trackEvent("buy_now_click", {
+    asin: product.asin,
+    title: product.title,
+    value: product.price
+  });
+
+  window.open(`https://www.amazon.com/dp/${product.asin}?tag=${product.tag}`, "_blank");
 }
 
+/* ================= WHATSAPP ================= */
 function orderWhatsApp(){
+  trackEvent("whatsapp_click", {
+    asin: product.asin,
+    title: product.title
+  });
+
   const msg = "I want to order: " + product.title;
   window.open(`https://wa.me/201205271929?text=${encodeURIComponent(msg)}`);
 }
 
 /* ================= FAQ ================= */
 const faqs = [
-  {q:"Is this product original?", a:"Yes, it is sourced from trusted suppliers."},
-  {q:"Shipping time?", a:"Fast delivery via Amazon system."},
-  {q:"Return policy?", a:"Standard Amazon return policy applies."}
+  {q:"Is this product original?", a:"Yes, it is from Amazon."},
+  {q:"Shipping time?", a:"Fast delivery."},
+  {q:"Return policy?", a:"Amazon return policy applies."}
 ];
 
 const faqSection = document.getElementById("faqSection");
@@ -194,15 +224,7 @@ faqs.forEach(f=>{
   p.innerHTML = `<b>Q:</b> ${f.q}<br>${f.a}`;
   faqSection.appendChild(p);
 });
-
-/* ================= ACTIVE NAV ================= */
-const path = window.location.pathname;
-document.querySelectorAll(".nav-link").forEach(a=>{
-  if(path.includes(a.getAttribute("href").replace("/",""))){
-    a.classList.add("active");
-  }
-});
 </script>
 
 </body>
-  </html>
+</html>
