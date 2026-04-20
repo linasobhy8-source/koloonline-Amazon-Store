@@ -3,229 +3,214 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🛒 Shopping Cart | Koloonline</title>
+<title>🛒 Your Selected Products | Koloonline</title>
+
+<!-- ================= TRACKING ================= -->
+
+<!-- Google Tag Manager -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+</script>
+
+<!-- GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin:0;
-  background:#f4f4f4;
-}
+body {font-family: Arial; margin:0; background:#f4f4f4;}
+header {background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
+.navbar {display:flex;flex-wrap:wrap;justify-content:center;gap:10px;background:#37475a;padding:10px;}
+.navbar a {color:#fff;text-decoration:none;padding:8px 12px;border-radius:6px;font-weight:bold;}
+.navbar a:hover {background:#e68a00;}
+.navbar a.active {background:#ff9900;}
 
-/* HEADER */
-header {
-  background:#232f3e;
-  color:#fff;
-  padding:15px;
-  text-align:center;
-  font-size:22px;
-}
+.cart {max-width:700px;margin:20px auto;background:#fff;padding:20px;border-radius:10px;}
+.cart-item {display:flex;justify-content:space-between;align-items:center;margin:10px 0;gap:10px;}
+.item-name {flex:2;}
+.item-qty input {width:60px;}
+.item-price {flex:1;text-align:center;}
 
-/* NAVBAR */
-.navbar {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:10px;
-  background:#37475a;
-  padding:10px;
-}
-.navbar a {
-  color:#fff;
-  text-decoration:none;
-  padding:8px 12px;
-  border-radius:6px;
-  font-weight:bold;
-}
-.navbar a:hover { background:#e68a00; }
-.navbar a.active { background:#ff9900; }
+.remove-btn {background:#dc3545;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
 
-/* CART */
-.cart {
-  max-width:700px;
-  margin:20px auto;
-  background:#fff;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 0 10px rgba(0,0,0,0.1);
-}
-
-.cart-item {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin:10px 0;
-  gap:10px;
-}
-
-.item-name { flex:2; }
-.item-qty input { width:60px; }
-.item-price { flex:1; text-align:center; }
-
-.remove-btn {
-  background:#dc3545;
-  color:#fff;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-/* BUTTONS */
 .checkout {
   margin-top:15px;
-  padding:10px;
-  background:#28a745;
+  padding:12px;
+  background:#ff9900;
   color:#fff;
   border:none;
   width:100%;
   border-radius:6px;
   cursor:pointer;
+  font-weight:bold;
 }
 
-.whatsapp {
-  margin-top:10px;
-  padding:10px;
-  background:#25D366;
-  color:#fff;
-  border:none;
-  width:100%;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-/* FAQ */
-.faq {
-  max-width:700px;
-  margin:20px auto;
-}
-.faq p {
-  background:#fff;
-  padding:10px;
-  border-radius:6px;
-  margin-bottom:10px;
-}
-
-/* MOBILE */
-@media(max-width:600px){
-  .navbar { flex-direction:column; align-items:center; }
-  .cart-item { flex-direction:column; align-items:flex-start; }
-}
+.faq {max-width:700px;margin:20px auto;}
+.faq p {background:#fff;padding:10px;border-radius:6px;margin-bottom:10px;}
 </style>
 </head>
 
 <body>
 
-<header>🛒 Koloonline Cart</header>
+<header>🛒 Koloonline Store</header>
 
-<!-- NAVBAR -->
 <nav class="navbar">
   <a href="/">🏠 الرئيسية</a>
   <a href="/products">📦 المنتجات</a>
   <a href="/cart">🛒 السلة</a>
   <a href="/blog">📰 المدونة</a>
-  <a href="/contact">✉️ اتصل بنا</a>
+  <a href="/contact">✉️ الدعم</a>
   <a href="/dashboard">📊 لوحة التحكم</a>
 </nav>
 
-<script>
-const currentPath = window.location.pathname.toLowerCase();
-document.querySelectorAll('.navbar a').forEach(link=>{
-  if(link.getAttribute('href') === currentPath){
-    link.classList.add('active');
-  }
-});
-</script>
-
-<!-- CART -->
 <div class="cart">
-  <h2>Shopping Cart</h2>
+  <h2>🛍️ Your Selected Products</h2>
   <div id="cart-items"></div>
 
-  <button class="checkout" onclick="checkout()">✅ Checkout</button>
-  <button class="whatsapp" onclick="sendWhatsApp()">📲 Order via WhatsApp</button>
+  <button class="checkout" onclick="checkout()">🛒 Buy All on Amazon</button>
 </div>
 
-<!-- FAQ -->
 <div class="faq" id="faqSection"></div>
 
 <script>
+// ================= TRACKING =================
+function trackEvent(type, value){
+  if(typeof gtag === "function"){
+    gtag('event', type, {
+      event_category: "engagement",
+      event_label: value
+    });
+  }
+
+  if(window.dataLayer){
+    window.dataLayer.push({
+      event: type,
+      value: value
+    });
+  }
+
+  console.log("Tracked:", type, value);
+}
+
+trackEvent("page_view", window.location.pathname);
+
+// ================= COUNTRY =================
+function getCountry(){
+  const lang = navigator.language || "en-US";
+
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("en-CA")) return "CA";
+  if(lang.includes("pl")) return "PL";
+  return "US";
+}
+
+// ================= AMAZON LINK =================
+function getAmazonLink(item){
+  const country = getCountry();
+
+  let domain = "amazon.com";
+  let tag = "koloonlinesto-20";
+
+  if(country === "EG"){
+    domain = "amazon.eg";
+    tag = "onlinesh03f31-21";
+  }
+
+  if(country === "CA"){
+    domain = "amazon.ca";
+    tag = "onlinesho0429-20";
+  }
+
+  if(country === "PL"){
+    domain = "amazon.pl";
+    tag = "koloonline-21";
+  }
+
+  return `https://${domain}/dp/${item.asin}?tag=${tag}`;
+}
+
 // ================= LOAD CART =================
 function loadCart() {
-    const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
-    const container = document.getElementById('cart-items');
-    container.innerHTML = '';
+  const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+  const container = document.getElementById('cart-items');
+  container.innerHTML = '';
 
-    if(cartItems.length === 0){
-        container.innerHTML = "<p>السلة فارغة 🛒</p>";
-        return;
-    }
+  if(cartItems.length === 0){
+    container.innerHTML = "<p>السلة فارغة 🛒</p>";
+    return;
+  }
 
-    cartItems.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'cart-item';
+  cartItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'cart-item';
 
-        div.innerHTML = `
-            <div class="item-name">${item.title || item.name}</div>
-            <div class="item-qty">
-                <input type="number" value="${item.quantity || 1}" min="1"
-                onchange="updateQuantity('${item.asin || item.id}', this.value)">
-            </div>
-            <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
-            <button class="remove-btn" onclick="removeItem('${item.asin || item.id}')">❌</button>
-        `;
+    div.innerHTML = `
+      <div class="item-name">${item.title || item.name}</div>
+      <div class="item-qty">
+        <input type="number" value="${item.quantity || 1}" min="1"
+        onchange="updateQuantity('${item.asin}', this.value)">
+      </div>
+      <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
+      <button class="remove-btn" onclick="removeItem('${item.asin}')">❌</button>
+    `;
 
-        container.appendChild(div);
-    });
+    container.appendChild(div);
+  });
 }
 
 // ================= UPDATE =================
 function updateQuantity(id, quantity) {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    cart = cart.map(item=>{
-        if((item.asin || item.id) === id){
-            item.quantity = Number(quantity);
-        }
-        return item;
-    });
-    localStorage.setItem('cart', JSON.stringify(cart));
-    loadCart();
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cart = cart.map(item=>{
+    if(item.asin === id){
+      item.quantity = Number(quantity);
+    }
+    return item;
+  });
+  localStorage.setItem('cart', JSON.stringify(cart));
+  loadCart();
 }
 
 // ================= REMOVE =================
 function removeItem(id) {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    cart = cart.filter(item => (item.asin || item.id) !== id);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    loadCart();
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cart = cart.filter(item => item.asin !== id);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  loadCart();
 }
 
 // ================= CHECKOUT =================
 function checkout() {
-    alert("جارٍ الانتقال للدفع...");
-}
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-// ================= WHATSAPP =================
-function sendWhatsApp() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    if(cart.length === 0){
-        alert("السلة فارغة");
-        return;
-    }
+  if(cart.length === 0){
+    alert("السلة فارغة");
+    return;
+  }
 
-    let message = "🛒 طلب جديد:%0A";
-    cart.forEach(item=>{
-        message += `- ${item.title || item.name} x${item.quantity || 1}%0A`;
-    });
+  cart.forEach(item=>{
+    const link = getAmazonLink(item);
 
-    window.open(`https://wa.me/201205271929?text=${message}`);
+    trackEvent("buy_click", item.asin);
+
+    window.open(link, "_blank");
+  });
 }
 
 // ================= FAQ =================
 const faqs = [
-  {q:"هل يمكن الدفع عند الاستلام؟", a:"نعم عبر التواصل واتساب."},
-  {q:"هل المنتجات أصلية؟", a:"نعم من أمازون."},
-  {q:"كيف أتابع الطلب؟", a:"سيتم التواصل معك بعد الطلب."}
+  {q:"كيف أشتري المنتج؟", a:"اضغط على زر الشراء وسيتم تحويلك مباشرة إلى Amazon"},
+  {q:"هل المنتجات أصلية؟", a:"نعم من Amazon الرسمي"},
+  {q:"هل الشحن متاح؟", a:"الشحن يتم حسب بلدك عبر Amazon"}
 ];
 
 function renderFAQ(){
@@ -243,4 +228,4 @@ renderFAQ();
 </script>
 
 </body>
-  </html>
+</html>
