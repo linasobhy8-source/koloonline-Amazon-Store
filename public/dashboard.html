@@ -28,7 +28,7 @@ j.async=true;
 j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
 
 f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+})(window,document,'script','dataLayer','GTM-KNQM8BN');
 </script>
 
 <style>
@@ -104,15 +104,15 @@ th{
 
 <!-- GTM NOSCRIPT -->
 <noscript>
-<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8BN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe>
 </noscript>
 
 <header>📊 Koloonline Live Analytics</header>
 
 <nav class="nav">
-  <a href="/">Store</a>
-  <a href="/dashboard">Dashboard</a>
+  <a href="/index.html">Store</a>
+  <a href="/dashboard.html">Dashboard</a>
 </nav>
 
 <!-- ================= STATS ================= -->
@@ -153,10 +153,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>
 
 <script>
 
-const GA_ID = "G-YS8L61XLPR";
-const GTM_ID = "GTM-KNQM8KBN";
-
-/* ================= COUNTRY DETECTION ================= */
 function getCountry(){
   const lang = navigator.language || "en-US";
 
@@ -166,14 +162,14 @@ function getCountry(){
   return "US";
 }
 
-/* ================= TRACK DASHBOARD VIEW ================= */
+/* ================= DASHBOARD VIEW TRACK ================= */
 gtag('event','dashboard_view', {
   page: 'dashboard',
   country: getCountry(),
   time: new Date().toISOString()
 });
 
-/* ================= FETCH ANALYTICS ================= */
+/* ================= FETCH DATA ================= */
 async function loadAnalytics(){
   try{
     const res = await fetch("/api/analytics");
@@ -183,7 +179,6 @@ async function loadAnalytics(){
     document.getElementById("orders").innerText = data.overview?.totalOrders || 0;
     document.getElementById("whatsapp").innerText = data.overview?.totalWhatsApp || 0;
 
-    // fake revenue calc (replace later from Firebase)
     const revenue = (data.overview?.totalOrders || 0) * 12;
     document.getElementById("revenue").innerText = "$" + revenue;
 
@@ -206,9 +201,8 @@ async function loadAnalytics(){
   }
 }
 
-/* ================= PRODUCT CLICK TRACKING ================= */
+/* ================= TRACK PRODUCT ================= */
 function trackProduct(asin){
-
   gtag('event','affiliate_click',{
     asin: asin,
     country: getCountry(),
