@@ -177,7 +177,7 @@ function render() {
   `;
 }
 
-/* ================= BUY NOW (FIXED + SAFE) ================= */
+/* ================= BUY NOW (FINAL FIXED LOGIC) ================= */
 function buyNow() {
 
   if (!product) return;
@@ -187,14 +187,21 @@ function buyNow() {
     title: product.title
   });
 
-  const lang = navigator.language || navigator.userLanguage || "en";
+  const lang = navigator.language || "en-US";
 
-  let tag = "koloonlinesto-20";
+  const tags = {
+    EG: "onlinesh03f31-21",
+    US: "onlinesho0429-20",
+    CA: "linasobhy20d8-20",
+    PL: "koloonline-21"
+  };
 
-  if (lang.includes("ar")) tag = "onlinesh03f31-21";
-  else if (lang.includes("en-US")) tag = "onlinesho0429-20";
-  else if (lang.includes("en-CA")) tag = "linasobhy20d8-20";
-  else if (lang.includes("pl")) tag = "koloonline-21";
+  let tag = "koloonlinesto-20"; // default
+
+  if (lang.includes("ar")) tag = tags.EG;
+  else if (lang.includes("en-US")) tag = tags.US;
+  else if (lang.includes("en-CA")) tag = tags.CA;
+  else if (lang.includes("pl")) tag = tags.PL;
 
   const url = `https://www.amazon.com/dp/${product.asin}?tag=${tag}`;
 
@@ -203,6 +210,8 @@ function buyNow() {
 
 /* ================= WHATSAPP ================= */
 function orderWhatsApp() {
+  if (!product) return;
+
   const msg = "I want to order: " + product.title;
   window.open(`https://wa.me/201205271929?text=${encodeURIComponent(msg)}`);
 }
