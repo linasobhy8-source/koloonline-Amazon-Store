@@ -6,31 +6,26 @@ export default async function handler(req, res) {
 
     const snapshot = await getDocs(collection(db, "events"));
 
-    const events = [];
-
-    snapshot.forEach(doc => {
-      events.push(doc.data());
-    });
+    const events = snapshot.docs.map(doc => doc.data());
 
     let totalClicks = 0;
     let totalOrders = 0;
     let totalWhatsApp = 0;
 
     const productMap = {};
-    const countryMap = { EG: 0, US: 0, CA: 0, PL: 0 };
+    const countryMap = {};
 
     events.forEach(ev => {
 
-      // country
-      countryMap[ev.country] = (countryMap[ev.country] || 0) + 1;
+      const country = ev.country || "UNKNOWN";
+      countryMap[country] = (countryMap[country] || 0) + 1;
 
-      // funnel
       if (ev.type === "product_click") totalClicks++;
       if (ev.type === "purchase") totalOrders++;
       if (ev.type === "whatsapp") totalWhatsApp++;
 
-      // product stats
       if (ev.asin) {
+
         if (!productMap[ev.asin]) {
           productMap[ev.asin] = {
             asin: ev.asin,
@@ -63,15 +58,20 @@ export default async function handler(req, res) {
       countries: countryMap,
 
       funnel: {
-        clickToOrderRate: totalClicks ? (totalOrders / totalClicks * 100).toFixed(2) : 0,
-        clickToWhatsappRate: totalClicks ? (totalWhatsApp / totalClicks * 100).toFixed(2) : 0
+        clickToOrderRate: totalClicks
+          ? Number(((totalOrders / totalClicks) * 100).toFixed(2))
+          : 0,
+
+        clickToWhatsappRate: totalClicks
+          ? Number(((totalWhatsApp / totalClicks) * 100).toFixed(2))
+          : 0
       }
     });
 
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message || "Server Error"
     });
   }
-}
+                                                                 }
