@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Support | Koloonline Store</title>
+<meta name="description" content="الدعم والمساعدة لمنتجات Koloonline وعروض Amazon.">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#f5f5f5;
+  margin:0;
+}
+
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  font-size:22px;
+}
+
+.navbar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  background:#37475a;
+  padding:10px;
+}
+
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:6px;
+  font-weight:bold;
+  background:#ff9900;
+}
+
+.navbar a:hover{background:#e68a00;}
+.navbar a.active{background:#131921;}
+
+.container{
+  max-width:600px;
+  margin:40px auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+h1{text-align:center;color:#232f3e;}
+
+input, textarea{
+  width:100%;
+  padding:10px;
+  margin:10px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:6px;
+  background:#ff9900;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{background:#e68a00;}
+
+.amazon-btn{
+  margin-top:10px;
+  background:#131921;
+}
+
+.faq{
+  max-width:600px;
+  margin:20px auto;
+}
+
+.faq p{
+  background:#fff;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+#status{
+  text-align:center;
+  margin-top:10px;
+  font-weight:bold;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>🛒 Koloonline Support</header>
+
+<!-- ================= NAVBAR (FIXED LINKS) ================= -->
+<nav class="navbar">
+  <a href="/">🏠 Home</a>
+  <a href="/product">📦 Products</a>
+  <a href="/cart">🛒 Cart</a>
+  <a href="/blog">📰 Blog</a>
+  <a href="/contact">✉️ Contact</a>
+  <a href="/dashboard">📊 Dashboard</a>
+</nav>
+
+<script>
+const currentPath = window.location.pathname;
+document.querySelectorAll('.navbar a').forEach(link=>{
+  if(link.getAttribute('href') === currentPath){
+    link.classList.add('active');
+  }
+});
+</script>
+
+<!-- ================= SUPPORT FORM ================= -->
+<div class="container">
+  <div class="card">
+
+    <h1>الدعم والمساعدة</h1>
+
+    <form onsubmit="sendMessage(event)">
+      <input type="text" id="name" placeholder="اسمك" required>
+      <input type="email" id="email" placeholder="بريدك الإلكتروني" required>
+      <textarea id="message" rows="5" placeholder="اكتب سؤالك" required></textarea>
+
+      <button type="submit">🔍 عرض أفضل منتج لك</button>
+      <button type="button" class="amazon-btn" onclick="goAmazon()">🛒 تصفح المنتجات</button>
+    </form>
+
+    <p id="status"></p>
+
+  </div>
+</div>
+
+<!-- ================= FAQ ================= -->
+<div class="faq" id="faqSection"></div>
+
+<script>
+
+/* ================= AMAZON ================= */
+function goAmazon(){
+  window.open("https://www.amazon.com/?tag=koloonlinesto-20","_blank");
+}
+
+/* ================= FORM ================= */
+function sendMessage(e){
+  e.preventDefault();
+
+  const name=document.getElementById("name").value.trim();
+  const email=document.getElementById("email").value.trim();
+  const message=document.getElementById("message").value.trim();
+
+  if(!name||!email||!message){
+    document.getElementById("status").innerText="⚠️ املأ كل البيانات";
+    return;
+  }
+
+  document.getElementById("status").innerText="🔄 جاري التحويل...";
+
+  const asin="B09V7Z4TJG";
+
+  setTimeout(()=>{
+    window.open(`https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`,"_blank");
+  },1200);
+
+  document.getElementById("name").value="";
+  document.getElementById("email").value="";
+  document.getElementById("message").value="";
+}
+
+/* ================= FAQ ================= */
+const faqs=[
+{q:"كيف أشتري؟",a:"اضغط زر الشراء وسيتم تحويلك إلى Amazon"},
+{q:"هل المنتجات أصلية؟",a:"نعم من Amazon"},
+{q:"هل يوجد شحن؟",a:"حسب بلدك"}
+];
+
+function renderFAQ(){
+  const container=document.getElementById("faqSection");
+  faqs.forEach(f=>{
+    const p=document.createElement("p");
+    p.innerHTML=`<strong>${f.q}</strong><br>${f.a}`;
+    container.appendChild(p);
+  });
+}
+
+renderFAQ();
+
+</script>
+
+</body>
+</html>
