@@ -1,14 +1,7 @@
 User-agent: *
 Allow: /
 
-# Sitemap الرئيسي
-Sitemap: https://www.koloonline.online/sitemap.xml
+Sitemap: https://koloonline.online/sitemap.xml
 
-# صفحات لا نريد فهرستها (صفحات داخلية)
-Disallow: /checkout.html
-Disallow: /thankyou.html
-Disallow: /dashboard.html
-Disallow: /cart.html
-
-# لو عندك نظام API حقيقي (Vercel Functions)
-Disallow: /api/
+Disallow: /dashboard
+Disallow: /cart
