@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SaaS Dashboard | Koloonline</title>
+<title>Koloonline Analytics Dashboard</title>
 
 <!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
@@ -13,24 +13,6 @@ function gtag(){dataLayer.push(arguments);}
 
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
-</script>
-
-<!-- ================= GTM ================= -->
-<script>
-(function(w,d,s,l,i){
-  w[l]=w[l]||[];
-  w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
-
-  var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),
-      dl=l!='dataLayer'?'&l='+l:'';
-
-  j.async=true;
-  j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-
-  f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-KNQM8KBN'); 
-// ✔️ كان عندك خطأ هنا (GTM-KNQM8BN ❌)
 </script>
 
 <style>
@@ -48,45 +30,6 @@ header{
   font-size:20px;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:15px;
-  padding:20px;
-}
-
-.card{
-  background:white;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  text-align:center;
-}
-
-.card h2{
-  margin:0;
-  font-size:28px;
-  color:#ff9900;
-}
-
-table{
-  width:95%;
-  margin:20px auto;
-  border-collapse:collapse;
-  background:white;
-}
-
-th,td{
-  padding:12px;
-  border:1px solid #ddd;
-  text-align:center;
-}
-
-th{
-  background:#232f3e;
-  color:white;
-}
-
 .nav{
   display:flex;
   justify-content:center;
@@ -99,18 +42,50 @@ th{
   color:white;
   text-decoration:none;
 }
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card h2{
+  color:#ff9900;
+  font-size:26px;
+}
+
+table{
+  width:95%;
+  margin:20px auto;
+  background:white;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:10px;
+  border:1px solid #ddd;
+  text-align:center;
+}
+
+th{
+  background:#232f3e;
+  color:white;
+}
 </style>
 </head>
 
 <body>
 
-<!-- GTM NOSCRIPT -->
-<noscript>
-<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
-height="0" width="0" style="display:none;visibility:hidden"></iframe>
-</noscript>
-
-<header>📊 Koloonline Live Analytics</header>
+<header>📊 Koloonline Analytics</header>
 
 <nav class="nav">
   <a href="/">Store</a>
@@ -120,22 +95,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>
 <!-- ================= STATS ================= -->
 <div class="grid">
   <div class="card">
-    <p>Total Clicks</p>
+    <p>Clicks</p>
     <h2 id="clicks">0</h2>
   </div>
 
   <div class="card">
-    <p>Total Orders</p>
+    <p>Orders</p>
     <h2 id="orders">0</h2>
   </div>
 
   <div class="card">
-    <p>WhatsApp Leads</p>
+    <p>WhatsApp</p>
     <h2 id="whatsapp">0</h2>
   </div>
 
   <div class="card">
-    <p>Revenue (est.)</p>
+    <p>Revenue</p>
     <h2 id="revenue">$0</h2>
   </div>
 </div>
@@ -157,40 +132,44 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>
 
 function getCountry(){
   const lang = navigator.language || "en-US";
-
   if(lang.includes("ar")) return "EG";
   if(lang.includes("en-CA")) return "CA";
   if(lang.includes("pl")) return "PL";
   return "US";
 }
 
-/* ================= DASHBOARD VIEW TRACK ================= */
-gtag('event','dashboard_view', {
-  page: 'dashboard',
-  country: getCountry(),
-  time: new Date().toISOString()
+/* ================= TRACK VIEW ================= */
+gtag('event','dashboard_view',{
+  country:getCountry()
 });
 
-/* ================= FETCH DATA ================= */
+/* ================= LOAD DATA ================= */
 async function loadAnalytics(){
+
   try{
     const res = await fetch("/api/analytics");
 
-    if(!res.ok) throw new Error("API not found");
+    if(!res.ok){
+      console.log("API not ready");
+      return;
+    }
 
     const data = await res.json();
 
-    document.getElementById("clicks").innerText = data.overview?.totalClicks || 0;
-    document.getElementById("orders").innerText = data.overview?.totalOrders || 0;
-    document.getElementById("whatsapp").innerText = data.overview?.totalWhatsApp || 0;
+    const clicks = data?.overview?.totalClicks || 0;
+    const orders = data?.overview?.totalOrders || 0;
+    const whatsapp = data?.overview?.totalWhatsApp || 0;
 
-    const revenue = (data.overview?.totalOrders || 0) * 12;
-    document.getElementById("revenue").innerText = "$" + revenue;
+    document.getElementById("clicks").innerText = clicks;
+    document.getElementById("orders").innerText = orders;
+    document.getElementById("whatsapp").innerText = whatsapp;
+
+    document.getElementById("revenue").innerText = "$" + (orders * 12);
 
     const table = document.getElementById("table");
     table.innerHTML = "";
 
-    (data.topProducts || []).forEach(p=>{
+    (data?.topProducts || []).forEach(p=>{
       table.innerHTML += `
         <tr onclick="trackProduct('${p.asin}')">
           <td>${p.asin}</td>
@@ -201,20 +180,17 @@ async function loadAnalytics(){
       `;
     });
 
-  }catch(e){
-    console.log("Dashboard error:", e);
+  }catch(err){
+    console.log("Dashboard error:", err);
   }
 }
 
-/* ================= TRACK PRODUCT ================= */
+/* ================= TRACK CLICK ================= */
 function trackProduct(asin){
   gtag('event','affiliate_click',{
-    asin: asin,
-    country: getCountry(),
-    source: 'dashboard'
+    asin:asin,
+    source:'dashboard'
   });
-
-  console.log("Tracked:", asin);
 }
 
 /* ================= AUTO REFRESH ================= */
@@ -225,4 +201,3 @@ loadAnalytics();
 
 </body>
 </html>
-
