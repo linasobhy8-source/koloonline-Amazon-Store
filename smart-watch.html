@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Watch Pro | Koloonline</title>
+
+<meta name="description" content="Buy Smart Watch Pro with Amazon deal. Fitness tracking, heart rate, notifications.">
+<meta name="keywords" content="smart watch, fitness watch, amazon deal, koloonline">
+<meta name="robots" content="index, follow">
+
+<meta property="og:title" content="Smart Watch Pro | Koloonline">
+<meta property="og:description" content="Best Amazon smart watch deal">
+<meta property="og:type" content="product">
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5}
+
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  font-size:22px;
+}
+
+.container{
+  max-width:900px;
+  margin:20px auto;
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+}
+
+img{
+  width:100%;
+  max-height:350px;
+  object-fit:contain;
+}
+
+.price{
+  color:#b12704;
+  font-size:22px;
+  font-weight:bold;
+}
+
+.btn{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:16px;
+  font-weight:bold;
+}
+
+.buy{background:#ff9900;}
+.buy:hover{background:#e68a00;}
+.wa{background:#25D366;color:#fff;}
+</style>
+
+<!-- ================= GTM ================= -->
+<script>
+(function(w,d,s,l,i){
+w[l]=w[l]||[];
+w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+j.async=true;
+j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+</script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+</head>
+
+<body>
+
+<noscript>
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+
+<header>🔥 Koloonline Product</header>
+
+<div class="container">
+
+<h1>Smart Watch Pro</h1>
+
+<img src="https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg" alt="Smart Watch">
+
+<p class="price">$49.99</p>
+
+<p>
+✔ Fitness Tracking<br>
+✔ Heart Rate Monitor<br>
+✔ Notifications Support<br>
+✔ Water Resistant
+</p>
+
+<button class="btn buy" onclick="buy()">🛒 Buy on Amazon</button>
+<button class="btn wa" onclick="whatsapp()">📲 Order via WhatsApp</button>
+
+</div>
+
+<script>
+
+function track(event, data={}){
+  if(window.dataLayer){
+    dataLayer.push({event,...data});
+  }
+  if(typeof gtag==="function"){
+    gtag('event',event,data);
+  }
+}
+
+/* ================= BUY ================= */
+function buy(){
+  track("affiliate_click",{asin:"B09V7Z4TJG"});
+
+  window.open(
+    "https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonlinesto-20",
+    "_blank"
+  );
+}
+
+/* ================= WHATSAPP ================= */
+function whatsapp(){
+  track("whatsapp_click",{product:"Smart Watch Pro"});
+
+  window.open(
+    "https://wa.me/201205271929?text=I%20want%20Smart%20Watch%20Pro",
+    "_blank"
+  );
+}
+
+track("page_view",{page:"product",asin:"B09V7Z4TJG"});
+
+</script>
+
+</body>
+</html>
