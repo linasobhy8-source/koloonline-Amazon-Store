@@ -28,12 +28,7 @@ gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 </script>
 
-<!-- ================= TRACKING CORE ================= -->
 <script>
-const GTM_ID = "GTM-KNQM8KBN";
-const GA_ID = "G-YS8L61XLPR";
-
-/* ===== COUNTRY DETECTION ===== */
 function getCountry(){
   const lang = navigator.language || "en-US";
   if(lang.includes("ar")) return "EG";
@@ -42,32 +37,17 @@ function getCountry(){
   return "US";
 }
 
-/* ===== MAIN TRACK FUNCTION ===== */
-function trackEvent(eventName, data = {}){
-
+function trackEvent(name, data = {}){
   const payload = {
     country: getCountry(),
-    page: window.location.pathname,
-    timestamp: new Date().toISOString(),
+    page: location.pathname,
+    time: new Date().toISOString(),
     ...data
   };
 
-  if(typeof gtag === "function"){
-    gtag('event', eventName, payload);
-  }
-
-  if(window.dataLayer){
-    window.dataLayer.push({
-      event: eventName,
-      ...payload
-    });
-  }
-
-  console.log("TRACK:", eventName, payload);
+  if(window.dataLayer) window.dataLayer.push({event:name,...payload});
+  if(typeof gtag==="function") gtag('event', name, payload);
 }
-
-/* ===== PAGE VIEW (مرة واحدة فقط) ===== */
-trackEvent("page_view");
 </script>
 
 <style>
@@ -77,71 +57,73 @@ body{
   background:#eaeded;
 }
 
+/* ===== AMAZON HEADER ===== */
 header{
   background:#131921;
   color:white;
-  padding:10px 15px;
+  padding:10px;
 }
 
-.logo{height:50px;}
-
-.header-top{
+.topbar{
   display:flex;
   align-items:center;
-  justify-content:space-between;
   gap:15px;
   flex-wrap:wrap;
 }
 
-.search-bar{
-  display:flex;
-  flex:1;
-  gap:10px;
+.logo{
+  height:45px;
 }
 
-.search-bar input{
+/* ===== SEARCH ===== */
+.search{
   flex:1;
+  display:flex;
+}
+
+.search input{
+  width:100%;
   padding:10px;
   border:none;
-  border-radius:4px;
+  border-radius:4px 0 0 4px;
 }
 
-.search-bar button{
-  padding:10px 15px;
+.search button{
   background:#febd69;
   border:none;
-  border-radius:4px;
+  padding:10px 15px;
   cursor:pointer;
   font-weight:bold;
+  border-radius:0 4px 4px 0;
 }
 
-.navbar{
+/* ===== NAV ===== */
+nav{
   background:#232f3e;
+  padding:10px;
   display:flex;
   gap:15px;
-  padding:10px;
-  flex-wrap:wrap;
 }
 
-.navbar a{
+nav a{
   color:white;
   text-decoration:none;
+  font-size:14px;
 }
 
+/* ===== PRODUCTS ===== */
 .container{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
   padding:20px;
 }
 
 .card{
   background:white;
-  width:250px;
   padding:10px;
   border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
 .card img{
@@ -150,133 +132,138 @@ header{
   object-fit:contain;
 }
 
+.card h3{
+  font-size:14px;
+}
+
 .card button{
   width:100%;
+  margin-top:8px;
   padding:10px;
-  margin-top:10px;
-  background:#ff9900;
   border:none;
-  border-radius:6px;
-  font-weight:bold;
+  border-radius:5px;
   cursor:pointer;
+  font-weight:bold;
+}
+
+.buy{
+  background:#ff9900;
+}
+
+.cart{
+  background:#ffd814;
 }
 </style>
 </head>
 
 <body>
 
-<!-- GTM NOSCRIPT -->
 <noscript>
 <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe>
 </noscript>
 
+<!-- ================= HEADER ================= -->
 <header>
-  <div class="header-top">
-    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" class="logo">
+  <div class="topbar">
 
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="🔍 Search products...">
-      <button onclick="searchProducts()">Search</button>
+    <img class="logo" src="https://i.postimg.cc/9fVfC1Y4/1000276862.png">
+
+    <div class="search">
+      <input id="searchInput" placeholder="ابحث عن منتجات...">
+      <button onclick="searchProducts()">بحث</button>
     </div>
+
   </div>
 </header>
 
-<nav class="navbar">
+<!-- ================= NAV ================= -->
+<nav>
   <a href="/">🏠 Home</a>
   <a href="/product">📦 Products</a>
   <a href="/cart">🛒 Cart</a>
-  <a href="/blog">📰 Blog</a>
-  <a href="/contact">📞 Contact</a>
   <a href="/dashboard">📊 Dashboard</a>
 </nav>
 
+<!-- ================= PRODUCTS ================= -->
 <div class="container" id="products"></div>
 
 <script>
 
-const products = [
-  {
-    title:"🔥 Smart Watch Pro",
-    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
-    asin:"B09V7Z4TJG"
-  },
-  {
-    title:"🎧 Wireless Earbuds",
-    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
-    asin:"B08G9P7N2X"
+let ALL_PRODUCTS = [];
+
+/* ================= LOAD API ================= */
+async function loadProducts(){
+  try{
+    const res = await fetch("/api/products");
+    ALL_PRODUCTS = await res.json();
+    render(ALL_PRODUCTS);
+  }catch(e){
+    document.getElementById("products").innerHTML =
+    "<h3>API Error</h3>";
   }
-];
+}
 
+/* ================= AFFILIATE LINK ================= */
 function getLink(asin){
-  return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+
+  const country = getCountry();
+
+  let tag = "koloonlinesto-20";
+
+  if(country==="EG") tag="onlinesh03f31-21";
+  if(country==="US") tag="onlinesho0429-20";
+  if(country==="CA") tag="linasobhy20d8-20";
+  if(country==="PL") tag="koloonline-21";
+
+  return `https://www.amazon.com/dp/${asin}?tag=${tag}`;
 }
 
-/* ===== VIEW PRODUCT ===== */
-function trackView(p){
-  trackEvent("product_view", {
-    asin: p.asin,
-    title: p.title
-  });
-}
+/* ================= RENDER ================= */
+function render(list){
 
-/* ===== LOAD PRODUCTS (FIX: no duplicate tracking) ===== */
-function load(){
   const container = document.getElementById("products");
   container.innerHTML = "";
 
-  products.forEach(p => {
+  list.forEach(p => {
 
     container.innerHTML += `
       <div class="card">
         <img src="${p.image}">
         <h3>${p.title}</h3>
 
-        <button onclick="
-          trackEvent('affiliate_click',{asin:'${p.asin}'});
-          window.open('${getLink(p.asin)}','_blank')
-        ">
-          🛒 Buy on Amazon
+        <button class="buy"
+          onclick="
+            trackEvent('affiliate_click',{asin:'${p.asin}'});
+            window.open('${getLink(p.asin)}','_blank')
+          ">
+          🛒 Buy Now
         </button>
 
-        <button onclick="trackEvent('add_to_cart',{asin:'${p.asin}'})">
-          ➕ Add to Cart
+        <button class="cart"
+          onclick="trackEvent('add_to_cart',{asin:'${p.asin}'})">
+          ➕ Add Cart
         </button>
-
       </div>
     `;
   });
 }
 
+/* ================= SEARCH ================= */
 function searchProducts(){
+
   const q = document.getElementById("searchInput").value.toLowerCase();
 
   trackEvent("search",{query:q});
 
-  const container = document.getElementById("products");
-  container.innerHTML = "";
+  const filtered = ALL_PRODUCTS.filter(p =>
+    p.title.toLowerCase().includes(q)
+  );
 
-  products
-    .filter(p => p.title.toLowerCase().includes(q))
-    .forEach(p => {
-
-      container.innerHTML += `
-        <div class="card">
-          <img src="${p.image}">
-          <h3>${p.title}</h3>
-
-          <button onclick="
-            trackEvent('affiliate_click',{asin:'${p.asin}'});
-            window.open('${getLink(p.asin)}','_blank')
-          ">
-            🛒 Buy on Amazon
-          </button>
-        </div>
-      `;
-    });
+  render(filtered);
 }
 
-load();
+loadProducts();
 
 </script>
 
