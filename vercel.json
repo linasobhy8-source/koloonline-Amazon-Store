@@ -16,8 +16,14 @@
     { "source": "/about", "destination": "/about.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
 
-    { "source": "/p/:asin", "destination": "/product.html?asin=:asin" },
-    { "source": "/dp/:asin", "destination": "/product.html?asin=:asin" }
+    {
+      "source": "/dp/(.*)",
+      "destination": "/product.html?asin=$1"
+    },
+    {
+      "source": "/p/(.*)",
+      "destination": "/product.html?asin=$1"
+    }
   ],
 
   "redirects": [
