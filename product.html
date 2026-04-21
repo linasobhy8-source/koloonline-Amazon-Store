@@ -10,11 +10,11 @@
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 
 function trackEvent(eventName, params = {}) {
-  window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: eventName, ...params });
 
   if (typeof gtag === "function") {
@@ -132,13 +132,16 @@ const asin = params.get("asin");
 
 let product = null;
 
-/* ================= LOAD FROM API ================= */
+/* ================= LOAD API ================= */
 async function loadProduct() {
   try {
     const res = await fetch("/api/products");
+
+    if (!res.ok) throw new Error("API failed");
+
     const data = await res.json();
 
-    const products = data.products || data;
+    const products = Array.isArray(data) ? data : (data.products || []);
 
     product = products.find(p => p.asin === asin);
 
@@ -148,8 +151,10 @@ async function loadProduct() {
     }
 
     render();
+
   } catch (err) {
-    document.body.innerHTML = "<h2 style='text-align:center'>API Error</h2>";
+    console.error(err);
+    document.body.innerHTML = "<h2 style='text-align:center'>Server Error</h2>";
   }
 }
 
@@ -165,23 +170,16 @@ function render() {
   document.getElementById("price").innerText = "$" + product.price;
   document.getElementById("image").src = product.image;
 
-  const faqs = [
-    {q:"Is this product original?", a:"Yes, from Amazon."},
-    {q:"Shipping time?", a:"Fast delivery."},
-    {q:"Return policy?", a:"Amazon policy applies."}
-  ];
-
   const faqSection = document.getElementById("faqSection");
-  faqSection.innerHTML = "";
 
-  faqs.forEach(f => {
-    const p = document.createElement("p");
-    p.innerHTML = `<b>Q:</b> ${f.q}<br>${f.a}`;
-    faqSection.appendChild(p);
-  });
+  faqSection.innerHTML = `
+    <p><b>Q:</b> Is this product original?<br>A: Yes, from Amazon.</p>
+    <p><b>Q:</b> Shipping time?<br>A: Fast delivery.</p>
+    <p><b>Q:</b> Return policy?<br>A: Amazon policy applies.</p>
+  `;
 }
 
-/* ================= BUY NOW (AFFILIATE SMART LOGIC) ================= */
+/* ================= AFFILIATE BUY ================= */
 function buyNow() {
 
   trackEvent("buy_now_click", {
@@ -198,10 +196,9 @@ function buyNow() {
   else if (lang.includes("en-CA")) tag = "linasobhy20d8-20";
   else if (lang.includes("pl")) tag = "koloonline-21";
 
-  window.open(
-    `https://www.amazon.com/dp/${product.asin}?tag=${tag}`,
-    "_blank"
-  );
+  const url = `https://www.amazon.com/dp/${product.asin}?tag=${tag}`;
+
+  window.open(url, "_blank");
 }
 
 /* ================= WHATSAPP ================= */
