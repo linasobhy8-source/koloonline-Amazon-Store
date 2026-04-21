@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>About Us | Koloonline Amazon Store</title>
+<meta name="description" content="Learn more about Koloonline Store, a smart Amazon affiliate platform that helps users discover the best products.">
+
+<link rel="icon" type="image/png" href="/assets/1000276862.png">
+
+<!-- ================= GTM ================= -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+</script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+
+/* TRACK */
+function trackEvent(eventName, params = {}) {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: eventName,
+    ...params
+  });
+
+  if (typeof gtag === "function") {
+    gtag('event', eventName, params);
+  }
+}
+
+/* PAGE VIEW */
+trackEvent("page_view", { page: "about" });
+</script>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  margin:0;
+  background:#f5f5f5;
+}
+
+header{
+  background:#232f3e;
+  color:#fff;
+  padding:15px;
+  font-size:22px;
+  text-align:center;
+}
+
+.navbar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  background:#37475a;
+  padding:10px;
+}
+
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  padding:8px 12px;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+.navbar a:hover{ background:#e68a00; }
+.navbar a.active{ background:#ff9900; }
+
+.container{
+  max-width:900px;
+  margin:20px auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+
+.whatsapp-btn{
+  display:block;
+  width:100%;
+  margin-top:15px;
+  padding:12px;
+  text-align:center;
+  background:#25D366;
+  color:#fff;
+  border-radius:6px;
+  font-weight:bold;
+  text-decoration:none;
+}
+
+.faq p{
+  margin-bottom:10px;
+  background:#f9f9f9;
+  padding:10px;
+  border-radius:6px;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- GTM NOSCRIPT -->
+<noscript>
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+
+<header>🏬 Koloonline Store</header>
+
+<!-- NAV -->
+<nav class="navbar">
+  <a href="/" >🏠 الرئيسية</a>
+  <a href="/product.html">📦 المنتجات</a>
+  <a href="/cart.html">🛒 السلة</a>
+  <a href="/blog.html">📰 المدونة</a>
+  <a href="/contact.html">✉️ اتصل بنا</a>
+  <a href="/dashboard.html">📊 لوحة التحكم</a>
+  <a href="/about.html">ℹ️ من نحن</a>
+</nav>
+
+<div class="container">
+
+<div class="card">
+
+<h1>About Us</h1>
+
+<p>
+Welcome to <strong>Koloonline Store</strong>, your trusted destination for discovering the best smart products and Amazon deals.
+</p>
+
+<p>
+Our mission is to help users find high-quality gadgets and trending products at the best prices.
+</p>
+
+<h2>Why Choose Us?</h2>
+<ul>
+<li>✔ Trusted product recommendations</li>
+<li>✔ Daily updated deals</li>
+<li>✔ Secure affiliate links</li>
+</ul>
+
+<h2>Our Goal</h2>
+<p>
+To become a top platform for smart shopping and product discovery.
+</p>
+
+<a class="whatsapp-btn"
+   href="https://wa.me/201205271929"
+   target="_blank"
+   onclick="trackEvent('whatsapp_click',{page:'about'})">
+📲 تواصل عبر واتساب
+</a>
+
+</div>
+
+<div class="card" style="margin-top:20px;">
+<h2>FAQ</h2>
+<div class="faq" id="faqSection"></div>
+</div>
+
+</div>
+
+<script>
+const faqs = [
+  {q:"Is Koloonline a real store?", a:"It is an Amazon affiliate platform."},
+  {q:"Do you sell products?", a:"No, purchases happen on Amazon."},
+  {q:"How to contact?", a:"Via WhatsApp."}
+];
+
+function renderFAQ(){
+  const container=document.getElementById("faqSection");
+  faqs.forEach(f=>{
+    const p=document.createElement("p");
+    p.innerHTML=`<strong>${f.q}</strong><br>${f.a}`;
+    container.appendChild(p);
+  });
+}
+renderFAQ();
+</script>
+
+</body>
+</html>
+
