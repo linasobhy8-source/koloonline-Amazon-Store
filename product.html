@@ -141,7 +141,7 @@ async function loadProduct() {
 
     const data = await res.json();
 
-    const products = Array.isArray(data) ? data : (data.products || []);
+    const products = data.products || [];
 
     product = products.find(p => p.asin === asin);
 
@@ -170,24 +170,24 @@ function render() {
   document.getElementById("price").innerText = "$" + product.price;
   document.getElementById("image").src = product.image;
 
-  const faqSection = document.getElementById("faqSection");
-
-  faqSection.innerHTML = `
+  document.getElementById("faqSection").innerHTML = `
     <p><b>Q:</b> Is this product original?<br>A: Yes, from Amazon.</p>
     <p><b>Q:</b> Shipping time?<br>A: Fast delivery.</p>
     <p><b>Q:</b> Return policy?<br>A: Amazon policy applies.</p>
   `;
 }
 
-/* ================= AFFILIATE BUY ================= */
+/* ================= BUY NOW (FIXED + SAFE) ================= */
 function buyNow() {
+
+  if (!product) return;
 
   trackEvent("buy_now_click", {
     asin: product.asin,
     title: product.title
   });
 
-  const lang = navigator.language || "en";
+  const lang = navigator.language || navigator.userLanguage || "en";
 
   let tag = "koloonlinesto-20";
 
