@@ -25,7 +25,6 @@ Send details to:
 
 ## 🔒 What to Include
 Please include:
-
 - Description of the issue
 - Steps to reproduce
 - Affected page (e.g. /cart, /product)
@@ -34,26 +33,26 @@ Please include:
 ---
 
 ## ⏳ Response Time
-- We aim to respond within 48–72 hours
-- Critical issues will be prioritized immediately
+- 48–72 hours response time
+- Critical issues prioritized immediately
 
 ---
 
 ## ⚠️ Important Notes
-- This is a static frontend + affiliate tracking project
-- No sensitive user data is stored on servers
-- Payments are handled externally via Amazon
-- Dashboard is for analytics only
+- Static frontend + affiliate tracking project
+- No user data stored on servers
+- Payments handled by Amazon
+- Dashboard is analytics-only
 
 ---
 
 ## 🚀 Security Scope
 
 Included:
-- Website frontend
-- Tracking scripts (GA4 / GTM)
-- LocalStorage (cart system)
+- Frontend website
+- GA4 / GTM tracking
+- LocalStorage cart
 
 Not included:
 - Amazon systems
-- Third-party services (Google / Vercel)
+- External services (Google, Vercel)
