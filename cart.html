@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🛒 Your Selected Products | Koloonline</title>
+
+<title>🛒 Cart | Koloonline</title>
 
 <!-- ================= GTM ================= -->
 <script>
 (function(w,d,s,l,i){
-  w[l]=w[l]||[];
-  w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
-  var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),
-      dl=l!='dataLayer'?'&l='+l:'';
-  j.async=true;
-  j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-  f.parentNode.insertBefore(j,f);
+w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+j.async=true;
+j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-KNQM8KBN');
 </script>
 
-<!-- GA4 -->
+<!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -29,231 +30,140 @@ gtag('config', 'G-YS8L61XLPR');
 </script>
 
 <style>
-body {font-family: Arial; margin:0; background:#f4f4f4;}
+body{
+  font-family:Arial;
+  margin:0;
+  background:#f5f5f5;
+}
 
-header {
+header{
   background:#232f3e;
-  color:#fff;
+  color:white;
   padding:15px;
   text-align:center;
   font-size:22px;
 }
 
-.navbar {
+.navbar{
   display:flex;
-  flex-wrap:wrap;
   justify-content:center;
   gap:10px;
+  flex-wrap:wrap;
   background:#37475a;
   padding:10px;
 }
 
-.navbar a {
-  color:#fff;
+.navbar a{
+  color:white;
   text-decoration:none;
   padding:8px 12px;
+  background:#ff9900;
   border-radius:6px;
   font-weight:bold;
 }
 
-.navbar a:hover {background:#e68a00;}
+.navbar a:hover{
+  background:#e68a00;
+}
 
-.cart {
+.cart{
   max-width:700px;
   margin:20px auto;
-  background:#fff;
+  background:white;
   padding:20px;
   border-radius:10px;
 }
 
-.cart-item {
+.item{
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  margin:10px 0;
-  gap:10px;
+  padding:10px;
+  border-bottom:1px solid #ddd;
 }
 
-.item-name {flex:2;}
-.item-qty input {width:60px;}
-.item-price {flex:1;text-align:center;}
-
-.remove-btn {
-  background:#dc3545;
-  color:#fff;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.checkout {
-  margin-top:15px;
-  padding:12px;
+button{
   background:#ff9900;
-  color:#fff;
   border:none;
+  padding:10px;
   width:100%;
+  margin-top:10px;
   border-radius:6px;
   cursor:pointer;
   font-weight:bold;
 }
 </style>
+
 </head>
 
 <body>
 
-<header>🛒 Koloonline Store</header>
+<!-- GTM NOSCRIPT -->
+<noscript>
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
 
-<!-- ================= FIXED ROUTES ================= -->
-<nav class="navbar">
+<header>🛒 Cart | Koloonline</header>
+
+<!-- ================= NAVBAR (FIXED LINKS) ================= -->
+<div class="navbar">
   <a href="/">🏠 Home</a>
   <a href="/product">📦 Products</a>
   <a href="/cart">🛒 Cart</a>
   <a href="/blog">📰 Blog</a>
   <a href="/contact">✉️ Contact</a>
   <a href="/dashboard">📊 Dashboard</a>
-</nav>
+</div>
 
+<!-- ================= CART ================= -->
 <div class="cart">
-  <h2>🛍️ Your Selected Products</h2>
-  <div id="cart-items"></div>
-
-  <button class="checkout" onclick="checkout()">🛒 Buy All on Amazon</button>
+  <h2>Your Cart</h2>
+  <div id="cartItems"></div>
+  <button onclick="checkout()">Checkout</button>
 </div>
 
 <script>
 
-/* ================= TRACKING ================= */
-function trackEvent(type, value){
-  if(typeof gtag === "function"){
-    gtag('event', type, {
-      event_category: "engagement",
-      event_label: value
-    });
+/* ================= TRACK ================= */
+function trackEvent(name,data={}){
+  if(typeof gtag==="function"){
+    gtag('event',name,data);
   }
-
-  if(window.dataLayer){
-    window.dataLayer.push({
-      event: type,
-      value: value
-    });
-  }
-
-  console.log("Tracked:", type, value);
-}
-
-trackEvent("page_view", window.location.pathname);
-
-/* ================= COUNTRY ================= */
-function getCountry(){
-  const lang = navigator.language || "en-US";
-
-  if(lang.includes("ar")) return "EG";
-  if(lang.includes("en-CA")) return "CA";
-  if(lang.includes("pl")) return "PL";
-  return "US";
-}
-
-/* ================= AMAZON LINK ================= */
-function getAmazonLink(item){
-  const country = getCountry();
-
-  let domain = "amazon.com";
-  let tag = "koloonlinesto-20";
-
-  if(country === "EG"){
-    domain = "amazon.eg";
-    tag = "onlinesh03f31-21";
-  }
-
-  if(country === "CA"){
-    domain = "amazon.ca";
-    tag = "onlinesho0429-20";
-  }
-
-  if(country === "PL"){
-    domain = "amazon.pl";
-    tag = "koloonline-21";
-  }
-
-  return `https://${domain}/dp/${item.asin}?tag=${tag}`;
+  console.log(name,data);
 }
 
 /* ================= LOAD CART ================= */
-function loadCart() {
-  const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
-  const container = document.getElementById('cart-items');
-  container.innerHTML = '';
+function loadCart(){
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const box = document.getElementById("cartItems");
 
-  if(cartItems.length === 0){
-    container.innerHTML = "<p>السلة فارغة 🛒</p>";
-    return;
-  }
+  box.innerHTML="";
 
-  cartItems.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'cart-item';
-
-    div.innerHTML = `
-      <div class="item-name">${item.title || item.name}</div>
-      <div class="item-qty">
-        <input type="number" value="${item.quantity || 1}" min="1"
-        onchange="updateQuantity('${item.asin}', this.value)">
-      </div>
-      <div class="item-price">$${(item.price || 0).toFixed(2)}</div>
-      <button class="remove-btn" onclick="removeItem('${item.asin}')">❌</button>
-    `;
-
-    container.appendChild(div);
-  });
-}
-
-/* ================= UPDATE ================= */
-function updateQuantity(id, quantity) {
-  let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-  cart = cart.map(item=>{
-    if(item.asin === id){
-      item.quantity = Number(quantity);
-    }
-    return item;
-  });
-
-  localStorage.setItem('cart', JSON.stringify(cart));
-  loadCart();
-}
-
-/* ================= REMOVE ================= */
-function removeItem(id) {
-  let cart = JSON.parse(localStorage.getItem('cart')) || [];
-  cart = cart.filter(item => item.asin !== id);
-
-  localStorage.setItem('cart', JSON.stringify(cart));
-  loadCart();
-
-  trackEvent("remove_item", id);
-}
-
-/* ================= CHECKOUT ================= */
-function checkout() {
-  const cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-  if(cart.length === 0){
-    alert("السلة فارغة");
+  if(cart.length===0){
+    box.innerHTML="<p>Cart is empty</p>";
     return;
   }
 
   cart.forEach(item=>{
-    const link = getAmazonLink(item);
+    const div=document.createElement("div");
+    div.className="item";
 
-    trackEvent("buy_click", item.asin);
+    div.innerHTML=`
+      <span>${item.title}</span>
+      <span>$${item.price}</span>
+    `;
 
-    window.open(link, "_blank");
+    box.appendChild(div);
   });
 }
 
-/* ================= INIT ================= */
+/* ================= CHECKOUT ================= */
+function checkout(){
+  trackEvent("checkout_click",{page:"cart"});
+  alert("Redirecting to Amazon...");
+}
+
+trackEvent("page_view",{page:"cart"});
 loadCart();
 
 </script>
