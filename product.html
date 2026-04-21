@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Koloonline Product</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Best Amazon deals and product details">
 
 <!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
@@ -15,10 +14,8 @@ gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 
 function trackEvent(eventName, params = {}) {
-  window.dataLayer.push({
-    event: eventName,
-    ...params
-  });
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: eventName, ...params });
 
   if (typeof gtag === "function") {
     gtag('event', eventName, params);
@@ -102,7 +99,7 @@ header {
 
 <nav class="navbar">
   <a href="/">🏠 Home</a>
-  <a href="/product">📦 Products</a>
+  <a href="/products">📦 Products</a>
   <a href="/cart">🛒 Cart</a>
   <a href="/blog">📰 Blog</a>
   <a href="/contact">✉️ Contact</a>
@@ -124,9 +121,6 @@ header {
 <button class="buy-btn" onclick="buyNow()">🔥 Buy Now</button>
 <button class="buy-btn whatsapp" onclick="orderWhatsApp()">📲 Order via WhatsApp</button>
 
-<h2>Product Details</h2>
-<p>High-quality product selected for performance and user satisfaction.</p>
-
 <h2>FAQ</h2>
 <div id="faqSection"></div>
 
@@ -136,54 +130,74 @@ header {
 const params = new URLSearchParams(window.location.search);
 const asin = params.get("asin");
 
-/* ================= PRODUCTS ================= */
-const products = [
-  {
-    asin:"B09V7Z4TJG",
-    title:"Smart Watch Pro",
-    price:49.99,
-    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg"
-  },
-  {
-    asin:"B09B8Q3YHJ",
-    title:"Echo Dot 5",
-    price:39.99,
-    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
-  },
-  {
-    asin:"B0C4GPPD1H",
-    title:"Asomugha Fitness Tracker",
-    price:29.99,
-    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg"
+let product = null;
+
+/* ================= LOAD FROM API ================= */
+async function loadProduct(){
+
+  const res = await fetch("/api/products");
+  const products = await res.json();
+
+  product = products.find(p => p.asin === asin);
+
+  if(!product){
+    document.body.innerHTML = "<h2 style='text-align:center'>Product Not Found</h2>";
+    return;
   }
-];
 
-const product = products.find(p => p.asin === asin);
-
-if(!product){
-  document.body.innerHTML = "<h2 style='text-align:center'>Product Not Found</h2>";
-  throw new Error("Invalid ASIN");
+  render();
 }
 
-/* ================= EVENTS ================= */
-trackEvent("product_view", {
-  asin: product.asin,
-  title: product.title
-});
+/* ================= RENDER ================= */
+function render(){
 
-/* ================= UI ================= */
-document.getElementById("title").innerText = product.title;
-document.getElementById("price").innerText = "$" + product.price;
-document.getElementById("image").src = product.image;
-
-/* ================= BUY ================= */
-function buyNow(){
-  trackEvent("buy_now_click", {
-    asin: product.asin
+  trackEvent("product_view", {
+    asin: product.asin,
+    title: product.title
   });
 
-  // 🔥 رابط أفلييت نظيف
-  window.open(`https://www.amazon.com/dp/${product.asin}?tag=koloonlinesto-20`, "_blank");
+  document.getElementById("title").innerText = product.title;
+  document.getElementById("price").innerText = "$" + product.price;
+  document.getElementById("image").src = product.image;
+
+  const faqs = [
+    {q:"Is this product original?", a:"Yes, from Amazon."},
+    {q:"Shipping time?", a:"Fast delivery."},
+    {q:"Return policy?", a:"Amazon policy applies."}
+  ];
+
+  const faqSection = document.getElementById("faqSection");
+  faqSection.innerHTML = "";
+
+  faqs.forEach(f=>{
+    const p = document.createElement("p");
+    p.innerHTML = `<b>Q:</b> ${f.q}<br>${f.a}`;
+    faqSection.appendChild(p);
+  });
+}
+
+/* ================= BUY NOW (FINAL AFFILIATE LOGIC) ================= */
+function buyNow(){
+
+  trackEvent("buy_now_click", {
+    asin: product.asin,
+    title: product.title
+  });
+
+  // 🌍 تحديد الدولة
+  const lang = navigator.language || "en";
+
+  let tag = "koloonlinesto-20"; // default
+
+  if(lang.includes("ar")) tag = "onlinesh03f31-21"; // Egypt
+  else if(lang.includes("en-US")) tag = "onlinesho0429-20"; // USA
+  else if(lang.includes("en-CA")) tag = "linasobhy20d8-20"; // Canada
+  else if(lang.includes("pl")) tag = "koloonline-21"; // Poland
+
+  window.open(
+    `https://www.amazon.com/dp/${product.asin}?tag=${tag}`,
+    "_blank"
+  );
 }
 
 /* ================= WHATSAPP ================= */
@@ -192,19 +206,7 @@ function orderWhatsApp(){
   window.open(`https://wa.me/201205271929?text=${encodeURIComponent(msg)}`);
 }
 
-/* ================= FAQ ================= */
-const faqs = [
-  {q:"Is this product original?", a:"Yes, from Amazon."},
-  {q:"Shipping time?", a:"Fast delivery."},
-  {q:"Return policy?", a:"Amazon policy applies."}
-];
-
-const faqSection = document.getElementById("faqSection");
-faqs.forEach(f=>{
-  const p=document.createElement("p");
-  p.innerHTML = `<b>Q:</b> ${f.q}<br>${f.a}`;
-  faqSection.appendChild(p);
-});
+loadProduct();
 </script>
 
 </body>
