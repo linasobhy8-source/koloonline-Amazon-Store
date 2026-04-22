@@ -3,6 +3,8 @@
   "trailingSlash": false,
 
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+
     { "source": "/", "destination": "/index.html" },
 
     { "source": "/product", "destination": "/product.html" },
@@ -16,14 +18,8 @@
     { "source": "/about", "destination": "/about.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
 
-    {
-      "source": "/dp/:asin",
-      "destination": "/product.html?asin=:asin"
-    },
-    {
-      "source": "/p/:asin",
-      "destination": "/product.html?asin=:asin"
-    }
+    { "source": "/dp/(.*)", "destination": "/product.html?asin=$1" },
+    { "source": "/p/(.*)", "destination": "/product.html?asin=$1" }
   ],
 
   "redirects": [
@@ -31,39 +27,6 @@
       "source": "/index.html",
       "destination": "/",
       "permanent": true
-    }
-  ],
-
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
-    }
-  ]
-}
-
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
     }
   ]
 }
