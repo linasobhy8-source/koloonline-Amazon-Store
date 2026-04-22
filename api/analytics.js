@@ -1,10 +1,24 @@
 export default function handler(req, res) {
+  // ================= METHOD CHECK =================
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      success: false,
+      message: "Method Not Allowed"
+    });
+  }
+
   try {
+    // ================= DATA =================
     const stats = {
       success: true,
-      totalClicks: 205,
-      totalOrders: 25,
-      totalWhatsApp: 40,
+      timestamp: new Date().toISOString(),
+
+      totals: {
+        clicks: 205,
+        orders: 25,
+        whatsapp: 40
+      },
+
       topProducts: [
         {
           asin: "B09V7Z4TJG",
@@ -21,12 +35,18 @@ export default function handler(req, res) {
       ]
     };
 
-    res.status(200).json(stats);
+    // ================= HEADERS =================
+    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate");
+    res.setHeader("Content-Type", "application/json");
+
+    return res.status(200).json(stats);
 
   } catch (error) {
-    res.status(500).json({
+    console.error("Analytics API Error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: "Analytics API Error",
+      message: "Internal Server Error",
       error: error.message
     });
   }
