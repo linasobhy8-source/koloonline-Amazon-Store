@@ -1,4 +1,11 @@
 export default function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      success: false,
+      message: "Method Not Allowed"
+    });
+  }
+
   const products = [
     {
       asin: "B09V7Z4TJG",
@@ -26,7 +33,7 @@ export default function handler(req, res) {
     }
   ];
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     count: products.length,
     products
