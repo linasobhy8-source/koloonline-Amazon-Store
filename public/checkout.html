@@ -15,151 +15,64 @@ window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
+
+/* ================= TRACK EVENT ================= */
+function trackEvent(eventName, params = {}) {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: eventName,
+    ...params
+  });
+
+  if (typeof gtag === "function") {
+    gtag('event', eventName, params);
+  }
+}
 </script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5;}
-
-/* HEADER */
-header{
-  background:#232f3e;
-  color:#fff;
-  padding:15px;
-  text-align:center;
-  font-size:22px;
-}
-
-/* NAVBAR */
-.navbar{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:10px;
-  background:#37475a;
-  padding:10px;
-}
-.navbar a{
-  color:#fff;
-  text-decoration:none;
-  padding:8px 12px;
-  border-radius:6px;
-  font-weight:bold;
-}
-.navbar a:hover{background:#e68a00;}
+header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22px;}
+.navbar{display:flex;justify-content:center;gap:10px;background:#37475a;padding:10px;}
+.navbar a{color:#fff;text-decoration:none;padding:8px 12px;border-radius:6px;font-weight:bold;}
 .navbar a.active{background:#ff9900;}
 
-/* CART */
 .products{padding:20px;display:grid;gap:15px;}
-.card{
-  background:#fff;
-  padding:15px;
-  border-radius:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
-  text-align:center;
-}
-.card img{
-  width:100%;
-  height:180px;
-  object-fit:contain;
-}
-.price{color:#b12704;font-weight:bold;font-size:18px;}
-
-.buy-btn{
-  background:#ff9900;
-  border:none;
-  padding:10px;
-  width:100%;
-  margin:5px 0;
-  border-radius:6px;
-  font-weight:bold;
-  cursor:pointer;
-}
-.buy-btn:hover{background:#e68a00;}
-
+.card{background:#fff;padding:15px;border-radius:10px;text-align:center;}
+.price{color:#b12704;font-weight:bold;}
+.buy-btn{background:#ff9900;border:none;padding:10px;width:100%;margin-top:5px;border-radius:6px;font-weight:bold;}
 .buy-btn.whatsapp{background:#25D366;color:#fff;}
-.buy-btn.success{background:#28a745;color:#fff;}
 .buy-btn.danger{background:#d9534f;color:#fff;}
+.buy-btn.success{background:#28a745;color:#fff;}
 
 .summary{max-width:600px;margin:auto;}
-
-.trust{
-  background:#e8f5e9;
-  padding:10px;
-  border-radius:6px;
-  margin-top:10px;
-}
-
-/* FAQ */
-.faq{
-  max-width:600px;
-  margin:20px auto;
-}
-.faq p{
-  background:#fff;
-  padding:10px;
-  border-radius:6px;
-  margin-bottom:10px;
-}
-
-/* MOBILE */
-@media(max-width:600px){
-  .products{grid-template-columns:1fr;}
-}
+.trust{background:#e8f5e9;padding:10px;border-radius:6px;margin-top:10px;}
 </style>
+
 </head>
 
 <body>
 
 <header>🛒 Koloonline Cart</header>
 
-<!-- NAVBAR -->
 <nav class="navbar">
   <a href="/">🏠 الرئيسية</a>
   <a href="/products">📦 المنتجات</a>
   <a href="/cart">🛒 السلة</a>
-  <a href="/blog">📰 المدونة</a>
-  <a href="/contact">✉️ اتصل بنا</a>
-  <a href="/dashboard">📊 لوحة التحكم</a>
 </nav>
 
-<script>
-const currentPath = window.location.pathname.toLowerCase();
-document.querySelectorAll('.navbar a').forEach(link=>{
-  if(link.getAttribute('href') === currentPath){
-    link.classList.add('active');
-  }
-});
-</script>
-
-<!-- CART -->
 <div id="cart" class="products"></div>
 <div id="summary" class="summary"></div>
 
-<!-- FAQ -->
-<div class="faq" id="faqSection"></div>
-
 <script>
-// ================= CART =================
 let cart = JSON.parse(localStorage.getItem("cart")||"[]");
 
-// ================= TRACKING =================
-async function trackEvent(eventType,data){
-try{
-await fetch("/api/track",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({event:eventType,data,page:"cart",time:new Date().toISOString()})
+/* ================= VIEW CART ================= */
+trackEvent("view_cart", {
+  items: cart.length
 });
-}catch(e){}
-}
 
-// ================= SAVE =================
-function saveCart(){
-localStorage.setItem("cart",JSON.stringify(cart));
-renderCart();
-}
-
-// ================= COUNTRY =================
+/* ================= COUNTRY ================= */
 function getCountry(){
 let lang=navigator.language||"en-US";
 if(lang.includes("ar")) return "EG";
@@ -168,7 +81,7 @@ if(lang.includes("en-CA")) return "CA";
 return "US";
 }
 
-// ================= AFFILIATE =================
+/* ================= AFFILIATE ================= */
 function getAffiliateLink(item){
 const country=getCountry();
 let domain="amazon.com", tag="koloonlinesto-20";
@@ -180,7 +93,7 @@ if(country==="PL"){domain="amazon.pl";tag=item.tags?.poland;}
 return `https://${domain}/dp/${item.asin}?tag=${tag}`;
 }
 
-// ================= RENDER =================
+/* ================= RENDER ================= */
 function renderCart(){
 let container=document.getElementById("cart");
 let summary=document.getElementById("summary");
@@ -192,27 +105,23 @@ return;
 }
 
 let html="";
-let totalItems=0,totalPrice=0;
+let total=0;
 
-cart.forEach((item,index)=>{
+cart.forEach((item,i)=>{
 item.qty=item.qty||1;
-item.price=parseFloat(item.price||0);
-
-totalItems+=item.qty;
-totalPrice+=item.price*item.qty;
+total += item.price * item.qty;
 
 html+=`
 <div class="card">
-<img src="${item.image}">
 <h3>${item.title}</h3>
 <p class="price">$${item.price}</p>
 
-<button class="buy-btn" onclick="increaseQty(${index})">➕</button>
-<button class="buy-btn" onclick="decreaseQty(${index})">➖</button>
-<button class="buy-btn danger" onclick="removeItem(${index})">❌</button>
+<button class="buy-btn" onclick="increaseQty(${i})">➕</button>
+<button class="buy-btn" onclick="decreaseQty(${i})">➖</button>
+<button class="buy-btn danger" onclick="removeItem(${i})">❌</button>
 
 <button class="buy-btn" onclick="window.open('${getAffiliateLink(item)}','_blank')">🔥 Buy</button>
-<button class="buy-btn whatsapp" onclick="orderWhatsApp('${item.title}')">📲 WhatsApp</button>
+<button class="buy-btn whatsapp" onclick="whatsapp('${item.title}')">📲 WhatsApp</button>
 </div>
 `;
 });
@@ -222,58 +131,71 @@ container.innerHTML=html;
 summary.innerHTML=`
 <div class="card">
 <h2>🛒 Summary</h2>
-<p>Total Items: ${totalItems}</p>
-<p>Total Price: $${totalPrice.toFixed(2)}</p>
+<p>Total: $${total.toFixed(2)}</p>
 
 <div class="trust">
 ✔ Secure <br> ✔ Fast <br> ✔ Trusted
 </div>
 
-<button class="buy-btn success" onclick="checkout()">Checkout</button>
+<button class="buy-btn success" onclick="checkout(${total})">Checkout</button>
 <button class="buy-btn danger" onclick="clearCart()">Clear</button>
 </div>
 `;
 }
 
-// ================= ACTIONS =================
-function removeItem(i){cart.splice(i,1);saveCart();}
-function increaseQty(i){cart[i].qty+=1;saveCart();}
-function decreaseQty(i){cart[i].qty>1?cart[i].qty--:cart.splice(i,1);saveCart();}
-function clearCart(){cart=[];saveCart();}
-
-// ================= WHATSAPP =================
-function orderWhatsApp(title){
-window.open("https://wa.me/201205271929?text="+encodeURIComponent("أريد طلب: "+title));
+/* ================= ACTIONS ================= */
+function removeItem(i){
+trackEvent("remove_from_cart",{index:i});
+cart.splice(i,1);
+save();
 }
 
-// ================= CHECKOUT =================
-function checkout(){
-if(cart.length===0){alert("السلة فارغة");return;}
-alert("تم الطلب ✅");
+function increaseQty(i){
+cart[i].qty++;
+trackEvent("add_to_cart",{type:"increase"});
+save();
+}
+
+function decreaseQty(i){
+cart[i].qty>1?cart[i].qty--:cart.splice(i,1);
+trackEvent("add_to_cart",{type:"decrease"});
+save();
+}
+
+function clearCart(){
 cart=[];
-saveCart();
+save();
+}
+
+/* ================= SAVE ================= */
+function save(){
+localStorage.setItem("cart",JSON.stringify(cart));
+renderCart();
+}
+
+/* ================= WHATSAPP ================= */
+function whatsapp(title){
+trackEvent("whatsapp_click",{title});
+window.open("https://wa.me/201205271929?text="+encodeURIComponent(title));
+}
+
+/* ================= CHECKOUT ================= */
+function checkout(total){
+trackEvent("begin_checkout",{
+value: total,
+currency:"USD"
+});
+
+trackEvent("purchase_intent",{
+value: total
+});
+
+alert("تم التوجه للشراء ✅");
 window.location.href="thankyou.html";
 }
 
-// ================= FAQ =================
-const faqs=[
-{q:"هل الدفع آمن؟",a:"نعم 100%"},
-{q:"هل المنتجات أصلية؟",a:"من أمازون"},
-{q:"هل يوجد استرجاع؟",a:"حسب سياسة أمازون"}
-];
-
-function renderFAQ(){
-const container=document.getElementById("faqSection");
-faqs.forEach(f=>{
-const p=document.createElement("p");
-p.innerHTML=`<strong>${f.q}</strong><br>${f.a}`;
-container.appendChild(p);
-});
-}
-
-// INIT
+/* INIT */
 renderCart();
-renderFAQ();
 </script>
 
 </body>

@@ -3,8 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ https/koloonline-amazon-store.vercel.app
 
 <title>Koloonline Dashboard</title>
+=======
+<title>Koloonline Analytics Dashboard</title>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+ main
 
 <style>
 body{
@@ -12,8 +26,10 @@ body{
   font-family:Arial;
   background:#f5f5f5;
 }
-
+https/koloonline-amazon-store.vercel.app
 /* HEADER */
+=======
+ main
 header{
   background:#131921;
   color:white;
@@ -22,7 +38,10 @@ header{
   font-size:20px;
 }
 
+ https/koloonline-amazon-store.vercel.app
 /* NAV */
+=======
+ main
 .nav{
   display:flex;
   justify-content:center;
@@ -36,10 +55,16 @@ header{
   text-decoration:none;
 }
 
+ https/koloonline-amazon-store.vercel.app
 /* CARDS */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+=======
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ main
   gap:15px;
   padding:20px;
 }
@@ -68,6 +93,24 @@ table{
 
 th,td{
   padding:12px;
+  text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card h2{
+  color:#ff9900;
+  font-size:26px;
+}
+
+table{
+  width:95%;
+  margin:20px auto;
+  background:white;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:10px;
   border:1px solid #ddd;
   text-align:center;
 }
@@ -76,6 +119,7 @@ th{
   background:#232f3e;
   color:white;
 }
+  https/koloonline-amazon-store.vercel.app
 
 /* STATES */
 .loading, .empty, .error{
@@ -85,6 +129,8 @@ th{
 }
 .loading{ color:#ff9900; }
 .error{ color:red; }
+=======
+ main
 </style>
 </head>
 
@@ -95,11 +141,17 @@ th{
 <nav class="nav">
   <a href="/">🏠 Store</a>
   <a href="/dashboard">📊 Dashboard</a>
+<header>📊 Koloonline Analytics</header>
+
+<nav class="nav">
+  <a href="/">Store</a>
+  <a href="/dashboard">Dashboard</a>
 </nav>
 
 <!-- ================= STATS ================= -->
 <div class="grid">
   <div class="card">
+https/koloonline-amazon-store.vercel.app
     <p>Total Clicks</p>
     <h2 id="clicks">...</h2>
   </div>
@@ -112,6 +164,25 @@ th{
   <div class="card">
     <p>WhatsApp Leads</p>
     <h2 id="whatsapp">...</h2>
+=======
+    <p>Clicks</p>
+    <h2 id="clicks">0</h2>
+  </div>
+
+  <div class="card">
+    <p>Orders</p>
+    <h2 id="orders">0</h2>
+  </div>
+
+  <div class="card">
+    <p>WhatsApp</p>
+    <h2 id="whatsapp">0</h2>
+  </div>
+
+  <div class="card">
+    <p>Revenue</p>
+    <h2 id="revenue">$0</h2>
+main
   </div>
 </div>
 
@@ -125,6 +196,7 @@ th{
       <th>WhatsApp</th>
     </tr>
   </thead>
+ https/koloonline-amazon-store.vercel.app
   <tbody id="table">
     <tr><td colspan="4" class="loading">⏳ Loading...</td></tr>
   </tbody>
@@ -134,16 +206,44 @@ th{
 // ================= LOAD ANALYTICS =================
 async function loadAnalytics(){
   const table = document.getElementById("table");
+=======
+  <tbody id="table"></tbody>
+</table>
+
+<script>
+
+function getCountry(){
+  const lang = navigator.language || "en-US";
+  if(lang.includes("ar")) return "EG";
+  if(lang.includes("en-CA")) return "CA";
+  if(lang.includes("pl")) return "PL";
+  return "US";
+}
+
+/* ================= TRACK VIEW ================= */
+gtag('event','dashboard_view',{
+  country:getCountry()
+});
+
+/* ================= LOAD DATA ================= */
+async function loadAnalytics(){
+ main
 
   try{
     const res = await fetch("/api/analytics");
 
     if(!res.ok){
+ https/koloonline-amazon-store.vercel.app
       throw new Error("API Error");
+=======
+      console.log("API not ready");
+      return;
+ main
     }
 
     const data = await res.json();
 
+https/koloonline-amazon-store.vercel.app
     // totals (safe)
     document.getElementById("clicks").innerText = data.totalClicks || 0;
     document.getElementById("orders").innerText = data.totalOrders || 0;
@@ -164,10 +264,33 @@ async function loadAnalytics(){
           <td>${p.clicks || 0}</td>
           <td>${p.orders || 0}</td>
           <td>${p.whatsapp || 0}</td>
+=======
+    const clicks = data?.overview?.totalClicks || 0;
+    const orders = data?.overview?.totalOrders || 0;
+    const whatsapp = data?.overview?.totalWhatsApp || 0;
+
+    document.getElementById("clicks").innerText = clicks;
+    document.getElementById("orders").innerText = orders;
+    document.getElementById("whatsapp").innerText = whatsapp;
+
+    document.getElementById("revenue").innerText = "$" + (orders * 12);
+
+    const table = document.getElementById("table");
+    table.innerHTML = "";
+
+    (data?.topProducts || []).forEach(p=>{
+      table.innerHTML += `
+        <tr onclick="trackProduct('${p.asin}')">
+          <td>${p.asin}</td>
+          <td>${p.clicks}</td>
+          <td>${p.orders}</td>
+          <td>${p.whatsapp}</td>
+ main
         </tr>
       `;
     });
 
+ https/koloonline-amazon-store.vercel.app
   }catch(e){
     console.log("Dashboard error:", e);
 
@@ -186,6 +309,25 @@ async function loadAnalytics(){
 }
 
 loadAnalytics();
+=======
+  }catch(err){
+    console.log("Dashboard error:", err);
+  }
+}
+
+/* ================= TRACK CLICK ================= */
+function trackProduct(asin){
+  gtag('event','affiliate_click',{
+    asin:asin,
+    source:'dashboard'
+  });
+}
+
+/* ================= AUTO REFRESH ================= */
+setInterval(loadAnalytics, 10000);
+loadAnalytics();
+
+ main
 </script>
 
 </body>

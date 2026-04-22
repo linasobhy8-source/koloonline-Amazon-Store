@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>🛒 Cart | Koloonline</title>
+
+<!-- ================= GTM ================= -->
+<script>
+(function(w,d,s,l,i){
+w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});
+var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+j.async=true;
+j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KNQM8KBN');
+</script>
+
+<!-- ================= GA4 ================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+</script>
+
+<style>
+body{
+  font-family:Arial;
+  margin:0;
+  background:#f5f5f5;
+}
+
+header{
+  background:#232f3e;
+  color:white;
+  padding:15px;
+  text-align:center;
+  font-size:22px;
+}
+
+.navbar{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  background:#37475a;
+  padding:10px;
+}
+
+.navbar a{
+  color:white;
+  text-decoration:none;
+  padding:8px 12px;
+  background:#ff9900;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+.navbar a:hover{
+  background:#e68a00;
+}
+
+.cart{
+  max-width:700px;
+  margin:20px auto;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+}
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  border-bottom:1px solid #ddd;
+}
+
+button{
+  background:#ff9900;
+  border:none;
+  padding:10px;
+  width:100%;
+  margin-top:10px;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- GTM NOSCRIPT -->
+<noscript>
+<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+
+<header>🛒 Cart | Koloonline</header>
+
+<!-- ================= NAVBAR (FIXED LINKS) ================= -->
+<div class="navbar">
+  <a href="/">🏠 Home</a>
+  <a href="/product">📦 Products</a>
+  <a href="/cart">🛒 Cart</a>
+  <a href="/blog">📰 Blog</a>
+  <a href="/contact">✉️ Contact</a>
+  <a href="/dashboard">📊 Dashboard</a>
+</div>
+
+<!-- ================= CART ================= -->
+<div class="cart">
+  <h2>Your Cart</h2>
+  <div id="cartItems"></div>
+  <button onclick="checkout()">Checkout</button>
+</div>
+
+<script>
+
+/* ================= TRACK ================= */
+function trackEvent(name,data={}){
+  if(typeof gtag==="function"){
+    gtag('event',name,data);
+  }
+  console.log(name,data);
+}
+
+/* ================= LOAD CART ================= */
+function loadCart(){
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const box = document.getElementById("cartItems");
+
+  box.innerHTML="";
+
+  if(cart.length===0){
+    box.innerHTML="<p>Cart is empty</p>";
+    return;
+  }
+
+  cart.forEach(item=>{
+    const div=document.createElement("div");
+    div.className="item";
+
+    div.innerHTML=`
+      <span>${item.title}</span>
+      <span>$${item.price}</span>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+/* ================= CHECKOUT ================= */
+function checkout(){
+  trackEvent("checkout_click",{page:"cart"});
+  alert("Redirecting to Amazon...");
+}
+
+trackEvent("page_view",{page:"cart"});
+loadCart();
+
+</script>
+
+</body>
+</html>

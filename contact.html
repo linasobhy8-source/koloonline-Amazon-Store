@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Contact Us | Koloonline Store</title>
-<meta name="description" content="اتصل بنا لأي استفسارات حول منتجات Koloonline وعروض Amazon.">
+<title>Support | Koloonline Store</title>
+<meta name="description" content="الدعم والمساعدة لمنتجات Koloonline وعروض Amazon.">
 
 <style>
 body {
@@ -15,7 +15,6 @@ body {
   margin:0;
 }
 
-/* HEADER */
 header{
   background:#232f3e;
   color:#fff;
@@ -24,7 +23,6 @@ header{
   font-size:22px;
 }
 
-/* NAVBAR */
 .navbar{
   display:flex;
   flex-wrap:wrap;
@@ -33,17 +31,19 @@ header{
   background:#37475a;
   padding:10px;
 }
+
 .navbar a{
   color:#fff;
   text-decoration:none;
   padding:8px 12px;
   border-radius:6px;
   font-weight:bold;
+  background:#ff9900;
 }
-.navbar a:hover{background:#e68a00;}
-.navbar a.active{background:#ff9900;}
 
-/* CONTAINER */
+.navbar a:hover{background:#e68a00;}
+.navbar a.active{background:#131921;}
+
 .container{
   max-width:600px;
   margin:40px auto;
@@ -77,18 +77,19 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
+
 button:hover{background:#e68a00;}
 
-.whatsapp-btn{
+.amazon-btn{
   margin-top:10px;
-  background:#25D366;
+  background:#131921;
 }
 
-/* FAQ */
 .faq{
   max-width:600px;
   margin:20px auto;
 }
+
 .faq p{
   background:#fff;
   padding:10px;
@@ -96,7 +97,6 @@ button:hover{background:#e68a00;}
   margin-bottom:10px;
 }
 
-/* STATUS */
 #status{
   text-align:center;
   margin-top:10px;
@@ -108,20 +108,20 @@ button:hover{background:#e68a00;}
 
 <body>
 
-<header>📞 Koloonline Contact</header>
+<header>🛒 Koloonline Support</header>
 
-<!-- NAVBAR -->
+<!-- ================= NAVBAR (FIXED LINKS) ================= -->
 <nav class="navbar">
-  <a href="/">🏠 الرئيسية</a>
-  <a href="/products">📦 المنتجات</a>
-  <a href="/cart">🛒 السلة</a>
-  <a href="/blog">📰 المدونة</a>
-  <a href="/contact">✉️ اتصل بنا</a>
-  <a href="/dashboard">📊 لوحة التحكم</a>
+  <a href="/">🏠 Home</a>
+  <a href="/product">📦 Products</a>
+  <a href="/cart">🛒 Cart</a>
+  <a href="/blog">📰 Blog</a>
+  <a href="/contact">✉️ Contact</a>
+  <a href="/dashboard">📊 Dashboard</a>
 </nav>
 
 <script>
-const currentPath = window.location.pathname.toLowerCase();
+const currentPath = window.location.pathname;
 document.querySelectorAll('.navbar a').forEach(link=>{
   if(link.getAttribute('href') === currentPath){
     link.classList.add('active');
@@ -129,19 +129,19 @@ document.querySelectorAll('.navbar a').forEach(link=>{
 });
 </script>
 
-<!-- CONTACT FORM -->
+<!-- ================= SUPPORT FORM ================= -->
 <div class="container">
   <div class="card">
 
-    <h1>Contact Us</h1>
+    <h1>الدعم والمساعدة</h1>
 
     <form onsubmit="sendMessage(event)">
-      <input type="text" id="name" placeholder="Your Name" required>
-      <input type="email" id="email" placeholder="Your Email" required>
-      <textarea id="message" rows="5" placeholder="Your Message" required></textarea>
+      <input type="text" id="name" placeholder="اسمك" required>
+      <input type="email" id="email" placeholder="بريدك الإلكتروني" required>
+      <textarea id="message" rows="5" placeholder="اكتب سؤالك" required></textarea>
 
-      <button type="submit">📩 Send Message</button>
-      <button type="button" class="whatsapp-btn" onclick="sendWhatsApp()">📲 WhatsApp</button>
+      <button type="submit">🔍 عرض أفضل منتج لك</button>
+      <button type="button" class="amazon-btn" onclick="goAmazon()">🛒 تصفح المنتجات</button>
     </form>
 
     <p id="status"></p>
@@ -149,11 +149,17 @@ document.querySelectorAll('.navbar a').forEach(link=>{
   </div>
 </div>
 
-<!-- FAQ -->
+<!-- ================= FAQ ================= -->
 <div class="faq" id="faqSection"></div>
 
 <script>
-// ================= SEND FORM =================
+
+/* ================= AMAZON ================= */
+function goAmazon(){
+  window.open("https://www.amazon.com/?tag=koloonlinesto-20","_blank");
+}
+
+/* ================= FORM ================= */
 function sendMessage(e){
   e.preventDefault();
 
@@ -166,26 +172,24 @@ function sendMessage(e){
     return;
   }
 
-  console.log({name,email,message});
+  document.getElementById("status").innerText="🔄 جاري التحويل...";
 
-  document.getElementById("status").innerText="✅ تم إرسال الرسالة بنجاح";
+  const asin="B09V7Z4TJG";
+
+  setTimeout(()=>{
+    window.open(`https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`,"_blank");
+  },1200);
 
   document.getElementById("name").value="";
   document.getElementById("email").value="";
   document.getElementById("message").value="";
 }
 
-// ================= WHATSAPP =================
-function sendWhatsApp(){
-  const msg="Hello, I want to ask about your products";
-  window.open("https://wa.me/201205271929?text="+encodeURIComponent(msg));
-}
-
-// ================= FAQ =================
+/* ================= FAQ ================= */
 const faqs=[
-{q:"كم وقت الرد؟",a:"عادة خلال 24 ساعة"},
-{q:"هل يمكن الطلب عبر واتساب؟",a:"نعم متاح"},
-{q:"هل المنتجات أصلية؟",a:"من أمازون مباشرة"}
+{q:"كيف أشتري؟",a:"اضغط زر الشراء وسيتم تحويلك إلى Amazon"},
+{q:"هل المنتجات أصلية؟",a:"نعم من Amazon"},
+{q:"هل يوجد شحن؟",a:"حسب بلدك"}
 ];
 
 function renderFAQ(){
@@ -197,8 +201,8 @@ function renderFAQ(){
   });
 }
 
-// INIT
 renderFAQ();
+
 </script>
 
 </body>
