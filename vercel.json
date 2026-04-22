@@ -3,30 +3,8 @@
   "trailingSlash": false,
 
   "rewrites": [
- https/koloonline-amazon-store.vercel.app
     { "source": "/api/(.*)", "destination": "/api/$1" },
 
-    { "source": "/", "destination": "/public/index.html" },
-
-    { "source": "/product", "destination": "/public/product.html" },
-    { "source": "/products", "destination": "/public/products.html" },
-
-    { "source": "/cart", "destination": "/public/cart.html" },
-    { "source": "/blog", "destination": "/public/blog.html" },
-    { "source": "/contact", "destination": "/public/contact.html" },
-    { "source": "/dashboard", "destination": "/public/dashboard.html" },
-
-    { "source": "/about", "destination": "/public/about.html" },
-    { "source": "/privacy", "destination": "/public/privacy.html" },
-
-    {
-      "source": "/dp/(.*)",
-      "destination": "/public/product.html?asin=$1"
-    },
-    {
-      "source": "/p/(.*)",
-      "destination": "/public/product.html?asin=$1"
-=======
     { "source": "/", "destination": "/index.html" },
 
     { "source": "/product", "destination": "/product.html" },
@@ -40,15 +18,8 @@
     { "source": "/about", "destination": "/about.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
 
-    {
-      "source": "/dp/:asin",
-      "destination": "/product.html?asin=:asin"
-    },
-    {
-      "source": "/p/:asin",
-      "destination": "/product.html?asin=:asin"
- main
-    }
+    { "source": "/dp/(.*)", "destination": "/product.html?asin=$1" },
+    { "source": "/p/(.*)", "destination": "/product.html?asin=$1" }
   ],
 
   "redirects": [
@@ -57,41 +28,5 @@
       "destination": "/",
       "permanent": true
     }
-  ],
-
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
-    }
- https/koloonline-amazon-store.vercel.app
-=======
-  ]
-}
-
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
-    }
- main
   ]
 }
