@@ -1,4 +1,5 @@
 export default function handler(req, res) {
+  // السماح فقط بـ GET
   if (req.method !== "GET") {
     return res.status(405).json({
       success: false,
@@ -33,6 +34,27 @@ export default function handler(req, res) {
     }
   ];
 
+  // ✅ جلب asin من الرابط
+  const { asin } = req.query;
+
+  // ✅ لو فيه asin → رجّع منتج واحد
+  if (asin) {
+    const product = products.find(p => p.asin === asin);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      product
+    });
+  }
+
+  // ✅ لو مفيش asin → رجّع كل المنتجات
   return res.status(200).json({
     success: true,
     count: products.length,
