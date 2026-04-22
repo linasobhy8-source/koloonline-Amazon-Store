@@ -1,10 +1,54 @@
 {
-  "routes": [
-    { "src": "/", "dest": "/public/index.html" },
-    { "src": "/product", "dest": "/public/product.html" },
-    { "src": "/cart", "dest": "/public/cart.html" },
-    { "src": "/blog", "dest": "/public/blog.html" },
-    { "src": "/contact", "dest": "/public/contact.html" },
-    { "src": "/dashboard", "dest": "/public/dashboard.html" }
+  "cleanUrls": true,
+  "trailingSlash": false,
+
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+
+    { "source": "/", "destination": "/public/index.html" },
+
+    { "source": "/product", "destination": "/public/product.html" },
+    { "source": "/products", "destination": "/public/products.html" },
+
+    { "source": "/cart", "destination": "/public/cart.html" },
+    { "source": "/blog", "destination": "/public/blog.html" },
+    { "source": "/contact", "destination": "/public/contact.html" },
+    { "source": "/dashboard", "destination": "/public/dashboard.html" },
+
+    { "source": "/about", "destination": "/public/about.html" },
+    { "source": "/privacy", "destination": "/public/privacy.html" },
+
+    {
+      "source": "/dp/(.*)",
+      "destination": "/public/product.html?asin=$1"
+    },
+    {
+      "source": "/p/(.*)",
+      "destination": "/public/product.html?asin=$1"
+    }
+  ],
+
+  "redirects": [
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    }
   ]
 }
