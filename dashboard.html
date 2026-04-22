@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Koloonline Dashboard</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f5f5f5;
+}
+
+/* HEADER */
+header{
+  background:#131921;
+  color:white;
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+}
+
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:center;
+  gap:15px;
+  background:#232f3e;
+  padding:10px;
+}
+
+.nav a{
+  color:white;
+  text-decoration:none;
+}
+
+/* CARDS */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:15px;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  text-align:center;
+}
+
+.card h2{
+  margin:0;
+  font-size:28px;
+  color:#ff9900;
+}
+
+/* TABLE */
+table{
+  width:95%;
+  margin:20px auto;
+  border-collapse:collapse;
+  background:white;
+}
+
+th,td{
+  padding:12px;
+  border:1px solid #ddd;
+  text-align:center;
+}
+
+th{
+  background:#232f3e;
+  color:white;
+}
+
+/* STATES */
+.loading, .empty, .error{
+  text-align:center;
+  padding:20px;
+  font-weight:bold;
+}
+.loading{ color:#ff9900; }
+.error{ color:red; }
+</style>
+</head>
+
+<body>
+
+<header>📊 Koloonline Dashboard</header>
+
+<nav class="nav">
+  <a href="/">🏠 Store</a>
+  <a href="/dashboard">📊 Dashboard</a>
+</nav>
+
+<!-- ================= STATS ================= -->
+<div class="grid">
+  <div class="card">
+    <p>Total Clicks</p>
+    <h2 id="clicks">...</h2>
+  </div>
+
+  <div class="card">
+    <p>Total Orders</p>
+    <h2 id="orders">...</h2>
+  </div>
+
+  <div class="card">
+    <p>WhatsApp Leads</p>
+    <h2 id="whatsapp">...</h2>
+  </div>
+</div>
+
+<!-- ================= TABLE ================= -->
+<table>
+  <thead>
+    <tr>
+      <th>ASIN</th>
+      <th>Clicks</th>
+      <th>Orders</th>
+      <th>WhatsApp</th>
+    </tr>
+  </thead>
+  <tbody id="table">
+    <tr><td colspan="4" class="loading">⏳ Loading...</td></tr>
+  </tbody>
+</table>
+
+<script>
+// ================= LOAD ANALYTICS =================
+async function loadAnalytics(){
+  const table = document.getElementById("table");
+
+  try{
+    const res = await fetch("/api/analytics");
+
+    if(!res.ok){
+      throw new Error("API Error");
+    }
+
+    const data = await res.json();
+
+    // totals (safe)
+    document.getElementById("clicks").innerText = data.totalClicks || 0;
+    document.getElementById("orders").innerText = data.totalOrders || 0;
+    document.getElementById("whatsapp").innerText = data.totalWhatsApp || 0;
+
+    // table
+    table.innerHTML = "";
+
+    if(!data.topProducts || data.topProducts.length === 0){
+      table.innerHTML = `<tr><td colspan="4" class="empty">No data yet</td></tr>`;
+      return;
+    }
+
+    data.topProducts.forEach(p=>{
+      table.innerHTML += `
+        <tr>
+          <td>${p.asin || "-"}</td>
+          <td>${p.clicks || 0}</td>
+          <td>${p.orders || 0}</td>
+          <td>${p.whatsapp || 0}</td>
+        </tr>
+      `;
+    });
+
+  }catch(e){
+    console.log("Dashboard error:", e);
+
+    document.getElementById("clicks").innerText = "0";
+    document.getElementById("orders").innerText = "0";
+    document.getElementById("whatsapp").innerText = "0";
+
+    table.innerHTML = `
+      <tr>
+        <td colspan="4" class="error">
+          ⚠️ Failed to load data
+        </td>
+      </tr>
+    `;
+  }
+}
+
+loadAnalytics();
+</script>
+
+</body>
+</html>
