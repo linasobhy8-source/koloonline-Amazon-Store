@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ https/koloonline-amazon-store.vercel.app
+
+<title>Koloonline Dashboard</title>
+=======
 <title>Koloonline Analytics Dashboard</title>
 
 <!-- ================= GA4 ================= -->
@@ -14,6 +18,7 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
 </script>
+ main
 
 <style>
 body{
@@ -21,7 +26,10 @@ body{
   font-family:Arial;
   background:#f5f5f5;
 }
-
+https/koloonline-amazon-store.vercel.app
+/* HEADER */
+=======
+ main
 header{
   background:#131921;
   color:white;
@@ -30,6 +38,10 @@ header{
   font-size:20px;
 }
 
+ https/koloonline-amazon-store.vercel.app
+/* NAV */
+=======
+ main
 .nav{
   display:flex;
   justify-content:center;
@@ -43,9 +55,16 @@ header{
   text-decoration:none;
 }
 
+ https/koloonline-amazon-store.vercel.app
+/* CARDS */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+=======
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ main
   gap:15px;
   padding:20px;
 }
@@ -54,6 +73,26 @@ header{
   background:white;
   padding:20px;
   border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  text-align:center;
+}
+
+.card h2{
+  margin:0;
+  font-size:28px;
+  color:#ff9900;
+}
+
+/* TABLE */
+table{
+  width:95%;
+  margin:20px auto;
+  border-collapse:collapse;
+  background:white;
+}
+
+th,td{
+  padding:12px;
   text-align:center;
   box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
@@ -80,11 +119,28 @@ th{
   background:#232f3e;
   color:white;
 }
+  https/koloonline-amazon-store.vercel.app
+
+/* STATES */
+.loading, .empty, .error{
+  text-align:center;
+  padding:20px;
+  font-weight:bold;
+}
+.loading{ color:#ff9900; }
+.error{ color:red; }
+=======
+ main
 </style>
 </head>
 
 <body>
 
+<header>📊 Koloonline Dashboard</header>
+
+<nav class="nav">
+  <a href="/">🏠 Store</a>
+  <a href="/dashboard">📊 Dashboard</a>
 <header>📊 Koloonline Analytics</header>
 
 <nav class="nav">
@@ -95,6 +151,20 @@ th{
 <!-- ================= STATS ================= -->
 <div class="grid">
   <div class="card">
+https/koloonline-amazon-store.vercel.app
+    <p>Total Clicks</p>
+    <h2 id="clicks">...</h2>
+  </div>
+
+  <div class="card">
+    <p>Total Orders</p>
+    <h2 id="orders">...</h2>
+  </div>
+
+  <div class="card">
+    <p>WhatsApp Leads</p>
+    <h2 id="whatsapp">...</h2>
+=======
     <p>Clicks</p>
     <h2 id="clicks">0</h2>
   </div>
@@ -112,6 +182,7 @@ th{
   <div class="card">
     <p>Revenue</p>
     <h2 id="revenue">$0</h2>
+main
   </div>
 </div>
 
@@ -125,6 +196,17 @@ th{
       <th>WhatsApp</th>
     </tr>
   </thead>
+ https/koloonline-amazon-store.vercel.app
+  <tbody id="table">
+    <tr><td colspan="4" class="loading">⏳ Loading...</td></tr>
+  </tbody>
+</table>
+
+<script>
+// ================= LOAD ANALYTICS =================
+async function loadAnalytics(){
+  const table = document.getElementById("table");
+=======
   <tbody id="table"></tbody>
 </table>
 
@@ -145,17 +227,44 @@ gtag('event','dashboard_view',{
 
 /* ================= LOAD DATA ================= */
 async function loadAnalytics(){
+ main
 
   try{
     const res = await fetch("/api/analytics");
 
     if(!res.ok){
+ https/koloonline-amazon-store.vercel.app
+      throw new Error("API Error");
+=======
       console.log("API not ready");
       return;
+ main
     }
 
     const data = await res.json();
 
+https/koloonline-amazon-store.vercel.app
+    // totals (safe)
+    document.getElementById("clicks").innerText = data.totalClicks || 0;
+    document.getElementById("orders").innerText = data.totalOrders || 0;
+    document.getElementById("whatsapp").innerText = data.totalWhatsApp || 0;
+
+    // table
+    table.innerHTML = "";
+
+    if(!data.topProducts || data.topProducts.length === 0){
+      table.innerHTML = `<tr><td colspan="4" class="empty">No data yet</td></tr>`;
+      return;
+    }
+
+    data.topProducts.forEach(p=>{
+      table.innerHTML += `
+        <tr>
+          <td>${p.asin || "-"}</td>
+          <td>${p.clicks || 0}</td>
+          <td>${p.orders || 0}</td>
+          <td>${p.whatsapp || 0}</td>
+=======
     const clicks = data?.overview?.totalClicks || 0;
     const orders = data?.overview?.totalOrders || 0;
     const whatsapp = data?.overview?.totalWhatsApp || 0;
@@ -176,10 +285,31 @@ async function loadAnalytics(){
           <td>${p.clicks}</td>
           <td>${p.orders}</td>
           <td>${p.whatsapp}</td>
+ main
         </tr>
       `;
     });
 
+ https/koloonline-amazon-store.vercel.app
+  }catch(e){
+    console.log("Dashboard error:", e);
+
+    document.getElementById("clicks").innerText = "0";
+    document.getElementById("orders").innerText = "0";
+    document.getElementById("whatsapp").innerText = "0";
+
+    table.innerHTML = `
+      <tr>
+        <td colspan="4" class="error">
+          ⚠️ Failed to load data
+        </td>
+      </tr>
+    `;
+  }
+}
+
+loadAnalytics();
+=======
   }catch(err){
     console.log("Dashboard error:", err);
   }
@@ -197,6 +327,7 @@ function trackProduct(asin){
 setInterval(loadAnalytics, 10000);
 loadAnalytics();
 
+ main
 </script>
 
 </body>

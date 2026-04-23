@@ -3,6 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Koloonline Store | أفضل منتجات أمازون</title>
+<meta name="description" content="أفضل منتجات أمازون بأفضل الأسعار - ساعات ذكية، سماعات وأكثر">
+
+<!-- ================= SEO ================= -->
+<meta property="og:title" content="Koloonline Store">
+<meta property="og:description" content="أفضل منتجات أمازون بأفضل الأسعار">
+<meta property="og:image" content="https://i.postimg.cc/9fVfC1Y4/1000276862.png">
+<meta property="og:url" content="https://koloonline.online">
+<meta property="og:type" content="website">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Koloonline Store">
+<meta name="twitter:description" content="أفضل منتجات أمازون بأفضل الأسعار">
+<meta name="twitter:image" content="https://i.postimg.cc/9fVfC1Y4/1000276862.png">
 <title>Koloonline Store</title>
 
 <!-- ================= GTM ================= -->
@@ -26,6 +41,11 @@ window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
+ https/koloonline-amazon-store.vercel.app
+
+function trackEvent(name,data={}){
+  gtag('event', name, data);
+=======
 </script>
 
 <script>
@@ -47,6 +67,7 @@ function trackEvent(name, data = {}){
 
   if(window.dataLayer) window.dataLayer.push({event:name,...payload});
   if(typeof gtag==="function") gtag('event', name, payload);
+ main
 }
 </script>
 
@@ -57,6 +78,24 @@ body{
   background:#eaeded;
 }
 
+ https/koloonline-amazon-store.vercel.app
+/* HEADER */
+header{
+  background:#131921;
+  color:white;
+  padding:10px 15px;
+}
+
+.logo{
+  height:50px;
+}
+
+/* HEADER FLEX */
+.header-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+=======
 /* ===== AMAZON HEADER ===== */
 header{
   background:#131921;
@@ -67,10 +106,56 @@ header{
 .topbar{
   display:flex;
   align-items:center;
+ main
   gap:15px;
   flex-wrap:wrap;
 }
 
+ https/koloonline-amazon-store.vercel.app
+/* SEARCH */
+.search-bar{
+  display:flex;
+  flex:1;
+  gap:10px;
+}
+
+.search-bar input{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:4px;
+}
+
+.search-bar button{
+  padding:10px 15px;
+  background:#febd69;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+/* NAVBAR */
+.navbar{
+  background:#232f3e;
+  display:flex;
+  gap:15px;
+  padding:10px;
+  flex-wrap:wrap;
+}
+
+.navbar a{
+  color:white;
+  text-decoration:none;
+}
+
+/* PRODUCTS */
+.container{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:20px;
+=======
 .logo{
   height:45px;
 }
@@ -116,14 +201,27 @@ nav a{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:15px;
+ main
   padding:20px;
 }
 
 .card{
   background:white;
+ https/koloonline-amazon-store.vercel.app
+  width:250px;
+  padding:10px;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  transition:0.3s;
+}
+
+.card:hover{
+  transform:translateY(-5px);
+=======
   padding:10px;
   border-radius:8px;
   box-shadow:0 2px 6px rgba(0,0,0,0.1);
+ main
 }
 
 .card img{
@@ -132,6 +230,17 @@ nav a{
   object-fit:contain;
 }
 
+ https/koloonline-amazon-store.vercel.app
+.card button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  background:#ff9900;
+  border:none;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+=======
 .card h3{
   font-size:14px;
 }
@@ -152,12 +261,22 @@ nav a{
 
 .cart{
   background:#ffd814;
+ main
 }
 </style>
 </head>
 
 <body>
 
+ https/koloonline-amazon-store.vercel.app
+<header>
+  <div class="header-top">
+
+    <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" class="logo">
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 ابحث عن منتج...">
+=======
 <noscript>
 <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe>
@@ -171,12 +290,73 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe>
 
     <div class="search">
       <input id="searchInput" placeholder="ابحث عن منتجات...">
+ main
       <button onclick="searchProducts()">بحث</button>
     </div>
 
   </div>
 </header>
 
+ https/koloonline-amazon-store.vercel.app
+<nav class="navbar">
+  <a href="/">🏠 الرئيسية</a>
+  <a href="/products">📦 المنتجات</a>
+  <a href="/cart">🛒 السلة</a>
+  <a href="/blog">📰 المدونة</a>
+  <a href="/contact">📞 اتصل بنا</a>
+</nav>
+
+<div class="container" id="products"></div>
+
+<script>
+// ================= PRODUCTS =================
+const products = [
+  {
+    title:"🔥 Smart Watch Pro",
+    image:"https://m.media-amazon.com/images/I/61IMRs+o0iL._AC_SL1500_.jpg",
+    asin:"B09V7Z4TJG"
+  },
+  {
+    title:"🎧 Wireless Earbuds",
+    image:"https://m.media-amazon.com/images/I/61u48FEs0rL._AC_SL1000_.jpg",
+    asin:"B08G9P7N2X"
+  }
+];
+
+// ================= LOAD =================
+function load(){
+  const container=document.getElementById("products");
+  container.innerHTML="";
+
+  products.forEach(p=>{
+    container.innerHTML += `
+      <div class="card">
+        <img src="${p.image}">
+        <h3>${p.title}</h3>
+
+        <button onclick="goToProduct('${p.asin}','${p.title}')">
+          🔥 عرض المنتج
+        </button>
+      </div>
+    `;
+  });
+}
+
+// ================= GO PRODUCT =================
+function goToProduct(asin,title){
+  trackEvent("product_click",{asin,title});
+  window.location.href = "/dp/" + asin;
+}
+
+// ================= SEARCH =================
+function searchProducts(){
+  const q=document.getElementById("searchInput").value.toLowerCase();
+  const container=document.getElementById("products");
+  container.innerHTML="";
+
+  products.filter(p=>p.title.toLowerCase().includes(q))
+  .forEach(p=>{
+=======
 <!-- ================= NAV ================= -->
 <nav>
   <a href="/">🏠 Home</a>
@@ -227,11 +407,15 @@ function render(list){
 
   list.forEach(p => {
 
+main
     container.innerHTML += `
       <div class="card">
         <img src="${p.image}">
         <h3>${p.title}</h3>
-
+ https/koloonline-amazon-store.vercel.app
+        <button onclick="goToProduct('${p.asin}','${p.title}')">
+          🔥 عرض المنتج
+=======
         <button class="buy"
           onclick="
             trackEvent('affiliate_click',{asin:'${p.asin}'});
@@ -243,12 +427,16 @@ function render(list){
         <button class="cart"
           onclick="trackEvent('add_to_cart',{asin:'${p.asin}'})">
           ➕ Add Cart
+main
         </button>
       </div>
     `;
   });
 }
 
+ https/koloonline-amazon-store.vercel.app
+load();
+=======
 /* ================= SEARCH ================= */
 function searchProducts(){
 
@@ -265,6 +453,7 @@ function searchProducts(){
 
 loadProducts();
 
+ main
 </script>
 
 </body>

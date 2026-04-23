@@ -2,14 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+ https/koloonline-amazon-store.vercel.app
+<title id="pageTitle">Koloonline Product</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ================= SEO ================= -->
+<meta name="description" content="Best Amazon deals and product details">
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="Koloonline Store">
+<meta property="og:title" content="Koloonline Product">
+<meta property="og:description" content="Best Amazon deals">
+<meta property="og:image" content="">
+<meta property="og:url" content="">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Koloonline Product">
+<meta name="twitter:description" content="Best Amazon deals">
+<meta name="twitter:image" content="">
+
+=======
 <title>Koloonline Product</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+ main
 <!-- ================= GA4 ================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+ https/koloonline-amazon-store.vercel.app
+gtag('js', new Date());
+gtag('config', 'G-YS8L61XLPR');
+
+function trackEvent(name, data = {}) {
+  gtag('event', name, data);
+=======
 
 gtag('js', new Date());
 gtag('config', 'G-YS8L61XLPR');
@@ -20,6 +47,7 @@ function trackEvent(eventName, params = {}) {
   if (typeof gtag === "function") {
     gtag('event', eventName, params);
   }
+ main
 }
 </script>
 
@@ -83,6 +111,8 @@ header {
 }
 
 .whatsapp { background:#25D366; color:#fff; }
+  https/koloonline-amazon-store.vercel.app
+=======
 
 .trust {
   background:#e8f5e9;
@@ -90,6 +120,7 @@ header {
   border-radius:6px;
   margin-top:15px;
 }
+  main
 </style>
 </head>
 
@@ -100,6 +131,17 @@ header {
 <nav class="navbar">
   <a href="/">🏠 Home</a>
   <a href="/products">📦 Products</a>
+ https/koloonline-amazon-store.vercel.app
+</nav>
+
+<div class="container">
+  <img id="image" class="product-img">
+  <h1 id="title"></h1>
+  <p class="price" id="price"></p>
+
+  <button class="buy-btn" onclick="buyNow()">🔥 Buy Now</button>
+  <button class="buy-btn whatsapp" onclick="orderWhatsApp()">📲 WhatsApp</button>
+=======
   <a href="/cart">🛒 Cart</a>
   <a href="/blog">📰 Blog</a>
   <a href="/contact">✉️ Contact</a>
@@ -124,6 +166,7 @@ header {
 <h2>FAQ</h2>
 <div id="faqSection"></div>
 
+ main
 </div>
 
 <script>
@@ -132,6 +175,18 @@ const asin = params.get("asin");
 
 let product = null;
 
+ https/koloonline-amazon-store.vercel.app
+/* ================= LOAD FROM API ================= */
+async function loadProduct(){
+  try{
+    const res = await fetch("/api/products");
+    const data = await res.json();
+
+    product = data.products.find(p => p.asin === asin);
+
+    if(!product){
+      document.body.innerHTML = "<h2 style='text-align:center'>Not Found</h2>";
+=======
 /* ================= LOAD API ================= */
 async function loadProduct() {
   try {
@@ -147,29 +202,64 @@ async function loadProduct() {
 
     if (!product) {
       document.body.innerHTML = "<h2 style='text-align:center'>Product Not Found</h2>";
+main
       return;
     }
 
     render();
 
+ https/koloonline-amazon-store.vercel.app
+  }catch(e){
+    document.body.innerHTML = "<h2>Error loading product</h2>";
+=======
   } catch (err) {
     console.error(err);
     document.body.innerHTML = "<h2 style='text-align:center'>Server Error</h2>";
+ main
   }
 }
 
 /* ================= RENDER ================= */
+ https/koloonline-amazon-store.vercel.app
+function render(){
+=======
 function render() {
 
   trackEvent("product_view", {
     asin: product.asin,
     title: product.title
   });
+ main
 
   document.getElementById("title").innerText = product.title;
   document.getElementById("price").innerText = "$" + product.price;
   document.getElementById("image").src = product.image;
 
+ https/koloonline-amazon-store.vercel.app
+  /* SEO dynamic */
+  document.title = product.title + " | Koloonline";
+
+  document.querySelector('meta[name="description"]').setAttribute("content", product.title);
+
+  document.querySelector('meta[property="og:title"]').setAttribute("content", product.title);
+  document.querySelector('meta[property="og:image"]').setAttribute("content", product.image);
+  document.querySelector('meta[property="og:url"]').setAttribute("content", window.location.href);
+
+  document.querySelector('meta[name="twitter:title"]').setAttribute("content", product.title);
+  document.querySelector('meta[name="twitter:image"]').setAttribute("content", product.image);
+
+  trackEvent("product_view", { asin: product.asin });
+}
+
+/* ================= BUY ================= */
+function buyNow(){
+
+  const tag = product.tag?.US || "koloonlinesto-20";
+
+  const url = `https://www.amazon.com/dp/${product.asin}?tag=${tag}`;
+
+  trackEvent("buy_click", { asin: product.asin });
+=======
   document.getElementById("faqSection").innerHTML = `
     <p><b>Q:</b> Is this product original?<br>A: Yes, from Amazon.</p>
     <p><b>Q:</b> Shipping time?<br>A: Fast delivery.</p>
@@ -204,14 +294,19 @@ function buyNow() {
   else if (lang.includes("pl")) tag = tags.PL;
 
   const url = `https://www.amazon.com/dp/${product.asin}?tag=${tag}`;
+ main
 
   window.open(url, "_blank");
 }
 
 /* ================= WHATSAPP ================= */
+ https/koloonline-amazon-store.vercel.app
+function orderWhatsApp(){
+=======
 function orderWhatsApp() {
   if (!product) return;
 
+ main
   const msg = "I want to order: " + product.title;
   window.open(`https://wa.me/201205271929?text=${encodeURIComponent(msg)}`);
 }
