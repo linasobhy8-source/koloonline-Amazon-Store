@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBlLFhmWdhqjf62VraY0yT9UgcaAn6jnhI",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "onlinekoloonlineonline-a9979.firebaseapp.com",
   projectId: "onlinekoloonlineonline-a9979",
   storageBucket: "onlinekoloonlineonline-a9979.firebasestorage.app",
@@ -11,4 +11,5 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
