@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase-config";
 
 export default function Dashboard() {
   const [data, setData] = useState({
@@ -24,24 +26,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     trackEvent("dashboard_view", { country: getCountry() });
-
     loadAnalytics();
   }, []);
 
   async function loadAnalytics() {
     try {
-      const res = await fetch("/api/analytics");
+      // 🔥 1. إجمالي الإحصائيات من Firestore
+      const statsRef = doc(db, "analytics", "overview");
+      const statsSnap = await getDoc(statsRef);
 
-      if (!res.ok) return;
+      // 🔥 2. أفضل المنتجات
+      const productsSnap = await getDocs(collection(db, "analytics_products"));
 
-      const json = await res.json();
+      const topProducts = productsSnap.docs.map(doc => doc.data());
 
-      setData({
-        totalClicks: json?.overview?.totalClicks || 0,
-        totalOrders: json?.overview?.totalOrders || 0,
-        totalWhatsApp: json?.overview?.totalWhatsApp || 0,
-        topProducts: json?.topProducts || []
-      });
+      if (statsSnap.exists()) {
+        const stats = statsSnap.data();
+
+        setData({
+          totalClicks: stats.totalClicks || 0,
+          totalOrders: stats.totalOrders || 0,
+          totalWhatsApp: stats.totalWhatsApp || 0,
+          topProducts: topProducts || []
+        });
+      }
 
     } catch (err) {
       console.log("Dashboard error:", err);
@@ -148,4 +156,4 @@ function Card({ title, value }) {
       <h2 style={{ color: "#ff9900" }}>{value}</h2>
     </div>
   );
-}
+        }
