@@ -32,7 +32,6 @@ header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22
 .price{color:#b12704;font-size:22px;font-weight:bold;}
 .buy-btn{background:#ff9900;border:none;width:100%;padding:12px;margin-top:10px;border-radius:6px;cursor:pointer;}
 .buy-btn:hover{background:#e68a00;}
-.whatsapp{background:#25d366;color:#fff;}
 .section{background:#fff;margin:20px auto;padding:20px;max-width:700px;border-radius:10px;}
 </style>
 </head>
@@ -60,6 +59,7 @@ header{background:#232f3e;color:#fff;padding:15px;text-align:center;font-size:22
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* 🔥 Firebase Config */
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "onlinekoloonlineonline-a9979.firebaseapp.com",
@@ -70,6 +70,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let products = [];
+let currentProduct = null;
+
+/* ================= GET ASIN FROM URL ================= */
+const urlParams = new URLSearchParams(window.location.search);
+const asin = urlParams.get("asin");
 
 /* ================= LOAD FROM FIRESTORE ================= */
 async function loadProducts() {
@@ -77,15 +82,20 @@ async function loadProducts() {
 
   products = snap.docs.map(doc => doc.data());
 
+  currentProduct = products.find(p => p.asin === asin);
+
   loadProduct();
   loadRelated();
 }
 
-/* ================= LOAD MAIN PRODUCT ================= */
+/* ================= MAIN PRODUCT ================= */
 function loadProduct() {
-  const p = products[0];
+  if (!currentProduct) {
+    document.getElementById("product").innerHTML = "<h2>Product not found ❌</h2>";
+    return;
+  }
 
-  if (!p) return;
+  const p = currentProduct;
 
   trackEvent("product_view", {
     asin: p.asin,
@@ -104,17 +114,19 @@ function loadProduct() {
   </div>`;
 }
 
-/* ================= RELATED ================= */
+/* ================= RELATED PRODUCTS ================= */
 function loadRelated() {
-  document.getElementById("related").innerHTML = products.map(p => `
-    <div style="margin:10px;text-align:center;">
-      <img src="${p.image}" width="100"><br>
-      <b>${p.title}</b><br>
-      <button onclick="window.open('${p.link}','_blank')">
-        View
-      </button>
-    </div>
-  `).join("");
+  document.getElementById("related").innerHTML = products
+    .filter(p => p.asin !== asin)
+    .map(p => `
+      <div style="margin:10px;text-align:center;">
+        <img src="${p.image}" width="100"><br>
+        <b>${p.title}</b><br>
+        <button onclick="location.href='product.html?asin=${p.asin}'">
+          View
+        </button>
+      </div>
+    `).join("");
 }
 
 /* ================= START ================= */
