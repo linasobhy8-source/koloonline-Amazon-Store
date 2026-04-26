@@ -1,74 +1,160 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../config/firebase";
+import Head from "next/head";
 
-/* 🔥 Firebase Config */
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "onlinekoloonlineonline-a9979.firebaseapp.com",
-  projectId: "onlinekoloonlineonline-a9979",
-};
+export default function Product() {
+  const router = useRouter();
+  const { asin } = router.query;
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  const [products, setProducts] = useState([]);
+  const [currentProduct, setCurrentProduct] = useState(null);
 
-let products = [];
-let currentProduct = null;
+  /* ================= TRACKING ================= */
+  const trackEvent = (name, data = {}) => {
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", name, data);
+    }
+  };
 
-/* ================= GET ASIN ================= */
-const urlParams = new URLSearchParams(window.location.search);
-const asin = urlParams.get("asin");
+  /* ================= COUNTRY ================= */
+  const getCountry = () => {
+    const lang = navigator.language || "en-US";
+    if (lang.includes("ar")) return "EG";
+    if (lang.includes("en-CA")) return "CA";
+    if (lang.includes("pl")) return "PL";
+    return "US";
+  };
 
-/* ================= LOAD PRODUCTS ================= */
-async function loadProducts() {
-  const snap = await getDocs(collection(db, "products"));
-  products = snap.docs.map(doc => doc.data());
+  /* ================= AFFILIATE LINK ================= */
+  const getLink = (asin) => {
+    const country = getCountry();
 
-  currentProduct = products.find(p => p.asin === asin);
+    let tag = "koloonlinesto-20";
+    if (country === "EG") tag = "onlinesh03f31-21";
+    if (country === "US") tag = "onlinesho0429-20";
+    if (country === "CA") tag = "linasobhy20d8-20";
+    if (country === "PL") tag = "koloonline-21";
 
-  renderProduct();
-  renderRelated();
-}
+    return `https://www.amazon.com/dp/${asin}?tag=${tag}`;
+  };
 
-/* ================= RENDER PRODUCT ================= */
-function renderProduct() {
-  const container = document.getElementById("product");
+  /* ================= FETCH ================= */
+  useEffect(() => {
+    if (!asin) return;
 
-  if (!currentProduct) {
-    container.innerHTML = "<h2>Product not found ❌</h2>";
-    return;
-  }
+    const fetchProducts = async () => {
+      const snap = await getDocs(collection(db, "products"));
+      const data = snap.docs.map(doc => doc.data());
 
-  const p = currentProduct;
+      setProducts(data);
+      setCurrentProduct(data.find(p => p.asin === asin));
+    };
 
-  container.innerHTML = `
-    <div class="card">
-      <img src="${p.image}">
-      <h2>${p.title}</h2>
-      <p class="price">$${p.price}</p>
+    fetchProducts();
+  }, [asin]);
 
-      <button onclick="window.open('${p.link}','_blank')">
-        🔥 Buy Now
-      </button>
-    </div>
-  `;
-}
+  if (!currentProduct) return <h2 style={{ padding: 20 }}>Loading...</h2>;
 
-/* ================= RELATED ================= */
-function renderRelated() {
-  const container = document.getElementById("related");
+  return (
+    <div style={{ fontFamily: "Arial" }}>
 
-  container.innerHTML = products
-    .filter(p => p.asin !== asin)
-    .map(p => `
-      <div style="margin:10px;text-align:center;">
-        <img src="${p.image}" width="100"><br>
-        <b>${p.title}</b><br>
-        <button onclick="location.href='product.html?asin=${p.asin}'">
-          View
+      {/* ================= SEO ================= */}
+      <Head>
+        <title>{currentProduct.title}</title>
+        <meta name="description" content={currentProduct.title} />
+
+        {/* Open Graph */}
+        <meta property="og:title" content={currentProduct.title} />
+        <meta property="og:image" content={currentProduct.image} />
+        <meta property="og:type" content="product" />
+
+        {/* Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              name: currentProduct.title,
+              image: currentProduct.image,
+              offers: {
+                "@type": "Offer",
+                price: currentProduct.price,
+                priceCurrency: "USD",
+                availability: "https://schema.org/InStock"
+              }
+            })
+          }}
+        />
+      </Head>
+
+      {/* ================= UI ================= */}
+      <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
+        <img src={currentProduct.image} style={{ width: "100%", maxWidth: 400 }} />
+
+        <h1>{currentProduct.title}</h1>
+
+        <p style={{ color: "#b12704", fontSize: 22 }}>
+          ${currentProduct.price}
+        </p>
+
+        <button
+          onClick={() => {
+            trackEvent("affiliate_click", { asin: currentProduct.asin });
+            window.open(getLink(currentProduct.asin), "_blank");
+          }}
+          style={{
+            width: "100%",
+            padding: 12,
+            background: "#ff9900",
+            border: "none",
+            cursor: "pointer",
+            borderRadius: 6
+          }}
+        >
+          🔥 Buy Now
         </button>
       </div>
-    `).join("");
-}
 
-/* ================= START ================= */
-loadProducts();
+      {/* ================= RELATED ================= */}
+      <div style={{ padding: 20 }}>
+        <h2>🔥 Related Products</h2>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gap: 15
+        }}>
+          {products
+            .filter(p => p.asin !== currentProduct.asin)
+            .map(p => (
+              <div key={p.asin} style={{
+                background: "#fff",
+                padding: 10,
+                borderRadius: 8,
+                boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+              }}>
+                <img src={p.image} style={{ width: "100%" }} />
+                <h4>{p.title}</h4>
+
+                <button
+                  onClick={() => router.push(`/product?asin=${p.asin}`)}
+                  style={{
+                    width: "100%",
+                    padding: 8,
+                    marginTop: 5,
+                    cursor: "pointer"
+                  }}
+                >
+                  View
+                </button>
+              </div>
+            ))}
+        </div>
+      </div>
+
+    </div>
+  );
+        }
