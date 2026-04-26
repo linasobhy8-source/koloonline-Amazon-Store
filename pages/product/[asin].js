@@ -9,11 +9,11 @@ export default function Product() {
   const { asin } = router.query;
 
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!asin) return;
+    if (!router.isReady) return; // ⭐ أهم Fix
 
     const fetchData = async () => {
       setLoading(true);
@@ -22,20 +22,34 @@ export default function Product() {
       const data = snap.docs.map(doc => doc.data());
 
       setAllProducts(data);
-      setProduct(data.find(p => p.asin === asin));
 
+      const found = data.find(
+        p => String(p.asin).trim() === String(asin).trim()
+      );
+
+      setProduct(found || null);
       setLoading(false);
     };
 
     fetchData();
-  }, [asin]);
+  }, [router.isReady, asin]);
 
   const getLink = (asin) =>
     `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
 
-  if (loading) return <h2 style={{ padding: 20 }}>Loading...</h2>;
+  /* ================= LOADING ================= */
+  if (loading) {
+    return (
+      <h2 style={{ padding: 20 }}>Loading...</h2>
+    );
+  }
 
-  if (!product) return <h2 style={{ padding: 20 }}>Product Not Found ❌</h2>;
+  /* ================= NOT FOUND ================= */
+  if (!product) {
+    return (
+      <h2 style={{ padding: 20 }}>Product Not Found ❌</h2>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "Arial" }}>
@@ -76,7 +90,9 @@ export default function Product() {
         <p>${product.price}</p>
 
         <button
-          onClick={() => window.open(getLink(product.asin), "_blank")}
+          onClick={() =>
+            window.open(getLink(product.asin), "_blank")
+          }
           style={{
             padding: 12,
             background: "#ff9900",
@@ -102,7 +118,7 @@ export default function Product() {
 
               <button
                 onClick={() =>
-                  router.push(`/product/${p.asin}`)
+                  router.push(`/product/${p.asin}`) // ✅ صح
                 }
               >
                 View
@@ -112,4 +128,4 @@ export default function Product() {
       </div>
     </div>
   );
-}
+        }
