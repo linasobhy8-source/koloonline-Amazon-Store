@@ -10,6 +10,7 @@ export default function Product() {
 
   const [products, setProducts] = useState([]);
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   /* ================= TRACKING ================= */
   const trackEvent = (name, data = {}) => {
@@ -20,6 +21,8 @@ export default function Product() {
 
   /* ================= COUNTRY ================= */
   const getCountry = () => {
+    if (typeof navigator === "undefined") return "US";
+
     const lang = navigator.language || "en-US";
     if (lang.includes("ar")) return "EG";
     if (lang.includes("en-CA")) return "CA";
@@ -45,17 +48,33 @@ export default function Product() {
     if (!asin) return;
 
     const fetchProducts = async () => {
+      setLoading(true);
+
       const snap = await getDocs(collection(db, "products"));
       const data = snap.docs.map(doc => doc.data());
 
       setProducts(data);
-      setCurrentProduct(data.find(p => p.asin === asin));
+
+      const found = data.find(
+        p => String(p.asin) === String(asin)
+      );
+
+      setCurrentProduct(found || null);
+      setLoading(false);
     };
 
     fetchProducts();
   }, [asin]);
 
-  if (!currentProduct) return <h2 style={{ padding: 20 }}>Loading...</h2>;
+  /* ================= LOADING ================= */
+  if (loading) {
+    return <h2 style={{ padding: 20 }}>Loading product...</h2>;
+  }
+
+  /* ================= NOT FOUND ================= */
+  if (!currentProduct) {
+    return <h2 style={{ padding: 20 }}>Product not found ❌</h2>;
+  }
 
   return (
     <div style={{ fontFamily: "Arial" }}>
@@ -92,7 +111,10 @@ export default function Product() {
 
       {/* ================= UI ================= */}
       <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
-        <img src={currentProduct.image} style={{ width: "100%", maxWidth: 400 }} />
+        <img
+          src={currentProduct.image}
+          style={{ width: "100%", maxWidth: 400 }}
+        />
 
         <h1>{currentProduct.title}</h1>
 
@@ -102,8 +124,14 @@ export default function Product() {
 
         <button
           onClick={() => {
-            trackEvent("affiliate_click", { asin: currentProduct.asin });
-            window.open(getLink(currentProduct.asin), "_blank");
+            trackEvent("affiliate_click", {
+              asin: currentProduct.asin
+            });
+
+            window.open(
+              getLink(currentProduct.asin),
+              "_blank"
+            );
           }}
           style={{
             width: "100%",
@@ -122,25 +150,32 @@ export default function Product() {
       <div style={{ padding: 20 }}>
         <h2>🔥 Related Products</h2>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-          gap: 15
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+            gap: 15
+          }}
+        >
           {products
             .filter(p => p.asin !== currentProduct.asin)
             .map(p => (
-              <div key={p.asin} style={{
-                background: "#fff",
-                padding: 10,
-                borderRadius: 8,
-                boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
-              }}>
+              <div
+                key={p.asin}
+                style={{
+                  background: "#fff",
+                  padding: 10,
+                  borderRadius: 8,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                }}
+              >
                 <img src={p.image} style={{ width: "100%" }} />
                 <h4>{p.title}</h4>
 
                 <button
-                  onClick={() => router.push(`/product?asin=${p.asin}`)}
+                  onClick={() =>
+                    router.push(`/product?asin=${p.asin}`)
+                  }
                   style={{
                     width: "100%",
                     padding: 8,
@@ -157,4 +192,4 @@ export default function Product() {
 
     </div>
   );
-        }
+      }
