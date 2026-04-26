@@ -8,6 +8,8 @@
     { "source": "/", "destination": "/index.html" },
 
     { "source": "/product", "destination": "/product.html" },
+    { "source": "/product.html", "destination": "/product.html" },
+
     { "source": "/products", "destination": "/products.html" },
 
     { "source": "/cart", "destination": "/cart.html" },
@@ -18,8 +20,8 @@
     { "source": "/about", "destination": "/about.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
 
-    { "source": "/dp/(.*)", "destination": "/product.html?asin=$1" },
-    { "source": "/p/(.*)", "destination": "/product.html?asin=$1" }
+    { "source": "/p/(.*)", "destination": "/product.html?asin=$1" },
+    { "source": "/dp/(.*)", "destination": "/product.html?asin=$1" }
   ],
 
   "redirects": [
@@ -27,6 +29,12 @@
       "source": "/index.html",
       "destination": "/",
       "permanent": true
+    },
+
+    {
+      "source": "/product.html",
+      "destination": "/product",
+      "permanent": false
     }
   ]
 }
