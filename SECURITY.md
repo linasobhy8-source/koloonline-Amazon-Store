@@ -1,58 +1,81 @@
-# 🛡️ Security Policy – Koloonline Store
+🛡️ سياسة الأمان – متجر كولونلاين
 
-## 🔹 Supported Versions
+## 🔹 الإصدارات المدعومة
 
-We only provide security updates for the latest active version of the project.
+نحن نوفر تحديثات أمنية للإصدار النشط فقط من المشروع.
 
-| Version | Supported |
-|--------|----------|
-| main / production | ✅ Yes |
-| older branches | ❌ No |
-
----
-
-## 📝 Reporting a Vulnerability
-
-If you discover a security issue in Koloonline Store, please report it responsibly.
-
-### 📧 Contact
-Send details to:
-**security@koloonline.online**
-
-(If email is not available, use Contact page instead)
+| الإصدار | الحالة |
+|--------|--------|
+| Production | ✅ مدعوم |
+| الإصدارات السابقة | ❌ غير مدعومة |
 
 ---
 
-## 🔒 What to Include
-Please include:
-- Description of the issue
-- Steps to reproduce
-- Affected page (e.g. /cart, /product)
-- Screenshots (if applicable)
+## 📝 الإبلاغ عن ثغرة أمنية
+
+إذا اكتشفت ثغرة أمنية، يرجى الإبلاغ عنها بشكل مسؤول.
+
+### 📧 طريقة التواصل
+- عبر نموذج التواصل في الموقع:
+  /contact
+
+- أو البريد الإلكتروني (إذا تم تفعيله):
+  security@koloonline.online
 
 ---
 
-## ⏳ Response Time
-- 48–72 hours response time
-- Critical issues prioritized immediately
+## 🔒 المعلومات المطلوبة عند الإبلاغ
+
+يرجى تضمين:
+
+- وصف واضح للمشكلة  
+- خطوات إعادة الإنتاج  
+- الصفحة المتأثرة (مثال: /product, /cart)  
+- لقطات شاشة إن وجدت  
 
 ---
 
-## ⚠️ Important Notes
-- Static frontend + affiliate tracking project
-- No user data stored on servers
-- Payments handled by Amazon
-- Dashboard is analytics-only
+## ⏳ وقت الاستجابة
+
+- الرد خلال 48 – 72 ساعة  
+- الثغرات الحرجة: أولوية فورية  
 
 ---
 
-## 🚀 Security Scope
+## ⚠️ ملاحظات أمنية مهمة
 
-Included:
-- Frontend website
-- GA4 / GTM tracking
-- LocalStorage cart
+- المشروع عبارة عن واجهة أمامية (Frontend SaaS + Affiliate Tracking)  
+- لا يتم تخزين بيانات شخصية حساسة مثل كلمات المرور أو بيانات الدفع  
+- المدفوعات تتم عبر Amazon مباشرة  
+- التحليلات تتم عبر:
+  - Google Analytics (GA4)  
+  - Google Tag Manager (GTM)  
 
-Not included:
-- Amazon systems
-- External services (Google, Vercel)
+---
+
+## 📊 نطاق الأمان
+
+### يشمل:
+- واجهة الموقع (UI)
+- نظام التتبع (Clicks / Events)
+- LocalStorage (Cart / Preferences)
+
+### لا يشمل:
+- خدمات Amazon الخارجية
+- خدمات Google Analytics / GTM
+- خدمات الاستضافة (Vercel)
+
+---
+
+## 🔐 مبدأ الخصوصية
+
+الموقع لا يجمع بيانات شخصية حساسة مباشرة، ويستخدم فقط لأغراض التحليلات وتتبع الأداء وتحسين تجربة المستخدم.
+
+---
+
+## 🚀 الهدف الأمني
+
+الحفاظ على:
+- أمان المستخدم  
+- شفافية التتبع  
+- حماية بيانات التحليلات
