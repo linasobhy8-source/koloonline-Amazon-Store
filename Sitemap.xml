@@ -4,42 +4,42 @@
   <!-- 🏠 Home -->
   <url>
     <loc>https://koloonline.online/</loc>
-    <lastmod>2026-04-25T00:00:00+00:00</lastmod>
+    <lastmod>2026-04-27T00:00:00+00:00</lastmod>
     <priority>1.0</priority>
   </url>
 
-  <!-- 📦 Product Page -->
+  <!-- 📦 Product (Dynamic Page Example) -->
   <url>
-    <loc>https://koloonline.online/product.html</loc>
-    <lastmod>2026-04-25T00:00:00+00:00</lastmod>
+    <loc>https://koloonline.online/product/B0GWTCCHFZ</loc>
+    <lastmod>2026-04-27T00:00:00+00:00</lastmod>
     <priority>0.9</priority>
   </url>
 
   <!-- 🛒 Cart -->
   <url>
-    <loc>https://koloonline.online/cart.html</loc>
-    <lastmod>2026-04-25T00:00:00+00:00</lastmod>
+    <loc>https://koloonline.online/cart</loc>
+    <lastmod>2026-04-27T00:00:00+00:00</lastmod>
     <priority>0.8</priority>
   </url>
 
   <!-- 📰 Blog -->
   <url>
-    <loc>https://koloonline.online/blog.html</loc>
-    <lastmod>2026-04-25T00:00:00+00:00</lastmod>
+    <loc>https://koloonline.online/blog</loc>
+    <lastmod>2026-04-27T00:00:00+00:00</lastmod>
     <priority>0.8</priority>
   </url>
 
   <!-- ✉️ Contact -->
   <url>
-    <loc>https://koloonline.online/contact.html</loc>
-    <lastmod>2026-04-25T00:00:00+00:00</lastmod>
+    <loc>https://koloonline.online/contact</loc>
+    <lastmod>2026-04-27T00:00:00+00:00</lastmod>
     <priority>0.7</priority>
   </url>
 
   <!-- 📊 Dashboard -->
   <url>
-    <loc>https://koloonline.online/dashboard.html</loc>
-    <lastmod>2026-04-25T00:00:00+00:00</lastmod>
+    <loc>https://koloonline.online/dashboard</loc>
+    <lastmod>2026-04-27T00:00:00+00:00</lastmod>
     <priority>0.7</priority>
   </url>
 
