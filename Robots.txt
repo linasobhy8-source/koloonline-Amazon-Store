@@ -1,7 +1,16 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://koloonline.online/sitemap.xml
-
+# 🚫 صفحات غير مهمة للـ SEO
 Disallow: /dashboard
 Disallow: /cart
+
+# 🚫 API routes
+Disallow: /api/
+
+# 🚫 ملفات داخلية (احتياطي)
+Disallow: /_next/
+Disallow: /private/
+
+# 🌍 Sitemap
+Sitemap: https://koloonline.online/sitemap.xml
