@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase-config";
@@ -65,6 +66,17 @@ export default function Home() {
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
+      {/* ================= SEO ================= */}
+      <Head>
+        <title>Koloonline Amazon Store</title>
+        <meta name="description" content="Best Amazon Affiliate Store with Smart Deals and Offers" />
+        <meta name="keywords" content="amazon deals, smart watch, affiliate store, koloonline" />
+
+        <meta property="og:title" content="Koloonline Amazon Store" />
+        <meta property="og:description" content="Shop best Amazon products with deals" />
+        <meta property="og:image" content="https://i.postimg.cc/9fVfC1Y4/1000276862.png" />
+      </Head>
+
       {/* ================= HEADER ================= */}
       <header style={{
         background: "#131921",
@@ -114,6 +126,7 @@ export default function Home() {
       {/* ================= ADSENSE ================= */}
       <div style={{ textAlign: "center", margin: "20px 0" }}>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
         <ins
           className="adsbygoogle"
           style={{ display: "block" }}
@@ -122,9 +135,14 @@ export default function Home() {
           data-ad-format="auto"
           data-full-width-responsive="true"
         ></ins>
-        <script>
-          {(adsbygoogle = window.adsbygoogle || []).push({})}
-        </script>
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (adsbygoogle = window.adsbygoogle || []).push({});
+            `,
+          }}
+        />
       </div>
 
       {/* ================= CONTENT ================= */}
@@ -189,7 +207,8 @@ export default function Home() {
             ))}
           </div>
         )}
+
       </div>
     </div>
   );
-          }
+            }
