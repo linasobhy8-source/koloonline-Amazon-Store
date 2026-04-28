@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase";
+import { db } from "../../firebase-config"; // ✅ خلي المسار واحد بس
 import Head from "next/head";
 
 export default function Product() {
@@ -28,14 +28,11 @@ export default function Product() {
 
         setAllProducts(data);
 
-        const found = data.find((p) => {
-          if (!p?.asin) return false;
+        // ✅ Fix نهائي لمشكلة ASIN
+        const clean = (val) =>
+          String(val || "").toLowerCase().trim();
 
-          return (
-            String(p.asin).trim().toLowerCase() ===
-            String(asin).trim().toLowerCase()
-          );
-        });
+        const found = data.find((p) => clean(p.asin) === clean(asin));
 
         setProduct(found || null);
       } catch (err) {
@@ -53,7 +50,7 @@ export default function Product() {
     return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
   };
 
-  // LOADING
+  /* ================= LOADING ================= */
   if (loading) {
     return (
       <div style={{ padding: 20 }}>
@@ -62,12 +59,12 @@ export default function Product() {
     );
   }
 
-  // NOT FOUND (أفضل UX)
+  /* ================= NOT FOUND ================= */
   if (!product) {
     return (
       <div style={{ padding: 20, fontFamily: "Arial" }}>
         <h2>❌ Product Not Found</h2>
-        <p>Check ASIN in URL or Firestore database</p>
+        <p>Check ASIN in URL or Firestore</p>
 
         <button
           onClick={() => router.push("/")}
@@ -77,6 +74,7 @@ export default function Product() {
             background: "#232f3e",
             color: "white",
             border: "none",
+            cursor: "pointer",
           }}
         >
           Go Home
@@ -87,14 +85,14 @@ export default function Product() {
 
   return (
     <div style={{ fontFamily: "Arial" }}>
-
-      {/* SEO */}
+      
+      {/* ================= SEO ================= */}
       <Head>
         <title>{product.title}</title>
         <meta name="description" content={product.title} />
       </Head>
 
-      {/* PRODUCT */}
+      {/* ================= PRODUCT ================= */}
       <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
         <img
           src={product.image}
@@ -121,7 +119,7 @@ export default function Product() {
         </button>
       </div>
 
-      {/* RELATED */}
+      {/* ================= RELATED ================= */}
       <div style={{ padding: 20 }}>
         <h2>Related Products</h2>
 
@@ -137,7 +135,7 @@ export default function Product() {
             .slice(0, 6)
             .map((p) => (
               <div
-                key={p.asin}
+                key={p.id}
                 style={{
                   border: "1px solid #eee",
                   padding: 10,
@@ -149,6 +147,7 @@ export default function Product() {
                   alt={p.title}
                   style={{ width: "100%" }}
                 />
+
                 <p style={{ fontSize: 12 }}>{p.title}</p>
 
                 <button
@@ -170,4 +169,4 @@ export default function Product() {
       </div>
     </div>
   );
-}
+            }
