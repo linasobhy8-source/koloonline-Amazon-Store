@@ -32,8 +32,8 @@ export default function Product() {
           if (!p?.asin) return false;
 
           return (
-            String(p.asin).toLowerCase().trim() ===
-            String(asin).toLowerCase().trim()
+            String(p.asin).trim().toLowerCase() ===
+            String(asin).trim().toLowerCase()
           );
         });
 
@@ -49,18 +49,38 @@ export default function Product() {
     fetchData();
   }, [router.isReady, asin]);
 
-  const getLink = (asin) =>
-    `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+  const getLink = (asin) => {
+    return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
+  };
 
+  // LOADING
   if (loading) {
-    return <h2 style={{ padding: 20 }}>Loading...</h2>;
-  }
-
-  if (!product) {
     return (
       <div style={{ padding: 20 }}>
-        <h2>Product Not Found ❌</h2>
-        <p>Check Firestore ASIN or URL</p>
+        <h2>Loading...</h2>
+      </div>
+    );
+  }
+
+  // NOT FOUND (أفضل UX)
+  if (!product) {
+    return (
+      <div style={{ padding: 20, fontFamily: "Arial" }}>
+        <h2>❌ Product Not Found</h2>
+        <p>Check ASIN in URL or Firestore database</p>
+
+        <button
+          onClick={() => router.push("/")}
+          style={{
+            marginTop: 10,
+            padding: 10,
+            background: "#232f3e",
+            color: "white",
+            border: "none",
+          }}
+        >
+          Go Home
+        </button>
       </div>
     );
   }
@@ -68,16 +88,22 @@ export default function Product() {
   return (
     <div style={{ fontFamily: "Arial" }}>
 
+      {/* SEO */}
       <Head>
         <title>{product.title}</title>
+        <meta name="description" content={product.title} />
       </Head>
 
       {/* PRODUCT */}
       <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
-        <img src={product.image} width="300" />
+        <img
+          src={product.image}
+          alt={product.title}
+          style={{ width: "100%", maxWidth: 300 }}
+        />
 
         <h1>{product.title}</h1>
-        <p>${product.price}</p>
+        <p style={{ fontSize: 18 }}>${product.price}</p>
 
         <button
           onClick={() => window.open(getLink(product.asin), "_blank")}
@@ -86,9 +112,12 @@ export default function Product() {
             background: "#ff9900",
             border: "none",
             width: "100%",
+            cursor: "pointer",
+            marginTop: 10,
+            fontWeight: "bold",
           }}
         >
-          🔥 Buy Now
+          🔥 Buy Now on Amazon
         </button>
       </div>
 
@@ -96,20 +125,49 @@ export default function Product() {
       <div style={{ padding: 20 }}>
         <h2>Related Products</h2>
 
-        {allProducts
-          .filter((p) => p.asin !== product.asin)
-          .slice(0, 6)
-          .map((p) => (
-            <div key={p.asin} style={{ margin: 10 }}>
-              <img src={p.image} width="100" />
-              <p>{p.title}</p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+            gap: 10,
+          }}
+        >
+          {allProducts
+            .filter((p) => p.asin !== product.asin)
+            .slice(0, 6)
+            .map((p) => (
+              <div
+                key={p.asin}
+                style={{
+                  border: "1px solid #eee",
+                  padding: 10,
+                  borderRadius: 8,
+                }}
+              >
+                <img
+                  src={p.image}
+                  alt={p.title}
+                  style={{ width: "100%" }}
+                />
+                <p style={{ fontSize: 12 }}>{p.title}</p>
 
-              <button onClick={() => router.push(`/product/${p.asin}`)}>
-                View
-              </button>
-            </div>
-          ))}
+                <button
+                  onClick={() => router.push(`/product/${p.asin}`)}
+                  style={{
+                    width: "100%",
+                    padding: 6,
+                    background: "#131921",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  View
+                </button>
+              </div>
+            ))}
+        </div>
       </div>
     </div>
   );
-        }
+}
