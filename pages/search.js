@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase-config";
@@ -7,6 +8,8 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [suggestions, setSuggestions] = useState([]);
 
   /* ================= FETCH PRODUCTS ================= */
   useEffect(() => {
@@ -29,32 +32,33 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  /* ================= SEARCH SUGGESTIONS ================= */
+  useEffect(() => {
+    if (!search) {
+      setSuggestions([]);
+      return;
+    }
+
+    const results = products
+      .filter((p) =>
+        p.title?.toLowerCase().includes(search.toLowerCase())
+      )
+      .slice(0, 5);
+
+    setSuggestions(results);
+  }, [search, products]);
+
   /* ================= FILTER ================= */
-  const filtered = products.filter((p) =>
-    p.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = products.filter((p) => {
+    const title = p.title?.toLowerCase() || "";
+    const cat = p.category?.toLowerCase() || "";
 
-  /* ================= AMAZON LINK ================= */
-  const getCountry = () => {
-    if (typeof window === "undefined") return "US";
-    const lang = navigator.language || "en-US";
-    if (lang.includes("ar")) return "EG";
-    if (lang.includes("en-CA")) return "CA";
-    if (lang.includes("pl")) return "PL";
-    return "US";
-  };
+    const searchMatch = title.includes(search.toLowerCase());
+    const categoryMatch =
+      category === "all" ? true : cat === category.toLowerCase();
 
-  const getLink = (asin) => {
-    const country = getCountry();
-    let tag = "koloonlinesto-20";
-
-    if (country === "EG") tag = "onlinesh03f31-21";
-    if (country === "US") tag = "onlinesho0429-20";
-    if (country === "CA") tag = "linasobhy20d8-20";
-    if (country === "PL") tag = "koloonline-21";
-
-    return `https://www.amazon.com/dp/${asin}?tag=${tag}`;
-  };
+    return searchMatch && categoryMatch;
+  });
 
   const trackEvent = (name, data = {}) => {
     if (typeof window !== "undefined" && window.gtag) {
@@ -65,6 +69,12 @@ export default function Home() {
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
+      {/* ================= SEO ================= */}
+      <Head>
+        <title>Koloonline Amazon Store</title>
+        <meta name="description" content="Best Amazon Affiliate Store with Smart Deals and Offers" />
+      </Head>
+
       {/* ================= HEADER ================= */}
       <header style={{
         background: "#131921",
@@ -72,66 +82,88 @@ export default function Home() {
         padding: 15,
         display: "flex",
         alignItems: "center",
-        gap: 15
+        gap: 15,
+        position: "relative"
       }}>
         
         <img
           src="https://i.postimg.cc/9fVfC1Y4/1000276862.png"
-          alt="logo"
           style={{ height: 45 }}
         />
 
-        {/* 🔍 SEARCH INPUT */}
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+        {/* SEARCH BOX */}
+        <div style={{ flex: 1, position: "relative" }}>
+
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: 10,
+              borderRadius: 5,
+              border: "none"
+            }}
+          />
+
+          {/* 🔥 SUGGESTIONS */}
+          {suggestions.length > 0 && (
+            <div style={{
+              position: "absolute",
+              top: 45,
+              left: 0,
+              right: 0,
+              background: "white",
+              color: "black",
+              borderRadius: 8,
+              boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+              zIndex: 999
+            }}>
+              {suggestions.map((s) => (
+                <div
+                  key={s.id}
+                  onClick={() => {
+                    setSearch("");
+                    window.location.href = `/product/${s.asin}`;
+                  }}
+                  style={{
+                    padding: 10,
+                    borderBottom: "1px solid #eee",
+                    cursor: "pointer"
+                  }}
+                >
+                  {s.title}
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+
+        {/* CATEGORY */}
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
           style={{
-            flex: 1,
             padding: 10,
             borderRadius: 5,
-            border: "none",
-            outline: "none"
+            border: "none"
           }}
-        />
-
-        {/* 🔍 GOOGLE CSE */}
-        <script async src="https://cse.google.com/cse.js?cx=a62092fd965664e67"></script>
-        <div className="gcse-search"></div>
+        >
+          <option value="all">All</option>
+          <option value="electronics">Electronics</option>
+          <option value="fashion">Fashion</option>
+          <option value="home">Home</option>
+        </select>
 
       </header>
-
-      {/* ================= NAV ================= */}
-      <nav style={{
-        background: "#232f3e",
-        padding: 10,
-        color: "white"
-      }}>
-        <Link href="/" style={{ color: "white" }}>Home</Link>
-      </nav>
-
-      {/* ================= ADSENSE ================= */}
-      <div style={{ textAlign: "center", margin: "20px 0" }}>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-        <ins
-          className="adsbygoogle"
-          style={{ display: "block" }}
-          data-ad-client="ca-pub-1294940976431468"
-          data-ad-slot="1234567890"
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        ></ins>
-        <script>
-          {(adsbygoogle = window.adsbygoogle || []).push({})}
-        </script>
-      </div>
 
       {/* ================= CONTENT ================= */}
       <div style={{ padding: 20 }}>
 
         {loading ? (
-          <p>Loading products...</p>
+          <p>Loading...</p>
         ) : filtered.length === 0 ? (
           <p>No products found</p>
         ) : (
@@ -141,11 +173,10 @@ export default function Home() {
             gap: 15
           }}>
             {filtered.map((p) => (
-              <div key={p.id || p.asin} style={{
+              <div key={p.id} style={{
                 background: "white",
                 padding: 12,
-                borderRadius: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                borderRadius: 10
               }}>
                 
                 <img
@@ -157,22 +188,19 @@ export default function Home() {
                 <p>${p.price}</p>
 
                 <Link href={`/product/${p.asin}`}>
-                  <button
-                    onClick={() => trackEvent("product_click", { asin: p.asin })}
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      background: "#ff9900",
-                      border: "none",
-                      marginTop: 8
-                    }}
-                  >
+                  <button style={{
+                    width: "100%",
+                    padding: 10,
+                    background: "#ff9900",
+                    border: "none",
+                    marginTop: 8
+                  }}>
                     View Product
                   </button>
                 </Link>
 
                 <button
-                  onClick={() => window.open(getLink(p.asin), "_blank")}
+                  onClick={() => window.open(p.link, "_blank")}
                   style={{
                     width: "100%",
                     padding: 10,
@@ -182,14 +210,15 @@ export default function Home() {
                     color: "white"
                   }}
                 >
-                  Buy on Amazon
+                  🛒 Buy on Amazon
                 </button>
 
               </div>
             ))}
           </div>
         )}
+
       </div>
     </div>
   );
-      }
+            }
