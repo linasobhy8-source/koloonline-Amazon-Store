@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase-config"; // ✅ خلي المسار واحد بس
+import { db } from "../../firebase-config";
 import Head from "next/head";
 
 export default function Product() {
@@ -28,7 +28,6 @@ export default function Product() {
 
         setAllProducts(data);
 
-        // ✅ Fix نهائي لمشكلة ASIN
         const clean = (val) =>
           String(val || "").toLowerCase().trim();
 
@@ -46,10 +45,6 @@ export default function Product() {
     fetchData();
   }, [router.isReady, asin]);
 
-  const getLink = (asin) => {
-    return `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
-  };
-
   /* ================= LOADING ================= */
   if (loading) {
     return (
@@ -64,7 +59,6 @@ export default function Product() {
     return (
       <div style={{ padding: 20, fontFamily: "Arial" }}>
         <h2>❌ Product Not Found</h2>
-        <p>Check ASIN in URL or Firestore</p>
 
         <button
           onClick={() => router.push("/")}
@@ -85,7 +79,7 @@ export default function Product() {
 
   return (
     <div style={{ fontFamily: "Arial" }}>
-      
+
       {/* ================= SEO ================= */}
       <Head>
         <title>{product.title}</title>
@@ -94,6 +88,7 @@ export default function Product() {
 
       {/* ================= PRODUCT ================= */}
       <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
+
         <img
           src={product.image}
           alt={product.title}
@@ -103,8 +98,15 @@ export default function Product() {
         <h1>{product.title}</h1>
         <p style={{ fontSize: 18 }}>${product.price}</p>
 
+        {/* 🔥 AMAZON BUTTON (MODIFIED) */}
         <button
-          onClick={() => window.open(getLink(product.asin), "_blank")}
+          onClick={() => {
+            const link =
+              product.link ||
+              `https://www.amazon.com/dp/${product.asin}?tag=koloonlinesto-20`;
+
+            window.open(link, "_blank");
+          }}
           style={{
             padding: 12,
             background: "#ff9900",
@@ -123,31 +125,21 @@ export default function Product() {
       <div style={{ padding: 20 }}>
         <h2>Related Products</h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-            gap: 10,
-          }}
-        >
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+          gap: 10,
+        }}>
           {allProducts
             .filter((p) => p.asin !== product.asin)
             .slice(0, 6)
             .map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  border: "1px solid #eee",
-                  padding: 10,
-                  borderRadius: 8,
-                }}
-              >
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  style={{ width: "100%" }}
-                />
-
+              <div key={p.id} style={{
+                border: "1px solid #eee",
+                padding: 10,
+                borderRadius: 8,
+              }}>
+                <img src={p.image} style={{ width: "100%" }} />
                 <p style={{ fontSize: 12 }}>{p.title}</p>
 
                 <button
@@ -158,7 +150,6 @@ export default function Product() {
                     background: "#131921",
                     color: "white",
                     border: "none",
-                    cursor: "pointer",
                   }}
                 >
                   View
@@ -167,6 +158,7 @@ export default function Product() {
             ))}
         </div>
       </div>
+
     </div>
   );
             }
