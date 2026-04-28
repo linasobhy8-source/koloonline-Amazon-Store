@@ -13,22 +13,37 @@ export default function Product() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!router.isReady) return; // ⭐ أهم Fix
+    if (!router.isReady || !asin) return;
 
     const fetchData = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const snap = await getDocs(collection(db, "products"));
-      const data = snap.docs.map(doc => doc.data());
+        const snap = await getDocs(collection(db, "products"));
 
-      setAllProducts(data);
+        const data = snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      const found = data.find(
-        p => String(p.asin).trim() === String(asin).trim()
-      );
+        setAllProducts(data);
 
-      setProduct(found || null);
-      setLoading(false);
+        const found = data.find((p) => {
+          if (!p?.asin) return false;
+
+          return (
+            String(p.asin).toLowerCase().trim() ===
+            String(asin).toLowerCase().trim()
+          );
+        });
+
+        setProduct(found || null);
+      } catch (err) {
+        console.error("Error loading product:", err);
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -37,52 +52,27 @@ export default function Product() {
   const getLink = (asin) =>
     `https://www.amazon.com/dp/${asin}?tag=koloonlinesto-20`;
 
-  /* ================= LOADING ================= */
   if (loading) {
-    return (
-      <h2 style={{ padding: 20 }}>Loading...</h2>
-    );
+    return <h2 style={{ padding: 20 }}>Loading...</h2>;
   }
 
-  /* ================= NOT FOUND ================= */
   if (!product) {
     return (
-      <h2 style={{ padding: 20 }}>Product Not Found ❌</h2>
+      <div style={{ padding: 20 }}>
+        <h2>Product Not Found ❌</h2>
+        <p>Check Firestore ASIN or URL</p>
+      </div>
     );
   }
 
   return (
     <div style={{ fontFamily: "Arial" }}>
 
-      {/* ================= SEO ================= */}
       <Head>
         <title>{product.title}</title>
-        <meta name="description" content={product.title} />
-
-        <meta property="og:title" content={product.title} />
-        <meta property="og:image" content={product.image} />
-        <meta property="og:type" content="product" />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Product",
-              name: product.title,
-              image: product.image,
-              offers: {
-                "@type": "Offer",
-                price: product.price,
-                priceCurrency: "USD",
-                availability: "https://schema.org/InStock"
-              }
-            })
-          }}
-        />
       </Head>
 
-      {/* ================= PRODUCT ================= */}
+      {/* PRODUCT */}
       <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
         <img src={product.image} width="300" />
 
@@ -90,37 +80,31 @@ export default function Product() {
         <p>${product.price}</p>
 
         <button
-          onClick={() =>
-            window.open(getLink(product.asin), "_blank")
-          }
+          onClick={() => window.open(getLink(product.asin), "_blank")}
           style={{
             padding: 12,
             background: "#ff9900",
             border: "none",
-            width: "100%"
+            width: "100%",
           }}
         >
           🔥 Buy Now
         </button>
       </div>
 
-      {/* ================= RELATED ================= */}
+      {/* RELATED */}
       <div style={{ padding: 20 }}>
         <h2>Related Products</h2>
 
         {allProducts
-          .filter(p => p.asin !== product.asin)
+          .filter((p) => p.asin !== product.asin)
           .slice(0, 6)
-          .map(p => (
+          .map((p) => (
             <div key={p.asin} style={{ margin: 10 }}>
               <img src={p.image} width="100" />
               <p>{p.title}</p>
 
-              <button
-                onClick={() =>
-                  router.push(`/product/${p.asin}`) // ✅ صح
-                }
-              >
+              <button onClick={() => router.push(`/product/${p.asin}`)}>
                 View
               </button>
             </div>
