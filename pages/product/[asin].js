@@ -1,8 +1,54 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../../firebase-config";
 import Head from "next/head";
+
+/* ================= TRACKING ================= */
+async function trackEvent(type, product) {
+  try {
+    await addDoc(collection(db, "events"), {
+      type,
+      asin: product?.asin,
+      title: product?.title,
+      price: product?.price,
+      url: window.location.href,
+      country: navigator.language || "unknown",
+      timestamp: serverTimestamp(),
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* ================= COUNTRY ================= */
+const getCountry = () => {
+  if (typeof window === "undefined") return "US";
+  const lang = navigator.language || "en-US";
+
+  if (lang.includes("ar")) return "EG";
+  if (lang.includes("pl")) return "PL";
+  if (lang.includes("en-CA")) return "CA";
+  return "US";
+};
+
+/* ================= AFFILIATE ================= */
+const getAffiliateLink = (asin) => {
+  const country = getCountry();
+
+  let tag = "koloonlinesto-20";
+  if (country === "EG") tag = "onlinesh03f31-21";
+  if (country === "US") tag = "onlinesho0429-20";
+  if (country === "CA") tag = "linasobhy20d8-20";
+  if (country === "PL") tag = "koloonline-21";
+
+  return `https://www.amazon.com/dp/${asin}?tag=${tag}`;
+};
 
 export default function Product() {
   const router = useRouter();
@@ -12,74 +58,61 @@ export default function Product() {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= COUNTRY DETECTION ================= */
-  const getCountry = () => {
-    if (typeof window === "undefined") return "US";
-
-    const lang = navigator.language || "en-US";
-
-    if (lang.includes("ar")) return "EG";
-    if (lang.includes("en-CA")) return "CA";
-    if (lang.includes("pl")) return "PL";
-
-    return "US";
-  };
-
-  /* ================= AFFILIATE LINK ================= */
-  const getAffiliateLink = (asin) => {
-    const country = getCountry();
-
-    let tag = "koloonlinesto-20";
-
-    if (country === "EG") tag = "onlinesh03f31-21";
-    if (country === "US") tag = "onlinesho0429-20";
-    if (country === "CA") tag = "linasobhy20d8-20";
-    if (country === "PL") tag = "koloonline-21";
-
-    return `https://www.amazon.com/dp/${asin}?tag=${tag}`;
-  };
-
   /* ================= FETCH ================= */
   useEffect(() => {
     if (!router.isReady || !asin) return;
 
     const fetchData = async () => {
-      try {
-        const snap = await getDocs(collection(db, "products"));
+      const snap = await getDocs(collection(db, "products"));
 
-        const data = snap.docs.map((doc) => ({
-          id: doc.id,
-          asin: doc.id, // 🔥 مهم جدًا
-          ...doc.data(),
-        }));
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        asin: doc.id,
+        ...doc.data(),
+      }));
 
-        setAllProducts(data);
+      setAllProducts(data);
 
-        const found = data.find(
-          (p) => p.asin.toLowerCase() === asin.toLowerCase()
-        );
+      const found = data.find(
+        (p) => p.asin?.toLowerCase() === asin.toLowerCase()
+      );
 
-        setProduct(found || null);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      setProduct(found || null);
+
+      if (found) trackEvent("product_view", found);
+
+      setLoading(false);
     };
 
     fetchData();
   }, [router.isReady, asin]);
 
-  /* ================= STATES ================= */
   if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
+  if (!product) return <p style={{ padding: 20 }}>Not Found</p>;
 
-  if (!product) return <p style={{ padding: 20 }}>❌ Product Not Found</p>;
+  const buyLink = product.link || getAffiliateLink(product.asin);
 
   return (
     <div style={{ fontFamily: "Arial", background: "#fff" }}>
-      
+
+      {/* ================= SEO + RICH SNIPPET ================= */}
       <Head>
-        <title>{product.title}</title>
+        <title>{product.title} | Best Deal</title>
+        <meta name="description" content={product.title} />
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            name: product.title,
+            image: product.image,
+            offers: {
+              "@type": "Offer",
+              price: product.price,
+              priceCurrency: "USD",
+            },
+          })}
+        </script>
       </Head>
 
       {/* ================= MAIN ================= */}
@@ -92,90 +125,74 @@ export default function Product() {
         margin: "auto"
       }}>
 
-        {/* IMAGE */}
-        <div>
-          <img
-            src={product.image || "/placeholder.png"}
-            alt={product.title}
-            style={{
-              width: "100%",
-              borderRadius: 10
-            }}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "/placeholder.png";
-            }}
-          />
-        </div>
+        <img
+          src={product.image}
+          style={{ width: "100%", borderRadius: 12 }}
+        />
 
-        {/* INFO */}
         <div>
 
-          <h1 style={{ fontSize: 22 }}>{product.title}</h1>
+          <h1>{product.title}</h1>
 
-          {/* ⭐ fake rating */}
-          <p style={{ color: "#ffa41c", fontSize: 18 }}>
-            ★★★★☆ (1,245 ratings)
-          </p>
+          <p style={{ color: "#ffa41c" }}>★★★★☆ (Best Seller)</p>
 
-          <p style={{ fontSize: 24, fontWeight: "bold" }}>
-            ${product.price}
-          </p>
+          <h2 style={{ color: "#111" }}>${product.price}</h2>
 
-          <p style={{ color: "green", marginTop: 10 }}>
-            In Stock
-          </p>
+          <p style={{ color: "green" }}>✔ In Stock - Fast Delivery</p>
 
-          {/* ================= BUTTONS ================= */}
+          {/* ================= BUY BUTTON ================= */}
           <button
             onClick={() => {
-              const link = product.link || getAffiliateLink(product.asin);
-              window.open(link, "_blank");
+              trackEvent("amazon_click", product);
+              window.open(buyLink, "_blank");
             }}
             style={{
               width: "100%",
-              padding: 12,
+              padding: 15,
               background: "#ffd814",
               border: "1px solid #fcd200",
+              fontWeight: "bold",
+              borderRadius: 8,
               marginTop: 15,
               cursor: "pointer",
-              borderRadius: 5,
-              fontWeight: "bold"
             }}
           >
-            🛒 Buy on Amazon
+            🛒 Buy on Amazon Now
           </button>
 
+          {/* WHATSAPP */}
           <button
+            onClick={() => {
+              trackEvent("whatsapp_click", product);
+              window.open(
+                `https://wa.me/?text=Check this product: ${product.title}`,
+                "_blank"
+              );
+            }}
             style={{
               width: "100%",
-              padding: 12,
-              background: "#ffa41c",
+              padding: 15,
+              background: "#25D366",
+              color: "white",
               border: "none",
               marginTop: 10,
+              borderRadius: 8,
               cursor: "pointer",
-              borderRadius: 5,
-              fontWeight: "bold"
             }}
           >
-            ⚡ Add to Cart
+            💬 Ask on WhatsApp
           </button>
 
-        </div>
-      </div>
+          <p style={{ color: "red", marginTop: 10 }}>
+            🔥 Limited Offer – price may change anytime
+          </p>
 
-      {/* ================= DESCRIPTION ================= */}
-      <div style={{ padding: 30, maxWidth: 1200, margin: "auto" }}>
-        <h2>Product Details</h2>
-        <p>
-          This is a high-quality product available on Amazon. Designed for daily
-          use with premium performance and durability.
-        </p>
+        </div>
       </div>
 
       {/* ================= RELATED ================= */}
       <div style={{ padding: 30, background: "#f5f5f5" }}>
-        <h2 style={{ marginBottom: 20 }}>Related Products</h2>
+        <h2>🔥 Related Products</h2>
 
         <div style={{
           display: "grid",
@@ -189,19 +206,15 @@ export default function Product() {
               <div key={p.id} style={{
                 background: "white",
                 padding: 10,
-                borderRadius: 8
+                borderRadius: 10
               }}>
-                
+
                 <img
-                  src={p.image || "/placeholder.png"}
-                  alt={p.title}
+                  src={p.image}
                   style={{ width: "100%", height: 150, objectFit: "cover" }}
-                  onError={(e) => {
-                    e.target.src = "/placeholder.png";
-                  }}
                 />
 
-                <p style={{ fontSize: 14 }}>{p.title}</p>
+                <p>{p.title}</p>
 
                 <button
                   onClick={() => router.push(`/product/${p.asin}`)}
@@ -222,6 +235,38 @@ export default function Product() {
         </div>
       </div>
 
+      {/* ================= STICKY BUY BAR ================= */}
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: "#131921",
+        padding: 10,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        color: "white"
+      }}>
+        <span>{product.title}</span>
+
+        <button
+          onClick={() => {
+            trackEvent("amazon_click", product);
+            window.open(buyLink, "_blank");
+          }}
+          style={{
+            background: "#ff9900",
+            padding: "10px 20px",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: "bold"
+          }}
+        >
+          Buy Now
+        </button>
+      </div>
+
     </div>
   );
-          }
+                                            }
