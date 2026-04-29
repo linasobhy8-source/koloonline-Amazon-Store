@@ -8,17 +8,20 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
 
   /* ================= FETCH PRODUCTS ================= */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const snap = await getDocs(collection(db, "products"));
+
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-          asin: doc.id, // 🔥 مهم جدًا
+          asin: doc.id,
           ...doc.data(),
         }));
+
         setProducts(data);
       } catch (err) {
         console.error(err);
@@ -32,9 +35,16 @@ export default function Home() {
   }, []);
 
   /* ================= FILTER ================= */
-  const filtered = products.filter((p) =>
-    p.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = products.filter((p) => {
+    const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
+
+    const matchCategory =
+      category === "all"
+        ? true
+        : (p.category || "").toLowerCase() === category.toLowerCase();
+
+    return matchSearch && matchCategory;
+  });
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
@@ -61,6 +71,7 @@ export default function Home() {
           style={{ height: 45 }}
         />
 
+        {/* SEARCH */}
         <input
           type="text"
           placeholder="Search products..."
@@ -74,6 +85,22 @@ export default function Home() {
             outline: "none"
           }}
         />
+
+        {/* CATEGORY */}
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          style={{
+            padding: 10,
+            borderRadius: 5,
+            border: "none"
+          }}
+        >
+          <option value="all">All</option>
+          <option value="electronics">Electronics</option>
+          <option value="fashion">Fashion</option>
+          <option value="home">Home</option>
+        </select>
 
       </header>
 
@@ -107,7 +134,7 @@ export default function Home() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
               }}>
                 
-                {/* ✅ صورة المنتج (محسنة + fallback) */}
+                {/* IMAGE */}
                 <img
                   src={p.image || "/placeholder.png"}
                   alt={p.title || "Product"}
@@ -149,4 +176,4 @@ export default function Home() {
       </div>
     </div>
   );
-        }
+            }
