@@ -1,81 +1,76 @@
-🛡️ سياسة الأمان – متجر كولونلاين
+# 🛡️ Security Policy – Koloonline Amazon Store
 
-## 🔹 الإصدارات المدعومة
+## 🔐 Supported Versions
 
-نحن نوفر تحديثات أمنية للإصدار النشط فقط من المشروع.
+We only provide security updates for the latest production version of the project.
 
-| الإصدار | الحالة |
+| Version | Support |
 |--------|--------|
-| Production | ✅ مدعوم |
-| الإصدارات السابقة | ❌ غير مدعومة |
+| Production | ✅ Supported |
+| Older versions | ❌ Not supported |
 
 ---
 
-## 📝 الإبلاغ عن ثغرة أمنية
+## 🚨 Reporting a Vulnerability
 
-إذا اكتشفت ثغرة أمنية، يرجى الإبلاغ عنها بشكل مسؤول.
+If you discover a security vulnerability, please report it responsibly.
 
-### 📧 طريقة التواصل
-- عبر نموذج التواصل في الموقع:
-  /contact
-
-- أو البريد الإلكتروني (إذا تم تفعيله):
-  security@koloonline.online
+### 📧 Contact Methods:
+- Contact form: `/contact`
+- Email: Security@koloonline.online (if enabled)
 
 ---
 
-## 🔒 المعلومات المطلوبة عند الإبلاغ
+## 📋 Required Information
 
-يرجى تضمين:
+To help us investigate, please include:
 
-- وصف واضح للمشكلة  
-- خطوات إعادة الإنتاج  
-- الصفحة المتأثرة (مثال: /product, /cart)  
-- لقطات شاشة إن وجدت  
-
----
-
-## ⏳ وقت الاستجابة
-
-- الرد خلال 48 – 72 ساعة  
-- الثغرات الحرجة: أولوية فورية  
+- Clear description of the issue
+- Steps to reproduce
+- Affected page (e.g. `/product`, `/cart`)
+- Screenshots or proof of concept
 
 ---
 
-## ⚠️ ملاحظات أمنية مهمة
+## ⏱️ Response Time
 
-- المشروع عبارة عن واجهة أمامية (Frontend SaaS + Affiliate Tracking)  
-- لا يتم تخزين بيانات شخصية حساسة مثل كلمات المرور أو بيانات الدفع  
-- المدفوعات تتم عبر Amazon مباشرة  
-- التحليلات تتم عبر:
-  - Google Analytics (GA4)  
-  - Google Tag Manager (GTM)  
+We aim to respond within:
+**48 – 72 hours**
 
 ---
 
-## 📊 نطاق الأمان
+## 🔒 Security Scope
 
-### يشمل:
-- واجهة الموقع (UI)
-- نظام التتبع (Clicks / Events)
-- LocalStorage (Cart / Preferences)
+This project is a **frontend-based affiliate platform**, including:
 
-### لا يشمل:
-- خدمات Amazon الخارجية
-- خدمات Google Analytics / GTM
-- خدمات الاستضافة (Vercel)
+- Product display system
+- Affiliate tracking system
+- User interaction tracking (clicks/events)
+- Local storage (cart, preferences)
 
 ---
 
-## 🔐 مبدأ الخصوصية
+## 🧠 Important Notes
 
-الموقع لا يجمع بيانات شخصية حساسة مباشرة، ويستخدم فقط لأغراض التحليلات وتتبع الأداء وتحسين تجربة المستخدم.
+- No sensitive user data (passwords or payments) is stored
+- Payments and purchases are handled externally via Amazon
+- Analytics is handled via:
+  - Google Analytics (GA4)
+  - Google Tag Manager (GTM)
 
 ---
 
-## 🚀 الهدف الأمني
+## ⚙️ Infrastructure Security
 
-الحفاظ على:
-- أمان المستخدم  
-- شفافية التتبع  
-- حماية بيانات التحليلات
+The project relies on:
+
+- Firebase Firestore (data source)
+- Vercel (hosting platform)
+- Google services (analytics & tracking)
+
+---
+
+## 📌 Privacy
+
+We do not collect personal sensitive data.  
+Only anonymized analytics data is used to improve performance and user experience.
