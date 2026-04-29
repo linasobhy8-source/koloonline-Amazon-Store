@@ -27,23 +27,23 @@ export default function Dashboard() {
 
       const stats = statsSnap.exists() ? statsSnap.data() : {};
 
-      /* ================= PRODUCTS STATS ================= */
+      /* ================= PRODUCTS ================= */
       const productsSnap = await getDocs(collection(db, "analytics_products"));
 
-      const topProducts = productsSnap.docs.map((doc) => ({
+      let topProducts = productsSnap.docs.map((doc) => ({
         asin: doc.id,
         ...doc.data()
       }));
+
+      // 🔥 ترتيب حسب clicks (مهم جدًا)
+      topProducts.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
 
       /* ================= SET DATA ================= */
       setData({
         totalClicks: stats.totalClicks || 0,
         totalOrders: stats.totalOrders || 0,
         totalWhatsApp: stats.totalWhatsApp || 0,
-
-        // 💰 تقدير ربح (ممكن تغيريه بعدين)
         revenue: (stats.totalOrders || 0) * 12,
-
         topProducts
       });
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
         📊 Koloonline Analytics Dashboard
       </div>
 
-      {/* STATS CARDS */}
+      {/* STATS */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
@@ -86,9 +86,14 @@ export default function Dashboard() {
         <h2>🔥 Top Products</h2>
 
         {loading ? (
-          <p>Loading...</p>
+          <p>Loading dashboard...</p>
         ) : (
-          <table style={{ width: "100%", background: "white", borderRadius: 10 }}>
+          <table style={{
+            width: "100%",
+            background: "white",
+            borderRadius: 10,
+            overflow: "hidden"
+          }}>
             <thead>
               <tr style={{ background: "#232f3e", color: "white" }}>
                 <th>ASIN</th>
@@ -138,4 +143,4 @@ function Card({ title, value }) {
       <h2 style={{ color: "#ff9900" }}>{value}</h2>
     </div>
   );
-          }
+        }
