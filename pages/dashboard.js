@@ -10,32 +10,17 @@ export default function Dashboard() {
     topProducts: []
   });
 
-  const getCountry = () => {
-    const lang = navigator.language || "en-US";
-    if (lang.includes("ar")) return "EG";
-    if (lang.includes("en-CA")) return "CA";
-    if (lang.includes("pl")) return "PL";
-    return "US";
-  };
-
-  const trackEvent = (name, payload = {}) => {
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("event", name, payload);
-    }
-  };
-
   useEffect(() => {
-    trackEvent("dashboard_view", { country: getCountry() });
     loadAnalytics();
   }, []);
 
   async function loadAnalytics() {
     try {
-      // 🔥 1. إجمالي الإحصائيات من Firestore
+      // 🔥 إجمالي الإحصائيات
       const statsRef = doc(db, "analytics", "overview");
       const statsSnap = await getDoc(statsRef);
 
-      // 🔥 2. أفضل المنتجات
+      // 🔥 المنتجات
       const productsSnap = await getDocs(collection(db, "analytics_products"));
 
       const topProducts = productsSnap.docs.map(doc => doc.data());
@@ -47,26 +32,17 @@ export default function Dashboard() {
           totalClicks: stats.totalClicks || 0,
           totalOrders: stats.totalOrders || 0,
           totalWhatsApp: stats.totalWhatsApp || 0,
-          topProducts: topProducts || []
+          topProducts: topProducts
         });
       }
-
     } catch (err) {
       console.log("Dashboard error:", err);
     }
   }
 
-  const trackProduct = (asin) => {
-    trackEvent("affiliate_click", {
-      asin,
-      source: "dashboard"
-    });
-  };
-
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
 
-      {/* HEADER */}
       <div style={{
         background: "#131921",
         color: "white",
@@ -76,34 +52,18 @@ export default function Dashboard() {
         📊 Koloonline Dashboard
       </div>
 
-      {/* NAV */}
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 15,
-        background: "#232f3e",
-        padding: 10
-      }}>
-        <a href="/" style={{ color: "white" }}>Store</a>
-        <a href="/dashboard" style={{ color: "white" }}>Dashboard</a>
-      </div>
-
-      {/* STATS */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
         gap: 15,
         padding: 20
       }}>
-
         <Card title="Clicks" value={data.totalClicks} />
         <Card title="Orders" value={data.totalOrders} />
         <Card title="WhatsApp" value={data.totalWhatsApp} />
         <Card title="Revenue" value={`$${data.totalOrders * 12}`} />
-
       </div>
 
-      {/* TABLE */}
       <div style={{ padding: 20 }}>
         <table style={{ width: "100%", background: "white" }}>
           <thead>
@@ -124,11 +84,7 @@ export default function Dashboard() {
               </tr>
             ) : (
               data.topProducts.map((p) => (
-                <tr
-                  key={p.asin}
-                  onClick={() => trackProduct(p.asin)}
-                  style={{ cursor: "pointer", textAlign: "center" }}
-                >
+                <tr key={p.asin} style={{ textAlign: "center" }}>
                   <td>{p.asin}</td>
                   <td>{p.clicks}</td>
                   <td>{p.orders}</td>
@@ -156,4 +112,4 @@ function Card({ title, value }) {
       <h2 style={{ color: "#ff9900" }}>{value}</h2>
     </div>
   );
-        }
+          }
