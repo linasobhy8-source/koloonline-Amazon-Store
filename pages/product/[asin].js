@@ -23,6 +23,7 @@ export default function Product() {
 
         const data = snap.docs.map((doc) => ({
           id: doc.id,
+          asin: doc.id, // 🔥 أهم سطر (الحل)
           ...doc.data(),
         }));
 
@@ -89,16 +90,26 @@ export default function Product() {
       {/* ================= PRODUCT ================= */}
       <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
 
+        {/* ✅ صورة محسنة + fallback */}
         <img
-          src={product.image}
+          src={product.image || "/placeholder.png"}
           alt={product.title}
-          style={{ width: "100%", maxWidth: 300 }}
+          style={{
+            width: "100%",
+            maxWidth: 300,
+            borderRadius: 10,
+            background: "#eee"
+          }}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/placeholder.png";
+          }}
         />
 
         <h1>{product.title}</h1>
         <p style={{ fontSize: 18 }}>${product.price}</p>
 
-        {/* 🔥 AMAZON BUTTON (MODIFIED) */}
+        {/* 🔥 AMAZON BUTTON */}
         <button
           onClick={() => {
             const link =
@@ -139,7 +150,15 @@ export default function Product() {
                 padding: 10,
                 borderRadius: 8,
               }}>
-                <img src={p.image} style={{ width: "100%" }} />
+                
+                <img
+                  src={p.image || "/placeholder.png"}
+                  style={{ width: "100%", borderRadius: 6 }}
+                  onError={(e) => {
+                    e.target.src = "/placeholder.png";
+                  }}
+                />
+
                 <p style={{ fontSize: 12 }}>{p.title}</p>
 
                 <button
@@ -150,6 +169,7 @@ export default function Product() {
                     background: "#131921",
                     color: "white",
                     border: "none",
+                    cursor: "pointer"
                   }}
                 >
                   View
@@ -161,4 +181,4 @@ export default function Product() {
 
     </div>
   );
-            }
+}
