@@ -16,6 +16,7 @@ export default function Home() {
         const snap = await getDocs(collection(db, "products"));
         const data = snap.docs.map((doc) => ({
           id: doc.id,
+          asin: doc.id, // 🔥 مهم جدًا
           ...doc.data(),
         }));
         setProducts(data);
@@ -82,7 +83,7 @@ export default function Home() {
         padding: 10,
         color: "white"
       }}>
-        <Link href="/">Home</Link>
+        <Link href="/" style={{ color: "white" }}>Home</Link>
       </nav>
 
       {/* ================= CONTENT ================= */}
@@ -102,13 +103,26 @@ export default function Home() {
               <div key={p.id} style={{
                 background: "white",
                 padding: 12,
-                borderRadius: 10
+                borderRadius: 10,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
               }}>
                 
+                {/* ✅ صورة المنتج (محسنة + fallback) */}
                 <img
-                  src={p.image}
-                  alt={p.title}
-                  style={{ width: "100%", height: 180, objectFit: "cover" }}
+                  src={p.image || "/placeholder.png"}
+                  alt={p.title || "Product"}
+                  loading="lazy"
+                  style={{
+                    width: "100%",
+                    height: 180,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    background: "#eee"
+                  }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/placeholder.png";
+                  }}
                 />
 
                 <h3>{p.title}</h3>
@@ -120,7 +134,8 @@ export default function Home() {
                     padding: 10,
                     background: "#ff9900",
                     border: "none",
-                    marginTop: 8
+                    marginTop: 8,
+                    cursor: "pointer"
                   }}>
                     View Product
                   </button>
@@ -134,4 +149,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
+        }
