@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [suggestions, setSuggestions] = useState([]);
@@ -60,19 +61,13 @@ export default function Home() {
     return searchMatch && categoryMatch;
   });
 
-  const trackEvent = (name, data = {}) => {
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("event", name, data);
-    }
-  };
-
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
       {/* ================= SEO ================= */}
       <Head>
         <title>Koloonline Amazon Store</title>
-        <meta name="description" content="Best Amazon Affiliate Store with Smart Deals and Offers" />
+        <meta name="description" content="Best Amazon Affiliate Store" />
       </Head>
 
       {/* ================= HEADER ================= */}
@@ -96,7 +91,7 @@ export default function Home() {
 
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder="Search Amazon products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -107,7 +102,7 @@ export default function Home() {
             }}
           />
 
-          {/* 🔥 SUGGESTIONS */}
+          {/* SUGGESTIONS */}
           {suggestions.length > 0 && (
             <div style={{
               position: "absolute",
@@ -163,7 +158,7 @@ export default function Home() {
       <div style={{ padding: 20 }}>
 
         {loading ? (
-          <p>Loading...</p>
+          <p>Loading products...</p>
         ) : filtered.length === 0 ? (
           <p>No products found</p>
         ) : (
@@ -179,6 +174,7 @@ export default function Home() {
                 borderRadius: 10
               }}>
                 
+                {/* IMAGE */}
                 <img
                   src={p.image}
                   style={{ width: "100%", height: 180, objectFit: "cover" }}
@@ -187,6 +183,7 @@ export default function Home() {
                 <h3>{p.title}</h3>
                 <p>${p.price}</p>
 
+                {/* VIEW PRODUCT */}
                 <Link href={`/product/${p.asin}`}>
                   <button style={{
                     width: "100%",
@@ -199,6 +196,7 @@ export default function Home() {
                   </button>
                 </Link>
 
+                {/* AMAZON LINK */}
                 <button
                   onClick={() => window.open(p.link, "_blank")}
                   style={{
@@ -221,4 +219,4 @@ export default function Home() {
       </div>
     </div>
   );
-            }
+                    }
