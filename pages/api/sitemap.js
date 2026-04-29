@@ -4,6 +4,7 @@ import { collection, getDocs } from "firebase/firestore";
 export default async function handler(req, res) {
   try {
     const baseUrl = "https://koloonline.online";
+    const now = new Date().toISOString();
 
     const snap = await getDocs(collection(db, "products"));
     const products = snap.docs.map((doc) => doc.data());
@@ -11,30 +12,30 @@ export default async function handler(req, res) {
     let urls = `
       <url>
         <loc>${baseUrl}</loc>
-        <lastmod>${new Date().toISOString()}</lastmod>
+        <lastmod>${now}</lastmod>
         <priority>1.0</priority>
       </url>
 
       <url>
         <loc>${baseUrl}/blog</loc>
-        <lastmod>${new Date().toISOString()}</lastmod>
+        <lastmod>${now}</lastmod>
         <priority>0.8</priority>
       </url>
 
       <url>
         <loc>${baseUrl}/contact</loc>
-        <lastmod>${new Date().toISOString()}</lastmod>
+        <lastmod>${now}</lastmod>
         <priority>0.7</priority>
       </url>
     `;
 
     products.forEach((p) => {
-      if (!p.asin) return;
+      if (!p?.asin) return;
 
       urls += `
         <url>
           <loc>${baseUrl}/product/${p.asin}</loc>
-          <lastmod>${new Date().toISOString()}</lastmod>
+          <lastmod>${now}</lastmod>
           <priority>0.9</priority>
         </url>
       `;
