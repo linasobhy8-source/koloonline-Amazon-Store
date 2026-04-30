@@ -1,8 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/sync-products?q=amazon%20gadgets",
+      "path": "/api/auto-sync?q=electronics",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/auto-sync?q=fashion",
+      "schedule": "30 */6 * * *"
     }
   ]
 }
