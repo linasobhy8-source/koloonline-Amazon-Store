@@ -5,6 +5,8 @@ import {
   getDocs,
   query,
   limit,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebase-config";
 import Link from "next/link";
@@ -17,17 +19,53 @@ export default function Home() {
   const [category, setCategory] = useState("all");
   const [tab, setTab] = useState("trending");
 
-  /* ================= FETCH ================= */
+  /* ================= FETCH + ANALYTICS ================= */
   useEffect(() => {
     const fetchProducts = async () => {
       const q = query(collection(db, "products"), limit(80));
       const snap = await getDocs(q);
 
-      const data = snap.docs.map((doc) => ({
-        id: doc.id,
-        asin: doc.id,
-        ...doc.data(),
-      }));
+      const data = await Promise.all(
+        snap.docs.map(async (docItem) => {
+          const product = {
+            id: docItem.id,
+            asin: docItem.id,
+            ...docItem.data(),
+          };
+
+          /* 🔥 جلب analytics */
+          try {
+            const ref = doc(db, "analytics_products", product.asin);
+            const analytics = await getDoc(ref);
+
+            if (analytics.exists()) {
+              const a = analytics.data();
+              product.clicks = a.clicks || 0;
+              product.orders = a.orders || 0;
+            } else {
+              product.clicks = 0;
+              product.orders = 0;
+            }
+          } catch {
+            product.clicks = 0;
+            product.orders = 0;
+          }
+
+          /* 🔥 SMART SCORE */
+          const price = Number(product.price) || 0;
+
+          let score =
+            product.clicks * 0.5 +
+            product.orders * 1.5;
+
+          if (price < 50) score += 5;
+          if (price < 20) score += 3;
+
+          product.score = score;
+
+          return product;
+        })
+      );
 
       setProducts(data);
       setLoading(false);
@@ -48,11 +86,10 @@ export default function Home() {
     });
   }, [products, search, category]);
 
-  /* ================= AMAZON RANKING ================= */
+  /* ================= SMART RANKING ================= */
 
-  // 🔥 أهم تعديل (Score بدل clicks/orders)
   const trending = [...filtered]
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .sort((a, b) => b.score - a.score)
     .slice(0, 12);
 
   const bestSellers = [...filtered]
@@ -82,29 +119,12 @@ export default function Home() {
           name="description"
           content="Amazon affiliate store with trending products and best deals."
         />
-        <meta name="robots" content="index, follow" />
 
         <meta property="og:title" content="Koloonline Amazon Store" />
-        <meta
-          property="og:description"
-          content="Best Amazon deals updated daily"
-        />
-        <meta
-          property="og:image"
-          content="https://i.postimg.cc/9fVfC1Y4/1000276862.png"
-        />
+        <meta property="og:image" content="https://i.postimg.cc/9fVfC1Y4/1000276862.png" />
         <meta property="og:url" content="https://koloonline.online" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Koloonline Amazon Store" />
-        <meta
-          name="twitter:description"
-          content="Best Amazon Deals Updated Daily"
-        />
-        <meta
-          name="twitter:image"
-          content="https://i.postimg.cc/9fVfC1Y4/1000276862.png"
-        />
       </Head>
 
       {/* ================= HEADER ================= */}
@@ -130,21 +150,9 @@ export default function Home() {
 
       {/* ================= TABS ================= */}
       <div style={tabsStyle}>
-        <Tab
-          label="🔥 Trending"
-          active={tab === "trending"}
-          onClick={() => setTab("trending")}
-        />
-        <Tab
-          label="💰 Best Sellers"
-          active={tab === "bestsellers"}
-          onClick={() => setTab("bestsellers")}
-        />
-        <Tab
-          label="⚡ Deals"
-          active={tab === "deals"}
-          onClick={() => setTab("deals")}
-        />
+        <Tab label="🔥 Trending" active={tab==="trending"} onClick={()=>setTab("trending")} />
+        <Tab label="💰 Best Sellers" active={tab==="bestsellers"} onClick={()=>setTab("bestsellers")} />
+        <Tab label="⚡ Deals" active={tab==="deals"} onClick={()=>setTab("deals")} />
       </div>
 
       {/* ================= PRODUCTS ================= */}
@@ -162,15 +170,10 @@ export default function Home() {
 
                 <p style={priceStyle}>${p.price}</p>
 
-                {/* 🔥 Top Rated Badge */}
-                {p.score > 6 && (
-                  <span style={topBadge}>⭐ Top Rated</span>
-                )}
-
-                {/* 🔥 Best Seller Badge */}
-                {p.orders > 5 && (
-                  <span style={badge}>🔥 Best Seller</span>
-                )}
+                {/* 🔥 SMART BADGES */}
+                {p.score > 8 && <span style={topBadge}>⭐ Top Rated</span>}
+                {p.orders > 3 && <span style={badge}>🔥 Best Seller</span>}
+                {p.score > 12 && <span style={badge}>🚀 Trending</span>}
 
                 <Link href={`/product/${p.asin}`}>
                   <button
