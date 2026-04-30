@@ -8,7 +8,7 @@ export default function Dashboard() {
     totalOrders: 0,
     totalWhatsApp: 0,
     revenue: 0,
-    topProducts: []
+    topProducts: [],
   });
 
   const [loading, setLoading] = useState(true);
@@ -27,104 +27,132 @@ export default function Dashboard() {
 
       const stats = statsSnap.exists() ? statsSnap.data() : {};
 
-      /* ================= PRODUCTS ================= */
-      const productsSnap = await getDocs(collection(db, "analytics_products"));
+      /* ================= PRODUCTS ANALYTICS ================= */
+      const productsSnap = await getDocs(
+        collection(db, "analytics_products")
+      );
 
       let topProducts = productsSnap.docs.map((doc) => ({
         asin: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
-      // 🔥 ترتيب حسب clicks (مهم جدًا)
-      topProducts.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+      // ترتيب حسب الأداء الحقيقي
+      topProducts.sort(
+        (a, b) =>
+          (b.clicks || 0) + (b.orders || 0) * 3 -
+          ((a.clicks || 0) + (a.orders || 0) * 3)
+      );
 
-      /* ================= SET DATA ================= */
+      /* ================= SET STATE ================= */
       setData({
         totalClicks: stats.totalClicks || 0,
         totalOrders: stats.totalOrders || 0,
         totalWhatsApp: stats.totalWhatsApp || 0,
-        revenue: (stats.totalOrders || 0) * 12,
-        topProducts
-      });
 
+        // 💰 تقدير أرباح (قابل للتعديل)
+        revenue: (stats.totalOrders || 0) * 10,
+
+        topProducts: topProducts.slice(0, 10),
+      });
     } catch (err) {
-      console.log("Dashboard error:", err);
+      console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
-
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
       {/* HEADER */}
-      <div style={{
-        background: "#131921",
-        color: "white",
-        padding: 15,
-        textAlign: "center",
-        fontSize: 20
-      }}>
+      <div
+        style={{
+          background: "#131921",
+          color: "white",
+          padding: 15,
+          textAlign: "center",
+          fontSize: 20,
+          fontWeight: "bold",
+        }}
+      >
         📊 Koloonline Analytics Dashboard
       </div>
 
       {/* STATS */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-        gap: 15,
-        padding: 20
-      }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+          gap: 15,
+          padding: 20,
+        }}
+      >
         <Card title="Clicks" value={data.totalClicks} />
         <Card title="Orders" value={data.totalOrders} />
         <Card title="WhatsApp" value={data.totalWhatsApp} />
-        <Card title="Revenue" value={`$${data.revenue}`} />
+        <Card title="Revenue ($)" value={data.revenue} />
       </div>
 
       {/* TOP PRODUCTS */}
       <div style={{ padding: 20 }}>
-        <h2>🔥 Top Products</h2>
+        <h2>🔥 Top Performing Products</h2>
 
         {loading ? (
           <p>Loading dashboard...</p>
         ) : (
-          <table style={{
-            width: "100%",
-            background: "white",
-            borderRadius: 10,
-            overflow: "hidden"
-          }}>
-            <thead>
-              <tr style={{ background: "#232f3e", color: "white" }}>
-                <th>ASIN</th>
-                <th>Clicks</th>
-                <th>Orders</th>
-                <th>WhatsApp</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {data.topProducts.length === 0 ? (
-                <tr>
-                  <td colSpan="4" style={{ textAlign: "center", padding: 20 }}>
-                    No data yet
-                  </td>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                background: "white",
+                borderRadius: 10,
+                overflow: "hidden",
+                minWidth: 600,
+              }}
+            >
+              <thead>
+                <tr style={{ background: "#232f3e", color: "white" }}>
+                  <th style={{ padding: 10 }}>ASIN</th>
+                  <th>Clicks</th>
+                  <th>Orders</th>
+                  <th>WhatsApp</th>
                 </tr>
-              ) : (
-                data.topProducts.map((p) => (
-                  <tr key={p.asin} style={{ textAlign: "center" }}>
-                    <td>{p.asin}</td>
-                    <td>{p.clicks || 0}</td>
-                    <td>{p.orders || 0}</td>
-                    <td>{p.whatsapp || 0}</td>
+              </thead>
+
+              <tbody>
+                {data.topProducts.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      style={{ textAlign: "center", padding: 20 }}
+                    >
+                      No data yet
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  data.topProducts.map((p) => (
+                    <tr
+                      key={p.asin}
+                      style={{ textAlign: "center", borderBottom: "1px solid #eee" }}
+                    >
+                      <td style={{ padding: 10 }}>{p.asin}</td>
+                      <td>{p.clicks || 0}</td>
+                      <td>{p.orders || 0}</td>
+                      <td>{p.whatsapp || 0}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-
     </div>
   );
 }
@@ -132,15 +160,17 @@ export default function Dashboard() {
 /* ================= CARD ================= */
 function Card({ title, value }) {
   return (
-    <div style={{
-      background: "white",
-      padding: 20,
-      borderRadius: 10,
-      textAlign: "center",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-    }}>
-      <p style={{ color: "#777" }}>{title}</p>
-      <h2 style={{ color: "#ff9900" }}>{value}</h2>
+    <div
+      style={{
+        background: "white",
+        padding: 20,
+        borderRadius: 10,
+        textAlign: "center",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+      }}
+    >
+      <p style={{ color: "#777", margin: 0 }}>{title}</p>
+      <h2 style={{ color: "#ff9900", margin: 0 }}>{value}</h2>
     </div>
   );
-        }
+          }
