@@ -50,6 +50,7 @@ export default function Product() {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /* ================= FETCH ================= */
   useEffect(() => {
     if (!router.isReady) return;
 
@@ -75,18 +76,69 @@ export default function Product() {
     fetchData();
   }, [router.isReady, asin]);
 
-  if (loading) return <p>Loading...</p>;
-  if (!product) return <p>Not Found</p>;
+  if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
+  if (!product) return <p style={{ padding: 20 }}>Not Found</p>;
+
+  const buyLink = product.link || getAffiliateLink(product.asin);
 
   return (
-    <div style={{ fontFamily: "Arial" }}>
+    <div style={{ fontFamily: "Arial", background: "#fff" }}>
 
+      {/* ================= SEO ================= */}
       <Head>
-        <title>{product.title}</title>
+        <title>{product.title} | Koloonline Store</title>
+        <meta name="description" content={product.description || product.title} />
+        <meta name="keywords" content={`${product.title}, amazon deal, buy online, best price`} />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="canonical" href={`https://koloonline.online/product/${product.asin}`} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={product.title} />
+        <meta property="og:description" content={product.description || product.title} />
+        <meta property="og:image" content={product.image || "/placeholder.png"} />
+        <meta property="og:url" content={`https://koloonline.online/product/${product.asin}`} />
+        <meta property="og:site_name" content="Koloonline Store" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={product.title} />
+        <meta name="twitter:description" content={product.description || product.title} />
+        <meta name="twitter:image" content={product.image || "/placeholder.png"} />
+
+        {/* Schema Markup */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.title,
+            image: product.image,
+            description: product.description || product.title,
+            brand: {
+              "@type": "Brand",
+              name: "Amazon",
+            },
+            offers: {
+              "@type": "Offer",
+              price: product.price,
+              priceCurrency: "USD",
+              availability: "https://schema.org/InStock",
+              url: `https://koloonline.online/product/${product.asin}`,
+            },
+          })}
+        </script>
       </Head>
 
-      {/* PRODUCT */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: 30, gap: 20 }}>
+      {/* ================= PRODUCT ================= */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        padding: 30,
+        gap: 20,
+        maxWidth: 1200,
+        margin: "auto"
+      }}>
 
         <img
           src={product.image || "/placeholder.png"}
@@ -102,10 +154,7 @@ export default function Product() {
           <button
             onClick={() => {
               trackEvent("amazon_click", product);
-              window.open(
-                product.link || getAffiliateLink(product.asin),
-                "_blank"
-              );
+              window.open(buyLink, "_blank");
             }}
             style={{
               width: "100%",
@@ -122,7 +171,7 @@ export default function Product() {
         </div>
       </div>
 
-      {/* RELATED */}
+      {/* ================= RELATED ================= */}
       <div style={{ padding: 20 }}>
         <h2>Related Products</h2>
 
@@ -132,13 +181,12 @@ export default function Product() {
           gap: 10
         }}>
           {allProducts.slice(0, 6).map((p) => (
-            <div key={p.id} style={{ background: "#fff", padding: 10, borderRadius: 8 }}>
-
-              <img
-                src={p.image || "/placeholder.png"}
-                style={{ width: "100%" }}
-              />
-
+            <div key={p.id} style={{
+              background: "#fff",
+              padding: 10,
+              borderRadius: 8
+            }}>
+              <img src={p.image || "/placeholder.png"} style={{ width: "100%" }} />
               <p>{p.title}</p>
 
               <button
@@ -154,7 +202,6 @@ export default function Product() {
               >
                 View
               </button>
-
             </div>
           ))}
         </div>
@@ -162,4 +209,4 @@ export default function Product() {
 
     </div>
   );
-        }
+    }
