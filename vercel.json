@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync-products?q=amazon%20gadgets",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
