@@ -1,20 +1,28 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-/* 🔥 Firebase Config */
+/* =========================
+   Firebase Config (PRO)
+========================= */
 const firebaseConfig = {
-  apiKey: "AIzaSyBlLFhmWdhqjf62VraY0yT9UgcaAn6jnhI",
-  authDomain: "onlinekoloonlineonline-a9979.firebaseapp.com",
-  projectId: "onlinekoloonlineonline-a9979",
-  storageBucket: "onlinekoloonlineonline-a9979.firebasestorage.app",
-  messagingSenderId: "1051818718615",
-  appId: "1:1051818718615:web:9d3fd0d26d902082b3c0d2"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/* 🔥 Init Firebase */
-const app = initializeApp(firebaseConfig);
+/* =========================
+   Prevent re-init (Next.js fix)
+========================= */
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApp();
 
-/* 🔥 Firestore */
+/* =========================
+   Firestore DB
+========================= */
 const db = getFirestore(app);
 
 export { db };
