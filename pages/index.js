@@ -1,10 +1,10 @@
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   collection,
   getDocs,
   query,
-  limit
+  limit,
 } from "firebase/firestore";
 import { db } from "../firebase-config";
 import Link from "next/link";
@@ -16,9 +16,10 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
 
+  /* ================= FETCH ================= */
   useEffect(() => {
     const fetchProducts = async () => {
-      const q = query(collection(db, "products"), limit(20));
+      const q = query(collection(db, "products"), limit(50));
       const snap = await getDocs(q);
 
       const data = snap.docs.map((doc) => ({
@@ -34,29 +35,43 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = category === "all" || p.category === category;
-    return matchSearch && matchCategory;
-  });
+  /* ================= FILTER ================= */
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
+      const matchCategory = category === "all" || p.category === category;
+      return matchSearch && matchCategory;
+    });
+  }, [products, search, category]);
 
+  /* ================= SECTIONS ================= */
+  const trending = [...filtered].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 6);
+  const bestSellers = [...filtered].sort((a, b) => (b.orders || 0) - (a.orders || 0)).slice(0, 6);
+  const deals = [...filtered].filter((p) => p.price < 50).slice(0, 6);
+
+  /* ================= UI ================= */
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
       <Head>
-        <title>Koloonline Store</title>
-        <meta name="description" content="Best Deals Store" />
+        <title>Koloonline Store - Best Deals & Trending Products</title>
+        <meta name="description" content="Best Amazon Affiliate Store" />
       </Head>
 
       {/* HEADER */}
-      <header style={{ background: "#131921", color: "white", padding: 15 }}>
-        <h3>🛒 Koloonline Store</h3>
+      <header style={{
+        background: "#131921",
+        color: "white",
+        padding: 15,
+        fontSize: 18
+      }}>
+        🛒 Koloonline Store
       </header>
 
       {/* SEARCH */}
       <div style={{ display: "flex", gap: 10, padding: 10 }}>
         <input
-          placeholder="Search..."
+          placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 1, padding: 10 }}
@@ -69,88 +84,82 @@ export default function Home() {
         </select>
       </div>
 
-      {/* PRODUCTS */}
+      {/* ================= SECTIONS UI ================= */}
+
+      <Section title="🔥 Trending Now" items={trending} />
+      <Section title="💰 Best Sellers" items={bestSellers} />
+      <Section title="⚡ Deals Under $50" items={deals} />
+
+    </div>
+  );
+}
+
+/* ================= SECTION COMPONENT ================= */
+function Section({ title, items }) {
+  return (
+    <div style={{ padding: 20 }}>
+      <h2>{title}</h2>
+
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-        gap: 15,
-        padding: 20
+        gap: 15
       }}>
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          filtered.map((p) => (
-            <div key={p.id} style={{
-              background: "white",
-              padding: 12,
-              borderRadius: 10
-            }}>
+        {items.map((p) => (
+          <div key={p.id} style={{
+            background: "white",
+            padding: 12,
+            borderRadius: 10
+          }}>
 
-              {/* ✅ IMAGE FIXED */}
-              <img
-                src={p.image || "/placeholder.png"}
-                alt={p.title || "product"}
-                loading="lazy"
-                style={{
-                  width: "100%",
-                  height: 180,
-                  objectFit: "cover",
-                  borderRadius: 8,
-                  background: "#eee"
-                }}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/placeholder.png";
-                }}
-              />
+            <img
+              src={p.image || "/placeholder.png"}
+              style={{
+                width: "100%",
+                height: 180,
+                objectFit: "cover",
+                borderRadius: 8
+              }}
+            />
 
-              <h3>{p.title}</h3>
-              <p>${p.price}</p>
+            <h3>{p.title}</h3>
+            <p>${p.price}</p>
 
-              {/* VIEW */}
-              <Link href={`/product/${p.asin}`}>
-                <button
-                  onClick={() => trackEvent("click", p)}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    background: "#ff9900",
-                    border: "none",
-                    marginTop: 8
-                  }}
-                >
-                  View Product
-                </button>
-              </Link>
-
-              {/* BUY */}
+            <Link href={`/product/${p.asin}`}>
               <button
-                onClick={() => {
-                  trackEvent("order", p);
-
-                  const link =
-                    p.link ||
-                    `https://www.amazon.com/dp/${p.asin}?tag=koloonlinesto-20`;
-
-                  window.open(link, "_blank");
-                }}
+                onClick={() => trackEvent("click", p)}
                 style={{
                   width: "100%",
                   padding: 10,
-                  background: "#25D366",
-                  color: "white",
+                  background: "#ff9900",
                   border: "none",
                   marginTop: 8
                 }}
               >
-                Buy Now
+                View Product
               </button>
+            </Link>
 
-            </div>
-          ))
-        )}
+            <button
+              onClick={() => {
+                trackEvent("order", p);
+                window.open(p.link, "_blank");
+              }}
+              style={{
+                width: "100%",
+                padding: 10,
+                background: "#25D366",
+                color: "white",
+                border: "none",
+                marginTop: 8
+              }}
+            >
+              Buy Now
+            </button>
+
+          </div>
+        ))}
       </div>
-
     </div>
   );
-        }
+            }
