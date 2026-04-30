@@ -80,19 +80,37 @@ export default function Home() {
           <p>Loading...</p>
         ) : (
           filtered.map((p) => (
-            <div key={p.id} style={{ background: "white", padding: 12, borderRadius: 10 }}>
+            <div key={p.id} style={{
+              background: "white",
+              padding: 12,
+              borderRadius: 10
+            }}>
 
+              {/* ✅ IMAGE FIXED */}
               <img
-                src={p.image}
-                style={{ width: "100%", height: 180, objectFit: "cover" }}
+                src={p.image || "/placeholder.png"}
+                alt={p.title || "product"}
+                loading="lazy"
+                style={{
+                  width: "100%",
+                  height: 180,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  background: "#eee"
+                }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/placeholder.png";
+                }}
               />
 
               <h3>{p.title}</h3>
               <p>${p.price}</p>
 
+              {/* VIEW */}
               <Link href={`/product/${p.asin}`}>
                 <button
-                  onClick={() => trackEvent("product_click", p)}
+                  onClick={() => trackEvent("click", p)}
                   style={{
                     width: "100%",
                     padding: 10,
@@ -105,10 +123,16 @@ export default function Home() {
                 </button>
               </Link>
 
+              {/* BUY */}
               <button
                 onClick={() => {
-                  trackEvent("amazon_click", p);
-                  window.open(p.link, "_blank");
+                  trackEvent("order", p);
+
+                  const link =
+                    p.link ||
+                    `https://www.amazon.com/dp/${p.asin}?tag=koloonlinesto-20`;
+
+                  window.open(link, "_blank");
                 }}
                 style={{
                   width: "100%",
@@ -129,4 +153,4 @@ export default function Home() {
 
     </div>
   );
-            }
+        }
