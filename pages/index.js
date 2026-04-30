@@ -45,17 +45,56 @@ export default function Home() {
   }, [products, search, category]);
 
   /* ================= SECTIONS ================= */
-  const trending = [...filtered].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 6);
-  const bestSellers = [...filtered].sort((a, b) => (b.orders || 0) - (a.orders || 0)).slice(0, 6);
-  const deals = [...filtered].filter((p) => p.price < 50).slice(0, 6);
+  const trending = [...filtered]
+    .sort((a, b) => (b.clicks || 0) - (a.clicks || 0))
+    .slice(0, 6);
 
-  /* ================= UI ================= */
+  const bestSellers = [...filtered]
+    .sort((a, b) => (b.orders || 0) - (a.orders || 0))
+    .slice(0, 6);
+
+  const deals = [...filtered]
+    .filter((p) => p.price < 50)
+    .slice(0, 6);
+
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
+      {/* ================= SEO HEAD (PRO) ================= */}
       <Head>
-        <title>Koloonline Store - Best Deals & Trending Products</title>
-        <meta name="description" content="Best Amazon Affiliate Store" />
+        <title>Koloonline Store | Trending Amazon Deals & Best Sellers 2026</title>
+        <meta name="description" content="Discover trending Amazon products, best sellers, and exclusive deals under $50. Updated daily with smart recommendations." />
+        <meta name="keywords" content="amazon deals, trending products, best sellers, cheap products, online shopping, affiliate store" />
+        <meta name="robots" content="index, follow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        {/* Open Graph */}
+        <meta property="og:title" content="Koloonline Store - Best Amazon Deals" />
+        <meta property="og:description" content="Trending Amazon products and best deals updated daily." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/placeholder.png" />
+        <meta property="og:url" content="https://koloonline.online" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Koloonline Store" />
+        <meta name="twitter:description" content="Best Amazon Affiliate Deals & Trending Products" />
+        <meta name="twitter:image" content="/placeholder.png" />
+
+        {/* Structured Data (SEO Boost 🚀) */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Koloonline Store",
+            url: "https://koloonline.online",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: "https://koloonline.online/?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          })}
+        </script>
       </Head>
 
       {/* HEADER */}
@@ -84,8 +123,7 @@ export default function Home() {
         </select>
       </div>
 
-      {/* ================= SECTIONS UI ================= */}
-
+      {/* SECTIONS */}
       <Section title="🔥 Trending Now" items={trending} />
       <Section title="💰 Best Sellers" items={bestSellers} />
       <Section title="⚡ Deals Under $50" items={deals} />
@@ -94,7 +132,7 @@ export default function Home() {
   );
 }
 
-/* ================= SECTION COMPONENT ================= */
+/* ================= SECTION ================= */
 function Section({ title, items }) {
   return (
     <div style={{ padding: 20 }}>
@@ -162,4 +200,4 @@ function Section({ title, items }) {
       </div>
     </div>
   );
-            }
+        }
