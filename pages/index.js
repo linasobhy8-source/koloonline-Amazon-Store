@@ -48,14 +48,11 @@ export default function Home() {
     });
   }, [products, search, category]);
 
-  /* ================= SMART SORT ================= */
+  /* ================= AMAZON RANKING ================= */
+
+  // 🔥 أهم تعديل (Score بدل clicks/orders)
   const trending = [...filtered]
-    .sort(
-      (a, b) =>
-        (b.clicks || 0) * 0.6 +
-        (b.orders || 0) * 0.4 -
-        ((a.clicks || 0) * 0.6 + (a.orders || 0) * 0.4)
-    )
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 12);
 
   const bestSellers = [...filtered]
@@ -165,6 +162,12 @@ export default function Home() {
 
                 <p style={priceStyle}>${p.price}</p>
 
+                {/* 🔥 Top Rated Badge */}
+                {p.score > 6 && (
+                  <span style={topBadge}>⭐ Top Rated</span>
+                )}
+
+                {/* 🔥 Best Seller Badge */}
                 {p.orders > 5 && (
                   <span style={badge}>🔥 Best Seller</span>
                 )}
@@ -201,14 +204,17 @@ export default function Home() {
 /* ================= TAB ================= */
 function Tab({ label, active, onClick }) {
   return (
-    <button onClick={onClick} style={{
-      padding: "10px 15px",
-      border: "none",
-      cursor: "pointer",
-      background: active ? "#ff9900" : "#eee",
-      fontWeight: "bold",
-      borderRadius: 5
-    }}>
+    <button
+      onClick={onClick}
+      style={{
+        padding: "10px 15px",
+        border: "none",
+        cursor: "pointer",
+        background: active ? "#ff9900" : "#eee",
+        fontWeight: "bold",
+        borderRadius: 5,
+      }}
+    >
       {label}
     </button>
   );
@@ -220,58 +226,58 @@ const headerStyle = {
   color: "white",
   padding: 15,
   fontSize: 22,
-  fontWeight: "bold"
+  fontWeight: "bold",
 };
 
 const searchBar = {
   display: "flex",
   gap: 10,
   padding: 10,
-  background: "white"
+  background: "white",
 };
 
 const inputStyle = {
   flex: 1,
   padding: 10,
-  borderRadius: 5
+  borderRadius: 5,
 };
 
 const tabsStyle = {
   display: "flex",
   gap: 10,
   padding: 10,
-  background: "white"
+  background: "white",
 };
 
 const gridStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))",
-  gap: 15
+  gap: 15,
 };
 
 const cardStyle = {
   background: "white",
   padding: 12,
   borderRadius: 10,
-  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
 };
 
 const imgStyle = {
   width: "100%",
   height: 180,
   objectFit: "cover",
-  borderRadius: 8
+  borderRadius: 8,
 };
 
 const titleStyle = {
   fontSize: 14,
   height: 40,
-  overflow: "hidden"
+  overflow: "hidden",
 };
 
 const priceStyle = {
   fontWeight: "bold",
-  color: "#B12704"
+  color: "#B12704",
 };
 
 const btnOrange = {
@@ -280,7 +286,7 @@ const btnOrange = {
   background: "#ff9900",
   border: "none",
   marginTop: 8,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const btnGreen = {
@@ -290,7 +296,7 @@ const btnGreen = {
   color: "white",
   border: "none",
   marginTop: 8,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const badge = {
@@ -300,5 +306,15 @@ const badge = {
   color: "white",
   padding: "2px 6px",
   borderRadius: 5,
-  marginBottom: 5
+  marginBottom: 5,
+};
+
+const topBadge = {
+  display: "inline-block",
+  fontSize: 10,
+  background: "#007185",
+  color: "white",
+  padding: "2px 6px",
+  borderRadius: 5,
+  marginBottom: 5,
 };
