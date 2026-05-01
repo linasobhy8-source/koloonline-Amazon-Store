@@ -16,6 +16,7 @@
       "path": "/api/auto-sync?q=home",
       "schedule": "10 */6 * * *"
     },
+
     {
       "path": "/api/ai-learning-engine",
       "schedule": "0 */4 * * *"
@@ -23,6 +24,11 @@
     {
       "path": "/api/ai-learning-engine?mode=deep",
       "schedule": "30 */8 * * *"
+    },
+
+    {
+      "path": "/api/neural-ranking-engine-v2",
+      "schedule": "15 */2 * * *"
     }
   ]
 }
