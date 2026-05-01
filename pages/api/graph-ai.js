@@ -4,17 +4,28 @@ import {
   getDocs,
   doc,
   updateDoc,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
-/* ================= GRAPH AI SYSTEM ================= */
+async function logCron(data) {
+  try {
+    await addDoc(collection(db, "cron_logs"), {
+      ...data,
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) {}
+}
+
 export default async function handler(req, res) {
+  let updated = 0;
+
   try {
     const productsSnap = await getDocs(collection(db, "products"));
     const graphSnap = await getDocs(collection(db, "analytics/product_relations"));
 
     const graphMap = {};
 
-    /* ================= LOAD GRAPH ================= */
     graphSnap.forEach((d) => {
       const data = d.data();
       graphMap[d.id] = {
@@ -23,41 +34,27 @@ export default async function handler(req, res) {
       };
     });
 
-    let updated = 0;
-
-    /* ================= PROCESS PRODUCTS ================= */
     for (const p of productsSnap.docs) {
       const product = p.data();
       const id = p.id;
-
       const graph = graphMap[id];
 
       if (!graph) continue;
 
-      const alsoViewed = graph.alsoViewed;
-      const boughtTogether = graph.boughtTogether;
-
-      /* ================= GRAPH SCORE ENGINE ================= */
-      let relationScore = 0;
-
-      relationScore += alsoViewed.length * 2;
-      relationScore += boughtTogether.length * 5;
-
-      /* ================= AI BOOST ================= */
-      const baseScore = product.score || 0;
+      const relationScore =
+        graph.alsoViewed.length * 2 +
+        graph.boughtTogether.length * 5;
 
       const newScore =
-        baseScore +
+        (product.score || 0) +
         relationScore +
         (product.rating || 3) * 1.5;
 
-      /* ================= RECOMMENDATION ENGINE ================= */
       const recommendations = [
-        ...alsoViewed.slice(0, 5),
-        ...boughtTogether.slice(0, 5),
+        ...graph.alsoViewed.slice(0, 5),
+        ...graph.boughtTogether.slice(0, 5),
       ];
 
-      /* ================= UPDATE PRODUCT ================= */
       await updateDoc(doc(db, "products", id), {
         score: newScore,
         recommendations,
@@ -68,17 +65,25 @@ export default async function handler(req, res) {
       updated++;
     }
 
+    await logCron({
+      job: "graph-ai",
+      status: "success",
+      updated,
+      time: new Date().toISOString(),
+    });
+
     return res.status(200).json({
       success: true,
-      message: "🧠 Graph AI System Updated",
       updated,
     });
 
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      error: err.message,
+    await logCron({
+      job: "graph-ai",
+      status: "error",
+      message: err.message,
     });
+
+    return res.status(500).json({ success: false, error: err.message });
   }
-}
+         }
