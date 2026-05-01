@@ -65,7 +65,6 @@ export default function Product() {
 
     const fetchData = async () => {
       try {
-        /* ================= PRODUCTS ================= */
         const snap = await getDocs(collection(db, "products"));
 
         const data = snap.docs.map((d) => ({
@@ -79,16 +78,26 @@ export default function Product() {
         const found = data.find((p) => p.asin === asin);
         setProduct(found || null);
 
+        /* ================= TRACK VIEW EVENT (🔥 AI BRAIN) ================= */
         if (found) {
           trackEvent("product_view", found);
 
-          /* ================= AI RECOMMENDATIONS ================= */
+          // 🔥 Fire API tracking (server analytics)
+          fetch("/api/track-event", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "view",
+              asin: found.asin,
+            }),
+          });
+
+          /* ================= RELATIONS ================= */
           const relRef = doc(db, "product_relations", asin);
           const relSnap = await getDoc(relRef);
 
           if (relSnap.exists()) {
             const rel = relSnap.data();
-
             setAlsoViewed(rel.alsoViewed || []);
             setBoughtTogether(rel.boughtTogether || []);
           }
@@ -108,7 +117,7 @@ export default function Product() {
 
   const buyLink = product.link || getAffiliateLink(product.asin);
 
-  /* ================= FILTER RECOMMENDED ================= */
+  /* ================= FILTER ================= */
   const recommendedProducts = allProducts.filter((p) =>
     alsoViewed.includes(p.asin)
   );
@@ -120,7 +129,6 @@ export default function Product() {
   return (
     <div style={{ fontFamily: "Arial", background: "#fff" }}>
 
-      {/* ================= SEO ================= */}
       <Head>
         <title>{product.title} | Koloonline Store</title>
       </Head>
@@ -141,9 +149,20 @@ export default function Product() {
           <h1>{product.title}</h1>
           <h2>${product.price}</h2>
 
+          {/* ================= BUY BUTTON (🔥 TRACK ORDER) ================= */}
           <button
             onClick={() => {
               trackEvent("amazon_click", product);
+
+              fetch("/api/track-event", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  type: "order",
+                  asin: product.asin,
+                }),
+              });
+
               window.open(buyLink, "_blank");
             }}
             style={{
@@ -160,7 +179,7 @@ export default function Product() {
         </div>
       </div>
 
-      {/* ================= AI: ALSO VIEWED ================= */}
+      {/* ================= ALSO VIEWED ================= */}
       <div style={{ padding: 20 }}>
         <h2>👀 Customers Also Viewed</h2>
 
@@ -171,17 +190,34 @@ export default function Product() {
         }}>
           {recommendedProducts.map((p) => (
             <div key={p.id} style={{ padding: 10 }}>
+
               <img src={p.image} style={{ width: "100%" }} />
+
               <p>{p.title}</p>
-              <button onClick={() => router.push(`/product/${p.asin}`)}>
+
+              <button
+                onClick={() => {
+                  fetch("/api/track-event", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      type: "click",
+                      asin: p.asin,
+                    }),
+                  });
+
+                  router.push(`/product/${p.asin}`);
+                }}
+              >
                 View
               </button>
+
             </div>
           ))}
         </div>
       </div>
 
-      {/* ================= AI: BOUGHT TOGETHER ================= */}
+      {/* ================= BOUGHT TOGETHER ================= */}
       <div style={{ padding: 20 }}>
         <h2>🧺 Frequently Bought Together</h2>
 
@@ -194,27 +230,7 @@ export default function Product() {
             <div key={p.id} style={{ padding: 10 }}>
               <img src={p.image} style={{ width: "100%" }} />
               <p>{p.title}</p>
-              <button onClick={() => router.push(`/product/${p.asin}`)}>
-                View
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* ================= FALLBACK ================= */}
-      <div style={{ padding: 20 }}>
-        <h2>🔥 More Products</h2>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: 10
-        }}>
-          {allProducts.slice(0, 6).map((p) => (
-            <div key={p.id}>
-              <img src={p.image} style={{ width: "100%" }} />
-              <p>{p.title}</p>
               <button onClick={() => router.push(`/product/${p.asin}`)}>
                 View
               </button>
@@ -225,4 +241,4 @@ export default function Product() {
 
     </div>
   );
-                }
+    }
