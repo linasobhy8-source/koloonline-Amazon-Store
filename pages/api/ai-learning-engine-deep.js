@@ -16,7 +16,7 @@ async function writeCronLog(data) {
       createdAt: serverTimestamp(),
     });
 
-    // optional external sync (if you have endpoint)
+    // optional external sync
     if (process.env.DOMAIN) {
       await fetch(`${process.env.DOMAIN}/api/cron-log`, {
         method: "POST",
@@ -29,7 +29,7 @@ async function writeCronLog(data) {
   }
 }
 
-/* ================= AI LEARNING ENGINE V2 ================= */
+/* ================= DEEP AI ENGINE ================= */
 export default async function handler(req, res) {
   try {
     const snap = await getDocs(collection(db, "products"));
@@ -47,72 +47,75 @@ export default async function handler(req, res) {
       const rating = Number(data.rating || 3);
       const price = Number(data.price || 0);
 
+      /* ================= BASE SCORE ================= */
       let score =
-        clicks * 1.2 +
-        orders * 5 +
-        views * 0.3 +
-        rating * 2;
+        clicks * 1.5 +
+        orders * 6 +
+        views * 0.4 +
+        rating * 2.5;
 
-      if (clicks > 10) score *= 1.3;
-      if (clicks > 30) score *= 1.6;
+      /* ================= DEEP LEARNING BOOST ================= */
+      const engagement = clicks + views / 10 + orders * 2;
 
-      if (orders > 3) score *= 1.5;
-      if (orders > 10) score *= 2;
+      if (engagement > 50) score *= 1.4;
+      if (engagement > 120) score *= 1.7;
 
-      if (views > 100) score += 2;
+      /* ================= TREND INTELLIGENCE ================= */
+      if (price > 0 && price < 25) score += 8;
+      else if (price < 60) score += 4;
+      else if (price > 250) score -= 3;
 
-      if (price > 0 && price < 20) score += 6;
-      else if (price < 50) score += 3;
-      else if (price > 200) score -= 2;
-
+      /* ================= QUALITY FILTER ================= */
       if (!score || isNaN(score)) {
         score = rating * 2;
       }
 
+      /* ================= STATUS ENGINE ================= */
       let status = "active";
 
-      if (score < 5 && clicks === 0 && views > 50) {
+      if (score < 6 && clicks === 0 && views > 60) {
         status = "disabled";
         flagged++;
       }
 
-      if (score > 15 || orders > 5) {
+      if (score > 18 || orders > 8) {
         status = "boosted";
         boosted++;
       }
 
+      /* ================= UPDATE ================= */
       await updateDoc(doc(db, "products", d.id), {
         score,
         status,
-        lastLearned: serverTimestamp(),
+        lastDeepLearned: serverTimestamp(),
       });
 
       updated++;
     }
 
-    /* ================= FINAL CRON LOG ================= */
+    /* ================= LOG RESULT ================= */
     await writeCronLog({
-      job: "ai-learning-engine-v2",
+      job: "ai-learning-engine-deep",
       status: "success",
       updated,
       boosted,
       flagged,
-      message: "AI Learning Engine V2 Completed",
+      message: "Deep AI Learning Engine Completed",
     });
 
     return res.status(200).json({
       success: true,
-      message: "🧠 AI Learning Engine V2 Completed",
+      message: "🧠 Deep AI Engine Completed",
       updated,
       boosted,
       flagged,
     });
 
   } catch (err) {
-    console.error("AI Engine Error:", err);
+    console.error("Deep AI Error:", err);
 
     await writeCronLog({
-      job: "ai-learning-engine-v2",
+      job: "ai-learning-engine-deep",
       status: "error",
       message: err.message,
     });
@@ -122,4 +125,4 @@ export default async function handler(req, res) {
       error: err.message,
     });
   }
-          }
+}
