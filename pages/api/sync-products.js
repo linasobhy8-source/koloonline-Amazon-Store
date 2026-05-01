@@ -6,6 +6,29 @@ import {
   getDocs,
 } from "firebase/firestore";
 
+/* ================= CLEAN HELPERS ================= */
+function cleanTitle(title) {
+  return title
+    ?.replace(/\s+/g, " ")
+    ?.replace(/Amazon\.com:?/gi, "")
+    ?.trim();
+}
+
+function cleanPrice(price) {
+  if (!price) return 0;
+  return parseFloat(price.replace(/[^0-9.]/g, "")) || 0;
+}
+
+function getImage(item) {
+  return (
+    item.thumbnail ||
+    item.image ||
+    item.original_image ||
+    ""
+  );
+}
+
+/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const apiKey = process.env.SERPAPI_KEY;
@@ -23,7 +46,7 @@ export default async function handler(req, res) {
     let saved = 0;
     let skipped = 0;
 
-    /* ================= EXISTING ================= */
+    /* ================= EXISTING PRODUCTS ================= */
     const existingSnap = await getDocs(collection(db, "products"));
 
     const existingLinks = new Set(
@@ -31,24 +54,24 @@ export default async function handler(req, res) {
     );
 
     for (const item of results) {
-      if (!item.title || !item.link) continue;
+      if (!item?.title || !item?.link) {
+        skipped++;
+        continue;
+      }
 
-      /* ================= DUPLICATE ================= */
+      /* ================= DUPLICATES ================= */
       if (existingLinks.has(item.link)) {
         skipped++;
         continue;
       }
 
-      /* ================= CLEAN PRICE ================= */
-      let price = 0;
-      if (item.price) {
-        price = parseFloat(
-          item.price.replace(/[^0-9.]/g, "")
-        ) || 0;
-      }
+      /* ================= CLEAN DATA ================= */
+      const title = cleanTitle(item.title);
+      const price = cleanPrice(item.price || item.extracted_price);
+      const image = getImage(item);
 
-      /* ================= FILTER (AI-like) ================= */
-      if (price === 0 || !item.thumbnail) {
+      /* ================= FILTER AI LOGIC ================= */
+      if (!title || price <= 0 || !image) {
         skipped++;
         continue;
       }
@@ -57,17 +80,24 @@ export default async function handler(req, res) {
       const tag = process.env.AMAZON_US || "koloonlinesto-20";
       const affiliateLink = `${item.link}?tag=${tag}`;
 
-      /* ================= SMART SCORE ================= */
+      /* ================= AI SCORE ENGINE ================= */
       const score =
+        (item.rating || 3) * 2 +
+        Math.min(item.reviews || 0, 1000) / 500 +
         (price < 50 ? 3 : 1) +
-        Math.random() * 3;
+        Math.random();
 
-      /* ================= SAVE ================= */
+      /* ================= SAVE TO FIRESTORE ================= */
       await addDoc(collection(db, "products"), {
-        title: item.title,
-        image: item.thumbnail,
+        title,
+        image,
         price,
         link: affiliateLink,
+
+        rating: item.rating || 0,
+        reviews: item.reviews || 0,
+        category: keyword,
+
         source: "serpapi",
         createdAt: serverTimestamp(),
 
@@ -81,16 +111,19 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 Auto Sync PRO completed",
+      message: "🔥 Smart Amazon Sync Completed",
+      keyword,
       saved,
       skipped,
+      total: results.length,
     });
 
   } catch (err) {
     console.error(err);
+
     return res.status(500).json({
       success: false,
       error: err.message,
     });
   }
-}
+          }
