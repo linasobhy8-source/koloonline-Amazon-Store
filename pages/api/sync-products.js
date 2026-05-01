@@ -20,10 +20,7 @@ function cleanTitle(title) {
 function cleanPrice(price) {
   if (!price) return 0;
 
-  const num = parseFloat(
-    String(price).replace(/[^0-9.]/g, "")
-  );
-
+  const num = parseFloat(String(price).replace(/[^0-9.]/g, ""));
   return isNaN(num) ? 0 : num;
 }
 
@@ -49,7 +46,8 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    const results = data?.organic_results || data?.shopping_results || [];
+    const results =
+      data?.organic_results || data?.shopping_results || [];
 
     let saved = 0;
     let skipped = 0;
@@ -61,7 +59,7 @@ export default async function handler(req, res) {
       existingSnap.docs.map((d) => d.data().link)
     );
 
-    /* ================= PROCESS PRODUCTS ================= */
+    /* ================= PROCESS ================= */
     for (const item of results) {
       if (!item?.title || !item?.link) {
         skipped++;
@@ -78,24 +76,24 @@ export default async function handler(req, res) {
         continue;
       }
 
-      /* ================= DUPLICATE PREVENTION ================= */
+      /* ================= DUPLICATE ================= */
       if (existingLinks.has(item.link)) {
         skipped++;
         continue;
       }
 
-      /* ================= AFFILIATE LINK ================= */
+      /* ================= AFFILIATE ================= */
       const tag = process.env.AMAZON_US || "koloonlinesto-20";
       const affiliateLink = `${item.link}?tag=${tag}`;
 
-      /* ================= AI SCORE ENGINE ================= */
-      let score =
+      /* ================= AI SCORE ================= */
+      const score =
         (item.rating || 3) * 2 +
         Math.min(item.reviews || 0, 1000) / 500 +
         (price < 50 ? 3 : 1) +
         Math.random();
 
-      /* ================= SAVE PRODUCT ================= */
+      /* ================= SAVE ================= */
       const productRef = await addDoc(collection(db, "products"), {
         title,
         image,
@@ -114,12 +112,11 @@ export default async function handler(req, res) {
         score,
       });
 
-      /* ================= AI SELF-LEARNING GRAPH INIT ================= */
-      await setDoc(doc(db, "product_relations", productRef.id), {
+      /* ================= GRAPH INIT ================= */
+      await setDoc(doc(db, "analytics/product_relations", productRef.id), {
         alsoViewed: [],
         boughtTogether: [],
         recommended: [],
-        category: keyword,
         createdAt: serverTimestamp(),
       });
 
@@ -128,7 +125,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 PRO AI Auto Sync Engine Completed",
+      message: "🔥 Sync Engine Completed",
       keyword,
       saved,
       skipped,
@@ -136,11 +133,9 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error("Auto Sync Error:", err);
-
     return res.status(500).json({
       success: false,
       error: err.message,
     });
   }
-}
+                               }
