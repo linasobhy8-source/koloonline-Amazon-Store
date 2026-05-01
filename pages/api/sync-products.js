@@ -86,11 +86,16 @@ export default async function handler(req, res) {
       const tag = process.env.AMAZON_US || "koloonlinesto-20";
       const affiliateLink = `${item.link}?tag=${tag}`;
 
-      /* ================= AI SCORE ================= */
+      /* ================= AI TREND BOOST ================= */
+      const trendBoost =
+        item.bestseller || item.is_best_seller ? 5 : 0;
+
+      /* ================= AI SCORE ENGINE (UPDATED) ================= */
       const score =
         (item.rating || 3) * 2 +
         Math.min(item.reviews || 0, 1000) / 500 +
         (price < 50 ? 3 : 1) +
+        trendBoost +
         Math.random();
 
       /* ================= SAVE ================= */
@@ -125,7 +130,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 Sync Engine Completed",
+      message: "🔥 Sync Engine Updated with Trend AI",
       keyword,
       saved,
       skipped,
@@ -133,9 +138,11 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
+    console.error(err);
+
     return res.status(500).json({
       success: false,
       error: err.message,
     });
   }
-                               }
+        }
