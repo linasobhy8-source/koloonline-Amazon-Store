@@ -6,7 +6,15 @@
     },
     {
       "path": "/api/auto-sync?q=fashion",
-      "schedule": "30 */6 * * *"
+      "schedule": "20 */6 * * *"
+    },
+    {
+      "path": "/api/auto-sync?q=deals",
+      "schedule": "40 */6 * * *"
+    },
+    {
+      "path": "/api/ai-learning-engine",
+      "schedule": "0 */4 * * *"
     }
   ]
 }
