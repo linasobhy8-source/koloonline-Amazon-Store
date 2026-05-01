@@ -3,8 +3,6 @@ import {
   collection,
   addDoc,
   getDocs,
-  query,
-  where,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -22,42 +20,56 @@ export default async function handler(req, res) {
 
     const results = data?.organic_results || [];
 
-    // 🔥 جلب المنتجات الموجودة لمنع التكرار
+    /* ================= EXISTING PRODUCTS ================= */
     const existingSnap = await getDocs(collection(db, "products"));
+
     const existingTitles = new Set(
-      existingSnap.docs.map((d) => d.data().title)
+      existingSnap.docs.map((d) =>
+        d.data().title?.toLowerCase().trim()
+      )
     );
 
     let saved = 0;
 
     for (const item of results) {
-      if (!item.title || existingTitles.has(item.title)) continue;
+      if (!item.title) continue;
 
-      // 🧠 AI FILTERING (تنظيف بسيط)
-      if (item.title.length < 10) continue;
-      if (!item.price && !item.extracted_price) continue;
+      const title = item.title.toLowerCase().trim();
+
+      /* ================= DUPLICATE PREVENTION ================= */
+      if (existingTitles.has(title)) continue;
+
+      /* ================= AI FILTERING ================= */
+      if (title.length < 10) continue;
 
       const price = Number(item.price || item.extracted_price || 0);
 
-      // ❌ فلترة المنتجات الضعيفة
-      if (price <= 0 || price > 5000) continue;
+      if (!price || price <= 0 || price > 5000) continue;
 
-      // ⭐ Ranking Score (Amazon Style)
+      const rating = Number(item.rating || 3);
+      const reviews = Number(item.reviews || 0);
+
+      /* ================= SMART SCORE (Amazon Style AI) ================= */
       const score =
-        (item.rating || 3) * 2 +
-        Math.min(item.reviews || 0, 1000) / 500 +
-        (price < 50 ? 2 : 1);
+        rating * 2 +
+        Math.min(reviews, 2000) / 400 +
+        (price < 50 ? 3 : 1) +
+        (price < 20 ? 2 : 0);
 
       await addDoc(collection(db, "products"), {
         title: item.title,
         image: item.thumbnail || "",
-        price: price,
-        link: item.link,
-        rating: item.rating || 0,
-        reviews: item.reviews || 0,
+        price,
+        link: item.link || "",
+        rating,
+        reviews,
         score,
+
         category: keyword,
+
         createdAt: serverTimestamp(),
+
+        /* Analytics base */
         clicks: 0,
         orders: 0,
       });
@@ -67,12 +79,15 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      keyword,
       saved,
       total: results.length,
     });
+
   } catch (err) {
     return res.status(500).json({
+      success: false,
       error: err.message,
     });
   }
-}
+         }
