@@ -13,8 +13,16 @@
       "schedule": "40 */6 * * *"
     },
     {
+      "path": "/api/auto-sync?q=home",
+      "schedule": "10 */6 * * *"
+    },
+    {
       "path": "/api/ai-learning-engine",
       "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/ai-learning-engine?mode=deep",
+      "schedule": "30 */8 * * *"
     }
   ]
 }
