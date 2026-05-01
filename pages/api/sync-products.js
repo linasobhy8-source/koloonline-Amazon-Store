@@ -21,7 +21,7 @@ function cleanPrice(price) {
   if (!price) return 0;
 
   const num = parseFloat(
-    price.toString().replace(/[^0-9.]/g, "")
+    String(price).replace(/[^0-9.]/g, "")
   );
 
   return isNaN(num) ? 0 : num;
@@ -29,9 +29,9 @@ function cleanPrice(price) {
 
 function getImage(item) {
   return (
-    item.thumbnail ||
-    item.image ||
-    item.original_image ||
+    item?.thumbnail ||
+    item?.image ||
+    item?.original_image ||
     "/placeholder.png"
   );
 }
@@ -49,10 +49,7 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    const results =
-      data?.organic_results ||
-      data?.shopping_results ||
-      [];
+    const results = data?.organic_results || data?.shopping_results || [];
 
     let saved = 0;
     let skipped = 0;
@@ -64,7 +61,7 @@ export default async function handler(req, res) {
       existingSnap.docs.map((d) => d.data().link)
     );
 
-    /* ================= LOOP PRODUCTS ================= */
+    /* ================= PROCESS PRODUCTS ================= */
     for (const item of results) {
       if (!item?.title || !item?.link) {
         skipped++;
@@ -75,24 +72,24 @@ export default async function handler(req, res) {
       const price = cleanPrice(item.price || item.extracted_price);
       const image = getImage(item);
 
-      /* ================= FILTER ================= */
+      /* ================= VALIDATION ================= */
       if (!title || price <= 0 || !image) {
         skipped++;
         continue;
       }
 
-      /* ================= DUPLICATE CHECK ================= */
+      /* ================= DUPLICATE PREVENTION ================= */
       if (existingLinks.has(item.link)) {
         skipped++;
         continue;
       }
 
-      /* ================= AFFILIATE ================= */
+      /* ================= AFFILIATE LINK ================= */
       const tag = process.env.AMAZON_US || "koloonlinesto-20";
       const affiliateLink = `${item.link}?tag=${tag}`;
 
       /* ================= AI SCORE ENGINE ================= */
-      const score =
+      let score =
         (item.rating || 3) * 2 +
         Math.min(item.reviews || 0, 1000) / 500 +
         (price < 50 ? 3 : 1) +
@@ -117,7 +114,7 @@ export default async function handler(req, res) {
         score,
       });
 
-      /* ================= AI SELF-LEARNING HOOK ================= */
+      /* ================= AI SELF-LEARNING GRAPH INIT ================= */
       await setDoc(doc(db, "product_relations", productRef.id), {
         alsoViewed: [],
         boughtTogether: [],
@@ -131,7 +128,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 PRO AI Sync Engine Completed",
+      message: "🔥 PRO AI Auto Sync Engine Completed",
       keyword,
       saved,
       skipped,
@@ -139,7 +136,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Auto Sync Error:", err);
 
     return res.status(500).json({
       success: false,
