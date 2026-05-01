@@ -5,6 +5,8 @@ import {
   getDocs,
   query,
   limit,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import Link from "next/link";
@@ -13,6 +15,7 @@ import { trackEvent } from "../lib/tracking";
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [analyticsMap, setAnalyticsMap] = useState({});
+  const [userBehavior, setUserBehavior] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -22,7 +25,6 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        /* 🔥 1. المنتجات */
         const productsSnap = await getDocs(
           query(collection(db, "products"), limit(80))
         );
@@ -33,7 +35,6 @@ export default function Home() {
           ...doc.data(),
         }));
 
-        /* 🔥 2. analytics مرة واحدة */
         const analyticsSnap = await getDocs(
           collection(db, "analytics_products")
         );
@@ -42,6 +43,12 @@ export default function Home() {
         analyticsSnap.docs.forEach((d) => {
           map[d.id] = d.data();
         });
+
+        /* 🔥 USER BEHAVIOR (AI PERSONALIZATION) */
+        const userId = "guest_1";
+        const userSnap = await getDoc(doc(db, "user_behavior", userId));
+
+        setUserBehavior(userSnap.exists() ? userSnap.data() : {});
 
         setProducts(productsData);
         setAnalyticsMap(map);
@@ -56,32 +63,42 @@ export default function Home() {
     fetchData();
   }, []);
 
-  /* ================= FILTER + SCORE ================= */
+  /* ================= AI SCORE ================= */
   const filtered = useMemo(() => {
+    const views = userBehavior.views || [];
+    const clicks = userBehavior.clicks || [];
+    const purchases = userBehavior.purchases || [];
+    const categories = userBehavior.categories || [];
+
     return products
       .map((p) => {
         const analytics = analyticsMap[p.asin] || {};
 
-        const clicks = analytics.clicks || 0;
-        const orders = analytics.orders || 0;
+        const clickCount = analytics.clicks || 0;
+        const orderCount = analytics.orders || 0;
         const price = Number(p.price) || 0;
 
-        /* 🔥 SMART SCORE (محسن) */
         let score =
-          clicks * 0.4 +
-          orders * 2.5;
+          clickCount * 0.4 +
+          orderCount * 2.5;
 
-        /* 💰 سعر = boost */
+        /* 🔥 PERSONALIZATION AI */
+        if (views.includes(p.asin)) score += 3;
+        if (clicks.includes(p.asin)) score += 5;
+        if (purchases.includes(p.asin)) score += 10;
+        if (categories.includes(p.category)) score += 4;
+
+        /* 💰 Price boost */
         if (price < 50) score += 4;
         if (price < 20) score += 3;
 
-        /* 🚀 منتجات جديدة */
-        if (!clicks && !orders) score += 2;
+        /* 🚀 New products boost */
+        if (!clickCount && !orderCount) score += 2;
 
         return {
           ...p,
-          clicks,
-          orders,
+          clicks: clickCount,
+          orders: orderCount,
           score,
         };
       })
@@ -93,7 +110,7 @@ export default function Home() {
 
         return matchSearch && matchCategory;
       });
-  }, [products, analyticsMap, search, category]);
+  }, [products, analyticsMap, userBehavior, search, category]);
 
   /* ================= SORT ================= */
   const trending = [...filtered]
@@ -120,15 +137,13 @@ export default function Home() {
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
       <Head>
-        <title>Koloonline Amazon Pro</title>
+        <title>Koloonline Amazon AI Pro</title>
       </Head>
 
-      {/* HEADER */}
       <header style={headerStyle}>
-        🛒 Koloonline Amazon Pro
+        🛒 Koloonline AI Amazon Store
       </header>
 
-      {/* SEARCH */}
       <div style={searchBar}>
         <input
           placeholder="Search Amazon products..."
@@ -144,17 +159,15 @@ export default function Home() {
         </select>
       </div>
 
-      {/* TABS */}
       <div style={tabsStyle}>
-        <Tab label="🔥 Trending" active={tab==="trending"} onClick={()=>setTab("trending")} />
+        <Tab label="🔥 AI Trending" active={tab==="trending"} onClick={()=>setTab("trending")} />
         <Tab label="💰 Best Sellers" active={tab==="bestsellers"} onClick={()=>setTab("bestsellers")} />
         <Tab label="⚡ Deals" active={tab==="deals"} onClick={()=>setTab("deals")} />
       </div>
 
-      {/* PRODUCTS */}
       <div style={{ padding: 20 }}>
         {loading ? (
-          <p>Loading...</p>
+          <p>Loading AI Products...</p>
         ) : (
           <div style={gridStyle}>
             {active.map((p) => (
@@ -166,10 +179,9 @@ export default function Home() {
 
                 <p style={priceStyle}>${p.price}</p>
 
-                {/* BADGES */}
-                {p.score > 10 && <span style={topBadge}>⭐ Top Rated</span>}
+                {p.score > 10 && <span style={topBadge}>⭐ AI Pick</span>}
                 {p.orders > 3 && <span style={badge}>🔥 Best Seller</span>}
-                {p.score > 15 && <span style={badge}>🚀 Trending</span>}
+                {p.score > 15 && <span style={badge}>🚀 Hot Match</span>}
 
                 <Link href={`/product/${p.asin}`}>
                   <button
