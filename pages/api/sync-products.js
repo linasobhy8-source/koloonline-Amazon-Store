@@ -4,6 +4,8 @@ import {
   addDoc,
   serverTimestamp,
   getDocs,
+  setDoc,
+  doc,
 } from "firebase/firestore";
 
 /* ================= CLEAN HELPERS ================= */
@@ -11,12 +13,18 @@ function cleanTitle(title) {
   return title
     ?.replace(/\s+/g, " ")
     ?.replace(/Amazon\.com:?/gi, "")
+    ?.replace(/\|.*$/g, "")
     ?.trim();
 }
 
 function cleanPrice(price) {
   if (!price) return 0;
-  return parseFloat(price.replace(/[^0-9.]/g, "")) || 0;
+
+  const num = parseFloat(
+    price.toString().replace(/[^0-9.]/g, "")
+  );
+
+  return isNaN(num) ? 0 : num;
 }
 
 function getImage(item) {
@@ -24,7 +32,7 @@ function getImage(item) {
     item.thumbnail ||
     item.image ||
     item.original_image ||
-    ""
+    "/placeholder.png"
   );
 }
 
@@ -41,7 +49,10 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    const results = data?.organic_results || [];
+    const results =
+      data?.organic_results ||
+      data?.shopping_results ||
+      [];
 
     let saved = 0;
     let skipped = 0;
@@ -53,25 +64,25 @@ export default async function handler(req, res) {
       existingSnap.docs.map((d) => d.data().link)
     );
 
+    /* ================= LOOP PRODUCTS ================= */
     for (const item of results) {
       if (!item?.title || !item?.link) {
         skipped++;
         continue;
       }
 
-      /* ================= DUPLICATES ================= */
-      if (existingLinks.has(item.link)) {
-        skipped++;
-        continue;
-      }
-
-      /* ================= CLEAN DATA ================= */
       const title = cleanTitle(item.title);
       const price = cleanPrice(item.price || item.extracted_price);
       const image = getImage(item);
 
-      /* ================= FILTER AI LOGIC ================= */
+      /* ================= FILTER ================= */
       if (!title || price <= 0 || !image) {
+        skipped++;
+        continue;
+      }
+
+      /* ================= DUPLICATE CHECK ================= */
+      if (existingLinks.has(item.link)) {
         skipped++;
         continue;
       }
@@ -87,8 +98,8 @@ export default async function handler(req, res) {
         (price < 50 ? 3 : 1) +
         Math.random();
 
-      /* ================= SAVE TO FIRESTORE ================= */
-      await addDoc(collection(db, "products"), {
+      /* ================= SAVE PRODUCT ================= */
+      const productRef = await addDoc(collection(db, "products"), {
         title,
         image,
         price,
@@ -106,12 +117,21 @@ export default async function handler(req, res) {
         score,
       });
 
+      /* ================= AI SELF-LEARNING HOOK ================= */
+      await setDoc(doc(db, "product_relations", productRef.id), {
+        alsoViewed: [],
+        boughtTogether: [],
+        recommended: [],
+        category: keyword,
+        createdAt: serverTimestamp(),
+      });
+
       saved++;
     }
 
     return res.status(200).json({
       success: true,
-      message: "🔥 Smart Amazon Sync Completed",
+      message: "🔥 PRO AI Sync Engine Completed",
       keyword,
       saved,
       skipped,
