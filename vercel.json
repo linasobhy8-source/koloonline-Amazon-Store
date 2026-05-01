@@ -1,19 +1,19 @@
 {
   "crons": [
     {
-      "path": "/api/auto-sync?q=electronics",
+      "path": "/api/sync-products?q=electronics",
       "schedule": "0 */6 * * *"
     },
     {
-      "path": "/api/auto-sync?q=fashion",
+      "path": "/api/sync-products?q=fashion",
       "schedule": "20 */6 * * *"
     },
     {
-      "path": "/api/auto-sync?q=deals",
+      "path": "/api/sync-products?q=deals",
       "schedule": "40 */6 * * *"
     },
     {
-      "path": "/api/auto-sync?q=home",
+      "path": "/api/sync-products?q=home",
       "schedule": "10 */6 * * *"
     },
 
@@ -27,7 +27,7 @@
     },
 
     {
-      "path": "/api/neural-ranking-engine-v2",
+      "path": "/api/graph-ai",
       "schedule": "15 */2 * * *"
     }
   ]
