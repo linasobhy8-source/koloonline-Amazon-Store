@@ -16,17 +16,14 @@
       "path": "/api/sync-products?q=home",
       "schedule": "10 */6 * * *"
     },
-
     {
       "path": "/api/ai-learning-engine",
       "schedule": "0 */4 * * *"
     },
-
     {
       "path": "/api/ai-learning-engine-deep",
       "schedule": "30 */8 * * *"
     },
-
     {
       "path": "/api/graph-ai",
       "schedule": "15 */2 * * *"
