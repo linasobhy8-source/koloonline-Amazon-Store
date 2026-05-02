@@ -3,8 +3,17 @@ import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 
 export default async function handler(req, res) {
   try {
+    /* ================= METHOD PROTECTION ================= */
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        success: false,
+        error: "Method not allowed"
+      });
+    }
+
     const { type, asin, userId = "guest_1" } = req.body;
 
+    /* ================= VALIDATION ================= */
     if (!type || !asin) {
       return res.status(400).json({
         success: false,
@@ -12,6 +21,16 @@ export default async function handler(req, res) {
       });
     }
 
+    const allowedTypes = ["view", "click", "order"];
+
+    if (!allowedTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid event type"
+      });
+    }
+
+    /* ================= FIRESTORE REF ================= */
     const ref = doc(db, "analytics_products", asin);
     const snap = await getDoc(ref);
 
@@ -26,7 +45,7 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ================= UPDATE RULES ================= */
+    /* ================= UPDATE LOGIC ================= */
     const updates = {
       lastUpdated: new Date()
     };
@@ -43,17 +62,24 @@ export default async function handler(req, res) {
       updates.orders = increment(1);
     }
 
+    /* ================= OPTIONAL USER TRACK ================= */
+    if (userId) {
+      updates.users = [];
+    }
+
     /* ================= SAVE ================= */
     await updateDoc(ref, updates);
 
     return res.status(200).json({
       success: true,
-      message: "event tracked",
+      message: "event tracked successfully",
       type,
       asin
     });
 
   } catch (err) {
+    console.error("TRACK ERROR:", err);
+
     return res.status(500).json({
       success: false,
       error: err.message
