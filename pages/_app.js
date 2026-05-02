@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
@@ -8,5 +9,10 @@ export default function App({ Component, pageProps }) {
     document.body.appendChild(script);
   }, []);
 
-  return <Component {...pageProps} />;
+  return (
+    <>
+      <Component {...pageProps} />
+      <SpeedInsights />
+    </>
+  );
 }
