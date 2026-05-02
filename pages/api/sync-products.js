@@ -34,12 +34,13 @@ function getImage(item) {
 }
 
 /* ================= CRON LOGGER ================= */
-async function logCron({ job, status, updated = 0, message = "" }) {
+async function logCron({ job, status, updated = 0, skipped = 0, message = "" }) {
   try {
     await addDoc(collection(db, "cron_logs"), {
       job,
       status,
       updated,
+      skipped,
       message,
       time: new Date().toISOString(),
       createdAt: serverTimestamp(),
@@ -56,18 +57,34 @@ export default async function handler(req, res) {
   try {
     const apiKey = process.env.SERPAPI_KEY;
 
+    if (!apiKey) {
+      throw new Error("Missing SERPAPI_KEY");
+    }
+
     const url = `https://serpapi.com/search.json?engine=amazon&q=${encodeURIComponent(
       keyword
     )}&api_key=${apiKey}`;
 
     const response = await fetch(url);
+
+    /* ================= FETCH CHECK ================= */
+    if (!response.ok) {
+      throw new Error(`SerpAPI error: ${response.status}`);
+    }
+
     const data = await response.json();
 
-    const results = data?.organic_results || data?.shopping_results || [];
+    /* ================= LIMIT RESULTS ================= */
+    const results = (
+      data?.organic_results ||
+      data?.shopping_results ||
+      []
+    ).slice(0, 20);
 
     let saved = 0;
     let skipped = 0;
 
+    /* ================= EXISTING PRODUCTS ================= */
     const existingSnap = await getDocs(collection(db, "products"));
 
     const existingLinks = new Set(
@@ -76,79 +93,94 @@ export default async function handler(req, res) {
 
     /* ================= PROCESS ================= */
     for (const item of results) {
-      if (!item?.title || !item?.link) {
+      try {
+        if (!item?.title || !item?.link) {
+          skipped++;
+          continue;
+        }
+
+        const title = cleanTitle(item.title);
+        const price = cleanPrice(item.price || item.extracted_price);
+        const image = getImage(item);
+
+        if (!title || price <= 0 || !image) {
+          skipped++;
+          continue;
+        }
+
+        if (existingLinks.has(item.link)) {
+          skipped++;
+          continue;
+        }
+
+        const tag = process.env.AMAZON_US || "koloonlinesto-20";
+        const affiliateLink = `${item.link}?tag=${tag}`;
+
+        const trendBoost =
+          item.bestseller || item.is_best_seller ? 5 : 0;
+
+        const score =
+          (item.rating || 3) * 2 +
+          Math.min(item.reviews || 0, 1000) / 500 +
+          (price < 50 ? 3 : 1) +
+          trendBoost +
+          Math.random();
+
+        /* ================= SAVE PRODUCT ================= */
+        const productRef = await addDoc(collection(db, "products"), {
+          title,
+          image,
+          price,
+          link: affiliateLink,
+          rating: item.rating || 0,
+          reviews: item.reviews || 0,
+          category: keyword,
+          source: "serpapi",
+          createdAt: serverTimestamp(),
+          clicks: 0,
+          orders: 0,
+          score,
+        });
+
+        /* ================= GRAPH INIT ================= */
+        await setDoc(
+          doc(db, "analytics/product_relations", productRef.id),
+          {
+            alsoViewed: [],
+            boughtTogether: [],
+            recommended: [],
+            createdAt: serverTimestamp(),
+          }
+        );
+
+        saved++;
+      } catch (itemError) {
+        console.error("Item error:", itemError.message);
         skipped++;
-        continue;
       }
-
-      const title = cleanTitle(item.title);
-      const price = cleanPrice(item.price || item.extracted_price);
-      const image = getImage(item);
-
-      if (!title || price <= 0 || !image) {
-        skipped++;
-        continue;
-      }
-
-      if (existingLinks.has(item.link)) {
-        skipped++;
-        continue;
-      }
-
-      const tag = process.env.AMAZON_US || "koloonlinesto-20";
-      const affiliateLink = `${item.link}?tag=${tag}`;
-
-      const trendBoost = item.bestseller || item.is_best_seller ? 5 : 0;
-
-      const score =
-        (item.rating || 3) * 2 +
-        Math.min(item.reviews || 0, 1000) / 500 +
-        (price < 50 ? 3 : 1) +
-        trendBoost +
-        Math.random();
-
-      const productRef = await addDoc(collection(db, "products"), {
-        title,
-        image,
-        price,
-        link: affiliateLink,
-        rating: item.rating || 0,
-        reviews: item.reviews || 0,
-        category: keyword,
-        source: "serpapi",
-        createdAt: serverTimestamp(),
-        clicks: 0,
-        orders: 0,
-        score,
-      });
-
-      await setDoc(doc(db, "analytics/product_relations", productRef.id), {
-        alsoViewed: [],
-        boughtTogether: [],
-        recommended: [],
-        createdAt: serverTimestamp(),
-      });
-
-      saved++;
     }
 
-    /* ================= CRON LOG (REAL TIME AI TRACE) ================= */
+    /* ================= FINAL LOG ================= */
     await logCron({
       job: "sync-products",
       status: "success",
       updated: saved,
+      skipped,
       message: `${keyword} sync completed`,
     });
 
     return res.status(200).json({
       success: true,
-      message: "🔥 Sync Engine Updated + Cron Logged",
+      message: "🔥 Sync Engine Updated + Safe AI + Logging",
       keyword,
       saved,
       skipped,
       total: results.length,
     });
+
   } catch (err) {
+    console.error("SYNC ERROR:", err);
+
     await logCron({
       job: "sync-products",
       status: "error",
@@ -160,4 +192,4 @@ export default async function handler(req, res) {
       error: err.message,
     });
   }
-          }
+      }
