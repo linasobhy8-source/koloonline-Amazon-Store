@@ -1,22 +1,22 @@
 {
-"name": "koloonline-amazon-store",
-"version": "1.0.0",
-"private": true,
-"description": "Amazon Affiliate Store built with Next.js + Firebase",
-"author": "Lina Sobhy",
-"scripts": {
-"dev": "next dev",
-"build": "next build",
-"start": "next start",
-"lint": "next lint"
-},
-"engines": {
-"node": ">=18"
-},
-"dependencies": {
-"next": "^15.0.0",
-"react": "18.2.0",
-"react-dom": "18.2.0",
-"firebase": "^10.12.0"
-}
+  "name": "koloonline-amazon-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Amazon Affiliate Store built with Next.js + Firebase + AI Engine",
+  "author": "Lina Sobhy",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "firebase": "^10.12.0"
+  }
 }
