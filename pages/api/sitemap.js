@@ -29,34 +29,40 @@ async function pingGoogleSitemap() {
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    console.log("🔥 Sitemap Generated");
+    console.log("🔥 Sitemap API Called");
 
     const baseUrl = "https://koloonline.online";
 
     const snap = await getDocs(collection(db, "products"));
 
+    console.log("📦 Products Count:", snap.docs.length);
+
     const products = snap.docs.map((doc) => {
       const data = doc.data();
-
       return {
         id: doc.id,
-        ...data,
-        aiScore: data.score || 0,
+        category: data.category || "uncategorized",
+        score: data.score || 0,
       };
     });
 
-    /* ================= AI SORT ================= */
-    products.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
+    /* ================= AI PRIORITY SORT ================= */
+    products.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-    const categories = new Set();
+    /* ================= CATEGORIES ================= */
+    const categorySet = new Set();
 
     products.forEach((p) => {
       if (p.category) {
-        categories.add(p.category.toLowerCase());
+        categorySet.add(p.category.toLowerCase().trim());
       }
     });
 
-    /* ================= STATIC ================= */
+    const categories = [...categorySet];
+
+    console.log("📂 Categories:", categories);
+
+    /* ================= STATIC URLs ================= */
     let urls = `
 <url>
   <loc>${baseUrl}</loc>
@@ -72,7 +78,7 @@ export default async function handler(req, res) {
 `;
 
     /* ================= CATEGORY URLs ================= */
-    [...categories].forEach((cat) => {
+    categories.forEach((cat) => {
       urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
@@ -95,6 +101,7 @@ export default async function handler(req, res) {
 `;
     });
 
+    /* ================= FINAL XML ================= */
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
@@ -107,7 +114,7 @@ ${urls}
       "public, s-maxage=3600, stale-while-revalidate=3600"
     );
 
-    /* ================= AUTO GOOGLE PING ================= */
+    /* ================= GOOGLE PING ================= */
     pingGoogleSitemap();
 
     return res.status(200).send(sitemap);
@@ -116,4 +123,4 @@ ${urls}
     console.error("❌ Sitemap Error:", error);
     return res.status(500).send("Sitemap error");
   }
-}
+                     }
