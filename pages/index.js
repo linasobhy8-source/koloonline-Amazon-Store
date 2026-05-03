@@ -28,10 +28,7 @@ export default function Home({ products }) {
   const [category, setCategory] = useState("all");
 
   const filtered = products.filter((p) => {
-    const matchSearch = p.title
-      ?.toLowerCase()
-      .includes(search.toLowerCase());
-
+    const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
     const matchCategory =
       category === "all" ||
       p.category?.toLowerCase() === category.toLowerCase();
@@ -39,10 +36,12 @@ export default function Home({ products }) {
     return matchSearch && matchCategory;
   });
 
+  const siteUrl = "https://koloonline.online";
+
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
-      {/* ================= SEO ================= */}
+      {/* ================= SEO LEVEL 3 ================= */}
       <Head>
         <title>Koloonline | Best Amazon Deals</title>
 
@@ -50,56 +49,53 @@ export default function Home({ products }) {
           name="description"
           content="Best Amazon affiliate deals in Electronics, Fashion, Home & Sports"
         />
+        <meta name="robots" content="index, follow" />
+        <meta name="googlebot" content="index, follow" />
 
-        <link rel="canonical" href="https://koloonline.online" />
+        <link rel="canonical" href={siteUrl} />
 
         {/* Open Graph */}
         <meta property="og:title" content="Koloonline Amazon Deals" />
         <meta property="og:description" content="Best Amazon deals updated daily" />
-        <meta property="og:image" content="https://www.koloonline.online/favicon.ico" />
+        <meta property="og:image" content={`${siteUrl}/favicon.ico`} />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content={siteUrl} />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
 
-        {/* ================= ITEMLIST SCHEMA ================= */}
+        {/* ================= 🔥 ITEMLIST SCHEMA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ItemList",
-              itemListElement: products.map((p, i) => ({
+              itemListElement: filtered.map((p, i) => ({
                 "@type": "ListItem",
                 position: i + 1,
-                url: `https://koloonline.online/product/${p.id}`,
+                url: `${siteUrl}/product/${p.id}`,
                 name: p.title,
+                image: p.image || fallbackImage
               })),
             }),
           }}
         />
 
-        {/* ================= BREADCRUMB SCHEMA ================= */}
+        {/* ================= 🔥 SITE STRUCTURED DATA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                {
-                  "@type": "ListItem",
-                  position: 1,
-                  name: "Home",
-                  item: "https://koloonline.online"
-                },
-                {
-                  "@type": "ListItem",
-                  position: 2,
-                  name: category === "all" ? "All Products" : category,
-                  item: `https://koloonline.online/category/${category}`
-                }
-              ]
+              "@type": "WebSite",
+              name: "Koloonline",
+              url: siteUrl,
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${siteUrl}/search?q={search_term_string}`,
+                "query-input": "required name=search_term_string"
+              }
             }),
           }}
         />
@@ -158,6 +154,7 @@ export default function Home({ products }) {
 
             <p style={price}>${p.price}</p>
 
+            {/* ⭐ SEO BOOST: internal linking */}
             <Link href={`/product/${p.id}`}>
               <button style={btn}>View</button>
             </Link>
