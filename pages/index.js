@@ -12,6 +12,16 @@ import { db } from "../config/firebase";
 
 const fallbackImage = "https://via.placeholder.com/300";
 
+/* ================= BREADCRUMB UI ================= */
+function Breadcrumb({ category }) {
+  return (
+    <div style={{ padding: "10px 20px", fontSize: 14, color: "#555" }}>
+      <Link href="/">Home</Link> /{" "}
+      <span>{category === "all" ? "All Products" : category}</span>
+    </div>
+  );
+}
+
 /* ================= PAGE ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
@@ -41,8 +51,6 @@ export default function Home({ products }) {
           content="Best Amazon affiliate deals in Electronics, Fashion, Home & Sports"
         />
 
-        <meta name="keywords" content="amazon deals, buy online, electronics, fashion, koloonline" />
-
         <link rel="canonical" href="https://koloonline.online" />
 
         {/* Open Graph */}
@@ -54,7 +62,7 @@ export default function Home({ products }) {
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
 
-        {/* ================= PRODUCT SCHEMA ================= */}
+        {/* ================= ITEMLIST SCHEMA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -62,16 +70,36 @@ export default function Home({ products }) {
               "@context": "https://schema.org",
               "@type": "ItemList",
               itemListElement: products.map((p, i) => ({
-                "@type": "Product",
+                "@type": "ListItem",
                 position: i + 1,
+                url: `https://koloonline.online/product/${p.id}`,
                 name: p.title,
-                image: p.image,
-                offers: {
-                  "@type": "Offer",
-                  price: p.price,
-                  priceCurrency: "USD",
-                },
               })),
+            }),
+          }}
+        />
+
+        {/* ================= BREADCRUMB SCHEMA ================= */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Home",
+                  item: "https://koloonline.online"
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: category === "all" ? "All Products" : category,
+                  item: `https://koloonline.online/category/${category}`
+                }
+              ]
             }),
           }}
         />
@@ -111,26 +139,12 @@ export default function Home({ products }) {
         ))}
       </nav>
 
+      {/* ================= BREADCRUMB ================= */}
+      <Breadcrumb category={category} />
+
       {/* ================= HERO ================= */}
       <div style={hero}>
         🔥 Best Amazon Deals Today
-      </div>
-
-      {/* ================= ADSENSE ================= */}
-      <div style={{ textAlign: "center", margin: 20 }}>
-        <ins
-          className="adsbygoogle"
-          style={{ display: "block" }}
-          data-ad-client="ca-pub-1294940976431468"
-          data-ad-slot="1234567890"
-          data-ad-format="auto"
-        />
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
-          }}
-        />
       </div>
 
       {/* ================= PRODUCTS ================= */}
@@ -138,10 +152,7 @@ export default function Home({ products }) {
         {filtered.map((p) => (
           <div key={p.id} style={card}>
 
-            <img
-              src={p.image || fallbackImage}
-              style={img}
-            />
+            <img src={p.image || fallbackImage} style={img} />
 
             <h3 style={title}>{p.title}</h3>
 
@@ -163,34 +174,20 @@ export default function Home({ products }) {
   );
 }
 
-/* ================= SSR + CACHE ================= */
-export async function getServerSideProps({ res }) {
-  try {
-    res.setHeader(
-      "Cache-Control",
-      "s-maxage=60, stale-while-revalidate=300"
-    );
+/* ================= SSR ================= */
+export async function getServerSideProps() {
+  const snap = await getDocs(
+    query(collection(db, "products"), limit(50))
+  );
 
-    const snap = await getDocs(
-      query(collection(db, "products"), limit(50))
-    );
+  const products = snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
 
-    const products = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    }));
-
-    return {
-      props: { products },
-    };
-
-  } catch (err) {
-    console.error(err);
-
-    return {
-      props: { products: [] },
-    };
-  }
+  return {
+    props: { products },
+  };
 }
 
 /* ================= STYLES ================= */
@@ -204,10 +201,7 @@ const header = {
   gap: 10,
 };
 
-const logo = {
-  fontSize: 22,
-  fontWeight: "bold",
-};
+const logo = { fontSize: 22, fontWeight: "bold" };
 
 const searchBox = {
   flex: 1,
