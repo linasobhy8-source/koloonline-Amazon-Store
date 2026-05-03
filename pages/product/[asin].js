@@ -6,7 +6,8 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { db } from "../../firebase-config";
+
+import { db } from "../../config/firebase";
 import Head from "next/head";
 import { trackEvent } from "../../lib/tracking";
 
@@ -53,18 +54,54 @@ export default function Product() {
 
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
-
   const [alsoViewed, setAlsoViewed] = useState([]);
   const [boughtTogether, setBoughtTogether] = useState([]);
-
   const [loading, setLoading] = useState(true);
 
   /* ================= FETCH ================= */
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!router.isReady || !asin) return;
 
     const fetchData = async () => {
       try {
+        setLoading(true);
+
+        /* ================= GET PRODUCT (FAST) ================= */
+        const prodRef = doc(db, "products", asin);
+        const prodSnap = await getDoc(prodRef);
+
+        if (!prodSnap.exists()) {
+          setProduct(null);
+          setLoading(false);
+          return;
+        }
+
+        const prod = { id: asin, ...prodSnap.data(), asin };
+        setProduct(prod);
+
+        /* ================= TRACK VIEW ================= */
+        trackEvent("product_view", prod);
+
+        fetch("/api/track-event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "view",
+            asin,
+          }),
+        });
+
+        /* ================= RELATIONS ================= */
+        const relRef = doc(db, "product_relations", asin);
+        const relSnap = await getDoc(relRef);
+
+        if (relSnap.exists()) {
+          const rel = relSnap.data();
+          setAlsoViewed(rel.alsoViewed || []);
+          setBoughtTogether(rel.boughtTogether || []);
+        }
+
+        /* ================= ALL PRODUCTS (FOR RECOMMENDATIONS) ================= */
         const snap = await getDocs(collection(db, "products"));
 
         const data = snap.docs.map((d) => ({
@@ -74,46 +111,18 @@ export default function Product() {
         }));
 
         setAllProducts(data);
-
-        const found = data.find((p) => p.asin === asin);
-        setProduct(found || null);
-
-        /* ================= TRACK VIEW EVENT (🔥 AI BRAIN) ================= */
-        if (found) {
-          trackEvent("product_view", found);
-
-          // 🔥 Fire API tracking (server analytics)
-          fetch("/api/track-event", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "view",
-              asin: found.asin,
-            }),
-          });
-
-          /* ================= RELATIONS ================= */
-          const relRef = doc(db, "product_relations", asin);
-          const relSnap = await getDoc(relRef);
-
-          if (relSnap.exists()) {
-            const rel = relSnap.data();
-            setAlsoViewed(rel.alsoViewed || []);
-            setBoughtTogether(rel.boughtTogether || []);
-          }
-        }
       } catch (err) {
-        console.error(err);
+        console.error("Product Page Error:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchData();
   }, [router.isReady, asin]);
 
   if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
-  if (!product) return <p style={{ padding: 20 }}>Not Found</p>;
+  if (!product) return <p style={{ padding: 20 }}>Product Not Found</p>;
 
   const buyLink = product.link || getAffiliateLink(product.asin);
 
@@ -129,27 +138,24 @@ export default function Product() {
   return (
     <div style={{ fontFamily: "Arial", background: "#fff" }}>
 
+      {/* ================= SEO ================= */}
       <Head>
-        <title>{product.title} | Koloonline Store</title>
+        <title>{product.title} | Koloonline</title>
+        <meta name="description" content={product.title} />
       </Head>
 
       {/* ================= PRODUCT ================= */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        padding: 30,
-        gap: 20,
-        maxWidth: 1200,
-        margin: "auto"
-      }}>
+      <div style={layout}>
 
-        <img src={product.image || "/placeholder.png"} style={{ width: "100%" }} />
+        <img
+          src={product.image || "/placeholder.png"}
+          style={image}
+        />
 
         <div>
           <h1>{product.title}</h1>
-          <h2>${product.price}</h2>
+          <h2 style={{ color: "#B12704" }}>${product.price}</h2>
 
-          {/* ================= BUY BUTTON (🔥 TRACK ORDER) ================= */}
           <button
             onClick={() => {
               trackEvent("amazon_click", product);
@@ -165,14 +171,7 @@ export default function Product() {
 
               window.open(buyLink, "_blank");
             }}
-            style={{
-              width: "100%",
-              padding: 15,
-              background: "#ffd814",
-              border: "none",
-              fontWeight: "bold",
-              cursor: "pointer"
-            }}
+            style={buyBtn}
           >
             🛒 Buy Now
           </button>
@@ -180,65 +179,87 @@ export default function Product() {
       </div>
 
       {/* ================= ALSO VIEWED ================= */}
-      <div style={{ padding: 20 }}>
-        <h2>👀 Customers Also Viewed</h2>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: 10
-        }}>
-          {recommendedProducts.map((p) => (
-            <div key={p.id} style={{ padding: 10 }}>
-
-              <img src={p.image} style={{ width: "100%" }} />
-
-              <p>{p.title}</p>
-
-              <button
-                onClick={() => {
-                  fetch("/api/track-event", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      type: "click",
-                      asin: p.asin,
-                    }),
-                  });
-
-                  router.push(`/product/${p.asin}`);
-                }}
-              >
-                View
-              </button>
-
-            </div>
-          ))}
-        </div>
-      </div>
+      <Section title="👀 Customers Also Viewed" data={recommendedProducts} router={router} />
 
       {/* ================= BOUGHT TOGETHER ================= */}
-      <div style={{ padding: 20 }}>
-        <h2>🧺 Frequently Bought Together</h2>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: 10
-        }}>
-          {boughtTogetherProducts.map((p) => (
-            <div key={p.id} style={{ padding: 10 }}>
-              <img src={p.image} style={{ width: "100%" }} />
-              <p>{p.title}</p>
-
-              <button onClick={() => router.push(`/product/${p.asin}`)}>
-                View
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Section title="🧺 Frequently Bought Together" data={boughtTogetherProducts} router={router} />
 
     </div>
   );
-    }
+}
+
+/* ================= REUSABLE SECTION ================= */
+function Section({ title, data, router }) {
+  return (
+    <div style={{ padding: 20 }}>
+      <h2>{title}</h2>
+
+      <div style={grid}>
+        {data.map((p) => (
+          <div key={p.id} style={card}>
+
+            <img src={p.image} style={img} />
+
+            <p style={{ fontSize: 12 }}>{p.title}</p>
+
+            <button
+              onClick={() => router.push(`/product/${p.asin}`)}
+              style={smallBtn}
+            >
+              View
+            </button>
+
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= STYLES ================= */
+const layout = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 20,
+  padding: 30,
+  maxWidth: 1200,
+  margin: "auto",
+};
+
+const image = {
+  width: "100%",
+  borderRadius: 10,
+};
+
+const buyBtn = {
+  width: "100%",
+  padding: 15,
+  background: "#ffd814",
+  border: "none",
+  fontWeight: "bold",
+  cursor: "pointer",
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+  gap: 10,
+};
+
+const card = {
+  padding: 10,
+  background: "#f7f7f7",
+  borderRadius: 10,
+};
+
+const img = {
+  width: "100%",
+  height: 120,
+  objectFit: "cover",
+};
+
+const smallBtn = {
+  width: "100%",
+  padding: 8,
+  marginTop: 5,
+};
