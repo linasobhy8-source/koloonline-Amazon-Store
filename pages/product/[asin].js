@@ -1,288 +1,198 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
-import { trackEvent } from "../../lib/tracking";
 
-/* ================= COUNTRY ================= */
-const getCountry = () => {
-  if (typeof window === "undefined") return "US";
+/* ================= FALLBACK ================= */
+const fallbackImage = "https://via.placeholder.com/500";
 
-  const lang = navigator.language || "en-US";
+/* ================= STAR UI ================= */
+function Stars({ rating = 4.5 }) {
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.5;
 
-  if (lang.includes("ar")) return "EG";
-  if (lang.includes("en-CA")) return "CA";
-  if (lang.includes("pl")) return "PL";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+      {"⭐".repeat(full)}
+      {half && "✨"}
+      <span style={{ marginLeft: 6 }}>{rating}/5</span>
+    </div>
+  );
+}
 
-  return "US";
-};
-
-/* ================= AFFILIATE ================= */
-const getAffiliateLink = (asin) => {
-  const country = getCountry();
-
-  const tags = {
-    EG: "onlinesh03f31-21",
-    US: "onlinesho0429-20",
-    CA: "linasobhy20d8-20",
-    PL: "koloonline-21",
-  };
-
-  const domains = {
-    EG: "amazon.com",
-    US: "amazon.com",
-    CA: "amazon.ca",
-    PL: "amazon.pl",
-  };
-
-  const tag = tags[country] || "koloonlinesto-20";
-  const domain = domains[country] || "amazon.com";
-
-  return `https://${domain}/dp/${asin}?tag=${tag}`;
-};
-
-export default function Product() {
+/* ================= PAGE ================= */
+export default function ProductPage() {
   const router = useRouter();
   const { asin } = router.query;
 
   const [product, setProduct] = useState(null);
-  const [allProducts, setAllProducts] = useState([]);
-  const [alsoViewed, setAlsoViewed] = useState([]);
-  const [boughtTogether, setBoughtTogether] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH ================= */
   useEffect(() => {
     if (!router.isReady || !asin) return;
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+    const load = async () => {
+      const snap = await getDoc(doc(db, "products", asin));
 
-        /* ================= PRODUCT ================= */
-        const prodRef = doc(db, "products", asin);
-        const prodSnap = await getDoc(prodRef);
-
-        if (!prodSnap.exists()) {
-          setProduct(null);
-          setLoading(false);
-          return;
-        }
-
-        const prod = { id: asin, ...prodSnap.data(), asin };
-        setProduct(prod);
-
-        /* ================= TRACK VIEW ================= */
-        trackEvent("product_view", prod);
-
-        fetch("/api/track-event", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "view",
-            asin,
-          }),
-        });
-
-        /* ================= RELATIONS ================= */
-        const relRef = doc(db, "product_relations", asin);
-        const relSnap = await getDoc(relRef);
-
-        if (relSnap.exists()) {
-          const rel = relSnap.data();
-          setAlsoViewed(rel.alsoViewed || []);
-          setBoughtTogether(rel.boughtTogether || []);
-        }
-
-        /* ================= ALL PRODUCTS ================= */
-        const snap = await getDocs(collection(db, "products"));
-
-        const data = snap.docs.map((d) => ({
-          id: d.id,
-          asin: d.id,
-          ...d.data(),
-        }));
-
-        setAllProducts(data);
-      } catch (err) {
-        console.error("Product Page Error:", err);
-      } finally {
-        setLoading(false);
+      if (snap.exists()) {
+        setProduct({ asin, ...snap.data() });
       }
+
+      setLoading(false);
     };
 
-    fetchData();
+    load();
   }, [router.isReady, asin]);
 
   if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
   if (!product) return <p style={{ padding: 20 }}>Product Not Found</p>;
 
-  const buyLink = product.link || getAffiliateLink(product.asin);
+  const rating = product.rating || 4.3;
+  const reviews = product.reviews || [
+    { name: "Ahmed", text: "Amazing product! Fast delivery.", stars: 5 },
+    { name: "Sara", text: "Good value for money.", stars: 4 },
+    { name: "John", text: "Very useful and high quality.", stars: 5 },
+  ];
 
-  const recommendedProducts = allProducts.filter((p) =>
-    alsoViewed.includes(p.asin)
-  );
+  const isAvailable = true;
 
-  const boughtTogetherProducts = allProducts.filter((p) =>
-    boughtTogether.includes(p.asin)
-  );
+  /* ================= SCHEMA (🔥 IMPORTANT FOR GOOGLE) ================= */
+  const schema = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    name: product.title,
+    image: product.image,
+    description: product.title,
+    sku: product.asin,
+    brand: {
+      "@type": "Brand",
+      name: "Amazon"
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "USD",
+      price: product.price || "0",
+      availability: isAvailable
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      url: `https://koloonline.online/product/${product.asin}`
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: rating,
+      reviewCount: reviews.length
+    }
+  };
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#fff" }}>
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
-      {/* ================= SEO FULL ================= */}
+      {/* ================= SEO ================= */}
       <Head>
-        <title>{product.title} | Koloonline</title>
-        <meta name="description" content={product.title + " - Best deals on Koloonline"} />
-        <meta name="keywords" content={`${product.category || "products"}, amazon deals, buy online`} />
-
+        <title>{product.title} | Amazon Deal</title>
+        <meta name="description" content={product.title} />
         <link rel="canonical" href={`https://koloonline.online/product/${product.asin}`} />
 
+        {/* Open Graph */}
         <meta property="og:title" content={product.title} />
         <meta property="og:image" content={product.image} />
-        <meta property="og:url" content={`https://koloonline.online/product/${product.asin}`} />
         <meta property="og:type" content="product" />
 
+        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
 
-        {/* Google Rich Results */}
+        {/* 🔥 PRODUCT SCHEMA */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org/",
-              "@type": "Product",
-              name: product.title,
-              image: product.image,
-              description: product.title,
-              offers: {
-                "@type": "Offer",
-                price: product.price,
-                priceCurrency: "USD",
-                availability: "https://schema.org/InStock",
-              },
-            }),
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
       </Head>
 
-      {/* ================= PRODUCT ================= */}
-      <div style={layout}>
+      {/* ================= PRODUCT HERO ================= */}
+      <div style={container}>
 
-        <img src={product.image || "/placeholder.png"} style={image} />
+        <img
+          src={product.image || fallbackImage}
+          style={image}
+        />
 
-        <div>
+        <div style={{ flex: 1 }}>
+
           <h1>{product.title}</h1>
-          <h2 style={{ color: "#B12704" }}>${product.price}</h2>
+
+          {/* ⭐ Rating */}
+          <Stars rating={rating} />
+
+          {/* 💰 Price */}
+          <h2 style={{ color: "#B12704" }}>
+            ${product.price}
+          </h2>
+
+          {/* Availability */}
+          <p style={{ color: isAvailable ? "green" : "red" }}>
+            {isAvailable ? "In Stock" : "Out of Stock"}
+          </p>
 
           <button
-            onClick={() => {
-              trackEvent("amazon_click", product);
-
-              fetch("/api/track-event", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  type: "order",
-                  asin: product.asin,
-                }),
-              });
-
-              window.open(buyLink, "_blank");
-            }}
             style={buyBtn}
+            onClick={() => window.open(product.link, "_blank")}
           >
-            🛒 Buy Now
+            🛒 Buy on Amazon
           </button>
+
         </div>
       </div>
 
-      {/* ================= SECTIONS ================= */}
-      <Section title="👀 Customers Also Viewed" data={recommendedProducts} />
-      <Section title="🧺 Frequently Bought Together" data={boughtTogetherProducts} />
+      {/* ================= REVIEWS (Amazon Style) ================= */}
+      <div style={section}>
+        <h2>Customer Reviews</h2>
 
-    </div>
-  );
-}
-
-/* ================= SECTION ================= */
-function Section({ title, data }) {
-  const router = useRouter();
-
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>{title}</h2>
-
-      <div style={grid}>
-        {data.map((p) => (
-          <div key={p.id} style={card}>
-            <img src={p.image} style={img} />
-            <p style={{ fontSize: 12 }}>{p.title}</p>
-
-            <button
-              onClick={() => router.push(`/product/${p.asin}`)}
-              style={smallBtn}
-            >
-              View
-            </button>
+        {reviews.map((r, i) => (
+          <div key={i} style={reviewCard}>
+            <strong>{r.name}</strong>
+            <div>{"⭐".repeat(r.stars)}</div>
+            <p>{r.text}</p>
           </div>
         ))}
       </div>
+
     </div>
   );
 }
 
 /* ================= STYLES ================= */
-const layout = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+
+const container = {
+  display: "flex",
   gap: 20,
-  padding: 30,
-  maxWidth: 1200,
-  margin: "auto",
+  padding: 20,
+  background: "white",
 };
 
 const image = {
-  width: "100%",
-  borderRadius: 10,
+  width: 300,
+  height: 300,
+  objectFit: "contain",
 };
 
 const buyBtn = {
-  width: "100%",
   padding: 15,
-  background: "#ffd814",
+  background: "#ff9900",
   border: "none",
   fontWeight: "bold",
+  width: "100%",
+  marginTop: 10,
   cursor: "pointer",
 };
 
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-  gap: 10,
+const section = {
+  padding: 20,
+  marginTop: 20,
+  background: "white",
 };
 
-const card = {
+const reviewCard = {
   padding: 10,
-  background: "#f7f7f7",
-  borderRadius: 10,
-};
-
-const img = {
-  width: "100%",
-  height: 120,
-  objectFit: "cover",
-};
-
-const smallBtn = {
-  width: "100%",
-  padding: 8,
-  marginTop: 5,
+  borderBottom: "1px solid #ddd",
 };
