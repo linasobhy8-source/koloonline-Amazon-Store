@@ -12,6 +12,31 @@ import { db } from "../config/firebase";
 
 const fallbackImage = "https://via.placeholder.com/300";
 
+/* ================= 🔥 TRENDING PRODUCTS ================= */
+const trendingProducts = [
+  {
+    id: "t1",
+    title: "Wireless Bluetooth Earbuds",
+    price: "29",
+    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg",
+    link: "https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonline-20"
+  },
+  {
+    id: "t2",
+    title: "Smart Watch Fitness Tracker",
+    price: "39",
+    image: "https://m.media-amazon.com/images/I/71Swqqe7XAL._AC_SL1500_.jpg",
+    link: "https://www.amazon.com/dp/B0B4WZ9Q1K?tag=koloonline-20"
+  },
+  {
+    id: "t3",
+    title: "Fast Charging Power Bank",
+    price: "25",
+    image: "https://m.media-amazon.com/images/I/71lVwl3q-kL._AC_SL1500_.jpg",
+    link: "https://www.amazon.com/dp/B08LH26PFT?tag=koloonline-20"
+  }
+];
+
 /* ================= BREADCRUMB UI ================= */
 function Breadcrumb({ category }) {
   return (
@@ -41,67 +66,13 @@ export default function Home({ products }) {
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
-      {/* ================= SEO LEVEL 3 ================= */}
       <Head>
         <title>Koloonline | Best Amazon Deals</title>
-
-        <meta
-          name="description"
-          content="Best Amazon affiliate deals in Electronics, Fashion, Home & Sports"
-        />
-        <meta name="robots" content="index, follow" />
-        <meta name="googlebot" content="index, follow" />
-
+        <meta name="description" content="Best Amazon affiliate deals" />
         <link rel="canonical" href={siteUrl} />
-
-        {/* Open Graph */}
-        <meta property="og:title" content="Koloonline Amazon Deals" />
-        <meta property="og:description" content="Best Amazon deals updated daily" />
-        <meta property="og:image" content={`${siteUrl}/favicon.ico`} />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={siteUrl} />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-
-        {/* ================= 🔥 ITEMLIST SCHEMA ================= */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ItemList",
-              itemListElement: filtered.map((p, i) => ({
-                "@type": "ListItem",
-                position: i + 1,
-                url: `${siteUrl}/product/${p.id}`,
-                name: p.title,
-                image: p.image || fallbackImage
-              })),
-            }),
-          }}
-        />
-
-        {/* ================= 🔥 SITE STRUCTURED DATA ================= */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "Koloonline",
-              url: siteUrl,
-              potentialAction: {
-                "@type": "SearchAction",
-                target: `${siteUrl}/search?q={search_term_string}`,
-                "query-input": "required name=search_term_string"
-              }
-            }),
-          }}
-        />
       </Head>
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <header style={header}>
         <div style={logo}>🟠 Koloonline</div>
 
@@ -119,7 +90,7 @@ export default function Home({ products }) {
         </div>
       </header>
 
-      {/* ================= NAV ================= */}
+      {/* NAV */}
       <nav style={nav}>
         {["all", "Electronics", "Fashion", "Home", "Sports"].map((c) => (
           <button
@@ -135,15 +106,37 @@ export default function Home({ products }) {
         ))}
       </nav>
 
-      {/* ================= BREADCRUMB ================= */}
       <Breadcrumb category={category} />
 
-      {/* ================= HERO ================= */}
+      {/* HERO */}
       <div style={hero}>
         🔥 Best Amazon Deals Today
       </div>
 
-      {/* ================= PRODUCTS ================= */}
+      {/* 🔥 TRENDING SECTION */}
+      <div style={{ padding: 20 }}>
+        <h2>🔥 Trending Now</h2>
+
+        <div style={grid}>
+          {trendingProducts.map((p) => (
+            <div key={p.id} style={card}>
+
+              <img src={p.image} style={img} />
+
+              <h3 style={title}>{p.title}</h3>
+
+              <p style={price}>${p.price}</p>
+
+              <a href={p.link} target="_blank" rel="noopener noreferrer">
+                <button style={buy}>🛒 Buy Now</button>
+              </a>
+
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* PRODUCTS */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
@@ -154,7 +147,6 @@ export default function Home({ products }) {
 
             <p style={price}>${p.price}</p>
 
-            {/* ⭐ SEO BOOST: internal linking */}
             <Link href={`/product/${p.id}`}>
               <button style={btn}>View</button>
             </Link>
