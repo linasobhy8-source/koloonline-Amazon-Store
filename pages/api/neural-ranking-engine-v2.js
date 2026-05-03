@@ -1,11 +1,15 @@
-import { db } from "../../config/firebase";
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  doc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 /* ================= NEURAL RANKING ENGINE v2 ================= */
 export default async function handler(req, res) {
@@ -45,7 +49,7 @@ export default async function handler(req, res) {
 
       score += momentumBoost;
 
-      /* ================= 3. TIME DECAY (IMPORTANT) ================= */
+      /* ================= 3. TIME DECAY ================= */
       const decay = Math.max(0.7, 1 - ageHours / 72);
       score *= decay;
 
@@ -62,12 +66,11 @@ export default async function handler(req, res) {
       if (clicks > 50) score += 10;
       if (orders > 10) score += 15;
 
-      /* ================= 7. FINAL NORMALIZATION ================= */
+      /* ================= 7. SAFETY CHECK ================= */
       if (isNaN(score) || !isFinite(score)) {
         score = rating * 2;
       }
 
-      /* ================= HOT FLAG ================= */
       const isHot = score > 25;
 
       /* ================= UPDATE ================= */
@@ -76,7 +79,6 @@ export default async function handler(req, res) {
         isHot,
         lastLearned: serverTimestamp(),
 
-        // optional analytics boost tracking
         conversionRate,
         momentumBoost,
         decayFactor: decay,
@@ -92,10 +94,11 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("NEURAL ENGINE ERROR:", err);
+
     return res.status(500).json({
       success: false,
       error: err.message,
     });
   }
-}
+          }
