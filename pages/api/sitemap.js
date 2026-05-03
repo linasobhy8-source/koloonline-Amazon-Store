@@ -27,37 +27,49 @@ export default async function handler(req, res) {
       ...doc.data(),
     }));
 
-    /* ================= UNIQUE CATEGORIES ================= */
+    /* ================= CATEGORY SET ================= */
     const categorySet = new Set();
 
     products.forEach((p) => {
       if (p?.category) {
         categorySet.add(
-          p.category.toLowerCase().replace(/\s+/g, "-")
+          p.category
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "-")
         );
       }
     });
 
     const categories = Array.from(categorySet);
 
-    /* ================= STATIC PAGES ================= */
+    /* ================= STATIC URLS ================= */
     let urls = `
-      <url>
-        <loc>${baseUrl}</loc>
-        <lastmod>${now}</lastmod>
-        <priority>1.0</priority>
-      </url>
-    `;
+<url>
+  <loc>${baseUrl}</loc>
+  <lastmod>${now}</lastmod>
+  <changefreq>daily</changefreq>
+  <priority>1.0</priority>
+</url>
+
+<url>
+  <loc>${baseUrl}/categories</loc>
+  <lastmod>${now}</lastmod>
+  <changefreq>weekly</changefreq>
+  <priority>0.8</priority>
+</url>
+`;
 
     /* ================= CATEGORY PAGES ================= */
     categories.forEach((cat) => {
       urls += `
-        <url>
-          <loc>${baseUrl}/category/${cat}</loc>
-          <lastmod>${now}</lastmod>
-          <priority>0.85</priority>
-        </url>
-      `;
+<url>
+  <loc>${baseUrl}/category/${cat}</loc>
+  <lastmod>${now}</lastmod>
+  <changefreq>daily</changefreq>
+  <priority>0.85</priority>
+</url>
+`;
     });
 
     /* ================= PRODUCT PAGES ================= */
@@ -65,12 +77,13 @@ export default async function handler(req, res) {
       if (!p?.id) return;
 
       urls += `
-        <url>
-          <loc>${baseUrl}/product/${p.id}</loc>
-          <lastmod>${now}</lastmod>
-          <priority>0.9</priority>
-        </url>
-      `;
+<url>
+  <loc>${baseUrl}/product/${p.id}</loc>
+  <lastmod>${now}</lastmod>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
+</url>
+`;
     });
 
     /* ================= FINAL XML ================= */
@@ -80,7 +93,12 @@ ${urls}
 </urlset>`;
 
     res.setHeader("Content-Type", "application/xml");
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
+
+    // 🔥 SEO BOOST: caching for speed
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=86400"
+    );
 
     return res.status(200).send(sitemap);
 
