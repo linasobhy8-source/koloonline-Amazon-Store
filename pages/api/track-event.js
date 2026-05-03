@@ -1,9 +1,40 @@
-import { db } from "../../config/firebase";
-import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp
+} from "firebase/firestore";
 
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
+
+/* ================= USER FINGERPRINT ================= */
+function generateUserKey(req) {
+  const ip =
+    req.headers["x-forwarded-for"] ||
+    req.socket.remoteAddress ||
+    "unknown";
+
+  const ua = req.headers["user-agent"] || "unknown";
+
+  return Buffer.from(ip + ua).toString("base64");
+}
+
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= METHOD PROTECTION ================= */
+    /* ================= METHOD CHECK ================= */
     if (req.method !== "POST") {
       return res.status(405).json({
         success: false,
@@ -11,9 +42,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const { type, asin, userId = "guest_1" } = req.body;
+    const { type, asin } = req.body;
 
-    /* ================= VALIDATION ================= */
     if (!type || !asin) {
       return res.status(400).json({
         success: false,
@@ -30,59 +60,101 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ================= FIRESTORE REF ================= */
-    const ref = doc(db, "analytics_products", asin);
-    const snap = await getDoc(ref);
+    /* ================= USER DETECTION ================= */
+    const userKey = generateUserKey(req);
 
-    /* ================= INIT DOC ================= */
-    if (!snap.exists()) {
-      await setDoc(ref, {
+    const userRef = doc(db, "analytics_users", userKey);
+    const userSnap = await getDoc(userRef);
+
+    const now = Date.now();
+
+    /* ================= FRAUD PROTECTION ================= */
+    if (userSnap.exists()) {
+      const lastAction = userSnap.data().lastAction || 0;
+
+      // 30 seconds cooldown (anti spam clicks)
+      if (now - lastAction < 30000 && type === "click") {
+        return res.status(429).json({
+          success: false,
+          message: "Too many actions detected (fraud blocked)"
+        });
+      }
+    }
+
+    /* ================= UPDATE USER ================= */
+    await setDoc(
+      userRef,
+      {
+        lastAction: now,
+        lastType: type,
+      },
+      { merge: true }
+    );
+
+    /* ================= PRODUCT ANALYTICS ================= */
+    const productRef = doc(db, "analytics_products", asin);
+    const productSnap = await getDoc(productRef);
+
+    if (!productSnap.exists()) {
+      await setDoc(productRef, {
         clicks: 0,
         views: 0,
         orders: 0,
-        users: [],
-        lastUpdated: new Date()
+        createdAt: serverTimestamp()
       });
     }
 
-    /* ================= UPDATE LOGIC ================= */
+    /* ================= UPDATE STATS ================= */
     const updates = {
-      lastUpdated: new Date()
+      lastUpdated: serverTimestamp()
     };
 
-    if (type === "view") {
-      updates.views = increment(1);
-    }
+    if (type === "view") updates.views = increment(1);
+    if (type === "click") updates.clicks = increment(1);
+    if (type === "order") updates.orders = increment(1);
 
-    if (type === "click") {
-      updates.clicks = increment(1);
-    }
+    await updateDoc(productRef, updates);
 
-    if (type === "order") {
-      updates.orders = increment(1);
-    }
+    /* ================= AI CONVERSION CALC ================= */
+    const snap = await getDoc(productRef);
+    const data = snap.data();
 
-    /* ================= OPTIONAL USER TRACK ================= */
-    if (userId) {
-      updates.users = [];
-    }
+    const clicks = data.clicks || 0;
+    const orders = data.orders || 0;
+    const views = data.views || 0;
 
-    /* ================= SAVE ================= */
-    await updateDoc(ref, updates);
+    const conversionRate = clicks > 0 ? orders / clicks : 0;
 
+    const aiScore =
+      views * 0.2 +
+      clicks * 1.5 +
+      orders * 8 +
+      conversionRate * 100;
+
+    const isHotProduct = aiScore > 50;
+
+    await updateDoc(productRef, {
+      conversionRate,
+      aiScore,
+      isHotProduct
+    });
+
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      message: "event tracked successfully",
+      message: "Analytics tracked successfully",
       type,
-      asin
+      asin,
+      aiScore,
+      isHotProduct
     });
 
   } catch (err) {
-    console.error("TRACK ERROR:", err);
+    console.error("TRACK EVENT ERROR:", err);
 
     return res.status(500).json({
       success: false,
       error: err.message
     });
   }
-}
+                        }
