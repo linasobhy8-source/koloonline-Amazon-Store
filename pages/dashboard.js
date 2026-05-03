@@ -3,18 +3,17 @@ import {
   doc,
   getDoc,
   collection,
-  getDocs
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase-config";
 
+/* ================= MAIN DASHBOARD ================= */
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAnalytics();
-
-    // 🔥 REAL TIME REFRESH (Amazon-style)
     const interval = setInterval(loadAnalytics, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -23,11 +22,9 @@ export default function Dashboard() {
     try {
       setLoading(true);
 
-      /* ================= OVERVIEW ================= */
       const statsSnap = await getDoc(doc(db, "analytics", "overview"));
       const stats = statsSnap.exists() ? statsSnap.data() : {};
 
-      /* ================= PRODUCTS ================= */
       const productsSnap = await getDocs(collection(db, "analytics_products"));
 
       let products = productsSnap.docs.map((d) => ({
@@ -35,13 +32,12 @@ export default function Dashboard() {
         ...d.data(),
       }));
 
-      /* ================= AI SCORING ================= */
       products = products.map((p) => {
         const clicks = p.clicks || 0;
         const orders = p.orders || 0;
         const views = p.views || 0;
 
-        const conversion = clicks > 0 ? orders / clicks : 0;
+        const conversion = clicks ? orders / clicks : 0;
 
         const aiScore =
           views * 0.2 +
@@ -59,149 +55,172 @@ export default function Dashboard() {
 
       products.sort((a, b) => b.aiScore - a.aiScore);
 
-      /* ================= FINAL STATE ================= */
       setData({
         clicks: stats.totalClicks || 0,
         orders: stats.totalOrders || 0,
-        whatsapp: stats.totalWhatsApp || 0,
         revenue: (stats.totalOrders || 0) * 12,
-
-        products: products.slice(0, 10),
-        totalProducts: products.length,
-        hotProducts: products.filter(p => p.isHot).length,
+        products,
+        hot: products.filter((p) => p.isHot).length,
       });
 
     } catch (err) {
-      console.error("Dashboard error:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
   if (loading || !data) {
-    return <div style={{ padding: 30 }}>Loading dashboard...</div>;
+    return <div style={styles.loading}>Loading Analytics...</div>;
   }
 
   return (
-    <div style={page}>
+    <div style={styles.page}>
 
       {/* HEADER */}
-      <div style={header}>
-        🧠 Amazon-Level AI Analytics Dashboard
+      <div style={styles.header}>
+        🧠 AI Analytics Dashboard
+        <span style={styles.subHeader}>Amazon-Level Intelligence System</span>
       </div>
 
-      {/* STATS */}
-      <div style={grid}>
-        <Card title="Clicks" value={data.clicks} />
-        <Card title="Orders" value={data.orders} />
-        <Card title="Revenue $" value={data.revenue} />
-        <Card title="Hot Products 🔥" value={data.hotProducts} />
+      {/* STATS CARDS */}
+      <div style={styles.grid}>
+        <Card title="Clicks" value={data.clicks} color="#007bff" />
+        <Card title="Orders" value={data.orders} color="#28a745" />
+        <Card title="Revenue" value={`$${data.revenue}`} color="#ff9900" />
+        <Card title="Hot Products" value={data.hot} color="#ff3b30" />
       </div>
 
-      {/* AI INSIGHTS */}
-      <div style={insightBox}>
+      {/* INSIGHTS */}
+      <div style={styles.insights}>
         <h3>🧠 AI Insights</h3>
-        <p>📦 Total Products: {data.totalProducts}</p>
-        <p>🔥 Hot Products: {data.hotProducts}</p>
-        <p>📈 Conversion AI Active</p>
+        <p>🔥 Hot products detected automatically</p>
+        <p>📊 Conversion tracking active</p>
+        <p>⚡ Real-time analytics every 15s</p>
       </div>
 
-      {/* PRODUCTS TABLE */}
-      <div style={{ padding: 20 }}>
-        <h2>🔥 Top AI Products</h2>
+      {/* PRODUCTS SECTION */}
+      <div style={styles.section}>
+        <h2>🔥 Top Performing Products</h2>
 
-        <table style={table}>
-          <thead>
-            <tr style={thead}>
-              <th>ID</th>
-              <th>Clicks</th>
-              <th>Orders</th>
-              <th>Conversion %</th>
-              <th>AI Score</th>
-              <th>Status</th>
-            </tr>
-          </thead>
+        <div style={styles.table}>
+          <div style={styles.tableHeader}>
+            <span>ID</span>
+            <span>Clicks</span>
+            <span>Orders</span>
+            <span>Conversion</span>
+            <span>AI Score</span>
+            <span>Status</span>
+          </div>
 
-          <tbody>
-            {data.products.map((p) => (
-              <tr key={p.id} style={row}>
-                <td>{p.id.slice(0, 6)}</td>
-                <td>{p.clicks}</td>
-                <td>{p.orders}</td>
-                <td>{p.conversion}%</td>
-                <td style={{ color: "#ff9900", fontWeight: "bold" }}>
-                  {p.aiScore.toFixed(1)}
-                </td>
-                <td>
-                  {p.isHot ? "🔥 HOT" : "Normal"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          {data.products.slice(0, 10).map((p) => (
+            <div key={p.id} style={styles.row}>
+              <span>{p.id.slice(0, 6)}</span>
+              <span>{p.clicks}</span>
+              <span>{p.orders}</span>
+              <span>{p.conversion}%</span>
+              <span style={{ color: "#ff9900", fontWeight: "bold" }}>
+                {p.aiScore.toFixed(1)}
+              </span>
+              <span>
+                {p.isHot ? "🔥 HOT" : "Normal"}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
     </div>
   );
 }
 
-/* ================= UI ================= */
-function Card({ title, value }) {
+/* ================= CARD ================= */
+function Card({ title, value, color }) {
   return (
-    <div style={card}>
-      <p>{title}</p>
-      <h2 style={{ color: "#ff9900" }}>{value}</h2>
+    <div style={{ ...styles.card, borderLeft: `4px solid ${color}` }}>
+      <p style={{ margin: 0, color: "#666" }}>{title}</p>
+      <h2 style={{ margin: 0, color }}>{value}</h2>
     </div>
   );
 }
 
-const page = {
-  fontFamily: "Arial",
-  background: "#f5f5f5",
-  minHeight: "100vh",
-};
+/* ================= STYLES ================= */
+const styles = {
+  page: {
+    fontFamily: "Arial",
+    background: "#f4f6f9",
+    minHeight: "100vh",
+    paddingBottom: 40,
+  },
 
-const header = {
-  background: "#131921",
-  color: "white",
-  padding: 20,
-  textAlign: "center",
-  fontSize: 22,
-  fontWeight: "bold",
-};
+  header: {
+    background: "#111827",
+    color: "white",
+    padding: 20,
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
 
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
-  gap: 15,
-  padding: 20,
-};
+  subHeader: {
+    display: "block",
+    fontSize: 12,
+    opacity: 0.7,
+    marginTop: 5,
+  },
 
-const card = {
-  background: "white",
-  padding: 15,
-  borderRadius: 10,
-  textAlign: "center",
-};
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+    gap: 15,
+    padding: 20,
+  },
 
-const insightBox = {
-  margin: 20,
-  padding: 15,
-  background: "white",
-  borderRadius: 10,
-};
+  card: {
+    background: "white",
+    padding: 20,
+    borderRadius: 12,
+    boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+  },
 
-const table = {
-  width: "100%",
-  background: "white",
-  borderRadius: 10,
-};
+  insights: {
+    margin: "0 20px",
+    padding: 15,
+    background: "white",
+    borderRadius: 10,
+    boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
+  },
 
-const thead = {
-  background: "#232f3e",
-  color: "white",
-};
+  section: {
+    padding: 20,
+  },
 
-const row = {
-  textAlign: "center",
+  table: {
+    background: "white",
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
+  },
+
+  tableHeader: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
+    background: "#232f3e",
+    color: "white",
+    padding: 12,
+    fontWeight: "bold",
+  },
+
+  row: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
+    padding: 12,
+    borderBottom: "1px solid #eee",
+  },
+
+  loading: {
+    padding: 40,
+    textAlign: "center",
+    fontSize: 18,
+  },
 };
