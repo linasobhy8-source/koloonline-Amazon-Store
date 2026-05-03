@@ -1,4 +1,20 @@
 User-agent: *
 Allow: /
 
+# ================= IMPORTANT DIRECTORIES =================
+Allow: /product/
+Allow: /category/
+Allow: /
+
+# ================= BLOCK INTERNAL / USELESS PAGES =================
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /private/
+Disallow: /search?
+
+# ================= SITEMAP =================
 Sitemap: https://koloonline.online/api/sitemap
+
+# ================= CRAWL DELAY (OPTIONAL - safer for servers) =================
+Crawl-delay: 1
