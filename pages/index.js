@@ -1,74 +1,93 @@
 import Head from "next/head";
-import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../config/firebase";
-import Link from "next/link";
 
 const fallbackImage = "https://via.placeholder.com/300";
 
-export default function Home() {
-  const [products, setProducts] = useState([]);
+/* ================= PAGE ================= */
+export default function Home({ products }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
 
-  useEffect(() => {
-    const load = async () => {
-      const snap = await getDocs(
-        query(collection(db, "products"), limit(50))
-      );
+  const filtered = products.filter((p) => {
+    const matchSearch = p.title
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
 
-      setProducts(
-        snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      );
-    };
+    const matchCategory =
+      category === "all" ||
+      p.category?.toLowerCase() === category.toLowerCase();
 
-    load();
-  }, []);
-
-  const filtered = useMemo(() => {
-    return products.filter((p) =>
-      p.title?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [products, search]);
+    return matchSearch && matchCategory;
+  });
 
   return (
-    <div style={{ background: "#eaeded" }}>
+    <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
-      {/* SEO */}
+      {/* ================= SEO ================= */}
       <Head>
-        <title>Koloonline - Amazon Deals</title>
-        <meta name="description" content="Best Amazon affiliate deals in Electronics, Fashion, Home & Sports" />
+        <title>Koloonline | Amazon Deals</title>
+        <meta name="description" content="Best Amazon deals updated daily" />
+        <link rel="canonical" href="https://koloonline.online" />
       </Head>
 
-      {/* HEADER */}
+      {/* ================= HEADER (Amazon Style) ================= */}
       <header style={header}>
-        🟠 Koloonline Amazon Deals
-      </header>
+        <div style={logo}>🟠 Koloonline</div>
 
-      {/* SEARCH */}
-      <div style={{ padding: 10 }}>
         <input
           placeholder="Search Amazon products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={searchBox}
         />
-      </div>
 
-      {/* CATEGORIES */}
-      <div style={cats}>
-        {["Electronics", "Fashion", "Home", "Sports"].map((c) => (
-          <button key={c} style={catBtn}>
+        <div style={navRight}>
+          <span>Account</span>
+          <span>Orders</span>
+          <span>Cart 🛒</span>
+        </div>
+      </header>
+
+      {/* ================= NAVBAR ================= */}
+      <nav style={nav}>
+        {["all", "Electronics", "Fashion", "Home", "Sports"].map((c) => (
+          <button
+            key={c}
+            onClick={() => setCategory(c)}
+            style={{
+              ...navBtn,
+              background: category === c ? "#febd69" : "transparent",
+            }}
+          >
             {c}
           </button>
         ))}
+      </nav>
+
+      {/* ================= HERO ================= */}
+      <div style={hero}>
+        🔥 Best Amazon Deals Today
       </div>
 
-      {/* PRODUCTS */}
+      {/* ================= ADSENSE ================= */}
+      <div style={{ textAlign: "center", margin: 20 }}>
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="ca-pub-1294940976431468"
+          data-ad-slot="1234567890"
+          data-ad-format="auto"
+        ></ins>
+      </div>
+
+      {/* ================= PRODUCTS ================= */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
-            
+
             <img
               src={p.image || fallbackImage}
               style={img}
@@ -82,45 +101,84 @@ export default function Home() {
               <button style={btn}>View</button>
             </Link>
 
-            <a href={p.link} target="_blank">
+            <a href={p.link} target="_blank" rel="noopener noreferrer">
               <button style={buy}>Buy on Amazon</button>
             </a>
 
           </div>
         ))}
       </div>
+
     </div>
   );
 }
 
-/* ===== STYLE ===== */
+/* ================= SSR ================= */
+export async function getServerSideProps() {
+  const snap = await getDocs(
+    query(collection(db, "products"), limit(50))
+  );
+
+  const products = snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
+
+  return {
+    props: {
+      products,
+    },
+  };
+}
+
+/* ================= STYLES ================= */
 
 const header = {
   background: "#131921",
   color: "white",
-  padding: 15,
+  display: "flex",
+  alignItems: "center",
+  padding: 10,
+  gap: 10,
+};
+
+const logo = {
   fontSize: 22,
-  textAlign: "center",
+  fontWeight: "bold",
 };
 
 const searchBox = {
-  width: "100%",
+  flex: 1,
   padding: 10,
-  borderRadius: 6,
+  borderRadius: 5,
+  border: "none",
 };
 
-const cats = {
+const navRight = {
   display: "flex",
   gap: 10,
-  padding: 10,
-  flexWrap: "wrap",
 };
 
-const catBtn = {
+const nav = {
+  background: "#232f3e",
   padding: 10,
-  background: "#ff9900",
+  display: "flex",
+  gap: 10,
+};
+
+const navBtn = {
+  color: "white",
   border: "none",
-  borderRadius: 6,
+  padding: 8,
+  cursor: "pointer",
+};
+
+const hero = {
+  background: "linear-gradient(#f3a847,#e47911)",
+  padding: 30,
+  textAlign: "center",
+  fontSize: 22,
+  fontWeight: "bold",
 };
 
 const grid = {
@@ -164,8 +222,7 @@ const btn = {
 const buy = {
   width: "100%",
   padding: 10,
-  background: "#25D366",
+  background: "#ffd814",
   border: "none",
-  color: "white",
   marginTop: 5,
 };
