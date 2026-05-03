@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import Breadcrumb from "../../components/Breadcrumb";
 
 /* ================= FALLBACK ================= */
 const fallbackImage = "https://via.placeholder.com/500";
@@ -57,7 +58,7 @@ export default function ProductPage() {
 
   const isAvailable = true;
 
-  /* ================= SCHEMA (🔥 IMPORTANT FOR GOOGLE) ================= */
+  /* ================= PRODUCT SCHEMA ================= */
   const schema = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -65,10 +66,12 @@ export default function ProductPage() {
     image: product.image,
     description: product.title,
     sku: product.asin,
+
     brand: {
       "@type": "Brand",
       name: "Amazon"
     },
+
     offers: {
       "@type": "Offer",
       priceCurrency: "USD",
@@ -78,11 +81,38 @@ export default function ProductPage() {
         : "https://schema.org/OutOfStock",
       url: `https://koloonline.online/product/${product.asin}`
     },
+
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: rating,
       reviewCount: reviews.length
     }
+  };
+
+  /* ================= BREADCRUMB SCHEMA ================= */
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://koloonline.online"
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: product.category || "Category",
+        item: `https://koloonline.online/category/${product.category}`
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: product.title,
+        item: `https://koloonline.online/product/${product.asin}`
+      }
+    ]
   };
 
   return (
@@ -102,12 +132,27 @@ export default function ProductPage() {
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
 
-        {/* 🔥 PRODUCT SCHEMA */}
+        {/* PRODUCT SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
+
+        {/* BREADCRUMB SCHEMA (🔥 SEO قوي جدًا) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
       </Head>
+
+      {/* ================= BREADCRUMB UI ================= */}
+      <Breadcrumb
+        items={[
+          { name: "Home", link: "/" },
+          { name: product.category || "Category", link: `/category/${product.category}` },
+          { name: product.title, link: "#" }
+        ]}
+      />
 
       {/* ================= PRODUCT HERO ================= */}
       <div style={container}>
@@ -121,15 +166,12 @@ export default function ProductPage() {
 
           <h1>{product.title}</h1>
 
-          {/* ⭐ Rating */}
           <Stars rating={rating} />
 
-          {/* 💰 Price */}
           <h2 style={{ color: "#B12704" }}>
             ${product.price}
           </h2>
 
-          {/* Availability */}
           <p style={{ color: isAvailable ? "green" : "red" }}>
             {isAvailable ? "In Stock" : "Out of Stock"}
           </p>
@@ -144,7 +186,7 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* ================= REVIEWS (Amazon Style) ================= */}
+      {/* ================= REVIEWS ================= */}
       <div style={section}>
         <h2>Customer Reviews</h2>
 
