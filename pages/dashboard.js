@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs
+} from "firebase/firestore";
 import { db } from "../firebase-config";
 
 export default function Dashboard() {
-  const [data, setData] = useState({
-    totalClicks: 0,
-    totalOrders: 0,
-    totalWhatsApp: 0,
-    revenue: 0,
-    topProducts: [],
-  });
-
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAnalytics();
+
+    // 🔥 REAL TIME REFRESH (Amazon-style)
+    const interval = setInterval(loadAnalytics, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadAnalytics() {
@@ -22,48 +24,51 @@ export default function Dashboard() {
       setLoading(true);
 
       /* ================= OVERVIEW ================= */
-      const statsRef = doc(db, "analytics", "overview");
-      const statsSnap = await getDoc(statsRef);
-
+      const statsSnap = await getDoc(doc(db, "analytics", "overview"));
       const stats = statsSnap.exists() ? statsSnap.data() : {};
 
-      /* ================= PRODUCTS ANALYTICS ================= */
-      const productsSnap = await getDocs(
-        collection(db, "analytics_products")
-      );
+      /* ================= PRODUCTS ================= */
+      const productsSnap = await getDocs(collection(db, "analytics_products"));
 
-      let topProducts = productsSnap.docs.map((d) => ({
-        asin: d.id,
+      let products = productsSnap.docs.map((d) => ({
+        id: d.id,
         ...d.data(),
       }));
 
-      /* ================= SMART SORT (AI GRAPH CORE) ================= */
-      topProducts = topProducts
-        .map((p) => {
-          const clicks = p.clicks || 0;
-          const orders = p.orders || 0;
-          const whatsapp = p.whatsapp || 0;
+      /* ================= AI SCORING ================= */
+      products = products.map((p) => {
+        const clicks = p.clicks || 0;
+        const orders = p.orders || 0;
+        const views = p.views || 0;
 
-          // AI performance score
-          const score =
-            clicks * 1 +
-            orders * 4 +
-            whatsapp * 2;
+        const conversion = clicks > 0 ? orders / clicks : 0;
 
-          return { ...p, score };
-        })
-        .sort((a, b) => b.score - a.score);
+        const aiScore =
+          views * 0.2 +
+          clicks * 1.5 +
+          orders * 8 +
+          conversion * 100;
 
-      /* ================= SET STATE ================= */
+        return {
+          ...p,
+          conversion: (conversion * 100).toFixed(1),
+          aiScore,
+          isHot: aiScore > 50,
+        };
+      });
+
+      products.sort((a, b) => b.aiScore - a.aiScore);
+
+      /* ================= FINAL STATE ================= */
       setData({
-        totalClicks: stats.totalClicks || 0,
-        totalOrders: stats.totalOrders || 0,
-        totalWhatsApp: stats.totalWhatsApp || 0,
+        clicks: stats.totalClicks || 0,
+        orders: stats.totalOrders || 0,
+        whatsapp: stats.totalWhatsApp || 0,
+        revenue: (stats.totalOrders || 0) * 12,
 
-        // 💰 revenue estimate (adjustable model)
-        revenue: (stats.totalOrders || 0) * 10,
-
-        topProducts: topProducts.slice(0, 10),
+        products: products.slice(0, 10),
+        totalProducts: products.length,
+        hotProducts: products.filter(p => p.isHot).length,
       });
 
     } catch (err) {
@@ -73,112 +78,123 @@ export default function Dashboard() {
     }
   }
 
+  if (loading || !data) {
+    return <div style={{ padding: 30 }}>Loading dashboard...</div>;
+  }
+
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
+    <div style={page}>
 
       {/* HEADER */}
       <div style={header}>
-        📊 Koloonline AI Graph Dashboard
+        🧠 Amazon-Level AI Analytics Dashboard
       </div>
 
-      {/* STATS CARDS */}
+      {/* STATS */}
       <div style={grid}>
-        <Card title="Clicks" value={data.totalClicks} />
-        <Card title="Orders" value={data.totalOrders} />
-        <Card title="WhatsApp" value={data.totalWhatsApp} />
-        <Card title="Revenue ($)" value={data.revenue} />
+        <Card title="Clicks" value={data.clicks} />
+        <Card title="Orders" value={data.orders} />
+        <Card title="Revenue $" value={data.revenue} />
+        <Card title="Hot Products 🔥" value={data.hotProducts} />
       </div>
 
-      {/* TOP PRODUCTS TABLE */}
+      {/* AI INSIGHTS */}
+      <div style={insightBox}>
+        <h3>🧠 AI Insights</h3>
+        <p>📦 Total Products: {data.totalProducts}</p>
+        <p>🔥 Hot Products: {data.hotProducts}</p>
+        <p>📈 Conversion AI Active</p>
+      </div>
+
+      {/* PRODUCTS TABLE */}
       <div style={{ padding: 20 }}>
-        <h2>🔥 AI Top Products</h2>
+        <h2>🔥 Top AI Products</h2>
 
-        {loading ? (
-          <p>Loading dashboard...</p>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={tableStyle}>
-              <thead>
-                <tr style={thead}>
-                  <th>ASIN</th>
-                  <th>Clicks</th>
-                  <th>Orders</th>
-                  <th>WhatsApp</th>
-                  <th>AI Score</th>
-                </tr>
-              </thead>
+        <table style={table}>
+          <thead>
+            <tr style={thead}>
+              <th>ID</th>
+              <th>Clicks</th>
+              <th>Orders</th>
+              <th>Conversion %</th>
+              <th>AI Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
 
-              <tbody>
-                {data.topProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" style={empty}>
-                      No analytics data yet
-                    </td>
-                  </tr>
-                ) : (
-                  data.topProducts.map((p) => (
-                    <tr key={p.asin} style={row}>
-                      <td>{p.asin}</td>
-                      <td>{p.clicks || 0}</td>
-                      <td>{p.orders || 0}</td>
-                      <td>{p.whatsapp || 0}</td>
-                      <td style={{ color: "#ff9900", fontWeight: "bold" }}>
-                        {p.score?.toFixed(1)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+          <tbody>
+            {data.products.map((p) => (
+              <tr key={p.id} style={row}>
+                <td>{p.id.slice(0, 6)}</td>
+                <td>{p.clicks}</td>
+                <td>{p.orders}</td>
+                <td>{p.conversion}%</td>
+                <td style={{ color: "#ff9900", fontWeight: "bold" }}>
+                  {p.aiScore.toFixed(1)}
+                </td>
+                <td>
+                  {p.isHot ? "🔥 HOT" : "Normal"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
     </div>
   );
 }
 
-/* ================= CARD ================= */
+/* ================= UI ================= */
 function Card({ title, value }) {
   return (
     <div style={card}>
-      <p style={{ margin: 0, color: "#777" }}>{title}</p>
-      <h2 style={{ margin: 0, color: "#ff9900" }}>{value}</h2>
+      <p>{title}</p>
+      <h2 style={{ color: "#ff9900" }}>{value}</h2>
     </div>
   );
 }
 
-/* ================= STYLES ================= */
+const page = {
+  fontFamily: "Arial",
+  background: "#f5f5f5",
+  minHeight: "100vh",
+};
+
 const header = {
   background: "#131921",
   color: "white",
-  padding: 15,
+  padding: 20,
   textAlign: "center",
-  fontSize: 20,
+  fontSize: 22,
   fontWeight: "bold",
 };
 
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+  gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
   gap: 15,
   padding: 20,
 };
 
 const card = {
   background: "white",
-  padding: 20,
+  padding: 15,
   borderRadius: 10,
   textAlign: "center",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
 };
 
-const tableStyle = {
+const insightBox = {
+  margin: 20,
+  padding: 15,
+  background: "white",
+  borderRadius: 10,
+};
+
+const table = {
   width: "100%",
   background: "white",
   borderRadius: 10,
-  overflow: "hidden",
-  minWidth: 600,
 };
 
 const thead = {
@@ -188,10 +204,4 @@ const thead = {
 
 const row = {
   textAlign: "center",
-  borderBottom: "1px solid #eee",
-};
-
-const empty = {
-  textAlign: "center",
-  padding: 20,
 };
