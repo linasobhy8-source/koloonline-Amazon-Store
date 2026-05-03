@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../config/firebase";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -76,9 +76,7 @@ export default function Categories() {
       <div style={grid}>
         {categories.map((cat) => (
           <Link key={cat} href={`/category/${cat}`}>
-
             <div style={card}>
-
               <div style={icon}>🛍️</div>
 
               <h3 style={title}>
@@ -88,9 +86,7 @@ export default function Categories() {
               <p style={desc}>
                 Explore best {cat} deals on Amazon
               </p>
-
             </div>
-
           </Link>
         ))}
       </div>
