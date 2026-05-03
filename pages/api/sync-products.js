@@ -1,5 +1,6 @@
-import { db } from "../../config/firebase";
+import { initializeApp, getApps } from "firebase/app";
 import {
+  getFirestore,
   collection,
   addDoc,
   serverTimestamp,
@@ -7,6 +8,16 @@ import {
   setDoc,
   doc,
 } from "firebase/firestore";
+
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 /* ================= CLEAN HELPERS ================= */
 function cleanTitle(title) {
@@ -19,7 +30,6 @@ function cleanTitle(title) {
 
 function cleanPrice(price) {
   if (!price) return 0;
-
   const num = parseFloat(String(price).replace(/[^0-9.]/g, ""));
   return isNaN(num) ? 0 : num;
 }
@@ -67,14 +77,12 @@ export default async function handler(req, res) {
 
     const response = await fetch(url);
 
-    /* ================= FETCH CHECK ================= */
     if (!response.ok) {
       throw new Error(`SerpAPI error: ${response.status}`);
     }
 
     const data = await response.json();
 
-    /* ================= LIMIT RESULTS ================= */
     const results = (
       data?.organic_results ||
       data?.shopping_results ||
@@ -192,4 +200,4 @@ export default async function handler(req, res) {
       error: err.message,
     });
   }
-  }
+    }
