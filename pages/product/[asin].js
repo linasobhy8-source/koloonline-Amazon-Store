@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import {
@@ -8,7 +9,6 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../../config/firebase";
-import Head from "next/head";
 import { trackEvent } from "../../lib/tracking";
 
 /* ================= COUNTRY ================= */
@@ -66,7 +66,7 @@ export default function Product() {
       try {
         setLoading(true);
 
-        /* ================= GET PRODUCT (FAST) ================= */
+        /* ================= PRODUCT ================= */
         const prodRef = doc(db, "products", asin);
         const prodSnap = await getDoc(prodRef);
 
@@ -101,7 +101,7 @@ export default function Product() {
           setBoughtTogether(rel.boughtTogether || []);
         }
 
-        /* ================= ALL PRODUCTS (FOR RECOMMENDATIONS) ================= */
+        /* ================= ALL PRODUCTS ================= */
         const snap = await getDocs(collection(db, "products"));
 
         const data = snap.docs.map((d) => ({
@@ -126,7 +126,6 @@ export default function Product() {
 
   const buyLink = product.link || getAffiliateLink(product.asin);
 
-  /* ================= FILTER ================= */
   const recommendedProducts = allProducts.filter((p) =>
     alsoViewed.includes(p.asin)
   );
@@ -138,19 +137,46 @@ export default function Product() {
   return (
     <div style={{ fontFamily: "Arial", background: "#fff" }}>
 
-      {/* ================= SEO ================= */}
+      {/* ================= SEO FULL ================= */}
       <Head>
         <title>{product.title} | Koloonline</title>
-        <meta name="description" content={product.title} />
+        <meta name="description" content={product.title + " - Best deals on Koloonline"} />
+        <meta name="keywords" content={`${product.category || "products"}, amazon deals, buy online`} />
+
+        <link rel="canonical" href={`https://koloonline.online/product/${product.asin}`} />
+
+        <meta property="og:title" content={product.title} />
+        <meta property="og:image" content={product.image} />
+        <meta property="og:url" content={`https://koloonline.online/product/${product.asin}`} />
+        <meta property="og:type" content="product" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+
+        {/* Google Rich Results */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              name: product.title,
+              image: product.image,
+              description: product.title,
+              offers: {
+                "@type": "Offer",
+                price: product.price,
+                priceCurrency: "USD",
+                availability: "https://schema.org/InStock",
+              },
+            }),
+          }}
+        />
       </Head>
 
       {/* ================= PRODUCT ================= */}
       <div style={layout}>
 
-        <img
-          src={product.image || "/placeholder.png"}
-          style={image}
-        />
+        <img src={product.image || "/placeholder.png"} style={image} />
 
         <div>
           <h1>{product.title}</h1>
@@ -178,18 +204,18 @@ export default function Product() {
         </div>
       </div>
 
-      {/* ================= ALSO VIEWED ================= */}
-      <Section title="👀 Customers Also Viewed" data={recommendedProducts} router={router} />
-
-      {/* ================= BOUGHT TOGETHER ================= */}
-      <Section title="🧺 Frequently Bought Together" data={boughtTogetherProducts} router={router} />
+      {/* ================= SECTIONS ================= */}
+      <Section title="👀 Customers Also Viewed" data={recommendedProducts} />
+      <Section title="🧺 Frequently Bought Together" data={boughtTogetherProducts} />
 
     </div>
   );
 }
 
-/* ================= REUSABLE SECTION ================= */
-function Section({ title, data, router }) {
+/* ================= SECTION ================= */
+function Section({ title, data }) {
+  const router = useRouter();
+
   return (
     <div style={{ padding: 20 }}>
       <h2>{title}</h2>
@@ -197,9 +223,7 @@ function Section({ title, data, router }) {
       <div style={grid}>
         {data.map((p) => (
           <div key={p.id} style={card}>
-
             <img src={p.image} style={img} />
-
             <p style={{ fontSize: 12 }}>{p.title}</p>
 
             <button
@@ -208,7 +232,6 @@ function Section({ title, data, router }) {
             >
               View
             </button>
-
           </div>
         ))}
       </div>
