@@ -8,7 +8,10 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
 /* ================= HANDLER ================= */
@@ -20,6 +23,18 @@ export default async function handler(req, res) {
     const snap = await getDocs(collection(db, "products"));
     const products = snap.docs.map((doc) => doc.data());
 
+    /* ================= COLLECT UNIQUE CATEGORIES ================= */
+    const categorySet = new Set();
+
+    products.forEach((p) => {
+      if (p?.category) {
+        categorySet.add(p.category.toLowerCase());
+      }
+    });
+
+    const categories = Array.from(categorySet);
+
+    /* ================= STATIC URLS ================= */
     let urls = `
       <url>
         <loc>${baseUrl}</loc>
@@ -40,6 +55,18 @@ export default async function handler(req, res) {
       </url>
     `;
 
+    /* ================= CATEGORY PAGES (🔥 NEW) ================= */
+    categories.forEach((cat) => {
+      urls += `
+        <url>
+          <loc>${baseUrl}/category/${cat}</loc>
+          <lastmod>${now}</lastmod>
+          <priority>0.85</priority>
+        </url>
+      `;
+    });
+
+    /* ================= PRODUCT PAGES ================= */
     products.forEach((p) => {
       if (!p?.asin) return;
 
@@ -52,6 +79,7 @@ export default async function handler(req, res) {
       `;
     });
 
+    /* ================= FINAL XML ================= */
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
