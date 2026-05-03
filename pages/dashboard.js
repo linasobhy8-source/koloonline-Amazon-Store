@@ -5,7 +5,7 @@ import {
   collection,
   getDocs,
 } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../config/firebase";
 
 /* ================= MAIN DASHBOARD ================= */
 export default function Dashboard() {
