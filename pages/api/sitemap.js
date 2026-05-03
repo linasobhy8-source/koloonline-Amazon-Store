@@ -1,6 +1,17 @@
-import { db } from "../../firebase-config";
-import { collection, getDocs } from "firebase/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
+
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const baseUrl = "https://koloonline.online";
@@ -47,10 +58,10 @@ ${urls}
 </urlset>`;
 
     res.setHeader("Content-Type", "application/xml");
-    res.status(200).send(sitemap);
+    return res.status(200).send(sitemap);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Error generating sitemap");
+    console.error("SITEMAP ERROR:", error);
+    return res.status(500).send("Error generating sitemap");
   }
 }
