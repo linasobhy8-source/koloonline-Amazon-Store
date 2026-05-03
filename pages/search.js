@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../config/firebase";
 import Link from "next/link";
 
 export default function Home() {
@@ -174,7 +174,6 @@ export default function Home() {
                 borderRadius: 10
               }}>
                 
-                {/* IMAGE */}
                 <img
                   src={p.image}
                   style={{ width: "100%", height: 180, objectFit: "cover" }}
@@ -183,7 +182,6 @@ export default function Home() {
                 <h3>{p.title}</h3>
                 <p>${p.price}</p>
 
-                {/* VIEW PRODUCT */}
                 <Link href={`/product/${p.asin}`}>
                   <button style={{
                     width: "100%",
@@ -196,7 +194,6 @@ export default function Home() {
                   </button>
                 </Link>
 
-                {/* AMAZON LINK */}
                 <button
                   onClick={() => window.open(p.link, "_blank")}
                   style={{
@@ -219,4 +216,4 @@ export default function Home() {
       </div>
     </div>
   );
-                    }
+}
