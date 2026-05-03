@@ -1,12 +1,21 @@
-import { useEffect } from "react";
+import Head from "next/head";
 
 export default function App({ Component, pageProps }) {
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://cse.google.com/cse.js?cx=a62092fd965664e67";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
+  return (
+    <>
+      <Head>
+        {/* AdSense */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1294940976431468"
+          crossOrigin="anonymous"
+        />
 
-  return <Component {...pageProps} />;
+        {/* Global SEO */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+
+      <Component {...pageProps} />
+    </>
+  );
 }
