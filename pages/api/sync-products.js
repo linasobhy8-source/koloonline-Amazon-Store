@@ -11,9 +11,9 @@ import {
 
 /* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
@@ -39,7 +39,7 @@ function getImage(item) {
     item?.thumbnail ||
     item?.image ||
     item?.original_image ||
-    "/placeholder.png"
+    "https://via.placeholder.com/300"
   );
 }
 
@@ -116,14 +116,18 @@ export default async function handler(req, res) {
           continue;
         }
 
+        /* ✅ حل مشكلة duplicate */
         if (existingLinks.has(item.link)) {
           skipped++;
           continue;
         }
 
+        /* ✅ Affiliate Fix (مهم جدًا) */
         const tag = process.env.AMAZON_US || "koloonlinesto-20";
-        const affiliateLink = `${item.link}?tag=${tag}`;
+        const cleanLink = item.link.split("?")[0];
+        const affiliateLink = `${cleanLink}?tag=${tag}`;
 
+        /* ✅ AI Score */
         const trendBoost =
           item.bestseller || item.is_best_seller ? 5 : 0;
 
@@ -179,7 +183,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 Sync Engine Updated + Safe AI + Logging",
+      message: "🔥 AI Sync Engine Working",
       keyword,
       saved,
       skipped,
@@ -200,4 +204,4 @@ export default async function handler(req, res) {
       error: err.message,
     });
   }
-    }
+  }
