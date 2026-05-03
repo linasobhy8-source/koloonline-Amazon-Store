@@ -1,193 +1,159 @@
 import Head from "next/head";
 import { useEffect, useState, useMemo } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  limit,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../config/firebase";
 import Link from "next/link";
-import { trackEvent } from "../lib/tracking";
 
-/* صورة احتياطية */
-const fallbackImage =
-  "https://via.placeholder.com/300x300?text=No+Image";
+const fallbackImage = "https://via.placeholder.com/300";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
-  const [analyticsMap, setAnalyticsMap] = useState({});
-  const [userBehavior, setUserBehavior] = useState({});
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [tab, setTab] = useState("trending");
 
-  /* ================= FETCH ================= */
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const productsSnap = await getDocs(
-          query(collection(db, "products"), limit(80))
-        );
+    const load = async () => {
+      const snap = await getDocs(
+        query(collection(db, "products"), limit(50))
+      );
 
-        const productsData = productsSnap.docs.map((doc) => ({
-          id: doc.id,
-          asin: doc.id,
-          ...doc.data(),
-        }));
-
-        const analyticsSnap = await getDocs(
-          collection(db, "analytics_products")
-        );
-
-        const map = {};
-        analyticsSnap.docs.forEach((d) => {
-          map[d.id] = d.data();
-        });
-
-        const userId = "guest_1";
-        const userSnap = await getDoc(doc(db, "user_behavior", userId));
-
-        setUserBehavior(userSnap.exists() ? userSnap.data() : {});
-        setProducts(productsData);
-        setAnalyticsMap(map);
-
-      } catch (err) {
-        console.error("Fetch Error:", err);
-      }
-
-      setLoading(false);
+      setProducts(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      );
     };
 
-    fetchData();
+    load();
   }, []);
 
-  /* ================= AI ================= */
   const filtered = useMemo(() => {
-    return products
-      .map((p) => {
-        const analytics = analyticsMap[p.asin] || {};
-
-        let score =
-          (analytics.clicks || 0) * 0.4 +
-          (analytics.orders || 0) * 2;
-
-        if ((Number(p.price) || 0) < 50) score += 3;
-
-        return { ...p, score };
-      })
-      .filter((p) =>
-        p.title?.toLowerCase().includes(search.toLowerCase())
-      );
-  }, [products, analyticsMap, search]);
-
-  const active = [...filtered]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+    return products.filter((p) =>
+      p.title?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [products, search]);
 
   return (
     <div style={{ background: "#eaeded" }}>
 
+      {/* SEO */}
       <Head>
-        <title>Koloonline Store</title>
+        <title>Koloonline - Amazon Deals</title>
+        <meta name="description" content="Best Amazon affiliate deals in Electronics, Fashion, Home & Sports" />
       </Head>
 
-      <h1 style={{ padding: 15 }}>🛒 Koloonline</h1>
+      {/* HEADER */}
+      <header style={header}>
+        🟠 Koloonline Amazon Deals
+      </header>
 
+      {/* SEARCH */}
       <div style={{ padding: 10 }}>
         <input
-          placeholder="Search..."
+          placeholder="Search Amazon products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: 10, width: "100%" }}
+          style={searchBox}
         />
       </div>
 
-      <div style={{ padding: 20 }}>
-        {loading ? (
-          <p>Loading...</p>
-        ) : active.length === 0 ? (
-          <p>❌ No products found</p>
-        ) : (
-          <div style={gridStyle}>
-            {active.map((p) => (
-              <div key={p.id} style={cardStyle}>
+      {/* CATEGORIES */}
+      <div style={cats}>
+        {["Electronics", "Fashion", "Home", "Sports"].map((c) => (
+          <button key={c} style={catBtn}>
+            {c}
+          </button>
+        ))}
+      </div>
 
-                <img
-                  src={p.image || fallbackImage}
-                  onError={(e) => {
-                    e.target.src = fallbackImage;
-                  }}
-                  loading="lazy"
-                  style={imgStyle}
-                />
+      {/* PRODUCTS */}
+      <div style={grid}>
+        {filtered.map((p) => (
+          <div key={p.id} style={card}>
+            
+            <img
+              src={p.image || fallbackImage}
+              style={img}
+            />
 
-                <h3 style={titleStyle}>{p.title}</h3>
+            <h3 style={title}>{p.title}</h3>
 
-                <p style={priceStyle}>${p.price}</p>
+            <p style={price}>${p.price}</p>
 
-                <Link href={`/product/${p.asin}`}>
-                  <button
-                    onClick={() => trackEvent("click", p)}
-                    style={btnOrange}
-                  >
-                    View
-                  </button>
-                </Link>
+            <Link href={`/product/${p.id}`}>
+              <button style={btn}>View</button>
+            </Link>
 
-                <button
-                  onClick={() => {
-                    trackEvent("order", p);
-                    window.open(p.link, "_blank");
-                  }}
-                  style={btnGreen}
-                >
-                  Buy
-                </button>
+            <a href={p.link} target="_blank">
+              <button style={buy}>Buy on Amazon</button>
+            </a>
 
-              </div>
-            ))}
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
 }
 
-/* STYLE */
-const gridStyle = {
+/* ===== STYLE ===== */
+
+const header = {
+  background: "#131921",
+  color: "white",
+  padding: 15,
+  fontSize: 22,
+  textAlign: "center",
+};
+
+const searchBox = {
+  width: "100%",
+  padding: 10,
+  borderRadius: 6,
+};
+
+const cats = {
+  display: "flex",
+  gap: 10,
+  padding: 10,
+  flexWrap: "wrap",
+};
+
+const catBtn = {
+  padding: 10,
+  background: "#ff9900",
+  border: "none",
+  borderRadius: 6,
+};
+
+const grid = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
   gap: 15,
+  padding: 20,
 };
 
-const cardStyle = {
+const card = {
   background: "white",
   padding: 10,
   borderRadius: 10,
 };
 
-const imgStyle = {
+const img = {
   width: "100%",
   height: 180,
   objectFit: "cover",
 };
 
-const titleStyle = {
+const title = {
   fontSize: 14,
   height: 40,
   overflow: "hidden",
 };
 
-const priceStyle = {
+const price = {
   color: "#B12704",
   fontWeight: "bold",
 };
 
-const btnOrange = {
+const btn = {
   width: "100%",
   padding: 10,
   background: "#ff9900",
@@ -195,11 +161,11 @@ const btnOrange = {
   marginTop: 5,
 };
 
-const btnGreen = {
+const buy = {
   width: "100%",
   padding: 10,
   background: "#25D366",
-  color: "white",
   border: "none",
+  color: "white",
   marginTop: 5,
 };
