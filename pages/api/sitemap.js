@@ -11,69 +11,109 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
+/* ================= GOOGLE PING ================= */
+async function pingGoogleSitemap() {
+  try {
+    const sitemapUrl = "https://koloonline.online/api/sitemap";
+
+    await fetch(
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`
+    );
+
+    console.log("🚀 Google Ping Sent");
+  } catch (e) {
+    console.log("❌ Google Ping Failed:", e.message);
+  }
+}
+
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
-  const baseUrl = "https://koloonline.online";
+  try {
+    console.log("🔥 Sitemap Generated");
 
-  const snap = await getDocs(collection(db, "products"));
+    const baseUrl = "https://koloonline.online";
 
-  const products = snap.docs.map((doc) => doc.id);
+    const snap = await getDocs(collection(db, "products"));
 
-  const categories = new Set();
+    const products = snap.docs.map((doc) => {
+      const data = doc.data();
 
-  snap.forEach((doc) => {
-    const data = doc.data();
-    if (data.category) {
-      categories.add(data.category.toLowerCase());
-    }
-  });
+      return {
+        id: doc.id,
+        ...data,
+        aiScore: data.score || 0,
+      };
+    });
 
-  let urls = `
+    /* ================= AI SORT ================= */
+    products.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
+
+    const categories = new Set();
+
+    products.forEach((p) => {
+      if (p.category) {
+        categories.add(p.category.toLowerCase());
+      }
+    });
+
+    /* ================= STATIC ================= */
+    let urls = `
 <url>
   <loc>${baseUrl}</loc>
-  <changefreq>daily</changefreq>
+  <changefreq>hourly</changefreq>
   <priority>1.0</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/categories</loc>
-  <changefreq>daily</changefreq>
-  <priority>0.8</priority>
-</url>
-`;
-
-  /* PRODUCTS */
-  products.forEach((id) => {
-    urls += `
-<url>
-  <loc>${baseUrl}/product/${id}</loc>
-  <changefreq>daily</changefreq>
+  <changefreq>hourly</changefreq>
   <priority>0.9</priority>
 </url>
 `;
-  });
 
-  /* CATEGORIES */
-  [...categories].forEach((cat) => {
-    urls += `
+    /* ================= CATEGORY URLs ================= */
+    [...categories].forEach((cat) => {
+      urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
-  <changefreq>daily</changefreq>
+  <changefreq>hourly</changefreq>
   <priority>0.8</priority>
 </url>
 `;
-  });
+    });
 
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    /* ================= PRODUCT URLs (AI PRIORITY) ================= */
+    products.forEach((p, index) => {
+      const priority = Math.max(0.5, 1 - index * 0.01);
+
+      urls += `
+<url>
+  <loc>${baseUrl}/product/${p.id}</loc>
+  <changefreq>hourly</changefreq>
+  <priority>${priority.toFixed(2)}</priority>
+</url>
+`;
+    });
+
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
 
-  res.setHeader("Content-Type", "application/xml");
-  res.setHeader(
-    "Cache-Control",
-    "public, s-maxage=3600, stale-while-revalidate=86400"
-  );
+    /* ================= HEADERS ================= */
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=3600"
+    );
 
-  return res.status(200).send(sitemap);
+    /* ================= AUTO GOOGLE PING ================= */
+    pingGoogleSitemap();
+
+    return res.status(200).send(sitemap);
+
+  } catch (error) {
+    console.error("❌ Sitemap Error:", error);
+    return res.status(500).send("Sitemap error");
+  }
 }
