@@ -1,32 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/sync-products?q=electronics",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/sync-products?q=fashion",
-      "schedule": "20 */6 * * *"
-    },
-    {
-      "path": "/api/sync-products?q=deals",
-      "schedule": "40 */6 * * *"
-    },
-    {
-      "path": "/api/sync-products?q=home",
-      "schedule": "10 */6 * * *"
-    },
-    {
-      "path": "/api/ai-learning-engine",
-      "schedule": "0 */4 * * *"
-    },
-    {
-      "path": "/api/ai-learning-engine-deep",
-      "schedule": "30 */8 * * *"
-    },
-    {
-      "path": "/api/graph-ai",
-      "schedule": "15 */2 * * *"
+      "path": "/api/daily-sync",
+      "schedule": "0 0 * * *"
     }
   ]
 }
