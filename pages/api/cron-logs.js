@@ -1,6 +1,17 @@
-import { db } from "../../config/firebase";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
+
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
     if (req.method !== "GET") {
