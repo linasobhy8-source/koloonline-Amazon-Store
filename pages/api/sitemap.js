@@ -21,41 +21,35 @@ export default async function handler(req, res) {
     const now = new Date().toISOString();
 
     const snap = await getDocs(collection(db, "products"));
-    const products = snap.docs.map((doc) => doc.data());
 
-    /* ================= COLLECT UNIQUE CATEGORIES ================= */
+    const products = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    /* ================= UNIQUE CATEGORIES ================= */
     const categorySet = new Set();
 
     products.forEach((p) => {
       if (p?.category) {
-        categorySet.add(p.category.toLowerCase());
+        categorySet.add(
+          p.category.toLowerCase().replace(/\s+/g, "-")
+        );
       }
     });
 
     const categories = Array.from(categorySet);
 
-    /* ================= STATIC URLS ================= */
+    /* ================= STATIC PAGES ================= */
     let urls = `
       <url>
         <loc>${baseUrl}</loc>
         <lastmod>${now}</lastmod>
         <priority>1.0</priority>
       </url>
-
-      <url>
-        <loc>${baseUrl}/blog</loc>
-        <lastmod>${now}</lastmod>
-        <priority>0.8</priority>
-      </url>
-
-      <url>
-        <loc>${baseUrl}/contact</loc>
-        <lastmod>${now}</lastmod>
-        <priority>0.7</priority>
-      </url>
     `;
 
-    /* ================= CATEGORY PAGES (🔥 NEW) ================= */
+    /* ================= CATEGORY PAGES ================= */
     categories.forEach((cat) => {
       urls += `
         <url>
@@ -68,11 +62,11 @@ export default async function handler(req, res) {
 
     /* ================= PRODUCT PAGES ================= */
     products.forEach((p) => {
-      if (!p?.asin) return;
+      if (!p?.id) return;
 
       urls += `
         <url>
-          <loc>${baseUrl}/product/${p.asin}</loc>
+          <loc>${baseUrl}/product/${p.id}</loc>
           <lastmod>${now}</lastmod>
           <priority>0.9</priority>
         </url>
@@ -86,6 +80,8 @@ ${urls}
 </urlset>`;
 
     res.setHeader("Content-Type", "application/xml");
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
+
     return res.status(200).send(sitemap);
 
   } catch (error) {
