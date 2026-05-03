@@ -1,41 +1,70 @@
 import Head from "next/head";
 import Script from "next/script";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 
 /* ================= GLOBAL APP ================= */
 export default function App({ Component, pageProps }) {
+  const router = useRouter();
+
+  /* ================= TRACK PAGE VIEWS (GA4 SPA FIX) ================= */
+  useEffect(() => {
+    const handleRouteChange = (url) => {
+      if (typeof window.gtag !== "undefined") {
+        window.gtag("config", "G-YS8L61XLPR", {
+          page_path: url,
+        });
+      }
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => router.events.off("routeChangeComplete", handleRouteChange);
+  }, [router.events]);
+
   return (
     <>
       {/* ================= GLOBAL SEO ================= */}
       <Head>
 
         {/* Basic SEO */}
+        <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Koloonline Amazon Affiliate Store - Best Deals Daily Updated" />
-        <meta name="keywords" content="amazon deals, online shopping, best offers, koloonline, electronics, fashion" />
+
+        <meta
+          name="description"
+          content="Koloonline Amazon Affiliate Store - Best Deals Daily Updated"
+        />
+        <meta
+          name="keywords"
+          content="amazon deals, online shopping, best offers, electronics, fashion, koloonline"
+        />
         <meta name="author" content="Koloonline" />
 
-        {/* Canonical (VERY IMPORTANT) */}
+        {/* Robots (IMPORTANT FOR INDEXING) */}
+        <meta name="robots" content="index, follow" />
+        <meta name="googlebot" content="index, follow" />
+
+        {/* Canonical */}
         <link rel="canonical" href="https://koloonline.online" />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Koloonline Amazon Store" />
         <meta property="og:description" content="Best Amazon Deals Updated Daily - Save More Now" />
-        <meta property="og:image" content="https://www.koloonline.online/favicon.ico" />
+        <meta property="og:image" content="https://koloonline.online/favicon.ico" />
         <meta property="og:url" content="https://koloonline.online" />
 
-        {/* Twitter Card */}
+        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Koloonline Amazon Store" />
         <meta name="twitter:description" content="Best Amazon Deals Updated Daily" />
-        <meta name="twitter:image" content="https://www.koloonline.online/favicon.ico" />
+        <meta name="twitter:image" content="https://koloonline.online/favicon.ico" />
 
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
-
       </Head>
 
-      {/* ================= GOOGLE ANALYTICS ================= */}
+      {/* ================= GOOGLE ANALYTICS (GA4 FIXED) ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
         strategy="afterInteractive"
@@ -45,7 +74,7 @@ export default function App({ Component, pageProps }) {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
-          
+
           gtag('js', new Date());
           gtag('config', 'G-YS8L61XLPR', {
             page_path: window.location.pathname,
@@ -70,17 +99,15 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= ADSENSE (OPTIMIZED) ================= */}
+      {/* ================= ADSENSE (OPTIMIZED LOAD) ================= */}
       <Script
-        async
-        strategy="afterInteractive"
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
+        strategy="afterInteractive"
         crossOrigin="anonymous"
       />
 
-      {/* ================= GLOBAL APP ================= */}
+      {/* ================= APP ================= */}
       <Component {...pageProps} />
-
     </>
   );
-    }
+            }
