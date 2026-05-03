@@ -1,7 +1,13 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
-import { collection, getDocs, query, limit } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  limit
+} from "firebase/firestore";
+
 import { db } from "../config/firebase";
 
 const fallbackImage = "https://via.placeholder.com/300";
@@ -28,12 +34,50 @@ export default function Home({ products }) {
 
       {/* ================= SEO ================= */}
       <Head>
-        <title>Koloonline | Amazon Deals</title>
-        <meta name="description" content="Best Amazon deals updated daily" />
+        <title>Koloonline | Best Amazon Deals</title>
+
+        <meta
+          name="description"
+          content="Best Amazon affiliate deals in Electronics, Fashion, Home & Sports"
+        />
+
+        <meta name="keywords" content="amazon deals, buy online, electronics, fashion, koloonline" />
+
         <link rel="canonical" href="https://koloonline.online" />
+
+        {/* Open Graph */}
+        <meta property="og:title" content="Koloonline Amazon Deals" />
+        <meta property="og:description" content="Best Amazon deals updated daily" />
+        <meta property="og:image" content="https://www.koloonline.online/favicon.ico" />
+        <meta property="og:type" content="website" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+
+        {/* ================= PRODUCT SCHEMA ================= */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              itemListElement: products.map((p, i) => ({
+                "@type": "Product",
+                position: i + 1,
+                name: p.title,
+                image: p.image,
+                offers: {
+                  "@type": "Offer",
+                  price: p.price,
+                  priceCurrency: "USD",
+                },
+              })),
+            }),
+          }}
+        />
       </Head>
 
-      {/* ================= HEADER (Amazon Style) ================= */}
+      {/* ================= HEADER ================= */}
       <header style={header}>
         <div style={logo}>🟠 Koloonline</div>
 
@@ -51,7 +95,7 @@ export default function Home({ products }) {
         </div>
       </header>
 
-      {/* ================= NAVBAR ================= */}
+      {/* ================= NAV ================= */}
       <nav style={nav}>
         {["all", "Electronics", "Fashion", "Home", "Sports"].map((c) => (
           <button
@@ -80,7 +124,13 @@ export default function Home({ products }) {
           data-ad-client="ca-pub-1294940976431468"
           data-ad-slot="1234567890"
           data-ad-format="auto"
-        ></ins>
+        />
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(adsbygoogle = window.adsbygoogle || []).push({});`,
+          }}
+        />
       </div>
 
       {/* ================= PRODUCTS ================= */}
@@ -113,22 +163,34 @@ export default function Home({ products }) {
   );
 }
 
-/* ================= SSR ================= */
-export async function getServerSideProps() {
-  const snap = await getDocs(
-    query(collection(db, "products"), limit(50))
-  );
+/* ================= SSR + CACHE ================= */
+export async function getServerSideProps({ res }) {
+  try {
+    res.setHeader(
+      "Cache-Control",
+      "s-maxage=60, stale-while-revalidate=300"
+    );
 
-  const products = snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+    const snap = await getDocs(
+      query(collection(db, "products"), limit(50))
+    );
 
-  return {
-    props: {
-      products,
-    },
-  };
+    const products = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
+
+    return {
+      props: { products },
+    };
+
+  } catch (err) {
+    console.error(err);
+
+    return {
+      props: { products: [] },
+    };
+  }
 }
 
 /* ================= STYLES ================= */
