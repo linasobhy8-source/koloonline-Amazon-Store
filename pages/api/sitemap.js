@@ -12,57 +12,53 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
 /* ================= GOOGLE PING ================= */
-async function pingGoogleSitemap() {
+async function pingGoogle() {
   try {
-    const sitemapUrl = "https://koloonline.online/api/sitemap";
+    const url = "https://koloonline.online/api/sitemap";
 
-    await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`
-    );
+    await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`);
 
     console.log("🚀 Google Ping Sent");
   } catch (e) {
-    console.log("❌ Google Ping Failed:", e.message);
+    console.log("Ping error:", e.message);
   }
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    console.log("🔥 Sitemap API Called");
+    console.log("🔥 Sitemap Generator Started");
 
     const baseUrl = "https://koloonline.online";
-
     const snap = await getDocs(collection(db, "products"));
 
-    console.log("📦 Products Count:", snap.docs.length);
+    console.log("📦 Products:", snap.docs.length);
 
-    const products = snap.docs.map((doc) => {
+    /* ================= PRODUCTS ================= */
+    let products = snap.docs.map((doc) => {
       const data = doc.data();
+
       return {
         id: doc.id,
-        category: data.category || "uncategorized",
+        category: data.category || "general",
         score: data.score || 0,
+        updatedAt: data.updatedAt || 0,
       };
     });
 
-    /* ================= AI PRIORITY SORT ================= */
-    products.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-    /* ================= CATEGORIES ================= */
-    const categorySet = new Set();
-
-    products.forEach((p) => {
-      if (p.category) {
-        categorySet.add(p.category.toLowerCase().trim());
-      }
+    /* ================= AI SORT ================= */
+    products.sort((a, b) => {
+      const scoreA = (a.score || 0);
+      const scoreB = (b.score || 0);
+      return scoreB - scoreA;
     });
 
-    const categories = [...categorySet];
+    /* ================= CATEGORIES ================= */
+    const categories = [...new Set(products.map(p => p.category.toLowerCase()))];
 
     console.log("📂 Categories:", categories);
 
-    /* ================= STATIC URLs ================= */
+    /* ================= STATIC ================= */
     let urls = `
 <url>
   <loc>${baseUrl}</loc>
@@ -114,8 +110,8 @@ ${urls}
       "public, s-maxage=3600, stale-while-revalidate=3600"
     );
 
-    /* ================= GOOGLE PING ================= */
-    pingGoogleSitemap();
+    /* ================= AUTO INDEXING ================= */
+    pingGoogle();
 
     return res.status(200).send(sitemap);
 
@@ -123,4 +119,4 @@ ${urls}
     console.error("❌ Sitemap Error:", error);
     return res.status(500).send("Sitemap error");
   }
-                     }
+}
