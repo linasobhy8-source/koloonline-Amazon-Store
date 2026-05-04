@@ -11,6 +11,5 @@ Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /private/
 
-# ================= FAST INDEXING PATHS =================
+# ================= SITEMAP (ONLY ONE) =================
 Sitemap: https://koloonline.online/api/sitemap
-Sitemap: https://koloonline.online/sitemap.xml
