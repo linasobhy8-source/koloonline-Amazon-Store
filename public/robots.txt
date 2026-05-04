@@ -11,5 +11,5 @@ Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /private/
 
-# ================= SITEMAP (ONLY ONE) =================
-Sitemap: https://koloonline.online/api/sitemap
+# ================= SITEMAP (ONLY ONE - SEO BEST PRACTICE) =================
+Sitemap: https://koloonline.online/sitemap.xml
