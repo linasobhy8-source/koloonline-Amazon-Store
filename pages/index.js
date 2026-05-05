@@ -60,45 +60,24 @@ function Subscriptions() {
         marginTop: 20
       }}>
 
-        {/* 🔥 AUDIBLE (UPDATED FULL) */}
         <div style={card}>
           <h3>🎧 Audible</h3>
           <p>Listen to books – Free trial</p>
 
           <Link href="/audible">
-            <button
-              style={buy}
-              onClick={async () => {
-                try {
-                  await fetch("/api/track", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      type: "click",
-                      asin: "AUDIBLE_MULTI"
-                    }),
-                  });
-                } catch (e) {}
-              }}
-            >
-              🎧 Start Free Trial
-            </button>
+            <button style={buy}>🎧 Start Free Trial</button>
           </Link>
         </div>
 
-        {/* KINDLE */}
         <div style={card}>
           <h3>📚 Kindle Unlimited</h3>
-          <p>Unlimited reading subscription</p>
           <a href="https://www.amazon.com/kindle-dbs/hz/subscribe/ku?tag=koloonlinesto-20" target="_blank">
             <button style={btn}>Subscribe</button>
           </a>
         </div>
 
-        {/* PRIME */}
         <div style={card}>
           <h3>🚀 Amazon Prime</h3>
-          <p>Fast shipping + streaming</p>
           <a href="https://www.amazon.com/amazonprime?tag=koloonlinesto-20" target="_blank">
             <button style={buy}>Try Prime</button>
           </a>
@@ -113,6 +92,30 @@ function Subscriptions() {
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+
+  // ✅ AI descriptions
+  const [aiDescriptions, setAiDescriptions] = useState({});
+
+  const generateDescription = async (product) => {
+    try {
+      const res = await fetch("/api/generate-description", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ title: product.title })
+      });
+
+      const data = await res.json();
+
+      setAiDescriptions((prev) => ({
+        ...prev,
+        [product.id]: data.description
+      }));
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const filtered = products.filter((p) => {
     const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
@@ -145,11 +148,6 @@ export default function Home({ products }) {
           style={searchBox}
         />
 
-        <div style={navRight}>
-          <span>Account</span>
-          <span>Orders</span>
-          <span>Cart 🛒</span>
-        </div>
       </header>
 
       {/* NAV */}
@@ -170,10 +168,7 @@ export default function Home({ products }) {
 
       <Breadcrumb category={category} />
 
-      {/* HERO */}
-      <div style={hero}>
-        🔥 Best Amazon Deals Today
-      </div>
+      <div style={hero}>🔥 Best Amazon Deals Today</div>
 
       {/* TRENDING */}
       <div style={{ padding: 20 }}>
@@ -185,6 +180,15 @@ export default function Home({ products }) {
               <img src={p.image} style={img} />
               <h3 style={title}>{p.title}</h3>
               <p style={price}>${p.price}</p>
+
+              <button style={btn} onClick={() => generateDescription(p)}>
+                ✨ Generate AI Description
+              </button>
+
+              {aiDescriptions[p.id] && (
+                <p style={{ fontSize: 12 }}>{aiDescriptions[p.id]}</p>
+              )}
+
               <a href={p.link} target="_blank">
                 <button style={buy}>🛒 Buy Now</button>
               </a>
@@ -193,7 +197,6 @@ export default function Home({ products }) {
         </div>
       </div>
 
-      {/* SUBSCRIPTIONS */}
       <Subscriptions />
 
       {/* PRODUCTS */}
@@ -203,6 +206,14 @@ export default function Home({ products }) {
             <img src={p.image || fallbackImage} style={img} />
             <h3 style={title}>{p.title}</h3>
             <p style={price}>${p.price}</p>
+
+            <button style={btn} onClick={() => generateDescription(p)}>
+              ✨ Generate AI Description
+            </button>
+
+            {aiDescriptions[p.id] && (
+              <p style={{ fontSize: 12 }}>{aiDescriptions[p.id]}</p>
+            )}
 
             <Link href={`/product/${p.id}`}>
               <button style={btn}>View</button>
@@ -243,7 +254,6 @@ const header = {
   display: "flex",
   alignItems: "center",
   padding: 10,
-  gap: 10,
 };
 
 const logo = { fontSize: 22, fontWeight: "bold" };
@@ -253,11 +263,6 @@ const searchBox = {
   padding: 10,
   borderRadius: 5,
   border: "none",
-};
-
-const navRight = {
-  display: "flex",
-  gap: 10,
 };
 
 const nav = {
@@ -271,7 +276,6 @@ const navBtn = {
   color: "white",
   border: "none",
   padding: 8,
-  cursor: "pointer",
 };
 
 const hero = {
@@ -279,7 +283,6 @@ const hero = {
   padding: 30,
   textAlign: "center",
   fontSize: 22,
-  fontWeight: "bold",
 };
 
 const grid = {
@@ -303,13 +306,10 @@ const img = {
 
 const title = {
   fontSize: 14,
-  height: 40,
-  overflow: "hidden",
 };
 
 const price = {
   color: "#B12704",
-  fontWeight: "bold",
 };
 
 const btn = {
