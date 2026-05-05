@@ -60,17 +60,33 @@ function Subscriptions() {
         marginTop: 20
       }}>
 
-        {/* Audible (UPDATED 🔥) */}
+        {/* 🔥 AUDIBLE (UPDATED FULL) */}
         <div style={card}>
           <h3>🎧 Audible</h3>
           <p>Listen to books – Free trial</p>
 
           <Link href="/audible">
-            <button style={buy}>🎧 Start Free Trial</button>
+            <button
+              style={buy}
+              onClick={async () => {
+                try {
+                  await fetch("/api/track", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      type: "click",
+                      asin: "AUDIBLE_MULTI"
+                    }),
+                  });
+                } catch (e) {}
+              }}
+            >
+              🎧 Start Free Trial
+            </button>
           </Link>
         </div>
 
-        {/* Kindle */}
+        {/* KINDLE */}
         <div style={card}>
           <h3>📚 Kindle Unlimited</h3>
           <p>Unlimited reading subscription</p>
@@ -79,7 +95,7 @@ function Subscriptions() {
           </a>
         </div>
 
-        {/* Prime */}
+        {/* PRIME */}
         <div style={card}>
           <h3>🚀 Amazon Prime</h3>
           <p>Fast shipping + streaming</p>
@@ -159,7 +175,7 @@ export default function Home({ products }) {
         🔥 Best Amazon Deals Today
       </div>
 
-      {/* 🔥 TRENDING */}
+      {/* TRENDING */}
       <div style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -177,7 +193,7 @@ export default function Home({ products }) {
         </div>
       </div>
 
-      {/* 🔥 SUBSCRIPTIONS */}
+      {/* SUBSCRIPTIONS */}
       <Subscriptions />
 
       {/* PRODUCTS */}
