@@ -63,7 +63,6 @@ function Subscriptions() {
         <div style={card}>
           <h3>🎧 Audible</h3>
           <p>Listen to books – Free trial</p>
-
           <Link href="/audible">
             <button style={buy}>🎧 Start Free Trial</button>
           </Link>
@@ -93,9 +92,9 @@ export default function Home({ products }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
 
-  // ✅ AI descriptions
   const [aiDescriptions, setAiDescriptions] = useState({});
 
+  // ✅ AI وصف المنتج
   const generateDescription = async (product) => {
     try {
       const res = await fetch("/api/generate-description", {
@@ -115,6 +114,23 @@ export default function Home({ products }) {
     } catch (e) {
       console.log(e);
     }
+  };
+
+  // ✅ AI مقال
+  const generateBlog = async () => {
+    const keyword = prompt("اكتب كلمة للمقال");
+
+    if (!keyword) return;
+
+    await fetch("/api/generate-blog", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ keyword })
+    });
+
+    alert("تم إنشاء المقال 🔥");
   };
 
   const filtered = products.filter((p) => {
@@ -147,7 +163,6 @@ export default function Home({ products }) {
           onChange={(e) => setSearch(e.target.value)}
           style={searchBox}
         />
-
       </header>
 
       {/* NAV */}
@@ -169,6 +184,20 @@ export default function Home({ products }) {
       <Breadcrumb category={category} />
 
       <div style={hero}>🔥 Best Amazon Deals Today</div>
+
+      {/* 🔥 AI BLOG BUTTON */}
+      <div style={{ padding: 20, textAlign: "center" }}>
+        <button onClick={generateBlog} style={{
+          padding: 15,
+          fontSize: 16,
+          background: "#28a745",
+          color: "white",
+          border: "none",
+          borderRadius: 5
+        }}>
+          ✨ Generate Blog Article
+        </button>
+      </div>
 
       {/* TRENDING */}
       <div style={{ padding: 20 }}>
