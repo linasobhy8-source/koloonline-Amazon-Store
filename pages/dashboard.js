@@ -10,6 +10,7 @@ import { db } from "../config/firebase";
 /* ================= MAIN DASHBOARD ================= */
 export default function Dashboard() {
   const [data, setData] = useState(null);
+  const [blogsData, setBlogsData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
 
+      /* ================= ANALYTICS ================= */
       const statsSnap = await getDoc(doc(db, "analytics", "overview"));
       const stats = statsSnap.exists() ? statsSnap.data() : {};
 
@@ -55,9 +57,21 @@ export default function Dashboard() {
 
       products.sort((a, b) => b.aiScore - a.aiScore);
 
-      /* ================= 🔥 HIGH CONVERSION INSIGHTS ================= */
       const bestProduct = products[0];
 
+      /* ================= 🤖 AUTO BLOGS (NEW PART) ================= */
+      const blogSnap = await getDocs(collection(db, "blog"));
+
+      const blogs = blogSnap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      const autoBlogs = blogs.filter(b => b.auto);
+
+      const latestBlog = blogs[0];
+
+      /* ================= SET STATE ================= */
       setData({
         clicks: stats.totalClicks || 0,
         orders: stats.totalOrders || 0,
@@ -68,6 +82,12 @@ export default function Dashboard() {
         ctr: stats.totalClicks && stats.totalViews
           ? ((stats.totalClicks / stats.totalViews) * 100).toFixed(2)
           : 0,
+      });
+
+      setBlogsData({
+        total: blogs.length,
+        auto: autoBlogs.length,
+        latest: latestBlog,
       });
 
     } catch (err) {
@@ -100,7 +120,21 @@ export default function Dashboard() {
         <Card title="Hot Products" value={data.hot} color="#ff3b30" />
       </div>
 
-      {/* 🔥 CONVERSION INSIGHT (NEW) */}
+      {/* 🔥 BLOG STATS (NEW) */}
+      {blogsData && (
+        <div style={styles.insights}>
+          <h3>📚 Blog System</h3>
+
+          <p>📌 Total Blogs: {blogsData.total}</p>
+          <p>🤖 Auto Generated: {blogsData.auto}</p>
+          <p>📰 Latest Blog: {blogsData.latest?.title || "No blogs yet"}</p>
+
+          <p>⚡ AI Content Engine Active</p>
+          <p>🚀 Auto publishing enabled</p>
+        </div>
+      )}
+
+      {/* 🔥 CONVERSION INSIGHT */}
       <div style={styles.insights}>
         <h3>🔥 Conversion Insights</h3>
         <p>📊 CTR: {data.ctr}%</p>
@@ -114,7 +148,7 @@ export default function Dashboard() {
         <p>🚀 Real-time optimization enabled</p>
       </div>
 
-      {/* 🔥 BEST PRODUCT CARD */}
+      {/* BEST PRODUCT */}
       {data.bestProduct && (
         <div style={styles.bestBox}>
           <h3>🏆 Top Converting Product</h3>
@@ -147,9 +181,7 @@ export default function Dashboard() {
               <span style={{ color: "#ff9900", fontWeight: "bold" }}>
                 {p.aiScore.toFixed(1)}
               </span>
-              <span>
-                {p.isHot ? "🔥 HOT" : "Normal"}
-              </span>
+              <span>{p.isHot ? "🔥 HOT" : "Normal"}</span>
             </div>
           ))}
         </div>
