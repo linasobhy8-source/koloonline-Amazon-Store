@@ -29,9 +29,13 @@ const keywordsPool = [
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
+    console.log("🔥 AUTO PUBLISH STARTED");
+
     /* 🔥 pick random keyword */
     const keyword =
       keywordsPool[Math.floor(Math.random() * keywordsPool.length)];
+
+    console.log("🔎 Keyword:", keyword);
 
     /* ================= CALL AI ================= */
     const response = await fetch(
@@ -45,7 +49,20 @@ export default async function handler(req, res) {
             {
               parts: [
                 {
-                  text: `اكتب مقال SEO احترافي عن: ${keyword} مع أسلوب تسويقي`,
+                  text: `
+اكتب مقال SEO احترافي قوي جدًا عن: ${keyword}
+
+الشروط:
+- عنوان جذاب (H1)
+- مقدمة قوية
+- 5 عناوين H2 على الأقل
+- شرح مفصل لكل قسم
+- Bullet points
+- أسلوب تسويقي (Affiliate)
+- كلمات شرائية (Buy, Best, Discount)
+- CTA في النهاية
+- طول المقال 800 - 1200 كلمة
+                  `,
                 },
               ],
             },
@@ -60,7 +77,7 @@ export default async function handler(req, res) {
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!article) {
-      return res.status(500).json({ error: "AI failed" });
+      throw new Error("AI failed");
     }
 
     /* ================= SAVE BLOG ================= */
@@ -71,7 +88,9 @@ export default async function handler(req, res) {
       createdAt: serverTimestamp(),
     });
 
-    /* ================= LOG ================= */
+    console.log("📝 Blog saved:", blogRef.id);
+
+    /* ================= LOG SUCCESS ================= */
     await addDoc(collection(db, "cron_logs"), {
       type: "auto_publish",
       keyword,
@@ -85,6 +104,14 @@ export default async function handler(req, res) {
       `https://www.google.com/ping?sitemap=https://koloonline.online/api/sitemap`
     );
 
+    /* ================= 🚀 AUTO DEPLOY ================= */
+    await fetch(
+      "https://api.vercel.com/v1/integrations/deploy/prj_mdjWXds5yhbCwPLFVfTJ8fd0XX0u/pWmuibqosg"
+    );
+
+    console.log("🚀 Deploy triggered");
+
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       keyword,
@@ -92,7 +119,18 @@ export default async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: "Auto publish failed" });
+    console.error("❌ AUTO PUBLISH ERROR:", e);
+
+    /* ================= LOG ERROR ================= */
+    await addDoc(collection(db, "cron_logs"), {
+      type: "auto_publish",
+      status: "error",
+      message: e.message,
+      createdAt: serverTimestamp(),
+    });
+
+    return res.status(500).json({
+      error: "Auto publish failed",
+    });
   }
 }
