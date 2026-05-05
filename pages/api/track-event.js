@@ -34,35 +34,25 @@ function generateUserKey(req) {
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= METHOD CHECK ================= */
+
     if (req.method !== "POST") {
-      return res.status(405).json({
-        success: false,
-        error: "Method not allowed"
-      });
+      return res.status(405).json({ success: false });
     }
 
     const { type, asin } = req.body;
 
     if (!type || !asin) {
-      return res.status(400).json({
-        success: false,
-        error: "type and asin required"
-      });
+      return res.status(400).json({ error: "missing data" });
     }
 
     const allowedTypes = ["view", "click", "order"];
 
     if (!allowedTypes.includes(type)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid event type"
-      });
+      return res.status(400).json({ error: "invalid type" });
     }
 
-    /* ================= USER DETECTION ================= */
+    /* ================= USER ================= */
     const userKey = generateUserKey(req);
-
     const userRef = doc(db, "analytics_users", userKey);
     const userSnap = await getDoc(userRef);
 
@@ -72,14 +62,17 @@ export default async function handler(req, res) {
     if (userSnap.exists()) {
       const lastAction = userSnap.data().lastAction || 0;
 
-      // 30 seconds cooldown (anti spam clicks)
       if (now - lastAction < 30000 && type === "click") {
         return res.status(429).json({
           success: false,
-          message: "Too many actions detected (fraud blocked)"
+          message: "spam blocked"
         });
       }
     }
+
+    /* ================= 🌍 COUNTRY TRACKING ================= */
+    const country =
+      req.headers["x-vercel-ip-country"] || "unknown";
 
     /* ================= UPDATE USER ================= */
     await setDoc(
@@ -87,11 +80,12 @@ export default async function handler(req, res) {
       {
         lastAction: now,
         lastType: type,
+        country
       },
       { merge: true }
     );
 
-    /* ================= PRODUCT ANALYTICS ================= */
+    /* ================= PRODUCT ================= */
     const productRef = doc(db, "analytics_products", asin);
     const productSnap = await getDoc(productRef);
 
@@ -115,7 +109,7 @@ export default async function handler(req, res) {
 
     await updateDoc(productRef, updates);
 
-    /* ================= AI CONVERSION CALC ================= */
+    /* ================= AI SCORE ================= */
     const snap = await getDoc(productRef);
     const data = snap.data();
 
@@ -142,19 +136,19 @@ export default async function handler(req, res) {
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      message: "Analytics tracked successfully",
       type,
       asin,
+      country,
       aiScore,
       isHotProduct
     });
 
   } catch (err) {
-    console.error("TRACK EVENT ERROR:", err);
+    console.error(err);
 
     return res.status(500).json({
       success: false,
       error: err.message
     });
   }
-                        }
+      }
