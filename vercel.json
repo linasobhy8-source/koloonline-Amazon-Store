@@ -1,8 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/auto-publish",
+      "path": "/api/auto-publisher",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/keyword-hunter",
+      "schedule": "0 */6 * * *"
     },
     {
       "path": "/api/sitemap",
