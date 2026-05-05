@@ -37,12 +37,57 @@ const trendingProducts = [
   }
 ];
 
-/* ================= BREADCRUMB UI ================= */
+/* ================= BREADCRUMB ================= */
 function Breadcrumb({ category }) {
   return (
     <div style={{ padding: "10px 20px", fontSize: 14, color: "#555" }}>
       <Link href="/">Home</Link> /{" "}
       <span>{category === "all" ? "All Products" : category}</span>
+    </div>
+  );
+}
+
+/* ================= 🔥 SUBSCRIPTIONS ================= */
+function Subscriptions() {
+  return (
+    <div style={{ padding: 20, background: "#f9f9f9" }}>
+      <h2>🔥 Amazon Subscriptions</h2>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+        gap: 20,
+        marginTop: 20
+      }}>
+
+        {/* Audible */}
+        <div style={card}>
+          <h3>🎧 Audible</h3>
+          <p>Listen to books – Free trial</p>
+          <a href="https://www.amazon.com/dp/B07L5CHS6S?tag=koloonlinesto-20" target="_blank">
+            <button style={buy}>Start Free</button>
+          </a>
+        </div>
+
+        {/* Kindle */}
+        <div style={card}>
+          <h3>📚 Kindle Unlimited</h3>
+          <p>Unlimited reading subscription</p>
+          <a href="https://www.amazon.com/kindle-dbs/hz/subscribe/ku?tag=koloonlinesto-20" target="_blank">
+            <button style={btn}>Subscribe</button>
+          </a>
+        </div>
+
+        {/* Prime */}
+        <div style={card}>
+          <h3>🚀 Amazon Prime</h3>
+          <p>Fast shipping + streaming</p>
+          <a href="https://www.amazon.com/amazonprime?tag=koloonlinesto-20" target="_blank">
+            <button style={buy}>Try Prime</button>
+          </a>
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -113,48 +158,42 @@ export default function Home({ products }) {
         🔥 Best Amazon Deals Today
       </div>
 
-      {/* 🔥 TRENDING SECTION */}
+      {/* 🔥 TRENDING */}
       <div style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
         <div style={grid}>
           {trendingProducts.map((p) => (
             <div key={p.id} style={card}>
-
               <img src={p.image} style={img} />
-
               <h3 style={title}>{p.title}</h3>
-
               <p style={price}>${p.price}</p>
-
-              <a href={p.link} target="_blank" rel="noopener noreferrer">
+              <a href={p.link} target="_blank">
                 <button style={buy}>🛒 Buy Now</button>
               </a>
-
             </div>
           ))}
         </div>
       </div>
 
+      {/* 🔥 NEW SECTION (IMPORTANT) */}
+      <Subscriptions />
+
       {/* PRODUCTS */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
-
             <img src={p.image || fallbackImage} style={img} />
-
             <h3 style={title}>{p.title}</h3>
-
             <p style={price}>${p.price}</p>
 
             <Link href={`/product/${p.id}`}>
               <button style={btn}>View</button>
             </Link>
 
-            <a href={p.link} target="_blank" rel="noopener noreferrer">
+            <a href={p.link} target="_blank">
               <button style={buy}>Buy on Amazon</button>
             </a>
-
           </div>
         ))}
       </div>
