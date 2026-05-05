@@ -55,12 +55,19 @@ export default function Dashboard() {
 
       products.sort((a, b) => b.aiScore - a.aiScore);
 
+      /* ================= 🔥 HIGH CONVERSION INSIGHTS ================= */
+      const bestProduct = products[0];
+
       setData({
         clicks: stats.totalClicks || 0,
         orders: stats.totalOrders || 0,
         revenue: (stats.totalOrders || 0) * 12,
         products,
         hot: products.filter((p) => p.isHot).length,
+        bestProduct,
+        ctr: stats.totalClicks && stats.totalViews
+          ? ((stats.totalClicks / stats.totalViews) * 100).toFixed(2)
+          : 0,
       });
 
     } catch (err) {
@@ -71,7 +78,7 @@ export default function Dashboard() {
   }
 
   if (loading || !data) {
-    return <div style={styles.loading}>Loading Analytics...</div>;
+    return <div style={styles.loading}>Loading AI Dashboard...</div>;
   }
 
   return (
@@ -80,10 +87,12 @@ export default function Dashboard() {
       {/* HEADER */}
       <div style={styles.header}>
         🧠 AI Analytics Dashboard
-        <span style={styles.subHeader}>Amazon-Level Intelligence System</span>
+        <span style={styles.subHeader}>
+          Amazon-Level Conversion Intelligence System
+        </span>
       </div>
 
-      {/* STATS CARDS */}
+      {/* STATS */}
       <div style={styles.grid}>
         <Card title="Clicks" value={data.clicks} color="#007bff" />
         <Card title="Orders" value={data.orders} color="#28a745" />
@@ -91,15 +100,31 @@ export default function Dashboard() {
         <Card title="Hot Products" value={data.hot} color="#ff3b30" />
       </div>
 
-      {/* INSIGHTS */}
+      {/* 🔥 CONVERSION INSIGHT (NEW) */}
       <div style={styles.insights}>
-        <h3>🧠 AI Insights</h3>
-        <p>🔥 Hot products detected automatically</p>
-        <p>📊 Conversion tracking active</p>
-        <p>⚡ Real-time analytics every 15s</p>
+        <h3>🔥 Conversion Insights</h3>
+        <p>📊 CTR: {data.ctr}%</p>
+
+        <p>
+          🧠 Best Product:
+          <b> {data.bestProduct?.id}</b>
+        </p>
+
+        <p>⚡ AI auto-ranking active</p>
+        <p>🚀 Real-time optimization enabled</p>
       </div>
 
-      {/* PRODUCTS SECTION */}
+      {/* 🔥 BEST PRODUCT CARD */}
+      {data.bestProduct && (
+        <div style={styles.bestBox}>
+          <h3>🏆 Top Converting Product</h3>
+          <p>ID: {data.bestProduct.id}</p>
+          <p>AI Score: {data.bestProduct.aiScore.toFixed(1)}</p>
+          <p>Conversion: {data.bestProduct.conversion}%</p>
+        </div>
+      )}
+
+      {/* PRODUCTS */}
       <div style={styles.section}>
         <h2>🔥 Top Performing Products</h2>
 
@@ -108,7 +133,7 @@ export default function Dashboard() {
             <span>ID</span>
             <span>Clicks</span>
             <span>Orders</span>
-            <span>Conversion</span>
+            <span>Conv%</span>
             <span>AI Score</span>
             <span>Status</span>
           </div>
@@ -189,6 +214,14 @@ const styles = {
     background: "white",
     borderRadius: 10,
     boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
+  },
+
+  bestBox: {
+    margin: "20px",
+    padding: 15,
+    background: "#fff7e6",
+    borderLeft: "5px solid #ff9900",
+    borderRadius: 10,
   },
 
   section: {
