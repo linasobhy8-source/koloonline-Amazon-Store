@@ -1,5 +1,23 @@
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
+
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
     const { keyword } = req.body;
 
     if (!keyword) {
@@ -27,12 +45,13 @@ export default async function handler(req, res) {
 - عنوان جذاب (H1)
 - مقدمة قوية لا تقل عن 80 كلمة
 - 5 عناوين H2 على الأقل
-- كل H2 فيه شرح مفصل
+- شرح مفصل لكل قسم
 - نقاط Bullet points
-- أسلوب تسويقي مناسب للأفلييت
-- إدخال كلمات شرائية (Buy intent keywords)
+- كلمات شرائية (Buy now, best price, discount, offer)
+- أسلوب تسويقي للأفلييت
+- تحسين لمحركات البحث SEO
 - خاتمة فيها دعوة للشراء
-- المقال يكون 1000 كلمة تقريبًا
+- طول المقال حوالي 1000 كلمة
                   `,
                 },
               ],
@@ -44,25 +63,59 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    /* ================= SAFE PARSING ================= */
     const text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
-      return res.status(500).json({
-        error: "Empty AI response",
+      await addDoc(collection(db, "cron_logs"), {
+        type: "auto_blog",
+        status: "error",
+        message: "Empty AI response",
+        keyword,
+        createdAt: serverTimestamp(),
       });
+
+      return res.status(500).json({ error: "Empty AI response" });
     }
 
-    /* ================= RETURN ================= */
+    /* ================= SAVE BLOG ================= */
+    const blogRef = await addDoc(collection(db, "blog"), {
+      title: keyword,
+      content: text,
+      auto: true,
+      seo: true,
+      createdAt: serverTimestamp(),
+    });
+
+    /* ================= LOG SUCCESS ================= */
+    await addDoc(collection(db, "cron_logs"), {
+      type: "auto_blog",
+      status: "success",
+      message: "Blog generated successfully",
+      keyword,
+      blogId: blogRef.id,
+      createdAt: serverTimestamp(),
+    });
+
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       article: text,
+      blogId: blogRef.id,
       keyword,
     });
 
   } catch (e) {
     console.error("AI ERROR:", e);
+
+    /* ================= LOG ERROR ================= */
+    await addDoc(collection(db, "cron_logs"), {
+      type: "auto_blog",
+      status: "error",
+      message: e.message,
+      createdAt: serverTimestamp(),
+    });
+
     return res.status(500).json({
       error: "AI generation failed",
     });
