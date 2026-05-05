@@ -1,5 +1,12 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit
+} from "firebase/firestore";
 
 /* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
@@ -8,16 +15,20 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
+    /* ================= SECURITY CHECK ================= */
     if (req.method !== "GET") {
       return res.status(405).json({
         success: false,
-        error: "Method not allowed"
+        error: "Method not allowed",
       });
     }
 
@@ -31,24 +42,39 @@ export default async function handler(req, res) {
 
     const snap = await getDocs(q);
 
-    const logs = snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const logs = snap.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        type: data.type || "unknown",
+        status: data.status || "ok",
+        message: data.message || "",
+        createdAt: data.createdAt || null,
+      };
+    });
+
+    /* ================= ANALYTICS ================= */
+    const successLogs = logs.filter(l => l.status === "success").length;
+    const failedLogs = logs.filter(l => l.status === "error").length;
 
     return res.status(200).json({
       success: true,
-      count: logs.length,
+      stats: {
+        total: logs.length,
+        success: successLogs,
+        failed: failedLogs,
+      },
       logs,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
   } catch (err) {
-    console.error("cron_logs error:", err);
+    console.error("❌ cron_logs error:", err);
 
     return res.status(500).json({
       success: false,
       error: err.message,
     });
   }
-}
+        }
