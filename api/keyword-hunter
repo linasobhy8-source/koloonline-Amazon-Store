@@ -1,5 +1,10 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -13,33 +18,91 @@ const db = getFirestore(app);
 
 /* ================= KEYWORDS ================= */
 const seedKeywords = [
-  "best wireless earbuds",
-  "cheap smart watch",
-  "fast charging power bank",
-  "best laptop accessories",
-  "top fitness tracker",
-  "budget headphones",
-  "gaming accessories cheap",
-  "best amazon deals 2026"
+  "best wireless earbuds 2026",
+  "cheap smart watch for fitness",
+  "fast charging power bank review",
+  "best laptop accessories for students",
+  "top fitness tracker amazon",
+  "budget noise cancelling headphones",
+  "gaming accessories cheap amazon",
+  "best amazon deals today 2026",
+  "best phone under 300 dollars",
+  "wireless earbuds noise cancelling review"
 ];
+
+/* ================= MONEY SCORE ENGINE ================= */
+function getScore(keyword) {
+  let score = 0;
+  const k = keyword.toLowerCase();
+
+  if (k.includes("best")) score += 30;
+  if (k.includes("cheap")) score += 20;
+  if (k.includes("review")) score += 15;
+  if (k.includes("deal")) score += 25;
+  if (k.includes("amazon")) score += 10;
+  if (k.includes("buy")) score += 25;
+  if (k.includes("2026")) score += 10;
+
+  if (k.includes("laptop") || k.includes("smart watch")) score += 20;
+  if (k.includes("headphones") || k.includes("earbuds")) score += 20;
+
+  return score;
+}
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
+    /* 1. Pick random keyword */
     const picked =
       seedKeywords[Math.floor(Math.random() * seedKeywords.length)];
 
-    await addDoc(collection(db, "keywords"), {
+    /* 2. Score it */
+    const score = getScore(picked);
+
+    /* 3. Filter weak keywords */
+    if (score < 30) {
+      await addDoc(collection(db, "cron_logs"), {
+        type: "keyword_skipped",
+        keyword: picked,
+        score,
+        createdAt: serverTimestamp(),
+      });
+
+      return res.json({
+        skipped: true,
+        keyword: picked,
+        score,
+      });
+    }
+
+    /* 4. Save keyword */
+    const ref = await addDoc(collection(db, "keywords"), {
       keyword: picked,
-      status: "new",
+      score,
+      priority: score >= 60 ? "high" : "medium",
+      status: "approved",
+      createdAt: serverTimestamp(),
+    });
+
+    /* 5. Log success */
+    await addDoc(collection(db, "cron_logs"), {
+      type: "keyword_approved",
+      keyword: picked,
+      score,
+      id: ref.id,
       createdAt: serverTimestamp(),
     });
 
     return res.status(200).json({
       success: true,
       keyword: picked,
+      score,
+      priority: score >= 60 ? "high" : "medium",
     });
+
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({
+      error: e.message,
+    });
   }
 }
