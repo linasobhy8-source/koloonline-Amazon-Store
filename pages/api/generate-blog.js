@@ -1,5 +1,11 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  serverTimestamp,
+} from "firebase/firestore";
 
 /* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
@@ -30,9 +36,7 @@ export default async function handler(req, res) {
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
@@ -63,7 +67,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    const text =
+    let text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
@@ -78,12 +82,53 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Empty AI response" });
     }
 
+    /* ================= GET PRODUCTS ================= */
+    const productsSnap = await getDocs(collection(db, "products"));
+
+    const products = productsSnap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
+
+    /* ================= SMART MATCHING ================= */
+    const keywords = keyword.toLowerCase().split(" ");
+
+    const relatedProducts = products
+      .map((p) => {
+        let score = 0;
+
+        keywords.forEach((k) => {
+          if (p.title?.toLowerCase().includes(k)) score += 5;
+          if (p.category?.toLowerCase().includes(k)) score += 3;
+        });
+
+        return { ...p, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+
+    /* ================= INTERNAL LINKS ================= */
+    relatedProducts.forEach((p) => {
+      if (p.title) {
+        const link = `https://koloonline.online/product/${p.id}`;
+        const firstWord = p.title.split(" ")[0];
+
+        const regex = new RegExp(firstWord, "gi");
+
+        text = text.replace(
+          regex,
+          `<a href="${link}" style="color:#ff9900;font-weight:bold">${p.title}</a>`
+        );
+      }
+    });
+
     /* ================= SAVE BLOG ================= */
     const blogRef = await addDoc(collection(db, "blog"), {
       title: keyword,
       content: text,
       auto: true,
       seo: true,
+      relatedProducts: relatedProducts.map((p) => p.id),
       createdAt: serverTimestamp(),
     });
 
@@ -91,7 +136,7 @@ export default async function handler(req, res) {
     await addDoc(collection(db, "cron_logs"), {
       type: "auto_blog",
       status: "success",
-      message: "Blog generated successfully",
+      message: "Blog generated with smart linking",
       keyword,
       blogId: blogRef.id,
       createdAt: serverTimestamp(),
@@ -102,13 +147,13 @@ export default async function handler(req, res) {
       success: true,
       article: text,
       blogId: blogRef.id,
+      relatedProducts,
       keyword,
     });
 
   } catch (e) {
     console.error("AI ERROR:", e);
 
-    /* ================= LOG ERROR ================= */
     await addDoc(collection(db, "cron_logs"), {
       type: "auto_blog",
       status: "error",
@@ -120,4 +165,4 @@ export default async function handler(req, res) {
       error: "AI generation failed",
     });
   }
-}
+  }
