@@ -16,7 +16,9 @@ async function pingGoogle() {
   try {
     const url = "https://koloonline.online/api/sitemap";
 
-    await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`);
+    await fetch(
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`
+    );
 
     console.log("🚀 Google Ping Sent");
   } catch (e) {
@@ -30,69 +32,90 @@ export default async function handler(req, res) {
     console.log("🔥 Sitemap Generator Started");
 
     const baseUrl = "https://koloonline.online";
-    const snap = await getDocs(collection(db, "products"));
-
-    console.log("📦 Products:", snap.docs.length);
 
     /* ================= PRODUCTS ================= */
-    let products = snap.docs.map((doc) => {
+    const productSnap = await getDocs(collection(db, "products"));
+
+    let products = productSnap.docs.map((doc) => {
       const data = doc.data();
 
       return {
         id: doc.id,
         category: data.category || "general",
         score: data.score || 0,
-        updatedAt: data.updatedAt || 0,
+        updatedAt: data.updatedAt || Date.now(),
       };
     });
 
-    /* ================= AI SORT ================= */
-    products.sort((a, b) => {
-      const scoreA = (a.score || 0);
-      const scoreB = (b.score || 0);
-      return scoreB - scoreA;
+    /* ================= BLOG POSTS ================= */
+    const blogSnap = await getDocs(collection(db, "blog"));
+
+    let blogs = blogSnap.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        updatedAt: data.createdAt || Date.now(),
+      };
     });
+
+    /* ================= SORT PRODUCTS ================= */
+    products.sort((a, b) => b.score - a.score);
 
     /* ================= CATEGORIES ================= */
     const categories = [...new Set(products.map(p => p.category.toLowerCase()))];
 
-    console.log("📂 Categories:", categories);
-
-    /* ================= STATIC ================= */
+    /* ================= XML START ================= */
     let urls = `
 <url>
   <loc>${baseUrl}</loc>
+  <lastmod>${new Date().toISOString()}</lastmod>
   <changefreq>hourly</changefreq>
   <priority>1.0</priority>
 </url>
 
 <url>
-  <loc>${baseUrl}/categories</loc>
-  <changefreq>hourly</changefreq>
+  <loc>${baseUrl}/blog</loc>
+  <lastmod>${new Date().toISOString()}</lastmod>
+  <changefreq>daily</changefreq>
   <priority>0.9</priority>
 </url>
 `;
 
-    /* ================= CATEGORY URLs ================= */
+    /* ================= CATEGORIES ================= */
     categories.forEach((cat) => {
       urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
+  <lastmod>${new Date().toISOString()}</lastmod>
   <changefreq>hourly</changefreq>
   <priority>0.8</priority>
 </url>
 `;
     });
 
-    /* ================= PRODUCT URLs (AI PRIORITY) ================= */
+    /* ================= PRODUCTS ================= */
     products.forEach((p, index) => {
       const priority = Math.max(0.5, 1 - index * 0.01);
 
       urls += `
 <url>
   <loc>${baseUrl}/product/${p.id}</loc>
+  <lastmod>${new Date(p.updatedAt).toISOString()}</lastmod>
   <changefreq>hourly</changefreq>
   <priority>${priority.toFixed(2)}</priority>
+</url>
+`;
+    });
+
+    /* ================= BLOG POSTS ================= */
+    blogs.forEach((b) => {
+      urls += `
+<url>
+  <loc>${baseUrl}/blog/${b.id}</loc>
+  <lastmod>${new Date(b.updatedAt).toISOString()}</lastmod>
+  <changefreq>daily</changefreq>
+  <priority>0.7</priority>
 </url>
 `;
     });
@@ -110,8 +133,10 @@ ${urls}
       "public, s-maxage=3600, stale-while-revalidate=3600"
     );
 
-    /* ================= AUTO INDEXING ================= */
-    pingGoogle();
+    /* ================= GOOGLE INDEXING ================= */
+    setTimeout(() => {
+      pingGoogle();
+    }, 3000);
 
     return res.status(200).send(sitemap);
 
