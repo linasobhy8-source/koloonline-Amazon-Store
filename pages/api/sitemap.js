@@ -55,9 +55,12 @@ export default async function handler(req, res) {
 
       return {
         id: doc.id,
-        updatedAt: data.createdAt || Date.now(),
+        updatedAt: data.createdAt?.toDate?.() || Date.now(),
+        auto: data.auto || false,
       };
     });
+
+    const autoBlogs = blogs.filter((b) => b.auto);
 
     /* ================= SORT PRODUCTS ================= */
     products.sort((a, b) => b.score - a.score);
@@ -115,7 +118,19 @@ export default async function handler(req, res) {
   <loc>${baseUrl}/blog/${b.id}</loc>
   <lastmod>${new Date(b.updatedAt).toISOString()}</lastmod>
   <changefreq>daily</changefreq>
-  <priority>0.7</priority>
+  <priority>${b.auto ? "0.8" : "0.6"}</priority>
+</url>
+`;
+    });
+
+    /* ================= AUTO BLOG BOOST (SEO HINT) ================= */
+    autoBlogs.forEach((b) => {
+      urls += `
+<url>
+  <loc>${baseUrl}/blog/${b.id}</loc>
+  <lastmod>${new Date(b.updatedAt).toISOString()}</lastmod>
+  <changefreq>hourly</changefreq>
+  <priority>0.85</priority>
 </url>
 `;
     });
@@ -144,4 +159,4 @@ ${urls}
     console.error("❌ Sitemap Error:", error);
     return res.status(500).send("Sitemap error");
   }
-}
+                                   }
