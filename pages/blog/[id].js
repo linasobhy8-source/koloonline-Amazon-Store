@@ -41,6 +41,7 @@ export default function Article({ post, relatedProducts }) {
             <img
               src={p.image}
               style={{ width: "100%", height: 160, objectFit: "cover" }}
+              alt={p.title}
             />
 
             <h4>{p.title}</h4>
@@ -70,7 +71,8 @@ export default function Article({ post, relatedProducts }) {
             border: "none",
             color: "#fff",
             fontSize: 16,
-            cursor: "pointer"
+            cursor: "pointer",
+            borderRadius: 8
           }}>
             🚀 Shop All Recommended Products
           </button>
@@ -104,18 +106,19 @@ export async function getServerSideProps({ params }) {
   }));
 
   /* ================= SMART MATCHING ================= */
-  const keywords = (post.title + " " + (post.content || ""))
-    .toLowerCase()
-    .split(" ");
+  const text = (
+    (post.title || "") + " " + (post.content || "")
+  ).toLowerCase();
 
   const relatedProducts = products
     .map((p) => {
       let score = 0;
 
-      keywords.forEach((k) => {
-        if (p.title?.toLowerCase().includes(k)) score += 3;
-        if (p.category?.toLowerCase().includes(k)) score += 2;
-      });
+      const title = (p.title || "").toLowerCase();
+      const category = (p.category || "").toLowerCase();
+
+      if (text.includes(title)) score += 5;
+      if (text.includes(category)) score += 3;
 
       return { ...p, score };
     })
