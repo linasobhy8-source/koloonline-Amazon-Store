@@ -60,13 +60,14 @@ function Subscriptions() {
         marginTop: 20
       }}>
 
-        {/* Audible */}
+        {/* Audible (UPDATED 🔥) */}
         <div style={card}>
           <h3>🎧 Audible</h3>
           <p>Listen to books – Free trial</p>
-          <a href="https://www.amazon.com/dp/B07L5CHS6S?tag=koloonlinesto-20" target="_blank">
-            <button style={buy}>Start Free</button>
-          </a>
+
+          <Link href="/audible">
+            <button style={buy}>🎧 Start Free Trial</button>
+          </Link>
         </div>
 
         {/* Kindle */}
@@ -176,7 +177,7 @@ export default function Home({ products }) {
         </div>
       </div>
 
-      {/* 🔥 NEW SECTION (IMPORTANT) */}
+      {/* 🔥 SUBSCRIPTIONS */}
       <Subscriptions />
 
       {/* PRODUCTS */}
