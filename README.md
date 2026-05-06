@@ -1,82 +1,79 @@
 # 🛒 Koloonline Amazon Store
 
-<p align="center">
-  <img src="https://i.postimg.cc/9fVfC1Y4/1000276862.png" alt="Koloonline Logo" width="150"/>
-</p>
-
-Koloonline Amazon Store هو متجر أفلييت ديناميكي يعرض منتجات Amazon بطريقة احترافية مع نظام تتبع وتحويلات عالية.
+Modern Amazon Affiliate Store built with **Next.js + Firebase**, optimized for SEO, speed, and conversions.
 
 ---
 
-## 🌐 روابط الصفحات (Production)
+## 🌐 Live Pages
 
-<div align="center">
-
-| الصفحة | الرابط |
-|--------|--------|
-| 🏠 Home | https://koloonline-store.vercel.app/ |
-| 📦 Products | https://koloonline-store.vercel.app/product.html |
-| 🛒 Cart | https://koloonline-store.vercel.app/cart.html |
-| 📰 Blog | https://koloonline-store.vercel.app/blog.html |
-| ✉️ Contact | https://koloonline-store.vercel.app/contact.html |
-| 📊 Dashboard | https://koloonline-store.vercel.app/dashboard.html |
-| 🎉 Thank You | https://koloonline-store.vercel.app/thankyou.html |
-
-</div>
+| Page | URL |
+|------|-----|
+| 🏠 Home | https://koloonline.online/ |
+| 📦 Product | https://koloonline.online/product/B0GWTCCHFZ |
+| 🛒 Cart | https://koloonline.online/cart |
+| 📰 Blog | https://koloonline.online/blog |
+| ✉️ Contact | https://koloonline.online/contact |
+| 📊 Dashboard | https://koloonline.online/dashboard |
+| 🎉 Thank You | https://koloonline.online/thankyou |
 
 ---
 
-## 📈 أهداف مستقبلية
+## ⚙️ Tech Stack
 
-<div align="center">
-
-| 🤖 AI Recommendations | 📊 Advanced Dashboard |
-|----------------------|----------------------|
-| 🌍 Country Tracking | 💰 Funnel Optimization |
-| 🔥 SaaS Transformation | 🛠 SEO Improvements |
-
-</div>
-
-- Lazy Loading للصور  
-- تصنيفات منتجات ديناميكية  
-- دمج GA4 + Facebook Pixel  
-- دعم تعدد اللغات  
+- Next.js (SSR + SEO Optimized)
+- Firebase Firestore (Products Database)
+- Vercel Hosting
+- Google Analytics 4 (GA4)
+- Google Tag Manager (GTM)
+- Amazon Affiliate System
 
 ---
 
-## 🔐 ملاحظات مهمة
+## 📈 Key Features
 
-- المشروع **Frontend Static فقط**
-- لا يحتاج Backend للتشغيل
-- يعتمد على LocalStorage + Tracking APIs
-- جاهز للتطوير إلى SaaS
-
----
-
-## ⚙️ ملاحظات تقنية
-
-- تم اعتماد روابط `.html` لتجنب 404 على Vercel
-- يمكن لاحقًا تحويله إلى clean routes باستخدام `vercel.json`
-- متوافق مع SEO + Google Indexing
-- جاهز للإعلانات و Affiliate Tracking
+- Dynamic Product Pages `/product/[asin]`
+- Firebase-driven product system
+- Affiliate tracking system
+- Click tracking (GA4 + GTM)
+- WhatsApp conversion flow
+- Related products system
+- SEO optimized (OpenGraph + Schema)
+- Dynamic Sitemap (Firebase-based)
 
 ---
 
-## 👤 Author
+## 🚀 Business Goals
 
-Koloonline Project by Lina Sobhy
+- AI-powered product recommendations
+- Advanced analytics dashboard
+- Country-based tracking system
+- Funnel optimization for conversions
+- SaaS expansion ready
+- High SEO performance
 
 ---
 
-## ⭐ الهدف النهائي
+## 🔐 Architecture
 
-تحويل المتجر إلى نظام أفلييت احترافي يحقق أرباح حقيقية من Amazon Affiliate 💰
+- Fully frontend-based (Next.js)
+- Firebase as backend (No custom server needed)
+- Serverless deployment (Vercel)
+- Scalable to SaaS model
 
 ---
 
-## 🚀 الحالة الحالية
+## ⚡ SEO Strategy
 
-✔ الصفحات تعمل بدون 404  
-✔ الروابط مستقرة  
-✔ Tracking جاهز (GA4 + GTM)  
-✔ جاهز للإعلانات + SEO
+- Dynamic sitemap from Firebase
+- Clean product URLs
+- Structured metadata (OpenGraph + Schema)
+- Fast indexing via Google Search Console
+
+---
+
+## 🧠 Notes
+
+All products are dynamically loaded from Firebase Firestore and automatically reflected in:
+- Website
+- Sitemap
+- SEO structure

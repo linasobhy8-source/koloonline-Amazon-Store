@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# ================= IMPORTANT =================
+Allow: /product/
+Allow: /category/
+
+# ================= SYSTEM BLOCK =================
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /private/
+
+# ================= SITEMAP (ONLY ONE - SEO BEST PRACTICE) =================
+Sitemap: https://koloonline.online/sitemap.xml
