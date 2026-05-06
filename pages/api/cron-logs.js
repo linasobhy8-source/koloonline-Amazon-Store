@@ -24,7 +24,17 @@ const db = getFirestore(app);
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= SECURITY CHECK ================= */
+    console.log("📊 CRON LOGS API HIT");
+
+    /* ================= SECURITY ================= */
+    const secret = req.query.secret;
+    if (secret !== process.env.CRON_SECRET) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
     if (req.method !== "GET") {
       return res.status(405).json({
         success: false,
@@ -32,6 +42,7 @@ export default async function handler(req, res) {
       });
     }
 
+    /* ================= QUERY ================= */
     const logsRef = collection(db, "cron_logs");
 
     const q = query(
@@ -47,10 +58,12 @@ export default async function handler(req, res) {
 
       return {
         id: doc.id,
-        type: data.type || "unknown",
+        type: data.type || data.job || "unknown",
         status: data.status || "ok",
         message: data.message || "",
-        createdAt: data.createdAt || null,
+        createdAt: data.createdAt
+          ? data.createdAt.toDate().toISOString()
+          : null,
       };
     });
 
@@ -77,4 +90,4 @@ export default async function handler(req, res) {
       error: err.message,
     });
   }
-        }
+}
