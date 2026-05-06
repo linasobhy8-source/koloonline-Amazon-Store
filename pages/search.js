@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 export default function Home() {
+  const router = useRouter();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,10 +20,17 @@ export default function Home() {
     const fetchProducts = async () => {
       try {
         const snap = await getDocs(collection(db, "products"));
-        const data = snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+
+        const data = snap.docs.map((doc) => {
+          const d = doc.data();
+
+          return {
+            id: doc.id,
+            asin: d.asin || doc.id, // 🔥 FIX مهم
+            ...d,
+          };
+        });
+
         setProducts(data);
       } catch (err) {
         console.error(err);
@@ -64,13 +74,12 @@ export default function Home() {
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
-      {/* ================= SEO ================= */}
       <Head>
         <title>Koloonline Amazon Store</title>
         <meta name="description" content="Best Amazon Affiliate Store" />
       </Head>
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <header style={{
         background: "#131921",
         color: "white",
@@ -80,13 +89,13 @@ export default function Home() {
         gap: 15,
         position: "relative"
       }}>
-        
+
         <img
           src="https://i.postimg.cc/9fVfC1Y4/1000276862.png"
           style={{ height: 45 }}
         />
 
-        {/* SEARCH BOX */}
+        {/* SEARCH */}
         <div style={{ flex: 1, position: "relative" }}>
 
           <input
@@ -120,7 +129,9 @@ export default function Home() {
                   key={s.id}
                   onClick={() => {
                     setSearch("");
-                    window.location.href = `/product/${s.asin}`;
+
+                    // 🔥 FIX NAVIGATION
+                    router.push(`/product/${s.asin}`);
                   }}
                   style={{
                     padding: 10,
@@ -154,7 +165,7 @@ export default function Home() {
 
       </header>
 
-      {/* ================= CONTENT ================= */}
+      {/* CONTENT */}
       <div style={{ padding: 20 }}>
 
         {loading ? (
@@ -173,7 +184,7 @@ export default function Home() {
                 padding: 12,
                 borderRadius: 10
               }}>
-                
+
                 <img
                   src={p.image}
                   style={{ width: "100%", height: 180, objectFit: "cover" }}
