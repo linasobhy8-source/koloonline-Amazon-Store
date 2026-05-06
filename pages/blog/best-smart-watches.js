@@ -25,6 +25,28 @@ export default function Blog() {
       <p>
         Choosing the right smart watch depends on your lifestyle and budget.
       </p>
+
+      {/* 🔥 Affiliate CTA */}
+      <div style={{ marginTop: 30 }}>
+        <a
+          href="https://www.amazon.com/dp/B0GWTCCHFZ?tag=koloonlinesto-20"
+          target="_blank"
+          rel="nofollow sponsored"
+        >
+          <button
+            style={{
+              padding: "12px 20px",
+              background: "#ff9900",
+              border: "none",
+              borderRadius: 6,
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
+          >
+            🛒 Buy Smart Watch on Amazon
+          </button>
+        </a>
+      </div>
     </div>
   );
 }
