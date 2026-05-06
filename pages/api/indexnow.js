@@ -1,16 +1,58 @@
+import { initializeApp, getApps } from "firebase/app";
+import {
+  getFirestore,
+  collection,
+  getDocs
+} from "firebase/firestore";
+
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
+
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const key = process.env.INDEXNOW_KEY;
 
-    const urls = [
+    /* ================= STATIC URLS ================= */
+    let urls = [
       "https://koloonline.online",
       "https://koloonline.online/categories",
       "https://koloonline.online/search",
+      "https://koloonline.online/blog",
     ];
 
-    await fetch("https://api.indexnow.org/indexnow", {
+    /* ================= PRODUCTS ================= */
+    const productsSnap = await getDocs(collection(db, "products"));
+
+    const productUrls = productsSnap.docs.map((doc) => {
+      const id = doc.id;
+      return `https://koloonline.online/product/${id}`;
+    });
+
+    /* ================= BLOGS ================= */
+    const blogSnap = await getDocs(collection(db, "blog"));
+
+    const blogUrls = blogSnap.docs.map((doc) => {
+      const id = doc.id;
+      return `https://koloonline.online/blog/${id}`;
+    });
+
+    /* ================= MERGE ALL ================= */
+    urls = [...urls, ...productUrls, ...blogUrls];
+
+    /* ================= SEND TO INDEXNOW ================= */
+    const response = await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         host: "koloonline.online",
         key,
@@ -18,11 +60,21 @@ export default async function handler(req, res) {
       }),
     });
 
-    console.log("⚡ IndexNow Ping Sent");
+    const data = await response.text();
 
-    return res.status(200).json({ success: true });
+    console.log("⚡ IndexNow Sent:", data);
+
+    return res.status(200).json({
+      success: true,
+      totalUrls: urls.length,
+    });
+
   } catch (e) {
     console.log("IndexNow Error:", e.message);
-    return res.status(500).json({ error: e.message });
+
+    return res.status(500).json({
+      success: false,
+      error: e.message,
+    });
   }
-}
+        }
