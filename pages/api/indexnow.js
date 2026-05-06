@@ -31,27 +31,25 @@ export default async function handler(req, res) {
     /* ================= PRODUCTS ================= */
     const productsSnap = await getDocs(collection(db, "products"));
 
-    const productUrls = productsSnap.docs.map((doc) => {
-      const id = doc.id;
-      return `https://koloonline.online/product/${id}`;
-    });
+    const productUrls = productsSnap.docs.map((doc) =>
+      `https://koloonline.online/product/${doc.id}`
+    );
 
     /* ================= BLOGS ================= */
     const blogSnap = await getDocs(collection(db, "blog"));
 
-    const blogUrls = blogSnap.docs.map((doc) => {
-      const id = doc.id;
-      return `https://koloonline.online/blog/${id}`;
-    });
+    const blogUrls = blogSnap.docs.map((doc) =>
+      `https://koloonline.online/blog/${doc.id}`
+    );
 
-    /* ================= MERGE ALL ================= */
+    /* ================= MERGE ================= */
     urls = [...urls, ...productUrls, ...blogUrls];
 
     /* ================= SEND TO INDEXNOW ================= */
     const response = await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         host: "koloonline.online",
@@ -67,6 +65,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       totalUrls: urls.length,
+      result: data
     });
 
   } catch (e) {
@@ -77,4 +76,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-        }
+}
