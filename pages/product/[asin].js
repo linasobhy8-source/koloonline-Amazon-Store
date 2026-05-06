@@ -3,20 +3,38 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
-import Breadcrumb from "../../components/Breadcrumb";
 
 /* ================= FALLBACK ================= */
 const fallbackImage = "https://via.placeholder.com/500";
 
+/* ================= WHATSAPP TRACK ================= */
+function sendWhatsApp(product) {
+  const message = `🔥 Product Interest:
+${product.title}
+Price: $${product.price}
+Link: ${product.link}`;
+
+  const whatsappURL = `https://wa.me/201234567890?text=${encodeURIComponent(message)}`;
+
+  // tracking click (لو عندك analytics API)
+  fetch("/api/track", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "whatsapp_click",
+      asin: product.asin,
+    }),
+  }).catch(() => {});
+
+  window.open(whatsappURL, "_blank");
+}
+
 /* ================= STAR UI ================= */
 function Stars({ rating = 4.5 }) {
   const full = Math.floor(rating);
-  const half = rating % 1 >= 0.5;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+    <div style={{ display: "flex", gap: 4 }}>
       {"⭐".repeat(full)}
-      {half && "✨"}
       <span style={{ marginLeft: 6 }}>{rating}/5</span>
     </div>
   );
@@ -49,16 +67,10 @@ export default function ProductPage() {
   if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
   if (!product) return <p style={{ padding: 20 }}>Product Not Found</p>;
 
+  const url = `https://koloonline.online/product/${product.asin}`;
   const rating = product.rating || 4.3;
-  const reviews = product.reviews || [
-    { name: "Ahmed", text: "Amazing product! Fast delivery.", stars: 5 },
-    { name: "Sara", text: "Good value for money.", stars: 4 },
-    { name: "John", text: "Very useful and high quality.", stars: 5 },
-  ];
 
-  const isAvailable = true;
-
-  /* ================= PRODUCT SCHEMA ================= */
+  /* ================= SEO SCHEMA ================= */
   const schema = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -67,52 +79,19 @@ export default function ProductPage() {
     description: product.title,
     sku: product.asin,
 
-    brand: {
-      "@type": "Brand",
-      name: "Amazon"
-    },
-
     offers: {
       "@type": "Offer",
       priceCurrency: "USD",
-      price: product.price || "0",
-      availability: isAvailable
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-      url: `https://koloonline.online/product/${product.asin}`
+      price: product.price,
+      availability: "https://schema.org/InStock",
+      url
     },
 
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: rating,
-      reviewCount: reviews.length
+      reviewCount: 120
     }
-  };
-
-  /* ================= BREADCRUMB SCHEMA ================= */
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: "https://koloonline.online"
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: product.category || "Category",
-        item: `https://koloonline.online/category/${product.category}`
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: product.title,
-        item: `https://koloonline.online/product/${product.asin}`
-      }
-    ]
   };
 
   return (
@@ -120,47 +99,25 @@ export default function ProductPage() {
 
       {/* ================= SEO ================= */}
       <Head>
-        <title>{product.title} | Amazon Deal</title>
+        <title>{product.title} | Koloonline Deal</title>
         <meta name="description" content={product.title} />
-        <link rel="canonical" href={`https://koloonline.online/product/${product.asin}`} />
+        <link rel="canonical" href={url} />
 
-        {/* Open Graph */}
         <meta property="og:title" content={product.title} />
         <meta property="og:image" content={product.image} />
+        <meta property="og:url" content={url} />
         <meta property="og:type" content="product" />
 
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-
-        {/* PRODUCT SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
-
-        {/* BREADCRUMB SCHEMA (🔥 SEO قوي جدًا) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-        />
       </Head>
 
-      {/* ================= BREADCRUMB UI ================= */}
-      <Breadcrumb
-        items={[
-          { name: "Home", link: "/" },
-          { name: product.category || "Category", link: `/category/${product.category}` },
-          { name: product.title, link: "#" }
-        ]}
-      />
-
-      {/* ================= PRODUCT HERO ================= */}
+      {/* ================= PRODUCT ================= */}
       <div style={container}>
 
-        <img
-          src={product.image || fallbackImage}
-          style={image}
-        />
+        <img src={product.image || fallbackImage} style={image} />
 
         <div style={{ flex: 1 }}>
 
@@ -172,31 +129,33 @@ export default function ProductPage() {
             ${product.price}
           </h2>
 
-          <p style={{ color: isAvailable ? "green" : "red" }}>
-            {isAvailable ? "In Stock" : "Out of Stock"}
-          </p>
-
+          {/* ================= AFFILIATE CLICK ================= */}
           <button
             style={buyBtn}
-            onClick={() => window.open(product.link, "_blank")}
+            onClick={() => {
+              fetch("/api/track", {
+                method: "POST",
+                body: JSON.stringify({
+                  type: "affiliate_click",
+                  asin: product.asin,
+                }),
+              });
+
+              window.open(product.link, "_blank");
+            }}
           >
             🛒 Buy on Amazon
           </button>
 
+          {/* ================= WHATSAPP CONVERSION ================= */}
+          <button
+            style={waBtn}
+            onClick={() => sendWhatsApp(product)}
+          >
+            💬 Order via WhatsApp
+          </button>
+
         </div>
-      </div>
-
-      {/* ================= REVIEWS ================= */}
-      <div style={section}>
-        <h2>Customer Reviews</h2>
-
-        {reviews.map((r, i) => (
-          <div key={i} style={reviewCard}>
-            <strong>{r.name}</strong>
-            <div>{"⭐".repeat(r.stars)}</div>
-            <p>{r.text}</p>
-          </div>
-        ))}
       </div>
 
     </div>
@@ -213,28 +172,26 @@ const container = {
 };
 
 const image = {
-  width: 300,
-  height: 300,
+  width: 320,
+  height: 320,
   objectFit: "contain",
 };
 
 const buyBtn = {
+  width: "100%",
   padding: 15,
   background: "#ff9900",
   border: "none",
-  fontWeight: "bold",
-  width: "100%",
   marginTop: 10,
   cursor: "pointer",
 };
 
-const section = {
-  padding: 20,
-  marginTop: 20,
-  background: "white",
-};
-
-const reviewCard = {
-  padding: 10,
-  borderBottom: "1px solid #ddd",
+const waBtn = {
+  width: "100%",
+  padding: 15,
+  background: "#25D366",
+  color: "white",
+  border: "none",
+  marginTop: 10,
+  cursor: "pointer",
 };
