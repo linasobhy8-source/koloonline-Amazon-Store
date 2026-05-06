@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   doc,
   getDoc,
@@ -13,15 +13,22 @@ export default function Dashboard() {
   const [blogsData, setBlogsData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const firstLoad = useRef(true);
+
   useEffect(() => {
     loadAnalytics();
-    const interval = setInterval(loadAnalytics, 15000);
+
+    // 🔥 بدل كل 15 ثانية reload كامل → خليه أهدى
+    const interval = setInterval(() => {
+      loadAnalytics(true);
+    }, 60000); // كل دقيقة بدل 15 ثانية
+
     return () => clearInterval(interval);
   }, []);
 
-  async function loadAnalytics() {
+  async function loadAnalytics(isRefresh = false) {
     try {
-      setLoading(true);
+      if (!isRefresh) setLoading(true);
 
       /* ================= ANALYTICS ================= */
       const statsSnap = await getDoc(doc(db, "analytics", "overview"));
@@ -59,7 +66,7 @@ export default function Dashboard() {
 
       const bestProduct = products[0];
 
-      /* ================= 🤖 AUTO BLOGS (NEW PART) ================= */
+      /* ================= BLOGS ================= */
       const blogSnap = await getDocs(collection(db, "blog"));
 
       const blogs = blogSnap.docs.map(d => ({
@@ -68,10 +75,9 @@ export default function Dashboard() {
       }));
 
       const autoBlogs = blogs.filter(b => b.auto);
-
       const latestBlog = blogs[0];
 
-      /* ================= SET STATE ================= */
+      /* ================= UPDATE STATE ================= */
       setData({
         clicks: stats.totalClicks || 0,
         orders: stats.totalOrders || 0,
@@ -93,7 +99,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!isRefresh) setLoading(false);
     }
   }
 
@@ -104,7 +110,6 @@ export default function Dashboard() {
   return (
     <div style={styles.page}>
 
-      {/* HEADER */}
       <div style={styles.header}>
         🧠 AI Analytics Dashboard
         <span style={styles.subHeader}>
@@ -112,7 +117,6 @@ export default function Dashboard() {
         </span>
       </div>
 
-      {/* STATS */}
       <div style={styles.grid}>
         <Card title="Clicks" value={data.clicks} color="#007bff" />
         <Card title="Orders" value={data.orders} color="#28a745" />
@@ -120,47 +124,31 @@ export default function Dashboard() {
         <Card title="Hot Products" value={data.hot} color="#ff3b30" />
       </div>
 
-      {/* 🔥 BLOG STATS (NEW) */}
       {blogsData && (
         <div style={styles.insights}>
           <h3>📚 Blog System</h3>
-
           <p>📌 Total Blogs: {blogsData.total}</p>
           <p>🤖 Auto Generated: {blogsData.auto}</p>
           <p>📰 Latest Blog: {blogsData.latest?.title || "No blogs yet"}</p>
-
-          <p>⚡ AI Content Engine Active</p>
-          <p>🚀 Auto publishing enabled</p>
         </div>
       )}
 
-      {/* 🔥 CONVERSION INSIGHT */}
       <div style={styles.insights}>
         <h3>🔥 Conversion Insights</h3>
         <p>📊 CTR: {data.ctr}%</p>
-
-        <p>
-          🧠 Best Product:
-          <b> {data.bestProduct?.id}</b>
-        </p>
-
-        <p>⚡ AI auto-ranking active</p>
-        <p>🚀 Real-time optimization enabled</p>
+        <p>🧠 Best Product: <b>{data.bestProduct?.id}</b></p>
       </div>
 
-      {/* BEST PRODUCT */}
       {data.bestProduct && (
         <div style={styles.bestBox}>
-          <h3>🏆 Top Converting Product</h3>
-          <p>ID: {data.bestProduct.id}</p>
+          <h3>🏆 Top Product</h3>
           <p>AI Score: {data.bestProduct.aiScore.toFixed(1)}</p>
           <p>Conversion: {data.bestProduct.conversion}%</p>
         </div>
       )}
 
-      {/* PRODUCTS */}
       <div style={styles.section}>
-        <h2>🔥 Top Performing Products</h2>
+        <h2>🔥 Top Products</h2>
 
         <div style={styles.table}>
           <div style={styles.tableHeader}>
@@ -209,7 +197,6 @@ const styles = {
     minHeight: "100vh",
     paddingBottom: 40,
   },
-
   header: {
     background: "#111827",
     color: "white",
@@ -218,36 +205,30 @@ const styles = {
     fontSize: 22,
     fontWeight: "bold",
   },
-
   subHeader: {
     display: "block",
     fontSize: 12,
     opacity: 0.7,
     marginTop: 5,
   },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
     gap: 15,
     padding: 20,
   },
-
   card: {
     background: "white",
     padding: 20,
     borderRadius: 12,
     boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
   },
-
   insights: {
     margin: "0 20px",
     padding: 15,
     background: "white",
     borderRadius: 10,
-    boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
   },
-
   bestBox: {
     margin: "20px",
     padding: 15,
@@ -255,37 +236,27 @@ const styles = {
     borderLeft: "5px solid #ff9900",
     borderRadius: 10,
   },
-
-  section: {
-    padding: 20,
-  },
-
+  section: { padding: 20 },
   table: {
     background: "white",
     borderRadius: 12,
     overflow: "hidden",
-    boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
   },
-
   tableHeader: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
     background: "#232f3e",
     color: "white",
     padding: 12,
-    fontWeight: "bold",
   },
-
   row: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
     padding: 12,
     borderBottom: "1px solid #eee",
   },
-
   loading: {
     padding: 40,
     textAlign: "center",
-    fontSize: 18,
   },
 };
