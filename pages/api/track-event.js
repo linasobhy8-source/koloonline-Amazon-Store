@@ -34,7 +34,6 @@ function generateUserKey(req) {
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-
     if (req.method !== "POST") {
       return res.status(405).json({ success: false });
     }
@@ -54,15 +53,15 @@ export default async function handler(req, res) {
     /* ================= USER ================= */
     const userKey = generateUserKey(req);
     const userRef = doc(db, "analytics_users", userKey);
-    const userSnap = await getDoc(userRef);
 
+    const userSnap = await getDoc(userRef);
     const now = Date.now();
 
     /* ================= FRAUD PROTECTION ================= */
     if (userSnap.exists()) {
       const lastAction = userSnap.data().lastAction || 0;
 
-      if (now - lastAction < 30000 && type === "click") {
+      if (now - lastAction < 15000 && type === "click") {
         return res.status(429).json({
           success: false,
           message: "spam blocked"
@@ -70,7 +69,6 @@ export default async function handler(req, res) {
       }
     }
 
-    /* ================= 🌍 COUNTRY TRACKING ================= */
     const country =
       req.headers["x-vercel-ip-country"] || "unknown";
 
@@ -80,7 +78,8 @@ export default async function handler(req, res) {
       {
         lastAction: now,
         lastType: type,
-        country
+        country,
+        updatedAt: serverTimestamp()
       },
       { merge: true }
     );
@@ -89,12 +88,16 @@ export default async function handler(req, res) {
     const productRef = doc(db, "analytics_products", asin);
     const productSnap = await getDoc(productRef);
 
+    /* 🔥 FIX: create BEFORE update (important) */
     if (!productSnap.exists()) {
       await setDoc(productRef, {
         clicks: 0,
         views: 0,
         orders: 0,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        aiScore: 0,
+        conversionRate: 0,
+        isHotProduct: false
       });
     }
 
@@ -109,9 +112,9 @@ export default async function handler(req, res) {
 
     await updateDoc(productRef, updates);
 
-    /* ================= AI SCORE ================= */
-    const snap = await getDoc(productRef);
-    const data = snap.data();
+    /* ================= RECALCULATE AI SCORE ================= */
+    const updatedSnap = await getDoc(productRef);
+    const data = updatedSnap.data();
 
     const clicks = data.clicks || 0;
     const orders = data.orders || 0;
@@ -144,7 +147,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("TRACK ERROR:", err);
 
     return res.status(500).json({
       success: false,
