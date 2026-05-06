@@ -140,8 +140,8 @@ export default function Home({ products }) {
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
       <Head>
-        <title>Koloonline | Best Amazon Deals</title>
-        <meta name="description" content="Best Amazon affiliate deals" />
+        <title>Best Amazon Deals & Product Reviews 2026 | Koloonline</title>
+        <meta name="description" content="Discover the best Amazon deals, product reviews, and buying guides for 2026." />
         <link rel="canonical" href={siteUrl} />
       </Head>
 
@@ -188,6 +188,7 @@ export default function Home({ products }) {
         </button>
       </div>
 
+      {/* TRENDING */}
       <div style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -216,6 +217,16 @@ export default function Home({ products }) {
 
       <Subscriptions />
 
+      {/* 🔥 SEO CONTENT */}
+      <div style={{ padding: 20 }}>
+        <h1>Best Amazon Deals & Product Reviews 2026</h1>
+        <p>
+          Discover the best Amazon deals, product reviews, and buying guides.
+          We help you choose the best products بسهولة.
+        </p>
+      </div>
+
+      {/* PRODUCTS */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
@@ -246,7 +257,7 @@ export default function Home({ products }) {
   );
 }
 
-/* ================= 🔥 FIXED SSR → SSG ================= */
+/* ================= SSG ================= */
 export async function getStaticProps() {
   const snap = await getDocs(
     query(collection(db, "products"), limit(50))
@@ -259,7 +270,7 @@ export async function getStaticProps() {
 
   return {
     props: { products },
-    revalidate: 60, // 🔥 تحديث كل دقيقة بدون ضغط
+    revalidate: 60,
   };
 }
 
