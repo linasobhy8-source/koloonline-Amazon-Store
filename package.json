@@ -4,17 +4,20 @@
   "private": true,
   "description": "Amazon Affiliate Store built with Next.js + Firebase + AI Engine",
   "author": "Lina Sobhy",
+
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
+
   "engines": {
-    "node": "24.x"
+    "node": "20.x"
   },
+
   "dependencies": {
-    "next": "15.0.0",
+    "next": "15.5.15",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "firebase": "^10.12.0"
