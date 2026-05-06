@@ -91,17 +91,13 @@ function Subscriptions() {
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-
   const [aiDescriptions, setAiDescriptions] = useState({});
 
-  // ✅ AI وصف المنتج
   const generateDescription = async (product) => {
     try {
       const res = await fetch("/api/generate-description", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: product.title })
       });
 
@@ -116,17 +112,13 @@ export default function Home({ products }) {
     }
   };
 
-  // ✅ AI مقال
   const generateBlog = async () => {
     const keyword = prompt("اكتب كلمة للمقال");
-
     if (!keyword) return;
 
     await fetch("/api/generate-blog", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keyword })
     });
 
@@ -153,7 +145,6 @@ export default function Home({ products }) {
         <link rel="canonical" href={siteUrl} />
       </Head>
 
-      {/* HEADER */}
       <header style={header}>
         <div style={logo}>🟠 Koloonline</div>
 
@@ -165,7 +156,6 @@ export default function Home({ products }) {
         />
       </header>
 
-      {/* NAV */}
       <nav style={nav}>
         {["all", "Electronics", "Fashion", "Home", "Sports"].map((c) => (
           <button
@@ -185,7 +175,6 @@ export default function Home({ products }) {
 
       <div style={hero}>🔥 Best Amazon Deals Today</div>
 
-      {/* 🔥 AI BLOG BUTTON */}
       <div style={{ padding: 20, textAlign: "center" }}>
         <button onClick={generateBlog} style={{
           padding: 15,
@@ -199,7 +188,6 @@ export default function Home({ products }) {
         </button>
       </div>
 
-      {/* TRENDING */}
       <div style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -228,7 +216,6 @@ export default function Home({ products }) {
 
       <Subscriptions />
 
-      {/* PRODUCTS */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
@@ -259,8 +246,8 @@ export default function Home({ products }) {
   );
 }
 
-/* ================= SSR ================= */
-export async function getServerSideProps() {
+/* ================= 🔥 FIXED SSR → SSG ================= */
+export async function getStaticProps() {
   const snap = await getDocs(
     query(collection(db, "products"), limit(50))
   );
@@ -272,6 +259,7 @@ export async function getServerSideProps() {
 
   return {
     props: { products },
+    revalidate: 60, // 🔥 تحديث كل دقيقة بدون ضغط
   };
 }
 
@@ -333,13 +321,8 @@ const img = {
   objectFit: "cover",
 };
 
-const title = {
-  fontSize: 14,
-};
-
-const price = {
-  color: "#B12704",
-};
+const title = { fontSize: 14 };
+const price = { color: "#B12704" };
 
 const btn = {
   width: "100%",
