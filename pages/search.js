@@ -26,7 +26,7 @@ export default function Home() {
 
           return {
             id: doc.id,
-            asin: d.asin || doc.id, // 🔥 FIX مهم
+            asin: d.asin || doc.id,
             ...d,
           };
         });
@@ -65,8 +65,11 @@ export default function Home() {
     const cat = p.category?.toLowerCase() || "";
 
     const searchMatch = title.includes(search.toLowerCase());
+
     const categoryMatch =
-      category === "all" ? true : cat === category.toLowerCase();
+      category === "all"
+        ? true
+        : cat === category.toLowerCase();
 
     return searchMatch && categoryMatch;
   });
@@ -76,19 +79,26 @@ export default function Home() {
 
       <Head>
         <title>Koloonline Amazon Store</title>
-        <meta name="description" content="Best Amazon Affiliate Store" />
+
+        <meta
+          name="description"
+          content="Best Amazon Affiliate Store"
+        />
       </Head>
 
       {/* HEADER */}
-      <header style={{
-        background: "#131921",
-        color: "white",
-        padding: 15,
-        display: "flex",
-        alignItems: "center",
-        gap: 15,
-        position: "relative"
-      }}>
+      <header
+        style={{
+          background: "#131921",
+          color: "white",
+          padding: 15,
+          display: "flex",
+          alignItems: "center",
+          gap: 15,
+          position: "relative",
+          flexWrap: "wrap"
+        }}
+      >
 
         <img
           src="https://i.postimg.cc/9fVfC1Y4/1000276862.png"
@@ -113,24 +123,25 @@ export default function Home() {
 
           {/* SUGGESTIONS */}
           {suggestions.length > 0 && (
-            <div style={{
-              position: "absolute",
-              top: 45,
-              left: 0,
-              right: 0,
-              background: "white",
-              color: "black",
-              borderRadius: 8,
-              boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-              zIndex: 999
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                top: 45,
+                left: 0,
+                right: 0,
+                background: "white",
+                color: "black",
+                borderRadius: 8,
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                zIndex: 999
+              }}
+            >
               {suggestions.map((s) => (
                 <div
                   key={s.id}
                   onClick={() => {
                     setSearch("");
 
-                    // 🔥 FIX NAVIGATION
                     router.push(`/product/${s.asin}`);
                   }}
                   style={{
@@ -163,6 +174,23 @@ export default function Home() {
           <option value="home">Home</option>
         </select>
 
+        {/* 🔥 AMAZON HAUL BUTTON */}
+        <Link href="/amazon-haul">
+          <button
+            style={{
+              padding: "10px 15px",
+              background: "#ff6600",
+              border: "none",
+              borderRadius: 5,
+              color: "white",
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
+          >
+            🔥 Amazon Haul
+          </button>
+        </Link>
+
       </header>
 
       {/* CONTENT */}
@@ -173,34 +201,46 @@ export default function Home() {
         ) : filtered.length === 0 ? (
           <p>No products found</p>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-            gap: 15
-          }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+              gap: 15
+            }}
+          >
             {filtered.map((p) => (
-              <div key={p.id} style={{
-                background: "white",
-                padding: 12,
-                borderRadius: 10
-              }}>
+              <div
+                key={p.id}
+                style={{
+                  background: "white",
+                  padding: 12,
+                  borderRadius: 10
+                }}
+              >
 
                 <img
                   src={p.image}
-                  style={{ width: "100%", height: 180, objectFit: "cover" }}
+                  style={{
+                    width: "100%",
+                    height: 180,
+                    objectFit: "cover"
+                  }}
                 />
 
                 <h3>{p.title}</h3>
+
                 <p>${p.price}</p>
 
                 <Link href={`/product/${p.asin}`}>
-                  <button style={{
-                    width: "100%",
-                    padding: 10,
-                    background: "#ff9900",
-                    border: "none",
-                    marginTop: 8
-                  }}>
+                  <button
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      background: "#ff9900",
+                      border: "none",
+                      marginTop: 8
+                    }}
+                  >
                     View Product
                   </button>
                 </Link>
@@ -227,4 +267,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
+              }
