@@ -141,7 +141,12 @@ export default function Home({ products }) {
 
       <Head>
         <title>Best Amazon Deals & Product Reviews 2026 | Koloonline</title>
-        <meta name="description" content="Discover the best Amazon deals, product reviews, and buying guides for 2026." />
+
+        <meta
+          name="description"
+          content="Discover the best Amazon deals, product reviews, and buying guides for 2026."
+        />
+
         <link rel="canonical" href={siteUrl} />
       </Head>
 
@@ -169,6 +174,20 @@ export default function Home({ products }) {
             {c}
           </button>
         ))}
+
+        {/* 🔥 AMAZON HAUL LINK */}
+        <Link href="/amazon-haul">
+          <button
+            style={{
+              ...navBtn,
+              background: "#ff6600",
+              fontWeight: "bold",
+              borderRadius: 6,
+            }}
+          >
+            🔥 Amazon Haul
+          </button>
+        </Link>
       </nav>
 
       <Breadcrumb category={category} />
@@ -176,14 +195,17 @@ export default function Home({ products }) {
       <div style={hero}>🔥 Best Amazon Deals Today</div>
 
       <div style={{ padding: 20, textAlign: "center" }}>
-        <button onClick={generateBlog} style={{
-          padding: 15,
-          fontSize: 16,
-          background: "#28a745",
-          color: "white",
-          border: "none",
-          borderRadius: 5
-        }}>
+        <button
+          onClick={generateBlog}
+          style={{
+            padding: 15,
+            fontSize: 16,
+            background: "#28a745",
+            color: "white",
+            border: "none",
+            borderRadius: 5
+          }}
+        >
           ✨ Generate Blog Article
         </button>
       </div>
@@ -196,7 +218,9 @@ export default function Home({ products }) {
           {trendingProducts.map((p) => (
             <div key={p.id} style={card}>
               <img src={p.image} style={img} />
+
               <h3 style={title}>{p.title}</h3>
+
               <p style={price}>${p.price}</p>
 
               <button style={btn} onClick={() => generateDescription(p)}>
@@ -204,7 +228,9 @@ export default function Home({ products }) {
               </button>
 
               {aiDescriptions[p.id] && (
-                <p style={{ fontSize: 12 }}>{aiDescriptions[p.id]}</p>
+                <p style={{ fontSize: 12 }}>
+                  {aiDescriptions[p.id]}
+                </p>
               )}
 
               <a href={p.link} target="_blank">
@@ -220,9 +246,11 @@ export default function Home({ products }) {
       {/* 🔥 SEO CONTENT */}
       <div style={{ padding: 20 }}>
         <h1>Best Amazon Deals & Product Reviews 2026</h1>
+
         <p>
-          Discover the best Amazon deals, product reviews, and buying guides.
-          We help you choose the best products بسهولة.
+          Discover the best Amazon deals, product reviews,
+          and buying guides. We help you choose the best
+          products بسهولة.
         </p>
       </div>
 
@@ -231,7 +259,9 @@ export default function Home({ products }) {
         {filtered.map((p) => (
           <div key={p.id} style={card}>
             <img src={p.image || fallbackImage} style={img} />
+
             <h3 style={title}>{p.title}</h3>
+
             <p style={price}>${p.price}</p>
 
             <button style={btn} onClick={() => generateDescription(p)}>
@@ -239,7 +269,9 @@ export default function Home({ products }) {
             </button>
 
             {aiDescriptions[p.id] && (
-              <p style={{ fontSize: 12 }}>{aiDescriptions[p.id]}</p>
+              <p style={{ fontSize: 12 }}>
+                {aiDescriptions[p.id]}
+              </p>
             )}
 
             <Link href={`/product/${p.id}`}>
@@ -284,7 +316,10 @@ const header = {
   padding: 10,
 };
 
-const logo = { fontSize: 22, fontWeight: "bold" };
+const logo = {
+  fontSize: 22,
+  fontWeight: "bold"
+};
 
 const searchBox = {
   flex: 1,
@@ -298,12 +333,14 @@ const nav = {
   padding: 10,
   display: "flex",
   gap: 10,
+  flexWrap: "wrap",
 };
 
 const navBtn = {
   color: "white",
   border: "none",
   padding: 8,
+  cursor: "pointer",
 };
 
 const hero = {
@@ -311,6 +348,7 @@ const hero = {
   padding: 30,
   textAlign: "center",
   fontSize: 22,
+  fontWeight: "bold",
 };
 
 const grid = {
@@ -324,16 +362,25 @@ const card = {
   background: "white",
   padding: 10,
   borderRadius: 10,
+  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
 };
 
 const img = {
   width: "100%",
   height: 180,
   objectFit: "cover",
+  borderRadius: 8,
 };
 
-const title = { fontSize: 14 };
-const price = { color: "#B12704" };
+const title = {
+  fontSize: 14,
+  minHeight: 40,
+};
+
+const price = {
+  color: "#B12704",
+  fontWeight: "bold",
+};
 
 const btn = {
   width: "100%",
@@ -341,6 +388,8 @@ const btn = {
   background: "#ff9900",
   border: "none",
   marginTop: 5,
+  borderRadius: 6,
+  cursor: "pointer",
 };
 
 const buy = {
@@ -349,4 +398,6 @@ const buy = {
   background: "#ffd814",
   border: "none",
   marginTop: 5,
+  borderRadius: 6,
+  cursor: "pointer",
 };
