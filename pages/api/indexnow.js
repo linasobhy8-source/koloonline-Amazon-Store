@@ -26,6 +26,7 @@ export default async function handler(req, res) {
       "https://koloonline.online/categories",
       "https://koloonline.online/search",
       "https://koloonline.online/blog",
+      "https://koloonline.online/amazon-haul" // 🔥 ADDED HERE
     ];
 
     /* ================= PRODUCTS ================= */
