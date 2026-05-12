@@ -1,69 +1,76 @@
 import Head from "next/head";
-
-const products = [
-  {
-    id: 1,
-    title: "Mini Portable Blender",
-    image:
-      "https://images.unsplash.com/photo-1570222094114-d054a817e56b?q=80&w=1200&auto=format&fit=crop",
-    price: "$8.99",
-    category: "Kitchen",
-    link:
-      "https://www.amazon.com/?tag=koloonlinesto-20",
-  },
-  {
-    id: 2,
-    title: "LED Strip Lights",
-    image:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop",
-    price: "$5.49",
-    category: "Home",
-    link:
-      "https://www.amazon.com/?tag=koloonlinesto-20",
-  },
-  {
-    id: 3,
-    title: "Wireless Earbuds",
-    image:
-      "https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=1200&auto=format&fit=crop",
-    price: "$14.99",
-    category: "Electronics",
-    link:
-      "https://www.amazon.com/?tag=koloonlinesto-20",
-  },
-  {
-    id: 4,
-    title: "Travel Makeup Bag",
-    image:
-      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200&auto=format&fit=crop",
-    price: "$6.99",
-    category: "Beauty",
-    link:
-      "https://www.amazon.com/?tag=koloonlinesto-20",
-  },
-  {
-    id: 5,
-    title: "Phone Holder Stand",
-    image:
-      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop",
-    price: "$3.99",
-    category: "Accessories",
-    link:
-      "https://www.amazon.com/?tag=koloonlinesto-20",
-  },
-  {
-    id: 6,
-    title: "USB Desk Fan",
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop",
-    price: "$9.99",
-    category: "Office",
-    link:
-      "https://www.amazon.com/?tag=koloonlinesto-20",
-  },
-];
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../config/firebase";
 
 export default function AmazonHaul() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ================= AUTO TRENDING + VIRAL BOOST ================= */
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        const snap = await getDocs(collection(db, "products"));
+
+        let data = snap.docs.map((doc) => {
+          const d = doc.data();
+
+          return {
+            id: doc.id,
+            title: d.title || "",
+            image: d.image || "",
+            price: d.price || 0,
+            category: d.category || "General",
+            link: d.link || "#",
+
+            // 🔥 trending fields
+            score: d.score || 0,
+            views: d.views || 0,
+            clicks: d.clicks || 0,
+            updatedAt: d.updatedAt || Date.now(),
+          };
+        });
+
+        /* ================= VIRAL + TRENDING ALGORITHM ================= */
+        data = data
+          .map((p) => {
+            const now = Date.now();
+            const createdAt = p.updatedAt || now;
+
+            // ⏱️ عمر المنتج بالساعات
+            const hoursOld = (now - createdAt) / (1000 * 60 * 60);
+
+            // 🔥 Viral Boost أول 24 ساعة
+            const viralBoost =
+              hoursOld <= 24 ? 50 - hoursOld * 2 : 0;
+
+            // 📊 Trend Score
+            const baseScore =
+              (p.score * 3) +
+              (p.clicks * 2) +
+              (p.views * 1);
+
+            return {
+              ...p,
+              trendScore: baseScore + viralBoost,
+              viralBoost: viralBoost > 0,
+            };
+          })
+          .sort((a, b) => b.trendScore - a.trendScore)
+          .slice(0, 20);
+
+        setProducts(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrending();
+  }, []);
+
   return (
     <>
       <Head>
@@ -71,26 +78,12 @@ export default function AmazonHaul() {
 
         <meta
           name="description"
-          content="Discover the best Amazon Haul deals, cheap Amazon finds, viral TikTok products, gadgets, beauty products, and trending items under $20."
+          content="Discover trending Amazon Haul products, viral TikTok finds, and cheap deals under $20."
         />
 
         <meta
           name="keywords"
-          content="Amazon Haul, Cheap Amazon Finds, Amazon Deals, Viral Amazon Products, TikTok Amazon Finds, Amazon Under 20"
-        />
-
-        <meta property="og:title" content="Amazon Haul Deals" />
-
-        <meta
-          property="og:description"
-          content="Best cheap Amazon products and viral finds under $20."
-        />
-
-        <meta property="og:type" content="website" />
-
-        <meta
-          property="og:url"
-          content="https://koloonline.online/amazon-haul"
+          content="Amazon Haul, Viral Products, Cheap Amazon Deals, TikTok Finds"
         />
 
         <link
@@ -101,46 +94,78 @@ export default function AmazonHaul() {
 
       <main style={styles.main}>
         <section style={styles.hero}>
-          <h1 style={styles.title}>Amazon Haul Deals</h1>
+          <h1 style={styles.title}>🔥 Amazon Trending Haul</h1>
 
           <p style={styles.subtitle}>
-            Discover trending Amazon products under $20.
+            Real-time trending & viral products under $20
           </p>
         </section>
 
-        <section style={styles.grid}>
-          {products.map((product) => (
-            <div key={product.id} style={styles.card}>
-              <img
-                src={product.image}
-                alt={product.title}
-                style={styles.image}
-              />
+        {loading ? (
+          <p style={{ textAlign: "center" }}>Loading trending products...</p>
+        ) : (
+          <section style={styles.grid}>
+            {products.map((product) => (
+              <div key={product.id} style={styles.card}>
 
-              <div style={styles.content}>
-                <span style={styles.category}>{product.category}</span>
+                <img
+                  src={product.image}
+                  alt={product.title}
+                  style={styles.image}
+                />
 
-                <h2 style={styles.productTitle}>{product.title}</h2>
+                <div style={styles.content}>
 
-                <p style={styles.price}>{product.price}</p>
+                  {/* 🔥 VIRAL BADGE */}
+                  {product.viralBoost && (
+                    <span
+                      style={{
+                        background: "red",
+                        color: "white",
+                        padding: "4px 8px",
+                        fontSize: "11px",
+                        borderRadius: "10px",
+                        marginBottom: 5,
+                        display: "inline-block",
+                      }}
+                    >
+                      🔥 NEW VIRAL
+                    </span>
+                  )}
 
-                <a
-                  href={product.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={styles.button}
-                >
-                  Shop Now
-                </a>
+                  <span style={styles.category}>
+                    {product.category}
+                  </span>
+
+                  <h2 style={styles.productTitle}>
+                    {product.title}
+                  </h2>
+
+                  <p style={styles.price}>
+                    ${product.price}
+                  </p>
+
+                  <a
+                    href={product.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.button}
+                  >
+                    🛒 Shop Now
+                  </a>
+
+                </div>
+
               </div>
-            </div>
-          ))}
-        </section>
+            ))}
+          </section>
+        )}
       </main>
     </>
   );
 }
 
+/* ================= STYLES ================= */
 const styles = {
   main: {
     background: "#f5f5f5",
@@ -178,7 +203,6 @@ const styles = {
     borderRadius: "20px",
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    transition: "0.3s",
   },
 
   image: {
