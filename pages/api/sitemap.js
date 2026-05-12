@@ -66,7 +66,9 @@ export default async function handler(req, res) {
     products.sort((a, b) => b.score - a.score);
 
     /* ================= CATEGORIES ================= */
-    const categories = [...new Set(products.map(p => p.category.toLowerCase()))];
+    const categories = [
+      ...new Set(products.map((p) => (p.category || "general").toLowerCase())),
+    ];
 
     /* ================= XML START ================= */
     let urls = `
@@ -79,6 +81,13 @@ export default async function handler(req, res) {
 
 <url>
   <loc>${baseUrl}/blog</loc>
+  <lastmod>${new Date().toISOString()}</lastmod>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
+</url>
+
+<url>
+  <loc>${baseUrl}/amazon-haul</loc>
   <lastmod>${new Date().toISOString()}</lastmod>
   <changefreq>daily</changefreq>
   <priority>0.9</priority>
@@ -123,7 +132,7 @@ export default async function handler(req, res) {
 `;
     });
 
-    /* ================= AUTO BLOG BOOST (SEO HINT) ================= */
+    /* ================= AUTO BLOG BOOST ================= */
     autoBlogs.forEach((b) => {
       urls += `
 <url>
@@ -159,4 +168,4 @@ ${urls}
     console.error("❌ Sitemap Error:", error);
     return res.status(500).send("Sitemap error");
   }
-                                   }
+}
