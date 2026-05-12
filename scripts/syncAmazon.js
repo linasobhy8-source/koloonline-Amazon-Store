@@ -1,5 +1,5 @@
 import { db } from "../firebase-config";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, doc, setDoc, getDoc } from "firebase/firestore";
 
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
 
@@ -12,6 +12,7 @@ async function fetchAmazonProducts() {
   return data.organic_results || [];
 }
 
+/* ================= CLEAN SYNC ================= */
 async function syncToFirestore() {
   try {
     const products = await fetchAmazonProducts();
@@ -21,19 +22,31 @@ async function syncToFirestore() {
 
       const ref = doc(db, "products", p.asin);
 
-      await setDoc(ref, {
+      /* ================= CHECK DUPLICATE ================= */
+      const existing = await getDoc(ref);
+
+      const newData = {
         asin: p.asin,
-        title: p.title || "No Title",
+        title: (p.title || "No Title").trim(),
         image: p.thumbnail || "",
         price: p.price || 0,
         link: p.link || "",
         category: "electronics",
 
-        clicks: 0,
-        orders: 0,
+        clicks: existing.exists() ? existing.data().clicks || 0 : 0,
+        orders: existing.exists() ? existing.data().orders || 0 : 0,
 
         updatedAt: Date.now(),
-      });
+      };
+
+      /* ================= WRITE ONLY IF NEW OR CHANGED ================= */
+      if (!existing.exists()) {
+        await setDoc(ref, newData);
+        console.log("🆕 New product added:", p.asin);
+      } else {
+        await setDoc(ref, newData, { merge: true });
+        console.log("♻️ Updated product:", p.asin);
+      }
     }
 
     console.log("🔥 Auto Sync Done Successfully");
