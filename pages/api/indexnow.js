@@ -1,9 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs
-} from "firebase/firestore";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 /* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
@@ -26,7 +22,11 @@ export default async function handler(req, res) {
       "https://koloonline.online/categories",
       "https://koloonline.online/search",
       "https://koloonline.online/blog",
-      "https://koloonline.online/amazon-haul" // 🔥 ADDED HERE
+      "https://koloonline.online/amazon-haul",
+
+      // 🔥 NEW IMPORTANT SEO PAGES
+      "https://koloonline.online/products",
+      "https://koloonline.online/sitemap.xml",
     ];
 
     /* ================= PRODUCTS ================= */
@@ -43,14 +43,31 @@ export default async function handler(req, res) {
       `https://koloonline.online/blog/${doc.id}`
     );
 
-    /* ================= MERGE ================= */
-    urls = [...urls, ...productUrls, ...blogUrls];
+    /* ================= CATEGORIES AUTO DISCOVERY ================= */
+    const categoriesSnap = await getDocs(collection(db, "products"));
+
+    const categoryUrls = categoriesSnap.docs.map((doc) => {
+      const data = doc.data();
+      return data.category
+        ? `https://koloonline.online/category/${data.category.toLowerCase()}`
+        : null;
+    }).filter(Boolean);
+
+    /* ================= MERGE + CLEAN ================= */
+    urls = [
+      ...new Set([
+        ...urls,
+        ...productUrls,
+        ...blogUrls,
+        ...categoryUrls,
+      ]),
+    ];
 
     /* ================= SEND TO INDEXNOW ================= */
     const response = await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         host: "koloonline.online",
@@ -66,7 +83,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       totalUrls: urls.length,
-      result: data
+      result: data,
     });
 
   } catch (e) {
