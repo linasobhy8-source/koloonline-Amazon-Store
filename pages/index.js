@@ -1,14 +1,15 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   collection,
   getDocs,
   query,
-  limit
+  limit,
 } from "firebase/firestore";
 
 import { db } from "../config/firebase";
+import { calculateTrendScore } from "../lib/trendScore";
 
 const fallbackImage = "https://via.placeholder.com/300";
 
@@ -28,13 +29,14 @@ function Subscriptions() {
     <div style={{ padding: 20, background: "#f9f9f9" }}>
       <h2>🔥 Amazon Subscriptions</h2>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-        gap: 20,
-        marginTop: 20
-      }}>
-
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+          gap: 20,
+          marginTop: 20,
+        }}
+      >
         <div style={card}>
           <h3>🎧 Audible</h3>
           <p>Listen to books – Free trial</p>
@@ -45,18 +47,23 @@ function Subscriptions() {
 
         <div style={card}>
           <h3>📚 Kindle Unlimited</h3>
-          <a href="https://www.amazon.com/kindle-dbs/hz/subscribe/ku?tag=koloonlinesto-20" target="_blank">
+          <a
+            href="https://www.amazon.com/kindle-dbs/hz/subscribe/ku?tag=koloonlinesto-20"
+            target="_blank"
+          >
             <button style={btn}>Subscribe</button>
           </a>
         </div>
 
         <div style={card}>
           <h3>🚀 Amazon Prime</h3>
-          <a href="https://www.amazon.com/amazonprime?tag=koloonlinesto-20" target="_blank">
+          <a
+            href="https://www.amazon.com/amazonprime?tag=koloonlinesto-20"
+            target="_blank"
+          >
             <button style={buy}>Try Prime</button>
           </a>
         </div>
-
       </div>
     </div>
   );
@@ -72,14 +79,14 @@ export default function Home({ products }) {
     const res = await fetch("/api/generate-description", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: product.title })
+      body: JSON.stringify({ title: product.title }),
     });
 
     const data = await res.json();
 
     setAiDescriptions((prev) => ({
       ...prev,
-      [product.id]: data.description
+      [product.id]: data.description,
     }));
   };
 
@@ -90,44 +97,38 @@ export default function Home({ products }) {
     await fetch("/api/generate-blog", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keyword })
+      body: JSON.stringify({ keyword }),
     });
 
     alert("تم إنشاء المقال 🔥");
   };
 
   /* ================= FILTER ================= */
-  const filtered = products.filter((p) => {
-    const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
-    const matchCategory =
-      category === "all" ||
-      p.category?.toLowerCase() === category.toLowerCase();
+  const filtered = products
+    .filter((p) => {
+      const matchSearch = p.title
+        ?.toLowerCase()
+        .includes(search.toLowerCase());
 
-    return matchSearch && matchCategory;
-  });
+      const matchCategory =
+        category === "all" ||
+        p.category?.toLowerCase() === category.toLowerCase();
 
-  /* ================= 🔥 VIRAL TRENDING ENGINE ================= */
-  const trendingProducts = products
-    .map((p) => {
-      const trendScore =
-        (p.score || 0) * 3 +
-        (p.clicks || 0) * 2 +
-        (p.views || 0) * 1 +
-        (p.viralBoost ? 50 : 0);
-
-      return {
-        ...p,
-        trendScore,
-      };
+      return matchSearch && matchCategory;
     })
-    .sort((a, b) => b.trendScore - a.trendScore)
-    .slice(0, 10);
+    /* 🔥 TREND ENGINE الحقيقي */
+    .map((p) => ({
+      ...p,
+      trendScore: calculateTrendScore(p),
+    }))
+    .sort((a, b) => b.trendScore - a.trendScore);
+
+  const trendingProducts = [...filtered].slice(0, 10);
 
   const siteUrl = "https://koloonline.online";
 
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
-
       <Head>
         <title>Best Amazon Deals & Product Reviews 2026 | Koloonline</title>
 
@@ -167,7 +168,13 @@ export default function Home({ products }) {
         ))}
 
         <Link href="/amazon-haul">
-          <button style={{ ...navBtn, background: "#ff6600", fontWeight: "bold" }}>
+          <button
+            style={{
+              ...navBtn,
+              background: "#ff6600",
+              fontWeight: "bold",
+            }}
+          >
             🔥 Amazon Haul
           </button>
         </Link>
@@ -177,7 +184,7 @@ export default function Home({ products }) {
 
       <div style={hero}>🔥 Best Amazon Deals Today</div>
 
-      {/* ================= BLOG BUTTON ================= */}
+      {/* ================= BLOG ================= */}
       <div style={{ padding: 20, textAlign: "center" }}>
         <button
           onClick={generateBlog}
@@ -187,7 +194,7 @@ export default function Home({ products }) {
             background: "#28a745",
             color: "white",
             border: "none",
-            borderRadius: 5
+            borderRadius: 5,
           }}
         >
           ✨ Generate Blog Article
@@ -208,15 +215,16 @@ export default function Home({ products }) {
               <p style={price}>${p.price}</p>
 
               {p.viralBoost && (
-                <div style={{
-                  background: "red",
-                  color: "white",
-                  fontSize: 11,
-                  padding: "3px 6px",
-                  borderRadius: 6,
-                  display: "inline-block",
-                  marginBottom: 5
-                }}>
+                <div
+                  style={{
+                    background: "red",
+                    color: "white",
+                    fontSize: 11,
+                    padding: "3px 6px",
+                    borderRadius: 6,
+                    display: "inline-block",
+                  }}
+                >
                   🔥 VIRAL
                 </div>
               )}
@@ -255,7 +263,6 @@ export default function Home({ products }) {
           </div>
         ))}
       </div>
-
     </div>
   );
 }
@@ -298,7 +305,12 @@ const nav = {
   flexWrap: "wrap",
 };
 
-const navBtn = { color: "white", border: "none", padding: 8, cursor: "pointer" };
+const navBtn = {
+  color: "white",
+  border: "none",
+  padding: 8,
+  cursor: "pointer",
+};
 
 const hero = {
   background: "linear-gradient(#f3a847,#e47911)",
