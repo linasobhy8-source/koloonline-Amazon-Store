@@ -125,19 +125,20 @@ export default function ProductPage() {
             ${product.price}
           </h2>
 
-          {/* 🔥 VIRAL BADGE */}
+          {/* 🔥 VIRAL BADGE (UPDATED) */}
           {product.viralBoost && (
-            <div style={{
-              background: "red",
+            <span style={{
+              background: "linear-gradient(45deg, #ff0000, #ff6600)",
               color: "white",
-              padding: "6px 10px",
+              padding: "6px 12px",
+              borderRadius: 20,
+              fontWeight: "bold",
+              fontSize: 12,
               display: "inline-block",
-              borderRadius: 8,
-              marginTop: 10,
-              fontSize: 12
+              marginTop: 10
             }}>
-              🔥 Trending Viral Product
-            </div>
+              🔥 VIRAL TRENDING NOW
+            </span>
           )}
 
           {/* 🛒 BUY BUTTON */}
