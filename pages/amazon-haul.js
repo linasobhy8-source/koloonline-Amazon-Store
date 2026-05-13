@@ -7,7 +7,6 @@ export default function AmazonHaul() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= AUTO TRENDING + VIRAL BOOST ================= */
   useEffect(() => {
     const fetchTrending = async () => {
       try {
@@ -24,28 +23,25 @@ export default function AmazonHaul() {
             category: d.category || "General",
             link: d.link || "#",
 
-            // 🔥 trending fields
             score: d.score || 0,
             views: d.views || 0,
             clicks: d.clicks || 0,
             updatedAt: d.updatedAt || Date.now(),
+
+            viralBoost: d.viralBoost || false,
           };
         });
 
-        /* ================= VIRAL + TRENDING ALGORITHM ================= */
         data = data
           .map((p) => {
             const now = Date.now();
             const createdAt = p.updatedAt || now;
 
-            // ⏱️ عمر المنتج بالساعات
             const hoursOld = (now - createdAt) / (1000 * 60 * 60);
 
-            // 🔥 Viral Boost أول 24 ساعة
             const viralBoost =
-              hoursOld <= 24 ? 50 - hoursOld * 2 : 0;
+              hoursOld <= 24 ? Math.max(0, 50 - hoursOld * 2) : 0;
 
-            // 📊 Trend Score
             const baseScore =
               (p.score * 3) +
               (p.clicks * 2) +
@@ -54,7 +50,7 @@ export default function AmazonHaul() {
             return {
               ...p,
               trendScore: baseScore + viralBoost,
-              viralBoost: viralBoost > 0,
+              viralBoost: viralBoost > 0 || p.viralBoost === true,
             };
           })
           .sort((a, b) => b.trendScore - a.trendScore)
@@ -74,16 +70,11 @@ export default function AmazonHaul() {
   return (
     <>
       <Head>
-        <title>Amazon Haul Deals | Cheap Amazon Finds</title>
+        <title>Amazon Haul Deals | Viral Products</title>
 
         <meta
           name="description"
-          content="Discover trending Amazon Haul products, viral TikTok finds, and cheap deals under $20."
-        />
-
-        <meta
-          name="keywords"
-          content="Amazon Haul, Viral Products, Cheap Amazon Deals, TikTok Finds"
+          content="Trending Amazon Haul products and viral deals"
         />
 
         <link
@@ -95,14 +86,13 @@ export default function AmazonHaul() {
       <main style={styles.main}>
         <section style={styles.hero}>
           <h1 style={styles.title}>🔥 Amazon Trending Haul</h1>
-
           <p style={styles.subtitle}>
-            Real-time trending & viral products under $20
+            Real-time viral & trending products
           </p>
         </section>
 
         {loading ? (
-          <p style={{ textAlign: "center" }}>Loading trending products...</p>
+          <p style={{ textAlign: "center" }}>Loading...</p>
         ) : (
           <section style={styles.grid}>
             {products.map((product) => (
@@ -110,7 +100,6 @@ export default function AmazonHaul() {
 
                 <img
                   src={product.image}
-                  alt={product.title}
                   style={styles.image}
                 />
 
@@ -118,17 +107,7 @@ export default function AmazonHaul() {
 
                   {/* 🔥 VIRAL BADGE */}
                   {product.viralBoost && (
-                    <span
-                      style={{
-                        background: "red",
-                        color: "white",
-                        padding: "4px 8px",
-                        fontSize: "11px",
-                        borderRadius: "10px",
-                        marginBottom: 5,
-                        display: "inline-block",
-                      }}
-                    >
+                    <span style={styles.viral}>
                       🔥 NEW VIRAL
                     </span>
                   )}
@@ -153,7 +132,6 @@ export default function AmazonHaul() {
                   >
                     🛒 Shop Now
                   </a>
-
                 </div>
 
               </div>
@@ -166,6 +144,7 @@ export default function AmazonHaul() {
 }
 
 /* ================= STYLES ================= */
+
 const styles = {
   main: {
     background: "#f5f5f5",
@@ -182,7 +161,6 @@ const styles = {
   title: {
     fontSize: "42px",
     fontWeight: "bold",
-    marginBottom: "10px",
   },
 
   subtitle: {
@@ -225,13 +203,22 @@ const styles = {
   productTitle: {
     fontSize: "20px",
     marginTop: "15px",
-    marginBottom: "10px",
   },
 
   price: {
     fontSize: "22px",
     fontWeight: "bold",
-    marginBottom: "15px",
+    marginBottom: "10px",
+  },
+
+  viral: {
+    background: "red",
+    color: "white",
+    padding: "4px 8px",
+    fontSize: "11px",
+    borderRadius: "10px",
+    display: "inline-block",
+    marginBottom: 8,
   },
 
   button: {
