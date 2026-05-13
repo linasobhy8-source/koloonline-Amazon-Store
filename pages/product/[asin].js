@@ -16,7 +16,6 @@ Link: ${product.link}`;
 
   const whatsappURL = `https://wa.me/201234567890?text=${encodeURIComponent(message)}`;
 
-  // tracking click (لو عندك analytics API)
   fetch("/api/track", {
     method: "POST",
     body: JSON.stringify({
@@ -28,7 +27,7 @@ Link: ${product.link}`;
   window.open(whatsappURL, "_blank");
 }
 
-/* ================= STAR UI ================= */
+/* ================= STARS ================= */
 function Stars({ rating = 4.5 }) {
   const full = Math.floor(rating);
 
@@ -78,7 +77,6 @@ export default function ProductPage() {
     image: product.image,
     description: product.title,
     sku: product.asin,
-
     offers: {
       "@type": "Offer",
       priceCurrency: "USD",
@@ -86,7 +84,6 @@ export default function ProductPage() {
       availability: "https://schema.org/InStock",
       url
     },
-
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: rating,
@@ -97,7 +94,6 @@ export default function ProductPage() {
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
-      {/* ================= SEO ================= */}
       <Head>
         <title>{product.title} | Koloonline Deal</title>
         <meta name="description" content={product.title} />
@@ -114,7 +110,7 @@ export default function ProductPage() {
         />
       </Head>
 
-      {/* ================= PRODUCT ================= */}
+      {/* ================= PRODUCT LAYOUT ================= */}
       <div style={container}>
 
         <img src={product.image || fallbackImage} style={image} />
@@ -129,7 +125,22 @@ export default function ProductPage() {
             ${product.price}
           </h2>
 
-          {/* ================= AFFILIATE CLICK ================= */}
+          {/* 🔥 VIRAL BADGE */}
+          {product.viralBoost && (
+            <div style={{
+              background: "red",
+              color: "white",
+              padding: "6px 10px",
+              display: "inline-block",
+              borderRadius: 8,
+              marginTop: 10,
+              fontSize: 12
+            }}>
+              🔥 Trending Viral Product
+            </div>
+          )}
+
+          {/* 🛒 BUY BUTTON */}
           <button
             style={buyBtn}
             onClick={() => {
@@ -147,13 +158,18 @@ export default function ProductPage() {
             🛒 Buy on Amazon
           </button>
 
-          {/* ================= WHATSAPP CONVERSION ================= */}
+          {/* 💬 WHATSAPP */}
           <button
             style={waBtn}
             onClick={() => sendWhatsApp(product)}
           >
             💬 Order via WhatsApp
           </button>
+
+          {/* ⚡ TRUST LINE */}
+          <p style={{ marginTop: 10, color: "gray", fontSize: 12 }}>
+            ⚡ Limited-time Amazon deal — prices may change anytime
+          </p>
 
         </div>
       </div>
