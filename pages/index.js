@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   collection,
   getDocs,
@@ -12,31 +12,6 @@ import { db } from "../config/firebase";
 
 const fallbackImage = "https://via.placeholder.com/300";
 
-/* ================= 🔥 TRENDING PRODUCTS ================= */
-const trendingProducts = [
-  {
-    id: "t1",
-    title: "Wireless Bluetooth Earbuds",
-    price: "29",
-    image: "https://m.media-amazon.com/images/I/61CGHv6kmWL._AC_SL1500_.jpg",
-    link: "https://www.amazon.com/dp/B09V7Z4TJG?tag=koloonline-20"
-  },
-  {
-    id: "t2",
-    title: "Smart Watch Fitness Tracker",
-    price: "39",
-    image: "https://m.media-amazon.com/images/I/71Swqqe7XAL._AC_SL1500_.jpg",
-    link: "https://www.amazon.com/dp/B0B4WZ9Q1K?tag=koloonline-20"
-  },
-  {
-    id: "t3",
-    title: "Fast Charging Power Bank",
-    price: "25",
-    image: "https://m.media-amazon.com/images/I/71lVwl3q-kL._AC_SL1500_.jpg",
-    link: "https://www.amazon.com/dp/B08LH26PFT?tag=koloonline-20"
-  }
-];
-
 /* ================= BREADCRUMB ================= */
 function Breadcrumb({ category }) {
   return (
@@ -47,7 +22,7 @@ function Breadcrumb({ category }) {
   );
 }
 
-/* ================= 🔥 SUBSCRIPTIONS ================= */
+/* ================= SUBSCRIPTIONS ================= */
 function Subscriptions() {
   return (
     <div style={{ padding: 20, background: "#f9f9f9" }}>
@@ -94,22 +69,18 @@ export default function Home({ products }) {
   const [aiDescriptions, setAiDescriptions] = useState({});
 
   const generateDescription = async (product) => {
-    try {
-      const res = await fetch("/api/generate-description", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: product.title })
-      });
+    const res = await fetch("/api/generate-description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: product.title })
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      setAiDescriptions((prev) => ({
-        ...prev,
-        [product.id]: data.description
-      }));
-    } catch (e) {
-      console.log(e);
-    }
+    setAiDescriptions((prev) => ({
+      ...prev,
+      [product.id]: data.description
+    }));
   };
 
   const generateBlog = async () => {
@@ -125,6 +96,7 @@ export default function Home({ products }) {
     alert("تم إنشاء المقال 🔥");
   };
 
+  /* ================= FILTER ================= */
   const filtered = products.filter((p) => {
     const matchSearch = p.title?.toLowerCase().includes(search.toLowerCase());
     const matchCategory =
@@ -133,6 +105,23 @@ export default function Home({ products }) {
 
     return matchSearch && matchCategory;
   });
+
+  /* ================= 🔥 VIRAL TRENDING ENGINE ================= */
+  const trendingProducts = products
+    .map((p) => {
+      const trendScore =
+        (p.score || 0) * 3 +
+        (p.clicks || 0) * 2 +
+        (p.views || 0) * 1 +
+        (p.viralBoost ? 50 : 0);
+
+      return {
+        ...p,
+        trendScore,
+      };
+    })
+    .sort((a, b) => b.trendScore - a.trendScore)
+    .slice(0, 10);
 
   const siteUrl = "https://koloonline.online";
 
@@ -150,6 +139,7 @@ export default function Home({ products }) {
         <link rel="canonical" href={siteUrl} />
       </Head>
 
+      {/* ================= HEADER ================= */}
       <header style={header}>
         <div style={logo}>🟠 Koloonline</div>
 
@@ -161,6 +151,7 @@ export default function Home({ products }) {
         />
       </header>
 
+      {/* ================= NAV ================= */}
       <nav style={nav}>
         {["all", "Electronics", "Fashion", "Home", "Sports"].map((c) => (
           <button
@@ -175,16 +166,8 @@ export default function Home({ products }) {
           </button>
         ))}
 
-        {/* 🔥 AMAZON HAUL LINK */}
         <Link href="/amazon-haul">
-          <button
-            style={{
-              ...navBtn,
-              background: "#ff6600",
-              fontWeight: "bold",
-              borderRadius: 6,
-            }}
-          >
+          <button style={{ ...navBtn, background: "#ff6600", fontWeight: "bold" }}>
             🔥 Amazon Haul
           </button>
         </Link>
@@ -194,6 +177,7 @@ export default function Home({ products }) {
 
       <div style={hero}>🔥 Best Amazon Deals Today</div>
 
+      {/* ================= BLOG BUTTON ================= */}
       <div style={{ padding: 20, textAlign: "center" }}>
         <button
           onClick={generateBlog}
@@ -210,7 +194,7 @@ export default function Home({ products }) {
         </button>
       </div>
 
-      {/* TRENDING */}
+      {/* ================= TRENDING ================= */}
       <div style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -223,15 +207,23 @@ export default function Home({ products }) {
 
               <p style={price}>${p.price}</p>
 
-              <button style={btn} onClick={() => generateDescription(p)}>
-                ✨ Generate AI Description
-              </button>
-
-              {aiDescriptions[p.id] && (
-                <p style={{ fontSize: 12 }}>
-                  {aiDescriptions[p.id]}
-                </p>
+              {p.viralBoost && (
+                <div style={{
+                  background: "red",
+                  color: "white",
+                  fontSize: 11,
+                  padding: "3px 6px",
+                  borderRadius: 6,
+                  display: "inline-block",
+                  marginBottom: 5
+                }}>
+                  🔥 VIRAL
+                </div>
               )}
+
+              <button style={btn} onClick={() => generateDescription(p)}>
+                ✨ AI Description
+              </button>
 
               <a href={p.link} target="_blank">
                 <button style={buy}>🛒 Buy Now</button>
@@ -243,18 +235,7 @@ export default function Home({ products }) {
 
       <Subscriptions />
 
-      {/* 🔥 SEO CONTENT */}
-      <div style={{ padding: 20 }}>
-        <h1>Best Amazon Deals & Product Reviews 2026</h1>
-
-        <p>
-          Discover the best Amazon deals, product reviews,
-          and buying guides. We help you choose the best
-          products بسهولة.
-        </p>
-      </div>
-
-      {/* PRODUCTS */}
+      {/* ================= PRODUCTS ================= */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
@@ -263,16 +244,6 @@ export default function Home({ products }) {
             <h3 style={title}>{p.title}</h3>
 
             <p style={price}>${p.price}</p>
-
-            <button style={btn} onClick={() => generateDescription(p)}>
-              ✨ Generate AI Description
-            </button>
-
-            {aiDescriptions[p.id] && (
-              <p style={{ fontSize: 12 }}>
-                {aiDescriptions[p.id]}
-              </p>
-            )}
 
             <Link href={`/product/${p.id}`}>
               <button style={btn}>View</button>
@@ -316,17 +287,8 @@ const header = {
   padding: 10,
 };
 
-const logo = {
-  fontSize: 22,
-  fontWeight: "bold"
-};
-
-const searchBox = {
-  flex: 1,
-  padding: 10,
-  borderRadius: 5,
-  border: "none",
-};
+const logo = { fontSize: 22, fontWeight: "bold" };
+const searchBox = { flex: 1, padding: 10, borderRadius: 5, border: "none" };
 
 const nav = {
   background: "#232f3e",
@@ -336,12 +298,7 @@ const nav = {
   flexWrap: "wrap",
 };
 
-const navBtn = {
-  color: "white",
-  border: "none",
-  padding: 8,
-  cursor: "pointer",
-};
+const navBtn = { color: "white", border: "none", padding: 8, cursor: "pointer" };
 
 const hero = {
   background: "linear-gradient(#f3a847,#e47911)",
@@ -372,15 +329,8 @@ const img = {
   borderRadius: 8,
 };
 
-const title = {
-  fontSize: 14,
-  minHeight: 40,
-};
-
-const price = {
-  color: "#B12704",
-  fontWeight: "bold",
-};
+const title = { fontSize: 14, minHeight: 40 };
+const price = { color: "#B12704", fontWeight: "bold" };
 
 const btn = {
   width: "100%",
