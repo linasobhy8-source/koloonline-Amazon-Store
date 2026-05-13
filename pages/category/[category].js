@@ -17,11 +17,13 @@ export default function CategoryPage() {
 
   async function fetchProducts() {
     try {
+      setLoading(true);
+
       const snap = await getDocs(collection(db, "products"));
 
       const normalizedCategory = (category || "").toLowerCase();
 
-      const filtered = snap.docs
+      let filtered = snap.docs
         .map((d) => ({
           id: d.id,
           ...d.data(),
@@ -29,11 +31,25 @@ export default function CategoryPage() {
         .filter((p) => {
           const productCategory = (p.category || "").toLowerCase();
           return productCategory === normalizedCategory;
-        });
+        })
+        .map((p) => {
+          // 🔥 TRENDING + VIRAL BOOST ENGINE
+          const trendScore =
+            (p.score || 0) * 3 +
+            (p.clicks || 0) * 2 +
+            (p.views || 0) * 1 +
+            (p.viralBoost ? 50 : 0);
+
+          return {
+            ...p,
+            trendScore,
+          };
+        })
+        .sort((a, b) => b.trendScore - a.trendScore); // 🔥 SORTING
 
       setProducts(filtered);
     } catch (err) {
-      console.error(err);
+      console.error("Category fetch error:", err);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -43,10 +59,12 @@ export default function CategoryPage() {
   return (
     <div style={{ padding: 20, fontFamily: "Arial" }}>
 
+      {/* ================= HEADER ================= */}
       <h1 style={{ marginBottom: 20 }}>
         📦 {category ? category : "Category"}
       </h1>
 
+      {/* ================= LOADING ================= */}
       {loading ? (
         <p>Loading products...</p>
       ) : products.length === 0 ? (
@@ -62,6 +80,8 @@ export default function CategoryPage() {
           {products.map((p) => (
             <Link key={p.id} href={`/product/${p.asin || p.id}`}>
               <div style={card}>
+
+                {/* ================= IMAGE ================= */}
                 <img
                   src={p.image}
                   alt={p.title}
@@ -73,11 +93,31 @@ export default function CategoryPage() {
                   }}
                 />
 
+                {/* ================= TITLE ================= */}
                 <h4 style={{ marginTop: 10 }}>{p.title}</h4>
 
+                {/* ================= PRICE ================= */}
                 <p style={{ color: "#B12704", fontWeight: "bold" }}>
                   ${p.price}
                 </p>
+
+                {/* ================= VIRAL BADGE ================= */}
+                {p.viralBoost && (
+                  <span
+                    style={{
+                      background: "red",
+                      color: "white",
+                      fontSize: 10,
+                      padding: "3px 6px",
+                      borderRadius: 6,
+                      display: "inline-block",
+                      marginTop: 5,
+                    }}
+                  >
+                    🔥 VIRAL
+                  </span>
+                )}
+
               </div>
             </Link>
           ))}
@@ -87,6 +127,7 @@ export default function CategoryPage() {
   );
 }
 
+/* ================= CARD STYLE ================= */
 const card = {
   background: "white",
   padding: 12,
