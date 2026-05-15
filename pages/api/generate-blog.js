@@ -23,20 +23,14 @@ const db = getFirestore(app);
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= METHOD CHECK ================= */
     if (req.method !== "POST") {
-      return res.status(405).json({
-        error: "Method not allowed",
-      });
+      return res.status(405).json({ error: "Method not allowed" });
     }
 
-    /* ================= BODY ================= */
     const { keyword } = req.body || {};
 
     if (!keyword || typeof keyword !== "string") {
-      return res.status(400).json({
-        error: "keyword is required",
-      });
+      return res.status(400).json({ error: "keyword is required" });
     }
 
     /* ================= GEMINI REQUEST ================= */
@@ -45,27 +39,23 @@ export default async function handler(req, res) {
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
               parts: [
                 {
                   text: `
-اكتب مقال SEO احترافي قوي جدًا عن: ${keyword}
+اكتب مقال SEO احترافي عن: ${keyword}
 
 الشروط:
-- عنوان جذاب H1
+- عنوان H1 جذاب
 - مقدمة قوية
-- 5 عناوين H2 على الأقل
-- شرح مفصل
-- Bullet Points
-- SEO قوي
+- 5 عناوين H2
+- محتوى 1000 كلمة
+- Bullet points
 - أسلوب تسويقي
-- خاتمة احترافية
-- حوالي 1000 كلمة
+- خاتمة قوية
                   `,
                 },
               ],
@@ -75,7 +65,6 @@ export default async function handler(req, res) {
       }
     );
 
-    /* ================= GEMINI RESPONSE ================= */
     const data = await response.json();
 
     let text =
@@ -88,54 +77,38 @@ export default async function handler(req, res) {
         type: "auto_blog",
         status: "error",
         message: "Empty AI response",
-        keyword: String(keyword),
+        keyword,
         createdAt: serverTimestamp(),
       });
 
-      return res.status(500).json({
-        error: "Empty AI response",
-      });
+      return res.status(500).json({ error: "Empty AI response" });
     }
 
     /* ================= GET PRODUCTS ================= */
-    const productsSnap = await getDocs(
-      collection(db, "products")
-    );
+    const productsSnap = await getDocs(collection(db, "products"));
 
     const products = productsSnap.docs.map((d) => ({
-      id: String(d.id),
+      id: d.id,
       ...d.data(),
     }));
 
     /* ================= SMART MATCHING ================= */
-    const keywords = String(keyword)
-      .toLowerCase()
-      .split(" ");
+    const keywords = keyword.toLowerCase().split(" ");
 
     const relatedProducts = products
-      .filter((p) => p && p.id && p.title)
       .map((p) => {
         let score = 0;
 
         keywords.forEach((k) => {
-          if (
-            p.title?.toLowerCase()?.includes(k)
-          ) {
-            score += 5;
-          }
-
-          if (
-            p.category?.toLowerCase()?.includes(k)
-          ) {
-            score += 3;
-          }
+          if (p.title?.toLowerCase()?.includes(k)) score += 5;
+          if (p.category?.toLowerCase()?.includes(k)) score += 3;
         });
 
         return {
-          id: String(p.id),
-          title: String(p.title || ""),
-          category: String(p.category || ""),
-          link: String(p.link || ""),
+          id: p.id,
+          title: p.title || "",
+          category: p.category || "",
+          link: p.link || "",
           score,
         };
       })
@@ -144,75 +117,52 @@ export default async function handler(req, res) {
 
     /* ================= INTERNAL LINKS ================= */
     relatedProducts.forEach((p) => {
-      try {
-        if (p.title && p.id) {
-          const link = `https://koloonline.online/product/${p.id}`;
+      if (!p.title || !p.id) return;
 
-          const firstWord = p.title
-            .split(" ")[0]
-            ?.trim();
+      const link = `https://koloonline.online/product/${p.id}`;
+      const firstWord = p.title.split(" ")[0];
 
-          if (!firstWord) return;
+      if (!firstWord) return;
 
-          const regex = new RegExp(firstWord, "gi");
+      const regex = new RegExp(firstWord, "gi");
 
-          text = text.replace(
-            regex,
-            `<a href="${link}" style="color:#ff9900;font-weight:bold">${p.title}</a>`
-          );
-        }
-      } catch (err) {
-        console.log("Link Error:", err.message);
-      }
+      text = text.replace(
+        regex,
+        `<a href="${link}" style="color:#ff9900;font-weight:bold">${p.title}</a>`
+      );
     });
 
     /* ================= SAVE BLOG ================= */
-    const blogRef = await addDoc(
-      collection(db, "blog"),
-      {
-        title: String(keyword),
-        slug: String(keyword)
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-"),
+    const blogRef = await addDoc(collection(db, "blog"), {
+      title: keyword,
+      slug: keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      content: text,
+      auto: true,
+      seo: true,
+      relatedProducts: relatedProducts.map((p) => p.id),
+      createdAt: serverTimestamp(),
+    });
 
-        content: String(text),
-
-        auto: true,
-        seo: true,
-
-        relatedProducts: relatedProducts.map(
-          (p) => String(p.id)
-        ),
-
-        createdAt: serverTimestamp(),
-      }
-    );
-
-    /* ================= SUCCESS LOG ================= */
+    /* ================= LOG SUCCESS ================= */
     await addDoc(collection(db, "cron_logs"), {
       type: "auto_blog",
       status: "success",
       message: "Blog generated successfully",
-      keyword: String(keyword),
-      blogId: String(blogRef.id),
+      keyword,
+      blogId: blogRef.id,
       createdAt: serverTimestamp(),
     });
 
     /* ================= AUTO INDEX ================= */
     try {
-      await fetch(
-        "https://koloonline.online/api/master-pipeline",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: "blog",
-            id: blogRef.id,
-          }),
-        }
-      );
+      await fetch("https://koloonline.online/api/master-pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "blog",
+          id: blogRef.id,
+        }),
+      });
     } catch (e) {
       console.log("Pipeline Error:", e.message);
     }
@@ -220,32 +170,25 @@ export default async function handler(req, res) {
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      article: text,
-      keyword,
       blogId: blogRef.id,
+      keyword,
       relatedProducts,
     });
-
   } catch (e) {
     console.error("AI ERROR:", e);
 
-    /* ================= ERROR LOG ================= */
     try {
       await addDoc(collection(db, "cron_logs"), {
         type: "auto_blog",
         status: "error",
-        message: String(
-          e?.message || "Unknown error"
-        ),
+        message: e?.message || "Unknown error",
         createdAt: serverTimestamp(),
       });
-    } catch (logErr) {
-      console.log("LOG ERROR:", logErr.message);
-    }
+    } catch {}
 
     return res.status(500).json({
       error: "AI generation failed",
-      details: String(e?.message || ""),
+      details: e?.message || "",
     });
   }
-                     }
+}
