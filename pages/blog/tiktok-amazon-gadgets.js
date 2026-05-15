@@ -4,44 +4,28 @@ export default function TikTokAmazonGadgets() {
   return (
     <>
       <Head>
-        <title>Trending TikTok Amazon Gadgets</title>
-
-        <meta
-          name="description"
-          content="Viral TikTok gadgets and trending Amazon products everyone is buying this year."
-        />
-
-        <link
-          rel="canonical"
-          href="https://koloonline.online/blog/tiktok-amazon-gadgets"
-        />
+        <title>TikTok Amazon Gadgets</title>
+        <meta name="description" content="Trending TikTok gadgets" />
+        <link rel="canonical" href="https://koloonline.online/blog/tiktok-amazon-gadgets" />
       </Head>
 
       <main style={styles.main}>
-        <h1>📱 Trending TikTok Amazon Gadgets</h1>
+        <h1>📱 TikTok Gadgets</h1>
 
-        <p>
-          These Amazon gadgets are trending across TikTok and social media.
-        </p>
-
-        <ul>
-          <li>Smart RGB Lights</li>
-          <li>Portable Projectors</li>
-          <li>Mini Wireless Printers</li>
-          <li>Phone Cooling Fans</li>
-          <li>Bluetooth Sleep Speakers</li>
-        </ul>
+        <section style={styles.linksBox}>
+          <h3>🔥 Continue Reading</h3>
+          <div>
+            <a href="/blog/amazon-finds-under-25">💸 Under $25</a><br />
+            <a href="/blog/viral-products-amazon">🔥 Viral Products</a><br />
+            <a href="/amazon-haul">🛒 Amazon Trending Haul</a>
+          </div>
+        </section>
       </main>
     </>
   );
 }
 
 const styles = {
-  main: {
-    maxWidth: "900px",
-    margin: "0 auto",
-    padding: "40px 20px",
-    lineHeight: 1.8,
-    fontFamily: "Arial",
-  },
+  main: { maxWidth: "900px", margin: "0 auto", padding: "40px 20px", fontFamily: "Arial" },
+  linksBox: { marginTop: "40px", padding: "20px", background: "#f8f8f8", borderRadius: "12px" },
 };
