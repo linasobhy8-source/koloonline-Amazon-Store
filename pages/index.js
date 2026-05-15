@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   collection,
   getDocs,
@@ -69,6 +69,41 @@ function Subscriptions() {
   );
 }
 
+/* ================= HOME FEED (🔥 AUTO PROFIT SYSTEM) ================= */
+function HomeFeed() {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/home-feed")
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data.topProducts || []);
+      });
+  }, []);
+
+  return (
+    <div style={{ padding: 20 }}>
+      <h2>🔥 Auto Trending Deals</h2>
+
+      <div style={grid}>
+        {products.map((p) => (
+          <div key={p.id} style={card}>
+            <img src={p.image || fallbackImage} style={img} />
+
+            <h3 style={title}>{p.title}</h3>
+
+            <p style={price}>Score: {p.profitScore?.toFixed(2)}</p>
+
+            <Link href={`/product/${p.id}`}>
+              <button style={btn}>View</button>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ================= PAGE ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
@@ -116,7 +151,6 @@ export default function Home({ products }) {
 
       return matchSearch && matchCategory;
     })
-    /* 🔥 TREND ENGINE الحقيقي */
     .map((p) => ({
       ...p,
       trendScore: calculateTrendScore(p),
@@ -130,17 +164,10 @@ export default function Home({ products }) {
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
       <Head>
-        <title>Best Amazon Deals & Product Reviews 2026 | Koloonline</title>
-
-        <meta
-          name="description"
-          content="Discover the best Amazon deals, product reviews, and buying guides for 2026."
-        />
-
-        <link rel="canonical" href={siteUrl} />
+        <title>Best Amazon Deals & Product Reviews 2026</title>
       </Head>
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <header style={header}>
         <div style={logo}>🟠 Koloonline</div>
 
@@ -152,7 +179,7 @@ export default function Home({ products }) {
         />
       </header>
 
-      {/* ================= NAV ================= */}
+      {/* NAV */}
       <nav style={nav}>
         {["all", "Electronics", "Fashion", "Home", "Sports"].map((c) => (
           <button
@@ -168,13 +195,7 @@ export default function Home({ products }) {
         ))}
 
         <Link href="/amazon-haul">
-          <button
-            style={{
-              ...navBtn,
-              background: "#ff6600",
-              fontWeight: "bold",
-            }}
-          >
+          <button style={{ ...navBtn, background: "#ff6600" }}>
             🔥 Amazon Haul
           </button>
         </Link>
@@ -184,24 +205,17 @@ export default function Home({ products }) {
 
       <div style={hero}>🔥 Best Amazon Deals Today</div>
 
-      {/* ================= BLOG ================= */}
+      {/* BLOG BUTTON */}
       <div style={{ padding: 20, textAlign: "center" }}>
-        <button
-          onClick={generateBlog}
-          style={{
-            padding: 15,
-            fontSize: 16,
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: 5,
-          }}
-        >
+        <button onClick={generateBlog} style={btn}>
           ✨ Generate Blog Article
         </button>
       </div>
 
-      {/* ================= TRENDING ================= */}
+      {/* 🔥 HOME FEED SYSTEM (NEW) */}
+      <HomeFeed />
+
+      {/* TRENDING */}
       <div style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -214,25 +228,6 @@ export default function Home({ products }) {
 
               <p style={price}>${p.price}</p>
 
-              {p.viralBoost && (
-                <div
-                  style={{
-                    background: "red",
-                    color: "white",
-                    fontSize: 11,
-                    padding: "3px 6px",
-                    borderRadius: 6,
-                    display: "inline-block",
-                  }}
-                >
-                  🔥 VIRAL
-                </div>
-              )}
-
-              <button style={btn} onClick={() => generateDescription(p)}>
-                ✨ AI Description
-              </button>
-
               <a href={p.link} target="_blank">
                 <button style={buy}>🛒 Buy Now</button>
               </a>
@@ -243,7 +238,7 @@ export default function Home({ products }) {
 
       <Subscriptions />
 
-      {/* ================= PRODUCTS ================= */}
+      {/* ALL PRODUCTS */}
       <div style={grid}>
         {filtered.map((p) => (
           <div key={p.id} style={card}>
@@ -258,7 +253,7 @@ export default function Home({ products }) {
             </Link>
 
             <a href={p.link} target="_blank">
-              <button style={buy}>Buy on Amazon</button>
+              <button style={buy}>Buy</button>
             </a>
           </div>
         ))}
@@ -283,83 +278,3 @@ export async function getStaticProps() {
     revalidate: 60,
   };
 }
-
-/* ================= STYLES ================= */
-
-const header = {
-  background: "#131921",
-  color: "white",
-  display: "flex",
-  alignItems: "center",
-  padding: 10,
-};
-
-const logo = { fontSize: 22, fontWeight: "bold" };
-const searchBox = { flex: 1, padding: 10, borderRadius: 5, border: "none" };
-
-const nav = {
-  background: "#232f3e",
-  padding: 10,
-  display: "flex",
-  gap: 10,
-  flexWrap: "wrap",
-};
-
-const navBtn = {
-  color: "white",
-  border: "none",
-  padding: 8,
-  cursor: "pointer",
-};
-
-const hero = {
-  background: "linear-gradient(#f3a847,#e47911)",
-  padding: 30,
-  textAlign: "center",
-  fontSize: 22,
-  fontWeight: "bold",
-};
-
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-  gap: 15,
-  padding: 20,
-};
-
-const card = {
-  background: "white",
-  padding: 10,
-  borderRadius: 10,
-  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-};
-
-const img = {
-  width: "100%",
-  height: 180,
-  objectFit: "cover",
-  borderRadius: 8,
-};
-
-const title = { fontSize: 14, minHeight: 40 };
-const price = { color: "#B12704", fontWeight: "bold" };
-
-const btn = {
-  width: "100%",
-  padding: 10,
-  background: "#ff9900",
-  border: "none",
-  marginTop: 5,
-  borderRadius: 6,
-  cursor: "pointer",
-};
-
-const buy = {
-  width: "100%",
-  padding: 10,
-  background: "#ffd814",
-  border: "none",
-  marginTop: 5,
-  borderRadius: 6,
-  cursor: "pointer",
-};
