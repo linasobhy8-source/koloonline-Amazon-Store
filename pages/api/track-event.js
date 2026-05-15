@@ -16,7 +16,10 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
 /* ================= USER FINGERPRINT ================= */
@@ -35,19 +38,28 @@ function generateUserKey(req) {
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
-      return res.status(405).json({ success: false });
+      return res.status(405).json({
+        success: false,
+        message: "Method not allowed"
+      });
     }
 
     const { type, asin } = req.body;
 
     if (!type || !asin) {
-      return res.status(400).json({ error: "missing data" });
+      return res.status(400).json({
+        success: false,
+        error: "missing data"
+      });
     }
 
     const allowedTypes = ["view", "click", "order"];
 
     if (!allowedTypes.includes(type)) {
-      return res.status(400).json({ error: "invalid type" });
+      return res.status(400).json({
+        success: false,
+        error: "invalid type"
+      });
     }
 
     /* ================= USER ================= */
@@ -57,11 +69,13 @@ export default async function handler(req, res) {
     const userSnap = await getDoc(userRef);
     const now = Date.now();
 
-    /* ================= FRAUD PROTECTION ================= */
+    /* ================= FRAUD + RATE LIMIT ================= */
     if (userSnap.exists()) {
-      const lastAction = userSnap.data().lastAction || 0;
+      const data = userSnap.data();
+      const lastAction = data.lastAction || 0;
 
-      if (now - lastAction < 15000 && type === "click") {
+      // منع سبام الكليك
+      if (now - lastAction < 12000 && type === "click") {
         return res.status(429).json({
           success: false,
           message: "spam blocked"
@@ -88,7 +102,6 @@ export default async function handler(req, res) {
     const productRef = doc(db, "analytics_products", asin);
     const productSnap = await getDoc(productRef);
 
-    /* 🔥 FIX: create BEFORE update (important) */
     if (!productSnap.exists()) {
       await setDoc(productRef, {
         clicks: 0,
@@ -97,7 +110,8 @@ export default async function handler(req, res) {
         createdAt: serverTimestamp(),
         aiScore: 0,
         conversionRate: 0,
-        isHotProduct: false
+        isHotProduct: false,
+        trendBoost: 0
       });
     }
 
@@ -112,29 +126,56 @@ export default async function handler(req, res) {
 
     await updateDoc(productRef, updates);
 
-    /* ================= RECALCULATE AI SCORE ================= */
+    /* ================= RECALCULATE ================= */
     const updatedSnap = await getDoc(productRef);
     const data = updatedSnap.data();
 
+    const views = data.views || 0;
     const clicks = data.clicks || 0;
     const orders = data.orders || 0;
-    const views = data.views || 0;
 
     const conversionRate = clicks > 0 ? orders / clicks : 0;
+
+    /* ================= TREND ENGINE ================= */
+
+    let trendBoost = 0;
+
+    // منتجات عليها حركة عالية = boost
+    if (views > 50) trendBoost += 5;
+    if (clicks > 20) trendBoost += 10;
+    if (orders > 3) trendBoost += 25;
+
+    // مكافأة التحويل
+    if (conversionRate > 0.1) trendBoost += 20;
 
     const aiScore =
       views * 0.2 +
       clicks * 1.5 +
       orders * 8 +
-      conversionRate * 100;
+      conversionRate * 100 +
+      trendBoost;
 
-    const isHotProduct = aiScore > 50;
+    const isHotProduct = aiScore > 60;
 
     await updateDoc(productRef, {
       conversionRate,
       aiScore,
-      isHotProduct
+      isHotProduct,
+      trendBoost
     });
+
+    /* ================= PROFIT SIGNALS ================= */
+    await setDoc(
+      doc(db, "profit_signals", asin),
+      {
+        asin,
+        aiScore,
+        isHotProduct,
+        conversionRate,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
@@ -143,6 +184,7 @@ export default async function handler(req, res) {
       asin,
       country,
       aiScore,
+      trendBoost,
       isHotProduct
     });
 
