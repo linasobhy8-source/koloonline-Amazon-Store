@@ -8,7 +8,10 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
 /* ================= PROFIT ENGINE ================= */
@@ -22,7 +25,6 @@ function profitScore(p) {
   const ctr = views > 0 ? clicks / views : 0;
   const cvr = clicks > 0 ? orders / clicks : 0;
 
-  // 🔥 Profit Intelligence Formula
   let profit =
     score * 2 +
     clicks * 1.5 +
@@ -30,7 +32,7 @@ function profitScore(p) {
     ctr * 50 +
     cvr * 120;
 
-  // 💰 High price products boost revenue potential
+  // 💰 price boost (revenue-focused)
   if (price > 50) profit += 20;
   if (price > 100) profit += 40;
 
@@ -64,7 +66,7 @@ export default async function handler(req, res) {
       };
     });
 
-    /* ================= AI SORTING ================= */
+    /* ================= PROFIT SCORING ================= */
     products = products
       .map((p) => ({
         ...p,
@@ -73,21 +75,35 @@ export default async function handler(req, res) {
       .sort((a, b) => b.profitScore - a.profitScore);
 
     /* ================= SEGMENTS ================= */
-
     const topProducts = products.slice(0, 10);
-    const trendingProducts = products.filter((p) => p.profitScore > 80);
-    const viralProducts = products.filter((p) => p.viralBoost);
+
+    const trendingProducts = products.filter(
+      (p) => p.profitScore > 80
+    );
+
+    const viralProducts = products.filter(
+      (p) => p.viralBoost === true
+    );
+
+    const highConversionProducts = products.filter(
+      (p) => (p.orders || 0) > 0 && (p.clicks || 0) > 0
+    );
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
+
       topProducts,
       trendingProducts,
       viralProducts,
+      highConversionProducts,
+
       total: products.length,
       engine: "profit-v1-ai",
     });
   } catch (e) {
+    console.error("HOME FEED ERROR:", e);
+
     return res.status(500).json({
       success: false,
       error: e.message,
