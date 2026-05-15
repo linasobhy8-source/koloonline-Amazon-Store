@@ -7,6 +7,51 @@ export default function AmazonHaul() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /* ================= BLOG ARTICLES ================= */
+
+  const blogPosts = [
+    {
+      title: "10 Best Smart Watches on Amazon in 2026",
+      link: "/blog/best-smart-watches",
+    },
+    {
+      title: "Best Wireless Headphones in 2026",
+      link: "/blog/best-headphones-2026",
+    },
+    {
+      title: "Top Power Banks for Travel & Gaming",
+      link: "/blog/best-power-banks-2026",
+    },
+    {
+      title: "Best Amazon Finds Under $25",
+      link: "/blog/amazon-finds-under-25",
+    },
+    {
+      title: "Trending TikTok Amazon Gadgets",
+      link: "/blog/tiktok-amazon-gadgets",
+    },
+    {
+      title: "Best Gaming Accessories on Amazon",
+      link: "/blog/best-gaming-accessories",
+    },
+    {
+      title: "Top Smart Home Devices in 2026",
+      link: "/blog/smart-home-devices-2026",
+    },
+    {
+      title: "Best Budget Tech Products This Year",
+      link: "/blog/budget-tech-products",
+    },
+    {
+      title: "Best Viral Products on Amazon Right Now",
+      link: "/blog/viral-products-amazon",
+    },
+    {
+      title: "Best USB-C Accessories for iPhone & Android",
+      link: "/blog/usb-c-accessories",
+    },
+  ];
+
   useEffect(() => {
     const fetchTrending = async () => {
       try {
@@ -43,9 +88,7 @@ export default function AmazonHaul() {
               hoursOld <= 24 ? Math.max(0, 50 - hoursOld * 2) : 0;
 
             const baseScore =
-              (p.score * 3) +
-              (p.clicks * 2) +
-              (p.views * 1);
+              p.score * 3 + p.clicks * 2 + p.views * 1;
 
             return {
               ...p,
@@ -81,15 +124,77 @@ export default function AmazonHaul() {
           rel="canonical"
           href="https://koloonline.online/amazon-haul"
         />
+
+        {/* ================= PRODUCT SCHEMA ================= */}
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'ItemList',
+              itemListElement: products.map((p, index) => ({
+                '@type': 'Product',
+                position: index + 1,
+                name: p.title,
+                image: p.image,
+                offers: {
+                  '@type': 'Offer',
+                  price: p.price,
+                  priceCurrency: 'USD',
+                  availability: 'https://schema.org/InStock',
+                },
+              })),
+            }),
+          }}
+        />
       </Head>
 
       <main style={styles.main}>
+
+        {/* ================= HERO ================= */}
+
         <section style={styles.hero}>
           <h1 style={styles.title}>🔥 Amazon Trending Haul</h1>
+
           <p style={styles.subtitle}>
-            Real-time viral & trending products
+            Real-time viral & trending Amazon products
+          </p>
+
+          <p style={styles.updated}>
+            Updated hourly with trending Amazon deals
           </p>
         </section>
+
+        {/* ================= TAGS ================= */}
+
+        <section style={styles.tagsContainer}>
+          <span style={styles.tag}>🔥 Viral</span>
+          <span style={styles.tag}>💸 Under $25</span>
+          <span style={styles.tag}>📱 Tech</span>
+          <span style={styles.tag}>🏠 Home</span>
+          <span style={styles.tag}>🎮 Gaming</span>
+        </section>
+
+        {/* ================= BLOG ARTICLES ================= */}
+
+        <section style={styles.blogSection}>
+          <h2 style={styles.blogTitle}>📝 Trending Buying Guides</h2>
+
+          <div style={styles.blogGrid}>
+            {blogPosts.map((post, index) => (
+              <a
+                key={index}
+                href={post.link}
+                style={styles.blogCard}
+              >
+                {post.title}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* ================= PRODUCTS ================= */}
 
         {loading ? (
           <p style={{ textAlign: "center" }}>Loading...</p>
@@ -101,11 +206,14 @@ export default function AmazonHaul() {
                 <img
                   src={product.image}
                   style={styles.image}
+                  loading="lazy"
+                  alt={product.title}
                 />
 
                 <div style={styles.content}>
 
-                  {/* 🔥 VIRAL BADGE */}
+                  {/* ================= VIRAL BADGE ================= */}
+
                   {product.viralBoost && (
                     <span style={styles.viral}>
                       🔥 NEW VIRAL
@@ -120,9 +228,27 @@ export default function AmazonHaul() {
                     {product.title}
                   </h2>
 
+                  <p style={styles.reason}>
+                    Trending on TikTok & Amazon this week
+                  </p>
+
                   <p style={styles.price}>
                     ${product.price}
                   </p>
+
+                  {/* ================= INTERNAL LINK ================= */}
+
+                  <a
+                    href={`/category/${product.category.toLowerCase()}`}
+                    style={styles.categoryLink}
+                  >
+                    More {product.category}
+                  </a>
+
+                  <br />
+                  <br />
+
+                  {/* ================= CTA ================= */}
 
                   <a
                     href={product.link}
@@ -130,10 +256,9 @@ export default function AmazonHaul() {
                     rel="noopener noreferrer"
                     style={styles.button}
                   >
-                    🛒 Shop Now
+                    🔥 View Amazon Deal
                   </a>
                 </div>
-
               </div>
             ))}
           </section>
@@ -155,7 +280,7 @@ const styles = {
 
   hero: {
     textAlign: "center",
-    marginBottom: "40px",
+    marginBottom: "30px",
   },
 
   title: {
@@ -166,6 +291,54 @@ const styles = {
   subtitle: {
     fontSize: "18px",
     color: "#555",
+  },
+
+  updated: {
+    color: "#888",
+    marginTop: 10,
+    fontSize: 14,
+  },
+
+  tagsContainer: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginBottom: "40px",
+  },
+
+  tag: {
+    background: "#111",
+    color: "#fff",
+    padding: "8px 14px",
+    borderRadius: "20px",
+    fontSize: "13px",
+  },
+
+  blogSection: {
+    maxWidth: "1200px",
+    margin: "0 auto 50px",
+  },
+
+  blogTitle: {
+    fontSize: "28px",
+    marginBottom: "20px",
+  },
+
+  blogGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+    gap: "16px",
+  },
+
+  blogCard: {
+    background: "white",
+    padding: "20px",
+    borderRadius: "16px",
+    textDecoration: "none",
+    color: "#111",
+    fontWeight: "bold",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
   },
 
   grid: {
@@ -205,6 +378,12 @@ const styles = {
     marginTop: "15px",
   },
 
+  reason: {
+    color: "#666",
+    fontSize: "14px",
+    marginTop: "10px",
+  },
+
   price: {
     fontSize: "22px",
     fontWeight: "bold",
@@ -219,6 +398,12 @@ const styles = {
     borderRadius: "10px",
     display: "inline-block",
     marginBottom: 8,
+  },
+
+  categoryLink: {
+    color: "#0070f3",
+    fontSize: "14px",
+    textDecoration: "none",
   },
 
   button: {
