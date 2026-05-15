@@ -11,16 +11,18 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
-/* ================= GOOGLE PING ================= */
-async function pingGoogle() {
+/* ================= PING ENGINES ================= */
+async function pingSearchEngines() {
+  const sitemapUrl = "https://koloonline.online/api/sitemap";
+
   try {
-    const url = "https://koloonline.online/api/sitemap";
+    // Google
+    await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
 
-    await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`
-    );
+    // Bing (مهم جدًا SEO إضافي)
+    await fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
 
-    console.log("🚀 Google Ping Sent");
+    console.log("🚀 Search engines pinged");
   } catch (e) {
     console.log("Ping error:", e.message);
   }
@@ -29,68 +31,67 @@ async function pingGoogle() {
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    console.log("🔥 Sitemap Generator Started");
-
     const baseUrl = "https://koloonline.online";
 
     /* ================= PRODUCTS ================= */
     const productSnap = await getDocs(collection(db, "products"));
 
-    let products = productSnap.docs.map((doc) => {
-      const data = doc.data();
+    const products = productSnap.docs.map((doc) => {
+      const d = doc.data();
 
       return {
         id: doc.id,
-        category: data.category || "general",
-        score: data.score || 0,
-        updatedAt: data.updatedAt || Date.now(),
+        category: (d.category || "general").toLowerCase(),
+        score: d.score || 0,
+        updatedAt: d.updatedAt || Date.now(),
       };
     });
 
-    /* ================= BLOG POSTS ================= */
+    /* ================= BLOGS ================= */
     const blogSnap = await getDocs(collection(db, "blog"));
 
-    let blogs = blogSnap.docs.map((doc) => {
-      const data = doc.data();
+    const blogs = blogSnap.docs.map((doc) => {
+      const d = doc.data();
 
       return {
         id: doc.id,
-        updatedAt: data.createdAt?.toDate?.() || Date.now(),
-        auto: data.auto || false,
+        slug: d.slug || doc.id, // 🔥 مهم جدًا
+        updatedAt: d.createdAt?.toDate?.() || Date.now(),
+        auto: d.auto || false,
       };
     });
 
     const autoBlogs = blogs.filter((b) => b.auto);
 
-    /* ================= SORT PRODUCTS ================= */
-    products.sort((a, b) => b.score - a.score);
-
     /* ================= CATEGORIES ================= */
     const categories = [
-      ...new Set(products.map((p) => (p.category || "general").toLowerCase())),
+      ...new Set(products.map((p) => p.category)),
     ];
 
-    /* ================= XML START ================= */
+    /* ================= BASE URLS ================= */
     let urls = `
 <url>
   <loc>${baseUrl}</loc>
-  <lastmod>${new Date().toISOString()}</lastmod>
-  <changefreq>hourly</changefreq>
+  <changefreq>daily</changefreq>
   <priority>1.0</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/blog</loc>
-  <lastmod>${new Date().toISOString()}</lastmod>
   <changefreq>daily</changefreq>
   <priority>0.9</priority>
 </url>
 
 <url>
-  <loc>${baseUrl}/amazon-haul</loc>
-  <lastmod>${new Date().toISOString()}</lastmod>
+  <loc>${baseUrl}/products</loc>
   <changefreq>daily</changefreq>
   <priority>0.9</priority>
+</url>
+
+<url>
+  <loc>${baseUrl}/search</loc>
+  <changefreq>weekly</changefreq>
+  <priority>0.7</priority>
 </url>
 `;
 
@@ -99,49 +100,31 @@ export default async function handler(req, res) {
       urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
-  <lastmod>${new Date().toISOString()}</lastmod>
   <changefreq>hourly</changefreq>
   <priority>0.8</priority>
-</url>
-`;
+</url>`;
     });
 
     /* ================= PRODUCTS ================= */
-    products.forEach((p, index) => {
-      const priority = Math.max(0.5, 1 - index * 0.01);
-
+    products.forEach((p, i) => {
       urls += `
 <url>
   <loc>${baseUrl}/product/${p.id}</loc>
   <lastmod>${new Date(p.updatedAt).toISOString()}</lastmod>
   <changefreq>hourly</changefreq>
-  <priority>${priority.toFixed(2)}</priority>
-</url>
-`;
+  <priority>${Math.max(0.5, 1 - i * 0.01).toFixed(2)}</priority>
+</url>`;
     });
 
-    /* ================= BLOG POSTS ================= */
+    /* ================= BLOGS (SEO FIX: SLUG) ================= */
     blogs.forEach((b) => {
       urls += `
 <url>
-  <loc>${baseUrl}/blog/${b.id}</loc>
+  <loc>${baseUrl}/blog/${b.slug}</loc>
   <lastmod>${new Date(b.updatedAt).toISOString()}</lastmod>
-  <changefreq>daily</changefreq>
-  <priority>${b.auto ? "0.8" : "0.6"}</priority>
-</url>
-`;
-    });
-
-    /* ================= AUTO BLOG BOOST ================= */
-    autoBlogs.forEach((b) => {
-      urls += `
-<url>
-  <loc>${baseUrl}/blog/${b.id}</loc>
-  <lastmod>${new Date(b.updatedAt).toISOString()}</lastmod>
-  <changefreq>hourly</changefreq>
-  <priority>0.85</priority>
-</url>
-`;
+  <changefreq>${b.auto ? "hourly" : "daily"}</changefreq>
+  <priority>${b.auto ? "0.85" : "0.7"}</priority>
+</url>`;
     });
 
     /* ================= FINAL XML ================= */
@@ -150,22 +133,18 @@ export default async function handler(req, res) {
 ${urls}
 </urlset>`;
 
-    /* ================= HEADERS ================= */
     res.setHeader("Content-Type", "application/xml");
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=3600, stale-while-revalidate=3600"
-    );
+    res.setHeader("Cache-Control", "public, s-maxage=3600");
 
-    /* ================= GOOGLE INDEXING ================= */
+    /* ================= AUTO PING ================= */
     setTimeout(() => {
-      pingGoogle();
+      pingSearchEngines();
     }, 3000);
 
     return res.status(200).send(sitemap);
 
-  } catch (error) {
-    console.error("❌ Sitemap Error:", error);
+  } catch (e) {
+    console.error("Sitemap error:", e);
     return res.status(500).send("Sitemap error");
   }
-}
+                   }
