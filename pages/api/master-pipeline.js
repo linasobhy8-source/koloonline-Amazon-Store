@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const { type, id, url } = req.body;
+    const { type, id, url } = req.body || {};
 
     if (!type || !id) {
       return res.status(400).json({
@@ -10,50 +10,91 @@ export default async function handler(req, res) {
     }
 
     const baseUrl = "https://koloonline.online";
+    const targetUrl = url || `${baseUrl}/${type}/${id}`;
+
+    console.log("🚀 Pipeline Started:", targetUrl);
 
     /* ================= 1️⃣ AUTO INDEX ================= */
-    await fetch(`${baseUrl}/api/auto-index`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, id }),
-    });
+    try {
+      await fetch(`${baseUrl}/api/indexnow`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: targetUrl,
+        }),
+      });
+    } catch (e) {
+      console.log("Index Error:", e.message);
+    }
 
     /* ================= 2️⃣ UPDATE SITEMAP ================= */
-    await fetch(`${baseUrl}/api/sitemap`, {
-      method: "POST",
-    });
+    try {
+      await fetch(`${baseUrl}/api/sitemap`, {
+        method: "POST",
+      });
+    } catch (e) {
+      console.log("Sitemap Error:", e.message);
+    }
 
-    /* ================= 3️⃣ GOOGLE PING ================= */
-    await fetch(`${baseUrl}/api/ping-google`, {
-      method: "POST",
-    });
+    /* ================= 3️⃣ GOOGLE + BING PING ================= */
+    try {
+      await fetch(`${baseUrl}/api/ping-google`, { method: "POST" });
+    } catch (e) {
+      console.log("Google Ping Error:", e.message);
+    }
 
-    /* ================= 4️⃣ LOG ================= */
-    await fetch(`${baseUrl}/api/cron-logs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "master_pipeline",
-        status: "success",
-        target: url || `${baseUrl}/${type}/${id}`,
-        createdAt: new Date().toISOString(),
-      }),
-    });
+    /* ================= 4️⃣ OPTIONAL SOCIAL HOOK (future growth) ================= */
+    try {
+      await fetch(`${baseUrl}/api/social-hook`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: targetUrl,
+          type,
+        }),
+      });
+    } catch {
+      // silent fail (future feature)
+    }
 
-    console.log("🚀 MASTER PIPELINE DONE:", type, id);
+    /* ================= 5️⃣ LOGGING ================= */
+    try {
+      await fetch(`${baseUrl}/api/cron-logs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "master_pipeline",
+          status: "success",
+          target: targetUrl,
+          source: `${type}/${id}`,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+    } catch (e) {
+      console.log("Log Error:", e.message);
+    }
+
+    /* ================= FINAL RESPONSE ================= */
+    console.log("✅ PIPELINE DONE:", targetUrl);
 
     return res.status(200).json({
       success: true,
       message: "Pipeline executed successfully",
-      url: url || `${baseUrl}/${type}/${id}`,
+      url: targetUrl,
     });
 
   } catch (e) {
-    console.error("MASTER PIPELINE ERROR:", e);
+    console.error("❌ MASTER PIPELINE ERROR:", e);
 
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-}
+  }
