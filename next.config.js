@@ -1,6 +1,9 @@
 const nextConfig = {
   images: {
-    domains: ["m.media-amazon.com", "images-na.ssl-images-amazon.com"],
+    domains: [
+      "m.media-amazon.com",
+      "images-na.ssl-images-amazon.com",
+    ],
   },
 
   async rewrites() {
@@ -12,6 +15,31 @@ const nextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      // ❌ fix broken template URL
+      {
+        source: "/blog/%7Bslug%7D",
+        destination: "/blog",
+        permanent: true,
+      },
+
+      // ❌ fix old empty product route
+      {
+        source: "/product",
+        destination: "/products",
+        permanent: true,
+      },
+
+      // ❌ optional: old store page redirect
+      {
+        source: "/store",
+        destination: "/",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
@@ -19,10 +47,12 @@ const nextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=3600, stale-while-revalidate=86400",
+            value:
+              "public, max-age=3600, stale-while-revalidate=86400",
           },
         ],
       },
+
       {
         source: "/(.*)",
         headers: [
@@ -45,7 +75,6 @@ const nextConfig = {
 
   reactStrictMode: true,
   poweredByHeader: false,
-
   compress: true,
 };
 
