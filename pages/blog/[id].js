@@ -6,23 +6,61 @@ import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 export default function Article({ post, relatedProducts }) {
   if (!post) return <p>Not found</p>;
 
+  const title = `${post.title} | Koloonline`;
+  const description = post.description || post.title;
+  const url = `https://koloonline.online/blog/${post.id}`;
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: description,
+    url: url,
+    image: post.image || "https://koloonline.online/og-image.jpg",
+    author: {
+      "@type": "Organization",
+      name: "Koloonline",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Koloonline",
+    },
+  };
+
   return (
     <div style={{ padding: 20, fontFamily: "Arial", maxWidth: 900, margin: "auto" }}>
 
-      {/* ================= SEO ================= */}
+      {/* ================= SEO HEAD (FULL FIX) ================= */}
       <Head>
-        <title>{post.title} | Koloonline</title>
+        <title>{title}</title>
 
-        <meta name="description" content={post.description || post.title} />
+        <meta name="description" content={description} />
+        <meta name="robots" content="index, follow" />
+
+        {/* Canonical */}
+        <link rel="canonical" href={url} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={url} />
+        <meta property="og:image" content={post.image} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={post.image} />
 
         {/* IMPORTANT FOR INDEXING */}
         <meta name="robots" content="index, follow" />
 
-        {/* Open Graph */}
-        <meta property="og:title" content={post.title} />
-        <meta property="og:description" content={post.description || post.title} />
-
-        <meta property="og:type" content="article" />
+        {/* SCHEMA (Rich Results) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        />
       </Head>
 
       {/* ================= ARTICLE ================= */}
@@ -51,13 +89,13 @@ export default function Article({ post, relatedProducts }) {
         <ul>
           <li>High value insights from this article</li>
           <li>Practical tips you can apply immediately</li>
-          <li>Recommended products and tools</li>
+          <li>Recommended Amazon products inside</li>
         </ul>
 
         {/* ================= FAQ ================= */}
         <h2 style={{ marginTop: 40 }}>FAQ</h2>
-        <p><strong>Q: Is this useful?</strong></p>
-        <p>A: Yes, it helps users make better buying decisions.</p>
+        <p><strong>Q: Is this article helpful?</strong></p>
+        <p>A: Yes, it provides practical buying and usage insights.</p>
 
       </article>
 
@@ -102,7 +140,7 @@ export default function Article({ post, relatedProducts }) {
         ))}
       </div>
 
-      {/* ================= MAIN CTA ================= */}
+      {/* ================= CTA ================= */}
       <div style={{ marginTop: 50, textAlign: "center" }}>
         <a
           href="https://www.amazon.com?tag=koloonlinesto-20"
@@ -141,7 +179,6 @@ export async function getServerSideProps({ params }) {
     ...snap.data(),
   };
 
-  /* ================= GET PRODUCTS ================= */
   const productsSnap = await getDocs(collection(db, "products"));
 
   const products = productsSnap.docs.map((d) => ({
@@ -149,7 +186,6 @@ export async function getServerSideProps({ params }) {
     ...d.data(),
   }));
 
-  /* ================= SMART MATCHING ================= */
   const text = ((post.title || "") + " " + (post.content || "")).toLowerCase();
 
   const relatedProducts = products
@@ -173,4 +209,4 @@ export async function getServerSideProps({ params }) {
       relatedProducts,
     },
   };
-}
+        }
