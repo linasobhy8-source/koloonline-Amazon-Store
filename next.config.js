@@ -1,4 +1,5 @@
 const nextConfig = {
+  /* ================= IMAGES ================= */
   images: {
     domains: [
       "m.media-amazon.com",
@@ -6,6 +7,10 @@ const nextConfig = {
     ],
   },
 
+  /* ================= GLOBAL SEO SETTINGS ================= */
+  trailingSlash: false,
+
+  /* ================= REWRITES ================= */
   async rewrites() {
     return [
       {
@@ -15,33 +20,63 @@ const nextConfig = {
     ];
   },
 
+  /* ================= REDIRECTS (SEO FIX FULL DOMAIN CONTROL) ================= */
   async redirects() {
     return [
-      // ❌ fix broken template URL
+      /* ================= FIX BROKEN SLUG ================= */
       {
         source: "/blog/%7Bslug%7D",
         destination: "/blog",
         permanent: true,
       },
 
-      // ❌ fix old empty product route
+      /* ================= FIX OLD PRODUCT ROUTE ================= */
       {
         source: "/product",
         destination: "/products",
         permanent: true,
       },
 
-      // ❌ optional: old store page redirect
+      /* ================= OLD STORE ================= */
       {
         source: "/store",
         destination: "/",
         permanent: true,
       },
+
+      /* ================= FORCE HTTPS ================= */
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "header",
+            key: "x-forwarded-proto",
+            value: "http",
+          },
+        ],
+        destination: "https://koloonline.online/:path*",
+        permanent: true,
+      },
+
+      /* ================= FORCE NON-WWW ================= */
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.koloonline.online",
+          },
+        ],
+        destination: "https://koloonline.online/:path*",
+        permanent: true,
+      },
     ];
   },
 
+  /* ================= HEADERS ================= */
   async headers() {
     return [
+      /* ================= SITEMAP CACHE ================= */
       {
         source: "/sitemap.xml",
         headers: [
@@ -53,6 +88,7 @@ const nextConfig = {
         ],
       },
 
+      /* ================= GLOBAL SECURITY HEADERS ================= */
       {
         source: "/(.*)",
         headers: [
@@ -73,6 +109,7 @@ const nextConfig = {
     ];
   },
 
+  /* ================= PERFORMANCE ================= */
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
