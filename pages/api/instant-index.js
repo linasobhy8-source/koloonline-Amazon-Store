@@ -11,22 +11,19 @@ export default async function handler(req, res) {
     }
 
     const baseUrl = "https://koloonline.online";
+    const sitemapUrl = `${baseUrl}/sitemap.xml`;
 
-    /* ================= 1. GOOGLE (SITEMAP PING ONLY) ================= */
+    /* ================= 1. GOOGLE SITEMAP PING ================= */
     await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(
-        baseUrl + "/sitemap.xml"
-      )}`
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`
     );
 
-    /* ================= 2. BING ================= */
+    /* ================= 2. BING SITEMAP PING ================= */
     await fetch(
-      `https://www.bing.com/ping?sitemap=${encodeURIComponent(
-        baseUrl + "/sitemap.xml"
-      )}`
+      `https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`
     );
 
-    /* ================= 3. INDEXNOW (REAL BOOST) ================= */
+    /* ================= 3. INDEXNOW (IMPORTANT FOR FAST INDEXING) ================= */
     await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
       headers: {
@@ -39,10 +36,11 @@ export default async function handler(req, res) {
       }),
     });
 
-    /* ================= SUCCESS ================= */
+    /* ================= SUCCESS RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      message: "Index request sent successfully",
+      message: "Indexing request sent successfully",
+      url,
     });
 
   } catch (e) {
