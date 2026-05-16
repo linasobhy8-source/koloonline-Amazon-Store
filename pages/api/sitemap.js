@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       const d = doc.data();
 
       return {
-        id: doc.id, // 🔥 IMPORTANT: ONLY ID (no slug system)
+        id: doc.id,
         updatedAt: safeDate(d.updatedAt || d.createdAt),
         auto: d.auto || false,
       };
@@ -71,30 +71,30 @@ export default async function handler(req, res) {
     /* ================= CATEGORIES ================= */
     const categories = [...new Set(products.map((p) => p.category))];
 
-    /* ================= STATIC URLs ================= */
+    /* ================= STATIC URLS ================= */
     let urls = `
 <url>
   <loc>${baseUrl}/</loc>
-  <changefreq>daily</changefreq>
+  <changefreq>hourly</changefreq>
   <priority>1.0</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/blog</loc>
-  <changefreq>daily</changefreq>
-  <priority>0.9</priority>
+  <changefreq>hourly</changefreq>
+  <priority>0.95</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/products</loc>
-  <changefreq>daily</changefreq>
-  <priority>0.9</priority>
+  <changefreq>hourly</changefreq>
+  <priority>0.95</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/search</loc>
-  <changefreq>weekly</changefreq>
-  <priority>0.7</priority>
+  <changefreq>hourly</changefreq>
+  <priority>0.9</priority>
 </url>
 `;
 
@@ -105,8 +105,8 @@ export default async function handler(req, res) {
       urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
-  <changefreq>daily</changefreq>
-  <priority>0.8</priority>
+  <changefreq>hourly</changefreq>
+  <priority>0.9</priority>
 </url>`;
     });
 
@@ -116,19 +116,19 @@ export default async function handler(req, res) {
 <url>
   <loc>${baseUrl}/product/${p.id}</loc>
   <lastmod>${p.updatedAt}</lastmod>
-  <changefreq>daily</changefreq>
-  <priority>${Math.max(0.5, 1 - i * 0.01).toFixed(2)}</priority>
+  <changefreq>hourly</changefreq>
+  <priority>${Math.max(0.85, 1 - i * 0.005).toFixed(2)}</priority>
 </url>`;
     });
 
     /* ================= BLOGS ================= */
-    blogs.forEach((b) => {
+    blogs.forEach((b, i) => {
       urls += `
 <url>
   <loc>${baseUrl}/blog/${b.id}</loc>
   <lastmod>${b.updatedAt}</lastmod>
-  <changefreq>${b.auto ? "hourly" : "daily"}</changefreq>
-  <priority>${b.auto ? "0.85" : "0.7"}</priority>
+  <changefreq>hourly</changefreq>
+  <priority>${Math.max(0.9, 1 - i * 0.01).toFixed(2)}</priority>
 </url>`;
     });
 
@@ -141,7 +141,6 @@ ${urls}
     res.setHeader("Content-Type", "application/xml");
     res.setHeader("Cache-Control", "public, s-maxage=3600");
 
-    /* ================= PING (SAFE) ================= */
     setTimeout(() => {
       pingSearchEngines();
     }, 5000);
@@ -152,4 +151,4 @@ ${urls}
     console.error("Sitemap error:", e);
     return res.status(500).send("Sitemap error");
   }
-        }
+                                   }
