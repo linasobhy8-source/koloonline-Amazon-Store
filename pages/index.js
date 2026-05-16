@@ -28,6 +28,25 @@ function Hero() {
   );
 }
 
+/* ================= SEO CONTENT BOOST SECTION ================= */
+function SeoSection() {
+  return (
+    <section style={{ padding: 20 }}>
+      <h2>Best Amazon Deals 2026</h2>
+
+      <p>
+        Koloonline is a smart shopping platform that helps users discover trending Amazon products,
+        best deals, viral gadgets, and buying guides updated daily with real data-driven insights.
+      </p>
+
+      <p>
+        We analyze product performance, conversion rates, and popularity to recommend the best items
+        for tech, home, fitness, and lifestyle categories.
+      </p>
+    </section>
+  );
+}
+
 /* ================= HOME FEED ================= */
 function HomeFeed() {
   const [products, setProducts] = useState([]);
@@ -140,7 +159,7 @@ export default function Home({ products }) {
         />
         <meta property="og:url" content="https://koloonline.online/" />
 
-        {/* ================= PERFORMANCE BOOST ================= */}
+        {/* PERFORMANCE BOOST */}
         <link rel="preconnect" href="https://www.google.com" />
         <link rel="preconnect" href="https://www.amazon.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
@@ -155,6 +174,9 @@ export default function Home({ products }) {
 
       {/* ================= HERO ================= */}
       <Hero />
+
+      {/* ================= SEO SECTION (NEW) ================= */}
+      <SeoSection />
 
       {/* ================= SEARCH ================= */}
       <section style={{ padding: 20 }}>
@@ -248,4 +270,4 @@ export async function getStaticProps() {
     },
     revalidate: 60,
   };
-}
+  }
