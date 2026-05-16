@@ -11,59 +11,20 @@ import {
 import { db } from "../config/firebase";
 import { calculateTrendScore } from "../lib/trendScore";
 
-const fallbackImage = "https://via.placeholder.com/300";
-
-/* ================= HERO SECTION ================= */
+/* ================= HERO ================= */
 function Hero() {
   return (
     <section style={{ padding: 20 }}>
-      <h1>🟠 Koloonline - Best Amazon Deals & Trending Products 2026</h1>
+      <h1>
+        🟠 Koloonline - Best Amazon Deals, Trending Products & Smart Shopping Guide 2026
+      </h1>
+
       <p>
-        Discover curated Amazon products, trending deals, and smart buying guides
-        updated daily to help you shop smarter and save money.
+        Discover the best Amazon deals, trending products, viral gadgets, and
+        smart buying guides updated daily. We help you find top-rated products
+        and save money with real data-driven recommendations.
       </p>
     </section>
-  );
-}
-
-/* ================= BREADCRUMB ================= */
-function Breadcrumb({ category }) {
-  return (
-    <div style={{ padding: "10px 20px", fontSize: 14, color: "#555" }}>
-      <Link href="/">Home</Link> /{" "}
-      <span>{category === "all" ? "All Products" : category}</span>
-    </div>
-  );
-}
-
-/* ================= SUBSCRIPTIONS ================= */
-function Subscriptions() {
-  return (
-    <div style={{ padding: 20, background: "#f9f9f9", marginTop: 30 }}>
-      <h2>🔥 Amazon Subscriptions & Free Trials</h2>
-
-      <p>
-        Explore exclusive offers like Audible free trial and Amazon services
-        that can boost your productivity and entertainment.
-      </p>
-
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-        gap: 20,
-        marginTop: 20,
-      }}>
-        <div style={{ padding: 15, border: "1px solid #ddd", borderRadius: 10 }}>
-          <h3>🎧 Audible</h3>
-          <p>Listen to books anywhere with free trial access.</p>
-          <Link href="/audible">
-            <button style={{ padding: 10, cursor: "pointer" }}>
-              Start Free Trial
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -74,23 +35,45 @@ function HomeFeed() {
   useEffect(() => {
     fetch("/api/home-feed")
       .then((res) => res.json())
-      .then((data) => {
-        setProducts(data.topProducts || []);
-      });
+      .then((data) => setProducts(data.topProducts || []))
+      .catch(() => setProducts([]));
   }, []);
 
   return (
     <section style={{ padding: 20 }}>
       <h2>🔥 Auto Trending Deals</h2>
-      <p>Live updated list of high-performing Amazon products.</p>
+      <p>Live updated Amazon products with high engagement and conversions.</p>
 
       <div style={{ display: "grid", gap: 15, marginTop: 15 }}>
         {products.map((p) => (
           <div key={p.id} style={{ padding: 10, border: "1px solid #ddd" }}>
             <h3>{p.title}</h3>
-            <p>Score: {p.profitScore}</p>
+            <p>🔥 Score: {p.profitScore}</p>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+/* ================= SUBSCRIPTIONS ================= */
+function Subscriptions() {
+  return (
+    <section style={{ padding: 20, background: "#f9f9f9", marginTop: 30 }}>
+      <h2>🔥 Amazon Services & Free Trials</h2>
+
+      <p>
+        Explore Amazon services like Audible and exclusive free trials that
+        enhance your shopping and entertainment experience.
+      </p>
+
+      <div style={{ marginTop: 15 }}>
+        <h3>🎧 Audible</h3>
+        <p>Listen to audiobooks anywhere with free trial access.</p>
+
+        <Link href="/audible">
+          <button style={{ padding: 10 }}>Start Free Trial</button>
+        </Link>
       </div>
     </section>
   );
@@ -99,16 +82,14 @@ function HomeFeed() {
 /* ================= MAIN PAGE ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [category] = useState("all");
   const [recommendations, setRecommendations] = useState([]);
 
-  /* ================= LOAD RECOMMENDATIONS ================= */
   useEffect(() => {
     fetch("/api/recommendations")
       .then((res) => res.json())
-      .then((data) => {
-        setRecommendations(data.topPicks || []);
-      });
+      .then((data) => setRecommendations(data.topPicks || []))
+      .catch(() => setRecommendations([]));
   }, []);
 
   const filtered = products
@@ -132,42 +113,52 @@ export default function Home({ products }) {
 
       {/* ================= SEO ================= */}
       <Head>
-        <title>Koloonline - Best Amazon Deals 2026</title>
+        <title>
+          Koloonline - Best Amazon Deals, Trending Products & Smart Shopping Guide 2026
+        </title>
 
         <meta
           name="description"
-          content="Discover the best Amazon deals, trending products, and smart shopping guides updated daily."
+          content="Discover the best Amazon deals, trending products, smart gadgets, and buying guides updated daily."
         />
 
-        <meta name="robots" content="index, follow" />
-
-        <meta property="og:title" content="Koloonline - Amazon Deals 2026" />
         <meta
-          property="og:description"
-          content="Best Amazon deals, trending products, and smart buying guides."
+          name="keywords"
+          content="amazon deals, trending products, amazon gadgets, best amazon products 2026, smart shopping"
         />
 
         <link rel="canonical" href="https://koloonline.online/" />
+
+        <meta name="robots" content="index, follow" />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Koloonline Amazon Deals 2026" />
+        <meta
+          property="og:description"
+          content="Best Amazon deals, trending products, and smart shopping guides."
+        />
+        <meta property="og:url" content="https://koloonline.online/" />
       </Head>
 
       {/* ================= HEADER ================= */}
       <header style={{ padding: 20 }}>
         <h1>🟠 Koloonline</h1>
-        <p>Your Amazon Deals & Trends Hub</p>
+        <p>Your Smart Amazon Deals Hub</p>
       </header>
 
       {/* ================= HERO ================= */}
       <Hero />
 
       {/* ================= SEARCH ================= */}
-      <div style={{ padding: 20 }}>
+      <section style={{ padding: 20 }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search products..."
           style={{ padding: 10, width: "100%" }}
         />
-      </div>
+      </section>
 
       {/* ================= HOME FEED ================= */}
       <HomeFeed />
@@ -175,7 +166,6 @@ export default function Home({ products }) {
       {/* ================= RECOMMENDATIONS ================= */}
       <section style={{ padding: 20 }}>
         <h2>🔥 Best Conversion Products</h2>
-        <p>Hand-picked products with highest conversion potential.</p>
 
         <div style={{ display: "grid", gap: 15 }}>
           {recommendations.map((p) => (
@@ -194,7 +184,6 @@ export default function Home({ products }) {
       {/* ================= TRENDING ================= */}
       <section style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
-        <p>Most popular products right now based on real-time scoring.</p>
 
         <div style={{ display: "grid", gap: 15 }}>
           {trendingProducts.map((p) => (
@@ -206,6 +195,17 @@ export default function Home({ products }) {
         </div>
       </section>
 
+      {/* ================= BLOG LINKS ================= */}
+      <section style={{ padding: 20 }}>
+        <h2>📚 Latest Guides</h2>
+
+        <ul>
+          <li><Link href="/blog/best-smart-watches">Best Smart Watches</Link></li>
+          <li><Link href="/blog/best-headphones-2026">Best Headphones</Link></li>
+          <li><Link href="/blog/viral-products-amazon">Viral Amazon Products</Link></li>
+        </ul>
+      </section>
+
       {/* ================= SUBSCRIPTIONS ================= */}
       <Subscriptions />
 
@@ -214,10 +214,13 @@ export default function Home({ products }) {
         <h2>❓ Frequently Asked Questions</h2>
 
         <h3>What is Koloonline?</h3>
-        <p>A platform for discovering the best Amazon deals and trending products.</p>
+        <p>
+          Koloonline is a platform for discovering Amazon deals, trending products,
+          and smart shopping recommendations.
+        </p>
 
-        <h3>Is this updated daily?</h3>
-        <p>Yes, products and deals are updated automatically.</p>
+        <h3>Is it updated daily?</h3>
+        <p>Yes, all products are updated automatically every day.</p>
       </section>
 
     </div>
