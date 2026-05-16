@@ -11,13 +11,15 @@ export default function Article({ post, relatedProducts }) {
   const description = post.description || post.title;
   const url = `https://koloonline.online/blog/${post.id}`;
 
+  const image = post.image || "https://koloonline.online/og-image.jpg";
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: post.title,
-    description: description,
-    url: url,
-    image: post.image || "https://koloonline.online/og-image.jpg",
+    description,
+    url,
+    image,
     author: {
       "@type": "Organization",
       name: "Koloonline",
@@ -28,17 +30,19 @@ export default function Article({ post, relatedProducts }) {
     },
   };
 
-  /* ================= AUTO INDEXING (FIXED PLACE) ================= */
+  /* ================= AUTO INDEXING (SAFE VERSION) ================= */
   useEffect(() => {
+    if (!post?.id) return;
+
     const timer = setTimeout(() => {
-      fetch("https://koloonline.online/api/instant-index", {
+      fetch("/api/instant-index", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: `https://koloonline.online/blog/${post.id}`,
         }),
-      });
-    }, 5000);
+      }).catch(() => {});
+    }, 7000);
 
     return () => clearTimeout(timer);
   }, [post?.id]);
@@ -55,12 +59,20 @@ export default function Article({ post, relatedProducts }) {
 
         <link rel="canonical" href={url} />
 
+        {/* Open Graph */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={url} />
-        <meta property="og:image" content={post.image} />
+        <meta property="og:image" content={image} />
 
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={image} />
+
+        {/* Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
@@ -69,25 +81,23 @@ export default function Article({ post, relatedProducts }) {
 
       {/* ================= ARTICLE ================= */}
       <article>
-
         <h1 style={{ fontSize: 28 }}>{post.title}</h1>
 
         {post.image && (
           <img
-            src={post.image}
+            src={image}
             alt={post.title}
             style={{ width: "100%", marginTop: 20, borderRadius: 10 }}
           />
         )}
 
         <p style={{ marginTop: 20, fontSize: 18, color: "#555" }}>
-          {post.description}
+          {description}
         </p>
 
         <div style={{ whiteSpace: "pre-line", marginTop: 20, lineHeight: 1.7 }}>
           {post.content}
         </div>
-
       </article>
 
       {/* ================= RELATED PRODUCTS ================= */}
@@ -106,7 +116,6 @@ export default function Article({ post, relatedProducts }) {
             borderRadius: 10,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
           }}>
-
             <img
               src={p.image}
               style={{ width: "100%", height: 160, objectFit: "cover" }}
@@ -200,4 +209,4 @@ export async function getServerSideProps({ params }) {
       relatedProducts,
     },
   };
-        }
+                }
