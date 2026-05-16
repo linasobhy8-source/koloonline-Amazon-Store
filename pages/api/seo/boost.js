@@ -10,6 +10,31 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
+/* ================= SIMPLE SEO SCORING ================= */
+function scoreMatch(a, b) {
+  let score = 0;
+
+  const textA = (a.title + " " + a.content).toLowerCase();
+  const textB = (b.title + " " + b.content).toLowerCase();
+
+  const keywordsA = textA.split(" ").slice(0, 20);
+  const keywordsB = textB.split(" ").slice(0, 20);
+
+  keywordsA.forEach((word) => {
+    if (word.length > 4 && textB.includes(word)) {
+      score += 1;
+    }
+  });
+
+  keywordsB.forEach((word) => {
+    if (word.length > 4 && textA.includes(word)) {
+      score += 1;
+    }
+  });
+
+  return score;
+}
+
 export default async function handler(req, res) {
   try {
     const baseUrl = "https://koloonline.online";
@@ -22,12 +47,15 @@ export default async function handler(req, res) {
       content: d.data().content || "",
     }));
 
-    // نحدد أقوى المقالات (seed pages)
-    const topPosts = posts.slice(0, 5);
-
     const boostMap = posts.map((post) => {
-      const links = topPosts
+      const scored = posts
         .filter((p) => p.id !== post.id)
+        .map((p) => ({
+          ...p,
+          score: scoreMatch(post, p),
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4) // أهم 4 روابط فقط (SEO optimal)
         .map((p) => ({
           title: p.title,
           url: `${baseUrl}/blog/${p.id}`,
@@ -35,7 +63,7 @@ export default async function handler(req, res) {
 
       return {
         page: `${baseUrl}/blog/${post.id}`,
-        internalLinks: links,
+        internalLinks: scored,
       };
     });
 
@@ -47,4 +75,4 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
-}
+             }
