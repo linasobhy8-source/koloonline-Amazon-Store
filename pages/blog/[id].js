@@ -7,23 +7,62 @@ export default function Article({ post, relatedProducts }) {
   if (!post) return <p>Not found</p>;
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
+    <div style={{ padding: 20, fontFamily: "Arial", maxWidth: 900, margin: "auto" }}>
 
-      {/* SEO */}
+      {/* ================= SEO ================= */}
       <Head>
-        <title>{post.title}</title>
-        <meta name="description" content={post.title} />
+        <title>{post.title} | Koloonline</title>
+
+        <meta name="description" content={post.description || post.title} />
+
+        {/* IMPORTANT FOR INDEXING */}
+        <meta name="robots" content="index, follow" />
+
+        {/* Open Graph */}
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={post.description || post.title} />
+
+        <meta property="og:type" content="article" />
       </Head>
 
-      {/* ARTICLE */}
-      <h1>{post.title}</h1>
+      {/* ================= ARTICLE ================= */}
+      <article>
 
-      <div style={{ whiteSpace: "pre-line", marginTop: 20 }}>
-        {post.content}
-      </div>
+        <h1 style={{ fontSize: 28 }}>{post.title}</h1>
+
+        {post.image && (
+          <img
+            src={post.image}
+            alt={post.title}
+            style={{ width: "100%", marginTop: 20, borderRadius: 10 }}
+          />
+        )}
+
+        <p style={{ marginTop: 20, fontSize: 18, color: "#555" }}>
+          {post.description}
+        </p>
+
+        <div style={{ whiteSpace: "pre-line", marginTop: 20, lineHeight: 1.7 }}>
+          {post.content}
+        </div>
+
+        {/* ================= KEY TAKEAWAYS ================= */}
+        <h2 style={{ marginTop: 40 }}>Key Takeaways</h2>
+        <ul>
+          <li>High value insights from this article</li>
+          <li>Practical tips you can apply immediately</li>
+          <li>Recommended products and tools</li>
+        </ul>
+
+        {/* ================= FAQ ================= */}
+        <h2 style={{ marginTop: 40 }}>FAQ</h2>
+        <p><strong>Q: Is this useful?</strong></p>
+        <p>A: Yes, it helps users make better buying decisions.</p>
+
+      </article>
 
       {/* ================= RELATED PRODUCTS ================= */}
-      <h2 style={{ marginTop: 40 }}>🔥 Products Related to This Article</h2>
+      <h2 style={{ marginTop: 50 }}>🔥 Related Products</h2>
 
       <div style={{
         display: "grid",
@@ -31,13 +70,14 @@ export default function Article({ post, relatedProducts }) {
         gap: 15,
         marginTop: 20
       }}>
-        {relatedProducts.map((p) => (
+        {relatedProducts?.map((p) => (
           <div key={p.id} style={{
             background: "#fff",
             padding: 10,
             borderRadius: 10,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
           }}>
+
             <img
               src={p.image}
               style={{ width: "100%", height: 160, objectFit: "cover" }}
@@ -47,7 +87,7 @@ export default function Article({ post, relatedProducts }) {
             <h4>{p.title}</h4>
             <p style={{ color: "#B12704" }}>${p.price}</p>
 
-            <a href={p.link} target="_blank">
+            <a href={p.link} target="_blank" rel="noopener noreferrer">
               <button style={{
                 width: "100%",
                 padding: 10,
@@ -63,8 +103,12 @@ export default function Article({ post, relatedProducts }) {
       </div>
 
       {/* ================= MAIN CTA ================= */}
-      <div style={{ marginTop: 40, textAlign: "center" }}>
-        <a href="https://www.amazon.com?tag=koloonlinesto-20" target="_blank">
+      <div style={{ marginTop: 50, textAlign: "center" }}>
+        <a
+          href="https://www.amazon.com?tag=koloonlinesto-20"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <button style={{
             padding: 15,
             background: "linear-gradient(#ff9900,#ff6600)",
@@ -106,9 +150,7 @@ export async function getServerSideProps({ params }) {
   }));
 
   /* ================= SMART MATCHING ================= */
-  const text = (
-    (post.title || "") + " " + (post.content || "")
-  ).toLowerCase();
+  const text = ((post.title || "") + " " + (post.content || "")).toLowerCase();
 
   const relatedProducts = products
     .map((p) => {
