@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { db } from "../../config/firebase";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 
@@ -11,6 +11,22 @@ export default function Article({ post, relatedProducts }) {
   const description = post.description || post.title;
   const url = `https://koloonline.online/blog/${post.id}`;
   const image = post.image || "https://koloonline.online/og-image.jpg";
+
+  /* ================= INTERNAL LINKS BOOST ================= */
+  const [internalLinks, setInternalLinks] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/seo/boost")
+      .then((res) => res.json())
+      .then((data) => {
+        const match = data.boostMap?.find(
+          (x) => x.page === window.location.href
+        );
+
+        if (match) setInternalLinks(match.internalLinks || []);
+      })
+      .catch(() => {});
+  }, []);
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -48,12 +64,14 @@ export default function Article({ post, relatedProducts }) {
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={url} />
 
+        {/* Open Graph */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={url} />
         <meta property="og:image" content={image} />
 
+        {/* Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
@@ -65,7 +83,11 @@ export default function Article({ post, relatedProducts }) {
         <h1 style={{ fontSize: 28 }}>{post.title}</h1>
 
         {post.image && (
-          <img src={image} alt={post.title} style={{ width: "100%", marginTop: 20, borderRadius: 10 }} />
+          <img
+            src={image}
+            alt={post.title}
+            style={{ width: "100%", marginTop: 20, borderRadius: 10 }}
+          />
         )}
 
         <p style={{ marginTop: 20, fontSize: 18, color: "#555" }}>
@@ -76,7 +98,7 @@ export default function Article({ post, relatedProducts }) {
           {post.content}
         </div>
 
-        {/* ================= CONTENT BOOST (IMPORTANT FOR INDEXING) ================= */}
+        {/* ================= CONTENT BOOST ================= */}
         <section style={{ marginTop: 40 }}>
           <h2>Best Amazon Deals 2026</h2>
 
@@ -91,6 +113,20 @@ export default function Article({ post, relatedProducts }) {
           </p>
         </section>
       </article>
+
+      {/* ================= INTERNAL LINKS (NEW SEO LAYER) ================= */}
+      {internalLinks.length > 0 && (
+        <section style={{ marginTop: 40 }}>
+          <h2>🔗 Related Internal Pages</h2>
+          <ul>
+            {internalLinks.map((link, i) => (
+              <li key={i}>
+                <a href={link.url}>{link.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* ================= RELATED PRODUCTS ================= */}
       <h2 style={{ marginTop: 50 }}>🔥 Related Products</h2>
@@ -108,7 +144,11 @@ export default function Article({ post, relatedProducts }) {
             borderRadius: 10,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
           }}>
-            <img src={p.image} alt={p.title} style={{ width: "100%", height: 160, objectFit: "cover" }} />
+            <img
+              src={p.image}
+              alt={p.title}
+              style={{ width: "100%", height: 160, objectFit: "cover" }}
+            />
             <h4>{p.title}</h4>
             <p style={{ color: "#B12704" }}>${p.price}</p>
 
@@ -127,7 +167,7 @@ export default function Article({ post, relatedProducts }) {
         ))}
       </div>
 
-      {/* ================= RELATED GUIDES (IMPORTANT SEO INTERNAL LINKS) ================= */}
+      {/* ================= RELATED GUIDES ================= */}
       <section style={{ marginTop: 40 }}>
         <h2>📚 Related Guides</h2>
 
@@ -169,13 +209,17 @@ export async function getServerSideProps({ params }) {
 
   const productsSnap = await getDocs(collection(db, "products"));
 
-  const products = productsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const products = productsSnap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
 
   const text = ((post.title || "") + " " + (post.content || "")).toLowerCase();
 
   const relatedProducts = products
     .map((p) => {
       let score = 0;
+
       const title = (p.title || "").toLowerCase();
       const category = (p.category || "").toLowerCase();
 
@@ -193,4 +237,4 @@ export async function getServerSideProps({ params }) {
       relatedProducts,
     },
   };
-        }
+                   }
