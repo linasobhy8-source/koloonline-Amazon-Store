@@ -139,6 +139,12 @@ export default function Home({ products }) {
           content="Best Amazon deals, trending products, and smart shopping guides."
         />
         <meta property="og:url" content="https://koloonline.online/" />
+
+        {/* ================= PERFORMANCE BOOST ================= */}
+        <link rel="preconnect" href="https://www.google.com" />
+        <link rel="preconnect" href="https://www.amazon.com" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
+        <link rel="dns-prefetch" href="https://www.amazon.com" />
       </Head>
 
       {/* ================= HEADER ================= */}
@@ -209,7 +215,7 @@ export default function Home({ products }) {
       {/* ================= SUBSCRIPTIONS ================= */}
       <Subscriptions />
 
-      {/* ================= FAQ (SEO BOOST) ================= */}
+      {/* ================= FAQ ================= */}
       <section style={{ padding: 20 }}>
         <h2>❓ Frequently Asked Questions</h2>
 
@@ -242,4 +248,4 @@ export async function getStaticProps() {
     },
     revalidate: 60,
   };
-}
+          }
