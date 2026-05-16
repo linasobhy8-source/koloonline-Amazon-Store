@@ -64,6 +64,7 @@ export default async function handler(req, res) {
       return {
         id: doc.id,
         updatedAt: safeDate(d.updatedAt || d.createdAt),
+        isTop: d.isTop || false,
       };
     });
 
@@ -120,14 +121,16 @@ export default async function handler(req, res) {
 </url>`;
     });
 
-    /* ================= BLOGS ================= */
+    /* ================= BLOGS (FINAL FIXED PRIORITY) ================= */
     blogs.forEach((b) => {
+      const priority = b.isTop ? 1.0 : 0.8;
+
       urls += `
 <url>
   <loc>${baseUrl}/blog/${b.id}</loc>
   <lastmod>${b.updatedAt}</lastmod>
   <changefreq>daily</changefreq>
-  <priority>0.9</priority>
+  <priority>${priority}</priority>
 </url>`;
     });
 
@@ -151,4 +154,4 @@ ${urls}
     console.error("Sitemap error:", e);
     return res.status(500).send("Sitemap error");
   }
-}
+        }
