@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { useEffect } from "react";
 import { db } from "../../config/firebase";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 
@@ -27,36 +28,39 @@ export default function Article({ post, relatedProducts }) {
     },
   };
 
+  /* ================= AUTO INDEXING (FIXED PLACE) ================= */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetch("https://koloonline.online/api/instant-index", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: `https://koloonline.online/blog/${post.id}`,
+        }),
+      });
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [post?.id]);
+
   return (
     <div style={{ padding: 20, fontFamily: "Arial", maxWidth: 900, margin: "auto" }}>
 
-      {/* ================= SEO HEAD (FULL FIX) ================= */}
+      {/* ================= SEO ================= */}
       <Head>
         <title>{title}</title>
 
         <meta name="description" content={description} />
         <meta name="robots" content="index, follow" />
 
-        {/* Canonical */}
         <link rel="canonical" href={url} />
 
-        {/* Open Graph */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={url} />
         <meta property="og:image" content={post.image} />
 
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={post.image} />
-
-        {/* IMPORTANT FOR INDEXING */}
-        <meta name="robots" content="index, follow" />
-
-        {/* SCHEMA (Rich Results) */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
@@ -83,19 +87,6 @@ export default function Article({ post, relatedProducts }) {
         <div style={{ whiteSpace: "pre-line", marginTop: 20, lineHeight: 1.7 }}>
           {post.content}
         </div>
-
-        {/* ================= KEY TAKEAWAYS ================= */}
-        <h2 style={{ marginTop: 40 }}>Key Takeaways</h2>
-        <ul>
-          <li>High value insights from this article</li>
-          <li>Practical tips you can apply immediately</li>
-          <li>Recommended Amazon products inside</li>
-        </ul>
-
-        {/* ================= FAQ ================= */}
-        <h2 style={{ marginTop: 40 }}>FAQ</h2>
-        <p><strong>Q: Is this article helpful?</strong></p>
-        <p>A: Yes, it provides practical buying and usage insights.</p>
 
       </article>
 
