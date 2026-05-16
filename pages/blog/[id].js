@@ -19,17 +19,11 @@ export default function Article({ post, relatedProducts }) {
     description,
     url,
     image,
-    author: {
-      "@type": "Organization",
-      name: "Koloonline",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Koloonline",
-    },
+    author: { "@type": "Organization", name: "Koloonline" },
+    publisher: { "@type": "Organization", name: "Koloonline" },
   };
 
-  /* ================= AUTO INDEXING (SAFE + NO BOT TRIGGER RISK) ================= */
+  /* ================= AUTO INDEXING ================= */
   useEffect(() => {
     if (!post?.id) return;
 
@@ -37,9 +31,7 @@ export default function Article({ post, relatedProducts }) {
       fetch("/api/instant-index", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-        }),
+        body: JSON.stringify({ url }),
       }).catch(() => {});
     }, 8000);
 
@@ -52,26 +44,16 @@ export default function Article({ post, relatedProducts }) {
       {/* ================= SEO ================= */}
       <Head>
         <title>{title}</title>
-
         <meta name="description" content={description} />
         <meta name="robots" content="index, follow" />
-
         <link rel="canonical" href={url} />
 
-        {/* Open Graph */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={url} />
         <meta property="og:image" content={image} />
 
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={image} />
-
-        {/* Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
@@ -83,11 +65,7 @@ export default function Article({ post, relatedProducts }) {
         <h1 style={{ fontSize: 28 }}>{post.title}</h1>
 
         {post.image && (
-          <img
-            src={image}
-            alt={post.title}
-            style={{ width: "100%", marginTop: 20, borderRadius: 10 }}
-          />
+          <img src={image} alt={post.title} style={{ width: "100%", marginTop: 20, borderRadius: 10 }} />
         )}
 
         <p style={{ marginTop: 20, fontSize: 18, color: "#555" }}>
@@ -97,6 +75,21 @@ export default function Article({ post, relatedProducts }) {
         <div style={{ whiteSpace: "pre-line", marginTop: 20, lineHeight: 1.7 }}>
           {post.content}
         </div>
+
+        {/* ================= CONTENT BOOST (IMPORTANT FOR INDEXING) ================= */}
+        <section style={{ marginTop: 40 }}>
+          <h2>Best Amazon Deals 2026</h2>
+
+          <p>
+            Koloonline is a smart shopping platform that helps users discover trending Amazon products,
+            best deals, viral gadgets, and buying guides updated daily with real data-driven insights.
+          </p>
+
+          <p>
+            We analyze product performance, conversion rates, and popularity to recommend the best items
+            for tech, home, fitness, and lifestyle categories.
+          </p>
+        </section>
       </article>
 
       {/* ================= RELATED PRODUCTS ================= */}
@@ -115,12 +108,7 @@ export default function Article({ post, relatedProducts }) {
             borderRadius: 10,
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
           }}>
-            <img
-              src={p.image}
-              alt={p.title}
-              style={{ width: "100%", height: 160, objectFit: "cover" }}
-            />
-
+            <img src={p.image} alt={p.title} style={{ width: "100%", height: 160, objectFit: "cover" }} />
             <h4>{p.title}</h4>
             <p style={{ color: "#B12704" }}>${p.price}</p>
 
@@ -139,20 +127,26 @@ export default function Article({ post, relatedProducts }) {
         ))}
       </div>
 
+      {/* ================= RELATED GUIDES (IMPORTANT SEO INTERNAL LINKS) ================= */}
+      <section style={{ marginTop: 40 }}>
+        <h2>📚 Related Guides</h2>
+
+        <ul>
+          <li><a href="/blog/best-smart-watches">Best Smart Watches 2026</a></li>
+          <li><a href="/blog/best-headphones-2026">Best Headphones</a></li>
+          <li><a href="/blog/viral-products-amazon">Viral Amazon Products</a></li>
+        </ul>
+      </section>
+
       {/* ================= CTA ================= */}
       <div style={{ marginTop: 50, textAlign: "center" }}>
-        <a
-          href="https://www.amazon.com?tag=koloonlinesto-20"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://www.amazon.com?tag=koloonlinesto-20" target="_blank" rel="noopener noreferrer">
           <button style={{
             padding: 15,
             background: "linear-gradient(#ff9900,#ff6600)",
             border: "none",
             color: "#fff",
             fontSize: 16,
-            cursor: "pointer",
             borderRadius: 8
           }}>
             🚀 Shop All Recommended Products
@@ -169,28 +163,19 @@ export async function getServerSideProps({ params }) {
   const docRef = doc(db, "blog", params.id);
   const snap = await getDoc(docRef);
 
-  if (!snap.exists()) {
-    return { notFound: true };
-  }
+  if (!snap.exists()) return { notFound: true };
 
-  const post = {
-    id: snap.id,
-    ...snap.data(),
-  };
+  const post = { id: snap.id, ...snap.data() };
 
   const productsSnap = await getDocs(collection(db, "products"));
 
-  const products = productsSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  const products = productsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
   const text = ((post.title || "") + " " + (post.content || "")).toLowerCase();
 
   const relatedProducts = products
     .map((p) => {
       let score = 0;
-
       const title = (p.title || "").toLowerCase();
       const category = (p.category || "").toLowerCase();
 
@@ -208,4 +193,4 @@ export async function getServerSideProps({ params }) {
       relatedProducts,
     },
   };
-}
+        }
