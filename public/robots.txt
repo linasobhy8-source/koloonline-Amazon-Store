@@ -4,12 +4,22 @@ Allow: /
 # ================= IMPORTANT =================
 Allow: /product/
 Allow: /category/
+Allow: /blog/
 
-# ================= SYSTEM BLOCK =================
+# ================= BLOCK SYSTEM PAGES =================
 Disallow: /api/
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /private/
 
-# ================= SITEMAP (ONLY ONE - SEO BEST PRACTICE) =================
-Sitemap: https://koloonline.online/sitemap.xml
+# ================= BLOCK FAKE / SEARCH PARAMETERS =================
+Disallow: /*?q=
+Disallow: /*?search=
+Disallow: /*?*
+
+# ================= CLEAN NON-INDEX PAGES (OPTIONAL SAFETY) =================
+Disallow: /success
+Disallow: /store
+
+# ================= SITEMAP =================
+Sitemap: https://koloonline.online/api/sitemap
