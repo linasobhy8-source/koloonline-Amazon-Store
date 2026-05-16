@@ -64,7 +64,6 @@ export default async function handler(req, res) {
       return {
         id: doc.id,
         updatedAt: safeDate(d.updatedAt || d.createdAt),
-        auto: d.auto || false,
       };
     });
 
@@ -75,26 +74,26 @@ export default async function handler(req, res) {
     let urls = `
 <url>
   <loc>${baseUrl}/</loc>
-  <changefreq>hourly</changefreq>
+  <changefreq>daily</changefreq>
   <priority>1.0</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/blog</loc>
-  <changefreq>hourly</changefreq>
-  <priority>0.95</priority>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/products</loc>
-  <changefreq>hourly</changefreq>
-  <priority>0.95</priority>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/search</loc>
-  <changefreq>hourly</changefreq>
-  <priority>0.9</priority>
+  <changefreq>weekly</changefreq>
+  <priority>0.7</priority>
 </url>
 `;
 
@@ -105,30 +104,30 @@ export default async function handler(req, res) {
       urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
-  <changefreq>hourly</changefreq>
-  <priority>0.9</priority>
+  <changefreq>daily</changefreq>
+  <priority>0.8</priority>
 </url>`;
     });
 
     /* ================= PRODUCTS ================= */
-    products.forEach((p, i) => {
+    products.forEach((p) => {
       urls += `
 <url>
   <loc>${baseUrl}/product/${p.id}</loc>
   <lastmod>${p.updatedAt}</lastmod>
-  <changefreq>hourly</changefreq>
-  <priority>${Math.max(0.85, 1 - i * 0.005).toFixed(2)}</priority>
+  <changefreq>daily</changefreq>
+  <priority>0.8</priority>
 </url>`;
     });
 
     /* ================= BLOGS ================= */
-    blogs.forEach((b, i) => {
+    blogs.forEach((b) => {
       urls += `
 <url>
   <loc>${baseUrl}/blog/${b.id}</loc>
   <lastmod>${b.updatedAt}</lastmod>
-  <changefreq>hourly</changefreq>
-  <priority>${Math.max(0.9, 1 - i * 0.01).toFixed(2)}</priority>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
 </url>`;
     });
 
@@ -141,6 +140,7 @@ ${urls}
     res.setHeader("Content-Type", "application/xml");
     res.setHeader("Cache-Control", "public, s-maxage=3600");
 
+    /* ================= PING ================= */
     setTimeout(() => {
       pingSearchEngines();
     }, 5000);
@@ -151,4 +151,4 @@ ${urls}
     console.error("Sitemap error:", e);
     return res.status(500).send("Sitemap error");
   }
-                                   }
+}
