@@ -11,20 +11,29 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
-/* ================= PING ENGINES ================= */
+/* ================= PING SEARCH ENGINES ================= */
 async function pingSearchEngines() {
-  const sitemapUrl = "https://koloonline.online/api/sitemap";
+  const sitemapUrl = "https://koloonline.online/sitemap.xml";
 
   try {
-    // Google
     await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
-
-    // Bing (مهم جدًا SEO إضافي)
     await fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
 
-    console.log("🚀 Search engines pinged");
+    console.log("🚀 Sitemap pinged successfully");
   } catch (e) {
     console.log("Ping error:", e.message);
+  }
+}
+
+/* ================= SAFE DATE ================= */
+function safeDate(date) {
+  try {
+    if (!date) return new Date().toISOString();
+    if (typeof date === "number") return new Date(date).toISOString();
+    if (date.toDate) return date.toDate().toISOString();
+    return new Date(date).toISOString();
+  } catch {
+    return new Date().toISOString();
   }
 }
 
@@ -42,8 +51,7 @@ export default async function handler(req, res) {
       return {
         id: doc.id,
         category: (d.category || "general").toLowerCase(),
-        score: d.score || 0,
-        updatedAt: d.updatedAt || Date.now(),
+        updatedAt: safeDate(d.updatedAt || d.createdAt),
       };
     });
 
@@ -54,24 +62,19 @@ export default async function handler(req, res) {
       const d = doc.data();
 
       return {
-        id: doc.id,
-        slug: d.slug || doc.id, // 🔥 مهم جدًا
-        updatedAt: d.createdAt?.toDate?.() || Date.now(),
+        id: doc.id, // 🔥 IMPORTANT: ONLY ID (no slug system)
+        updatedAt: safeDate(d.updatedAt || d.createdAt),
         auto: d.auto || false,
       };
     });
 
-    const autoBlogs = blogs.filter((b) => b.auto);
-
     /* ================= CATEGORIES ================= */
-    const categories = [
-      ...new Set(products.map((p) => p.category)),
-    ];
+    const categories = [...new Set(products.map((p) => p.category))];
 
-    /* ================= BASE URLS ================= */
+    /* ================= STATIC URLs ================= */
     let urls = `
 <url>
-  <loc>${baseUrl}</loc>
+  <loc>${baseUrl}/</loc>
   <changefreq>daily</changefreq>
   <priority>1.0</priority>
 </url>
@@ -97,10 +100,12 @@ export default async function handler(req, res) {
 
     /* ================= CATEGORIES ================= */
     categories.forEach((cat) => {
+      if (!cat) return;
+
       urls += `
 <url>
   <loc>${baseUrl}/category/${cat}</loc>
-  <changefreq>hourly</changefreq>
+  <changefreq>daily</changefreq>
   <priority>0.8</priority>
 </url>`;
     });
@@ -110,18 +115,18 @@ export default async function handler(req, res) {
       urls += `
 <url>
   <loc>${baseUrl}/product/${p.id}</loc>
-  <lastmod>${new Date(p.updatedAt).toISOString()}</lastmod>
-  <changefreq>hourly</changefreq>
+  <lastmod>${p.updatedAt}</lastmod>
+  <changefreq>daily</changefreq>
   <priority>${Math.max(0.5, 1 - i * 0.01).toFixed(2)}</priority>
 </url>`;
     });
 
-    /* ================= BLOGS (SEO FIX: SLUG) ================= */
+    /* ================= BLOGS ================= */
     blogs.forEach((b) => {
       urls += `
 <url>
-  <loc>${baseUrl}/blog/${b.slug}</loc>
-  <lastmod>${new Date(b.updatedAt).toISOString()}</lastmod>
+  <loc>${baseUrl}/blog/${b.id}</loc>
+  <lastmod>${b.updatedAt}</lastmod>
   <changefreq>${b.auto ? "hourly" : "daily"}</changefreq>
   <priority>${b.auto ? "0.85" : "0.7"}</priority>
 </url>`;
@@ -136,10 +141,10 @@ ${urls}
     res.setHeader("Content-Type", "application/xml");
     res.setHeader("Cache-Control", "public, s-maxage=3600");
 
-    /* ================= AUTO PING ================= */
+    /* ================= PING (SAFE) ================= */
     setTimeout(() => {
       pingSearchEngines();
-    }, 3000);
+    }, 5000);
 
     return res.status(200).send(sitemap);
 
@@ -147,4 +152,4 @@ ${urls}
     console.error("Sitemap error:", e);
     return res.status(500).send("Sitemap error");
   }
-                   }
+        }
