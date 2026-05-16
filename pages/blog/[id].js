@@ -10,7 +10,6 @@ export default function Article({ post, relatedProducts }) {
   const title = `${post.title} | Koloonline`;
   const description = post.description || post.title;
   const url = `https://koloonline.online/blog/${post.id}`;
-
   const image = post.image || "https://koloonline.online/og-image.jpg";
 
   const articleSchema = {
@@ -30,7 +29,7 @@ export default function Article({ post, relatedProducts }) {
     },
   };
 
-  /* ================= AUTO INDEXING (SAFE VERSION) ================= */
+  /* ================= AUTO INDEXING (SAFE + NO BOT TRIGGER RISK) ================= */
   useEffect(() => {
     if (!post?.id) return;
 
@@ -39,13 +38,13 @@ export default function Article({ post, relatedProducts }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: `https://koloonline.online/blog/${post.id}`,
+          url,
         }),
       }).catch(() => {});
-    }, 7000);
+    }, 8000);
 
     return () => clearTimeout(timer);
-  }, [post?.id]);
+  }, [post?.id, url]);
 
   return (
     <div style={{ padding: 20, fontFamily: "Arial", maxWidth: 900, margin: "auto" }}>
@@ -118,8 +117,8 @@ export default function Article({ post, relatedProducts }) {
           }}>
             <img
               src={p.image}
-              style={{ width: "100%", height: 160, objectFit: "cover" }}
               alt={p.title}
+              style={{ width: "100%", height: 160, objectFit: "cover" }}
             />
 
             <h4>{p.title}</h4>
@@ -209,4 +208,4 @@ export async function getServerSideProps({ params }) {
       relatedProducts,
     },
   };
-                }
+}
