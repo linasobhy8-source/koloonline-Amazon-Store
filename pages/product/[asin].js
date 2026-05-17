@@ -17,6 +17,13 @@ import { generateInternalLinks } from "@/lib/seo/internalLinks";
 /* ================= SEO BLOCKS ================= */
 import ProductSEOBlocks from "@/components/seo/ProductSEOBlocks";
 
+/* ================= SEO SCHEMA (STEP 3) ================= */
+import {
+  generateProductSchema,
+  generateFAQSchema,
+  generateBreadcrumbSchema,
+} from "@/lib/seo/schemaGenerator";
+
 /* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500";
@@ -120,29 +127,10 @@ export default function ProductPage() {
       limit: 8,
     });
 
-  /* ================= SEO SCHEMA ================= */
-  const schema = {
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    name: product.title,
-    image: product.image,
-    description: product.description || product.title,
-    sku: product.asin,
-
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "USD",
-      price: product.price,
-      availability: "https://schema.org/InStock",
-      url,
-    },
-
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: rating,
-      reviewCount: product.reviewCount || 1,
-    },
-  };
+  /* ================= STEP 3 SCHEMA ENGINE ================= */
+  const productSchema = generateProductSchema(product, url);
+  const faqSchema = generateFAQSchema(product);
+  const breadcrumbSchema = generateBreadcrumbSchema(product, url);
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
@@ -162,10 +150,27 @@ export default function ProductPage() {
         <meta property="og:url" content={url} />
         <meta property="og:type" content="product" />
 
+        {/* ================= PRODUCT SCHEMA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(schema),
+            __html: JSON.stringify(productSchema),
+          }}
+        />
+
+        {/* ================= FAQ SCHEMA ================= */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(faqSchema),
+          }}
+        />
+
+        {/* ================= BREADCRUMB SCHEMA ================= */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbSchema),
           }}
         />
       </Head>
