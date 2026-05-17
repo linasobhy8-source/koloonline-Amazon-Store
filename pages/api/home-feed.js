@@ -1,5 +1,9 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs
+} from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -16,14 +20,19 @@ const db = getFirestore(app);
 
 /* ================= PROFIT ENGINE ================= */
 function profitScore(p) {
-  const views = p.views || 0;
-  const clicks = p.clicks || 0;
-  const orders = p.orders || 0;
-  const price = p.price || 0;
-  const score = p.score || 0;
+  const views = Number(p.views || 0);
+  const clicks = Number(p.clicks || 0);
+  const orders = Number(p.orders || 0);
+  const price = Number(p.price || 0);
+  const score = Number(p.score || 0);
 
-  const ctr = views > 0 ? clicks / views : 0;
-  const cvr = clicks > 0 ? orders / clicks : 0;
+  const ctr = views > 0
+    ? clicks / views
+    : 0;
+
+  const cvr = clicks > 0
+    ? orders / clicks
+    : 0;
 
   let profit =
     score * 2 +
@@ -32,12 +41,14 @@ function profitScore(p) {
     ctr * 50 +
     cvr * 120;
 
-  // 💰 price boost (revenue-focused)
+  /* ================= PRICE BOOST ================= */
   if (price > 50) profit += 20;
   if (price > 100) profit += 40;
 
-  // 🔥 viral boost
-  if (p.viralBoost) profit += 25;
+  /* ================= VIRAL BOOST ================= */
+  if (p.viralBoost === true) {
+    profit += 25;
+  }
 
   return Math.round(profit);
 }
@@ -45,26 +56,40 @@ function profitScore(p) {
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    const snap = await getDocs(collection(db, "products"));
+    /* ================= GET PRODUCTS ================= */
+    const snap = await getDocs(
+      collection(db, "products")
+    );
 
-    let products = snap.docs.map((doc) => {
-      const p = doc.data();
+    let products = snap.docs.map((docItem) => {
+      const p = docItem.data() || {};
 
       return {
-        id: doc.id,
-        title: p.title || "",
-        image: p.image || "",
-        price: p.price || 0,
-        category: p.category || "general",
-        link: p.link || "#",
+        id: String(docItem.id || ""),
 
-        views: p.views || 0,
-        clicks: p.clicks || 0,
-        orders: p.orders || 0,
-        score: p.score || 0,
-        viralBoost: p.viralBoost || false,
+        title: String(p.title || ""),
+        image: String(p.image || ""),
+        category: String(
+          p.category || "general"
+        ),
+        link: String(p.link || "#"),
+
+        price: Number(p.price || 0),
+
+        views: Number(p.views || 0),
+        clicks: Number(p.clicks || 0),
+        orders: Number(p.orders || 0),
+        score: Number(p.score || 0),
+
+        viralBoost:
+          p.viralBoost === true,
       };
     });
+
+    /* ================= REMOVE INVALID ================= */
+    products = products.filter(
+      (p) => p.id && p.title
+    );
 
     /* ================= PROFIT SCORING ================= */
     products = products
@@ -72,22 +97,31 @@ export default async function handler(req, res) {
         ...p,
         profitScore: profitScore(p),
       }))
-      .sort((a, b) => b.profitScore - a.profitScore);
+      .sort(
+        (a, b) =>
+          b.profitScore - a.profitScore
+      );
 
     /* ================= SEGMENTS ================= */
-    const topProducts = products.slice(0, 10);
+    const topProducts =
+      products.slice(0, 10);
 
-    const trendingProducts = products.filter(
-      (p) => p.profitScore > 80
-    );
+    const trendingProducts =
+      products.filter(
+        (p) => p.profitScore > 80
+      );
 
-    const viralProducts = products.filter(
-      (p) => p.viralBoost === true
-    );
+    const viralProducts =
+      products.filter(
+        (p) => p.viralBoost === true
+      );
 
-    const highConversionProducts = products.filter(
-      (p) => (p.orders || 0) > 0 && (p.clicks || 0) > 0
-    );
+    const highConversionProducts =
+      products.filter(
+        (p) =>
+          p.orders > 0 &&
+          p.clicks > 0
+      );
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
@@ -99,14 +133,21 @@ export default async function handler(req, res) {
       highConversionProducts,
 
       total: products.length,
+
       engine: "profit-v1-ai",
     });
+
   } catch (e) {
-    console.error("HOME FEED ERROR:", e);
+    console.error(
+      "HOME FEED ERROR:",
+      e
+    );
 
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: String(
+        e?.message || "Unknown error"
+      ),
     });
   }
       }
