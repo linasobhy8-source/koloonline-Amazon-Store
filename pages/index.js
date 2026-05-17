@@ -11,6 +11,12 @@ import {
 import { db } from "../config/firebase";
 import { calculateTrendScore } from "../lib/trendScore";
 
+/* ================= SEO SCHEMA ENGINE ================= */
+import {
+  generateWebsiteSchema,
+  generateItemListSchema,
+} from "@/lib/seo/homeSchema";
+
 /* ================= HERO ================= */
 function Hero() {
   return (
@@ -127,6 +133,10 @@ export default function Home({ products }) {
 
   const trendingProducts = filtered.slice(0, 10);
 
+  /* ================= STEP 3 SCHEMAS ================= */
+  const websiteSchema = generateWebsiteSchema();
+  const itemListSchema = generateItemListSchema(trendingProducts);
+
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
@@ -164,6 +174,24 @@ export default function Home({ products }) {
         <link rel="preconnect" href="https://www.amazon.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
         <link rel="dns-prefetch" href="https://www.amazon.com" />
+
+        {/* ================= STEP 3 SCHEMA ENGINE ================= */}
+
+        {/* WEBSITE SCHEMA */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema),
+          }}
+        />
+
+        {/* ITEM LIST SCHEMA */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(itemListSchema),
+          }}
+        />
       </Head>
 
       {/* ================= HEADER ================= */}
@@ -175,7 +203,7 @@ export default function Home({ products }) {
       {/* ================= HERO ================= */}
       <Hero />
 
-      {/* ================= SEO SECTION (NEW) ================= */}
+      {/* ================= SEO SECTION ================= */}
       <SeoSection />
 
       {/* ================= SEARCH ================= */}
