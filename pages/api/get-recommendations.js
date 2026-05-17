@@ -1,5 +1,9 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc
+} from "firebase/firestore";
 
 /* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
@@ -8,22 +12,35 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    const asin = req.query.asin;
+    /* ================= SAFE ASIN ================= */
+    const asin = String(
+      req.query.asin || ""
+    ).trim();
 
+    /* ================= VALIDATION ================= */
     if (!asin) {
       return res.status(400).json({
         success: false,
-        error: "asin is required"
+        error: "asin is required",
       });
     }
 
-    const ref = doc(db, "product_relations", asin);
+    /* ================= DOC REF ================= */
+    const ref = doc(
+      db,
+      "product_relations",
+      String(asin)
+    );
+
     const snap = await getDoc(ref);
 
     /* ================= NO DATA ================= */
@@ -34,27 +51,49 @@ export default async function handler(req, res) {
         alsoViewed: [],
         boughtTogether: [],
         recommended: [],
-        message: "No relations found (AI will generate soon)"
+        message:
+          "No relations found (AI will generate soon)",
       });
     }
 
-    const data = snap.data();
+    /* ================= SAFE DATA ================= */
+    const data = snap.data() || {};
 
-    /* ================= SAFE RESPONSE ================= */
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       asin,
-      alsoViewed: data.alsoViewed || [],
-      boughtTogether: data.boughtTogether || [],
-      recommended: data.recommended || []
+
+      alsoViewed: Array.isArray(
+        data.alsoViewed
+      )
+        ? data.alsoViewed
+        : [],
+
+      boughtTogether: Array.isArray(
+        data.boughtTogether
+      )
+        ? data.boughtTogether
+        : [],
+
+      recommended: Array.isArray(
+        data.recommended
+      )
+        ? data.recommended
+        : [],
     });
 
   } catch (err) {
-    console.error("GET RECOMMENDATIONS ERROR:", err);
+    console.error(
+      "GET RECOMMENDATIONS ERROR:",
+      err
+    );
 
     return res.status(500).json({
       success: false,
-      error: err.message
+      error: String(
+        err?.message || "Unknown error"
+      ),
     });
   }
 }
