@@ -1,311 +1,181 @@
 import Head from "next/head";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
+import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { calculateTrendScore } from "../../lib/trendScore";
 
-/* ================= SEO INTERNAL LINKS ================= */
-import InternalLinks from "@/components/seo/InternalLinks";
-import { generateInternalLinks } from "@/lib/seo/internalLinks";
-
-/* ================= SEO BLOCKS ================= */
-import ProductSEOBlocks from "@/components/seo/ProductSEOBlocks";
-
-/* ================= SEO SCHEMA (STEP 3) ================= */
-import {
-  generateProductSchema,
-  generateFAQSchema,
-  generateBreadcrumbSchema,
-} from "@/lib/seo/schemaGenerator";
-
-/* ================= FALLBACK ================= */
-const fallbackImage =
-  "https://via.placeholder.com/500";
-
-/* ================= WHATSAPP TRACK ================= */
-function sendWhatsApp(product) {
-  const message = `🔥 Product Interest:
-${product.title}
-Price: $${product.price}
-Link: ${product.link}`;
-
-  const whatsappURL =
-    `https://wa.me/201234567890?text=${encodeURIComponent(message)}`;
-
-  fetch("/api/track", {
-    method: "POST",
-    body: JSON.stringify({
-      type: "whatsapp_click",
-      asin: product.asin,
-    }),
-  }).catch(() => {});
-
-  window.open(whatsappURL, "_blank");
-}
-
-/* ================= STARS ================= */
-function Stars({ rating = 4.5 }) {
-  const full = Math.floor(rating);
-
-  return (
-    <div style={{ display: "flex", gap: 4 }}>
-      {"⭐".repeat(full)}
-      <span style={{ marginLeft: 6 }}>
-        {rating}/5
-      </span>
-    </div>
-  );
-}
-
-/* ================= PAGE ================= */
-export default function ProductPage() {
-  const router = useRouter();
-  const { asin } = router.query;
-
-  const [product, setProduct] = useState(null);
+export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!router.isReady || !asin) return;
+  /* ================= UI STATES ================= */
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("trending"); // trending | price_low | price_high
+  const [page, setPage] = useState(1);
 
+  const ITEMS_PER_PAGE = 12;
+
+  /* ================= LOAD DATA ================= */
+  useEffect(() => {
     const load = async () => {
       try {
-        const snap = await getDoc(doc(db, "products", asin));
+        const snap = await getDocs(collection(db, "products"));
 
-        if (snap.exists()) {
-          setProduct({
-            asin,
-            ...snap.data(),
-          });
-        }
-
-        const productsSnap = await getDocs(
-          collection(db, "products")
-        );
-
-        const allProducts = productsSnap.docs.map((doc) => ({
-          asin: doc.id,
-          ...doc.data(),
+        const data = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+          trendScore: calculateTrendScore(d.data()),
         }));
 
-        setProducts(allProducts);
-
-      } catch (err) {
-        console.error(err);
+        setProducts(data);
+      } catch (e) {
+        console.log("Products load error:", e);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     load();
-  }, [router.isReady, asin]);
+  }, []);
 
-  if (loading)
-    return <p style={{ padding: 20 }}>Loading...</p>;
+  /* ================= FILTER + SEARCH ================= */
+  const filtered = useMemo(() => {
+    return products
+      .filter((p) =>
+        p.title?.toLowerCase().includes(search.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (sort === "price_low") return (a.price || 0) - (b.price || 0);
+        if (sort === "price_high") return (b.price || 0) - (a.price || 0);
+        return (b.trendScore || 0) - (a.trendScore || 0);
+      });
+  }, [products, search, sort]);
 
-  if (!product)
-    return <p style={{ padding: 20 }}>Product Not Found</p>;
+  /* ================= PAGINATION ================= */
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
 
-  const url =
-    `https://koloonline.online/product/${product.asin}`;
+  const paginated = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, page]);
 
-  const rating =
-    product.rating || 4.3;
-
-  /* ================= RELATED PRODUCTS ================= */
-  const relatedProducts =
-    generateInternalLinks({
-      currentItem: product,
-      allItems: products,
-      limit: 8,
-    });
-
-  /* ================= STEP 3 SCHEMA ENGINE ================= */
-  const productSchema = generateProductSchema(product, url);
-  const faqSchema = generateFAQSchema(product);
-  const breadcrumbSchema = generateBreadcrumbSchema(product, url);
+  /* ================= SEO SCHEMA ================= */
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Koloonline Products",
+    description: "Browse trending Amazon products",
+    url: "https://koloonline.online/products",
+  };
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
+    <div style={{ padding: 20, fontFamily: "Arial" }}>
 
+      {/* ================= SEO ================= */}
       <Head>
-        <title>{product.title} | Koloonline Deal</title>
-
+        <title>All Products | Koloonline</title>
         <meta
           name="description"
-          content={`${product.title} - Best price, trending Amazon product. Check reviews, pros & cons and buy now at Koloonline.`}
+          content="Browse all trending Amazon products with smart filtering and deals"
         />
+        <link rel="canonical" href="https://koloonline.online/products" />
 
-        <link rel="canonical" href={url} />
-
-        <meta property="og:title" content={product.title} />
-        <meta property="og:image" content={product.image} />
-        <meta property="og:url" content={url} />
-        <meta property="og:type" content="product" />
-
-        {/* ================= PRODUCT SCHEMA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(productSchema),
-          }}
-        />
-
-        {/* ================= FAQ SCHEMA ================= */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqSchema),
-          }}
-        />
-
-        {/* ================= BREADCRUMB SCHEMA ================= */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(breadcrumbSchema),
+            __html: JSON.stringify(schema),
           }}
         />
       </Head>
 
-      {/* ================= PRODUCT LAYOUT ================= */}
+      <h1>📦 All Products</h1>
 
-      <div style={container}>
-
-        <img
-          src={product.image || fallbackImage}
-          style={image}
-          alt={product.title}
+      {/* ================= SEARCH + SORT ================= */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 15 }}>
+        <input
+          placeholder="Search products..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          style={{ padding: 10, flex: 1 }}
         />
 
-        <div style={{ flex: 1 }}>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          style={{ padding: 10 }}
+        >
+          <option value="trending">Trending</option>
+          <option value="price_low">Price: Low → High</option>
+          <option value="price_high">Price: High → Low</option>
+        </select>
+      </div>
 
-          <h1>{product.title}</h1>
-
-          <Stars rating={rating} />
-
-          <h2 style={{ color: "#B12704" }}>
-            ${product.price}
-          </h2>
-
-          {product.viralBoost && (
-            <span style={viralBadge}>
-              🔥 VIRAL TRENDING NOW
-            </span>
-          )}
-
-          <button
-            style={buyBtn}
-            onClick={() => {
-              fetch("/api/track", {
-                method: "POST",
-                body: JSON.stringify({
-                  type: "affiliate_click",
-                  asin: product.asin,
-                }),
-              });
-
-              window.open(product.link, "_blank");
+      {/* ================= CONTENT ================= */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+              gap: 15,
             }}
           >
-            🛒 Buy on Amazon
-          </button>
+            {paginated.map((p) => (
+              <Link key={p.id} href={`/product/${p.id}`}>
+                <div
+                  style={{
+                    background: "white",
+                    padding: 10,
+                    borderRadius: 10,
+                    cursor: "pointer",
+                  }}
+                >
+                  <img
+                    src={p.image || "/placeholder.png"}
+                    style={{ width: "100%" }}
+                  />
+                  <h4>{p.title}</h4>
+                  <p style={{ color: "red" }}>${p.price}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
 
-          <button
-            style={waBtn}
-            onClick={() => sendWhatsApp(product)}
+          {/* ================= PAGINATION ================= */}
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 20,
+              justifyContent: "center",
+            }}
           >
-            💬 Order via WhatsApp
-          </button>
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Prev
+            </button>
 
-          <p style={trustLine}>
-            ⚡ Limited-time Amazon deal — prices may change anytime
-          </p>
+            <span>
+              Page {page} / {totalPages}
+            </span>
 
-        </div>
-      </div>
-
-      {/* ================= INTERNAL LINKS ================= */}
-
-      <div style={wrapper}>
-        <InternalLinks
-          items={relatedProducts}
-          title="Customers Also Viewed"
-        />
-      </div>
-
-      {/* ================= SEO CONTENT BLOCKS ================= */}
-
-      <div style={wrapper}>
-        <ProductSEOBlocks product={product} />
-      </div>
-
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
-}
-
-/* ================= STYLES ================= */
-
-const container = {
-  display: "flex",
-  gap: 20,
-  padding: 20,
-  background: "white",
-  maxWidth: 1200,
-  margin: "0 auto",
-};
-
-const image = {
-  width: 320,
-  height: 320,
-  objectFit: "contain",
-};
-
-const buyBtn = {
-  width: "100%",
-  padding: 15,
-  background: "#ff9900",
-  border: "none",
-  marginTop: 10,
-  cursor: "pointer",
-};
-
-const waBtn = {
-  width: "100%",
-  padding: 15,
-  background: "#25D366",
-  color: "white",
-  border: "none",
-  marginTop: 10,
-  cursor: "pointer",
-};
-
-const viralBadge = {
-  background: "linear-gradient(45deg, #ff0000, #ff6600)",
-  color: "white",
-  padding: "6px 12px",
-  borderRadius: 20,
-  fontWeight: "bold",
-  fontSize: 12,
-  display: "inline-block",
-  marginTop: 10,
-};
-
-const trustLine = {
-  marginTop: 10,
-  color: "gray",
-  fontSize: 12,
-};
-
-const wrapper = {
-  maxWidth: 1200,
-  margin: "0 auto",
-  padding: 20,
-};
+          }
