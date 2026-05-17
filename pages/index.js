@@ -15,7 +15,7 @@ import { calculateTrendScore } from "../lib/trendScore";
 import {
   generateWebsiteSchema,
   generateItemListSchema,
-} from "@/lib/seo/homeSchema";
+} from "../lib/seo/homeSchema";
 
 /* ================= HERO ================= */
 function Hero() {
@@ -140,7 +140,6 @@ export default function Home({ products }) {
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
-      {/* ================= SEO ================= */}
       <Head>
         <title>
           Koloonline - Best Amazon Deals, Trending Products & Smart Shopping Guide 2026
@@ -157,10 +156,8 @@ export default function Home({ products }) {
         />
 
         <link rel="canonical" href="https://koloonline.online/" />
-
         <meta name="robots" content="index, follow" />
 
-        {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Koloonline Amazon Deals 2026" />
         <meta
@@ -169,15 +166,6 @@ export default function Home({ products }) {
         />
         <meta property="og:url" content="https://koloonline.online/" />
 
-        {/* PERFORMANCE BOOST */}
-        <link rel="preconnect" href="https://www.google.com" />
-        <link rel="preconnect" href="https://www.amazon.com" />
-        <link rel="dns-prefetch" href="https://www.google.com" />
-        <link rel="dns-prefetch" href="https://www.amazon.com" />
-
-        {/* ================= STEP 3 SCHEMA ENGINE ================= */}
-
-        {/* WEBSITE SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -185,7 +173,6 @@ export default function Home({ products }) {
           }}
         />
 
-        {/* ITEM LIST SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -194,19 +181,14 @@ export default function Home({ products }) {
         />
       </Head>
 
-      {/* ================= HEADER ================= */}
       <header style={{ padding: 20 }}>
         <h1>🟠 Koloonline</h1>
         <p>Your Smart Amazon Deals Hub</p>
       </header>
 
-      {/* ================= HERO ================= */}
       <Hero />
-
-      {/* ================= SEO SECTION ================= */}
       <SeoSection />
 
-      {/* ================= SEARCH ================= */}
       <section style={{ padding: 20 }}>
         <input
           value={search}
@@ -216,10 +198,8 @@ export default function Home({ products }) {
         />
       </section>
 
-      {/* ================= HOME FEED ================= */}
       <HomeFeed />
 
-      {/* ================= RECOMMENDATIONS ================= */}
       <section style={{ padding: 20 }}>
         <h2>🔥 Best Conversion Products</h2>
 
@@ -237,7 +217,6 @@ export default function Home({ products }) {
         </div>
       </section>
 
-      {/* ================= TRENDING ================= */}
       <section style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -251,7 +230,6 @@ export default function Home({ products }) {
         </div>
       </section>
 
-      {/* ================= BLOG LINKS ================= */}
       <section style={{ padding: 20 }}>
         <h2>📚 Latest Guides</h2>
 
@@ -262,10 +240,8 @@ export default function Home({ products }) {
         </ul>
       </section>
 
-      {/* ================= SUBSCRIPTIONS ================= */}
       <Subscriptions />
 
-      {/* ================= FAQ ================= */}
       <section style={{ padding: 20 }}>
         <h2>❓ Frequently Asked Questions</h2>
 
@@ -283,7 +259,6 @@ export default function Home({ products }) {
   );
 }
 
-/* ================= SSG ================= */
 export async function getStaticProps() {
   const snap = await getDocs(
     query(collection(db, "products"), limit(50))
@@ -298,4 +273,4 @@ export async function getStaticProps() {
     },
     revalidate: 60,
   };
-  }
+          }
