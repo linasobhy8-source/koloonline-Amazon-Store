@@ -26,37 +26,28 @@ function Hero() {
       </h1>
 
       <p>
-        Discover the best Amazon deals, trending products, viral gadgets, and
-        smart buying guides updated daily. We help you find top-rated products
-        and save money with real data-driven recommendations.
+        Discover the best Amazon deals, trending products, viral gadgets, and smart buying guides updated daily.
       </p>
     </section>
   );
 }
 
-/* ================= SEO CONTENT BOOST SECTION ================= */
+/* ================= SEO SECTION ================= */
 function SeoSection() {
   return (
     <section style={{ padding: 20 }}>
       <h2>Best Amazon Deals 2026</h2>
 
       <p>
-        Koloonline is a smart shopping platform that helps users discover trending Amazon products,
-        best deals, viral gadgets, and buying guides updated daily with real data-driven insights.
-      </p>
-
-      <p>
-        We analyze product performance, conversion rates, and popularity to recommend the best items
-        for tech, home, fitness, and lifestyle categories.
+        Koloonline helps users discover trending Amazon products and high-conversion deals using data-driven analysis.
       </p>
     </section>
   );
 }
 
-/* ================= HOME ================= */
+/* ================= MAIN ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
-  const [category] = useState("all");
   const [recommendations, setRecommendations] = useState([]);
 
   useEffect(() => {
@@ -67,13 +58,9 @@ export default function Home({ products }) {
   }, []);
 
   const filtered = products
-    .filter((p) => {
-      return (
-        p.title?.toLowerCase().includes(search.toLowerCase()) &&
-        (category === "all" ||
-          p.category?.toLowerCase() === category.toLowerCase())
-      );
-    })
+    .filter((p) =>
+      p.title?.toLowerCase().includes(search.toLowerCase())
+    )
     .map((p) => ({
       ...p,
       trendScore: calculateTrendScore(p),
@@ -88,22 +75,24 @@ export default function Home({ products }) {
   return (
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
+      {/* ================= SEO + DISCOVER ================= */}
       <Head>
-        <title>Koloonline - Best Amazon Deals & Trending Products 2026</title>
+        <title>Koloonline - Amazon Deals & Trending Products 2026</title>
 
         <meta name="description" content="Discover Amazon deals, trending products, and smart shopping guides updated daily." />
 
-        {/* ================= SEO CORE ================= */}
+        {/* E-E-A-T CORE */}
         <meta name="author" content="Koloonline" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <meta name="googlebot" content="index, follow, max-snippet:-1" />
 
-        {/* ================= DISCOVER BOOST ================= */}
-        <meta name="keywords" content="amazon deals, trending products, smart shopping, viral gadgets, best amazon products 2026" />
+        {/* DISCOVER BOOST */}
+        <meta name="keywords" content="amazon deals, trending products, viral gadgets, smart shopping 2026" />
 
+        {/* OPEN GRAPH (CRITICAL FOR DISCOVER) */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Koloonline Smart Shopping Platform" />
-        <meta property="og:description" content="Discover trending Amazon deals & viral products daily." />
+        <meta property="og:description" content="Best Amazon deals & trending products updated daily." />
         <meta property="og:url" content="https://koloonline.online/" />
 
         {/* SCHEMA */}
@@ -122,11 +111,13 @@ export default function Home({ products }) {
         />
       </Head>
 
+      {/* ================= HEADER ================= */}
       <header style={{ padding: 20 }}>
         <h1>🟠 Koloonline</h1>
-        <p>Your Smart Amazon Deals Hub</p>
+        <p>Smart Amazon Deals Engine</p>
       </header>
 
+      {/* ================= CONTENT ================= */}
       <Hero />
       <SeoSection />
 
@@ -139,12 +130,13 @@ export default function Home({ products }) {
         />
       </section>
 
+      {/* ================= TRENDING ================= */}
       <section style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
         <div style={{ display: "grid", gap: 15 }}>
           {trendingProducts.map((p) => (
-            <div key={p.id} style={{ padding: 10, border: "1px solid #ddd" }}>
+            <div key={p.id} style={{ padding: 10, border: "1px solid #ddd", background: "#fff" }}>
               <h3>{p.title}</h3>
               <p>${p.price}</p>
             </div>
@@ -152,6 +144,7 @@ export default function Home({ products }) {
         </div>
       </section>
 
+      {/* ================= GUIDES ================= */}
       <section style={{ padding: 20 }}>
         <h2>📚 Latest Guides</h2>
 
@@ -162,14 +155,24 @@ export default function Home({ products }) {
         </ul>
       </section>
 
+      {/* ================= ABOUT / E-E-A-T BOOST ================= */}
+      <section style={{ padding: 20, background: "#fff", marginTop: 20 }}>
+        <h2>About Koloonline</h2>
+        <p>
+          Koloonline is a smart affiliate platform focused on helping users find
+          the best Amazon deals using data-driven insights, trend analysis, and product research.
+        </p>
+      </section>
+
+      {/* ================= FAQ ================= */}
       <section style={{ padding: 20 }}>
         <h2>❓ FAQ</h2>
 
         <h3>What is Koloonline?</h3>
-        <p>Platform for Amazon deals & smart shopping insights.</p>
+        <p>Amazon deals & smart shopping platform.</p>
 
         <h3>Is it updated daily?</h3>
-        <p>Yes, automatically every day.</p>
+        <p>Yes, fully automated daily updates.</p>
       </section>
 
     </div>
@@ -191,4 +194,4 @@ export async function getStaticProps() {
     },
     revalidate: 60,
   };
-  }
+             }
