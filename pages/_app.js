@@ -25,8 +25,6 @@ export default function App({ Component, pageProps }) {
     <>
       {/* ================= GLOBAL SEO ================= */}
       <Head>
-
-        {/* Basic SEO */}
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -40,31 +38,40 @@ export default function App({ Component, pageProps }) {
         />
         <meta name="author" content="Koloonline" />
 
-        {/* Robots (IMPORTANT FOR INDEXING) */}
         <meta name="robots" content="index, follow" />
         <meta name="googlebot" content="index, follow" />
 
-        {/* Canonical */}
         <link rel="canonical" href="https://koloonline.online" />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Koloonline Amazon Store" />
-        <meta property="og:description" content="Best Amazon Deals Updated Daily - Save More Now" />
-        <meta property="og:image" content="https://koloonline.online/favicon.ico" />
+        <meta
+          property="og:description"
+          content="Best Amazon Deals Updated Daily - Save More Now"
+        />
+        <meta
+          property="og:image"
+          content="https://koloonline.online/favicon.ico"
+        />
         <meta property="og:url" content="https://koloonline.online" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Koloonline Amazon Store" />
-        <meta name="twitter:description" content="Best Amazon Deals Updated Daily" />
-        <meta name="twitter:image" content="https://koloonline.online/favicon.ico" />
+        <meta
+          name="twitter:description"
+          content="Best Amazon Deals Updated Daily"
+        />
+        <meta
+          name="twitter:image"
+          content="https://koloonline.online/favicon.ico"
+        />
 
-        {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* ================= GOOGLE ANALYTICS (GA4 FIXED) ================= */}
+      {/* ================= GOOGLE ANALYTICS ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
         strategy="afterInteractive"
@@ -74,7 +81,6 @@ export default function App({ Component, pageProps }) {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
-
           gtag('js', new Date());
           gtag('config', 'G-YS8L61XLPR', {
             page_path: window.location.pathname,
@@ -99,7 +105,7 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= ADSENSE (OPTIMIZED LOAD) ================= */}
+      {/* ================= ADSENSE (CORRECT VERSION) ================= */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
         strategy="afterInteractive"
