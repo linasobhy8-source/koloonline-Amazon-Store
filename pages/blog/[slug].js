@@ -85,19 +85,31 @@ export default function BlogPost({
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
-      {/* ================= SEO ================= */}
+      {/* ================= SEO + DISCOVER OPTIMIZED ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
+
         <meta name="description" content={post.excerpt || post.title} />
+
+        {/* SEO CORE */}
         <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="googlebot" content="index, follow, max-snippet:-1" />
+        <meta name="author" content="Koloonline" />
+
+        {/* OPTIONAL KEYWORDS FOR DISCOVER */}
+        <meta name="keywords" content={post.keywords || post.title} />
+
         <link rel="canonical" href={url} />
 
-        {/* OG */}
+        {/* OG (Google Discover IMPORTANT) */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt || post.title} />
         <meta property="og:image" content={post.image} />
         <meta property="og:url" content={url} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
 
         {/* Schema */}
         <script
@@ -123,21 +135,18 @@ export default function BlogPost({
       {/* ================= ARTICLE ================= */}
       <article style={{ maxWidth: 900, margin: "auto", background: "white", padding: 25 }}>
 
-        {/* BADGE */}
         {post.auto && (
           <span style={{ background: "#0f9d58", color: "white", padding: "5px 10px", borderRadius: 8 }}>
             🔥 AI Generated Article
           </span>
         )}
 
-        {/* TITLE */}
         <h1 style={{ fontSize: 34, marginTop: 20 }}>{post.title}</h1>
 
         <p style={{ color: "gray" }}>
           Published • {readingTime} min read
         </p>
 
-        {/* IMAGE */}
         {post.image && (
           <img
             src={post.image}
@@ -146,7 +155,6 @@ export default function BlogPost({
           />
         )}
 
-        {/* CONTENT */}
         <div
           dangerouslySetInnerHTML={{ __html: post.content }}
           style={{ fontSize: 18, lineHeight: 1.9 }}
@@ -247,4 +255,4 @@ export async function getServerSideProps({ params }) {
   } catch (e) {
     return { notFound: true };
   }
-       }
+        }
