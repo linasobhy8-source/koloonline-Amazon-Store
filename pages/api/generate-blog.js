@@ -1,210 +1,341 @@
-export default async function handler(req, res) {
-  try {
-    const { type, id, url } = req.body || {};
+import { initializeApp, getApps } from "firebase/app";
 
-    if (!type || !id) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing type or id",
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  serverTimestamp,
+} from "firebase/firestore";
+
+/* ================= FIREBASE INIT ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+
+  authDomain:
+    process.env.FIREBASE_AUTH_DOMAIN,
+
+  projectId:
+    process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
+const db = getFirestore(app);
+
+/* ================= HANDLER ================= */
+export default async function handler(req, res) {
+
+  try {
+
+    if (req.method !== "POST") {
+      return res.status(405).json({
+        error: "Method not allowed",
       });
     }
 
-    const baseUrl = "https://koloonline.online";
+    const { keyword } = req.body || {};
 
-    const targetUrl =
-      url || `${baseUrl}/${type}/${id}`;
+    if (!keyword || typeof keyword !== "string") {
 
-    console.log(
-      "🚀 Pipeline Started:",
-      targetUrl
+      return res.status(400).json({
+        error: "keyword is required",
+      });
+    }
+
+    /* ================= GEMINI AI ================= */
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" +
+        process.env.GEMINI_API_KEY,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `
+اكتب مقال SEO احترافي عن: ${keyword}
+
+الشروط:
+- عنوان H1 جذاب
+- مقدمة قوية
+- 5 عناوين H2
+- محتوى 1000 كلمة
+- Bullet points
+- FAQ Section
+- Table of Contents
+- أسلوب تسويقي احترافي
+- خاتمة قوية
+                  `,
+                },
+              ],
+            },
+          ],
+        }),
+      }
     );
 
-    /* ================= 1️⃣ AUTO INDEX ================= */
-    try {
-      await fetch(
-        `${baseUrl}/api/indexnow`,
+    const data = await response.json();
+
+    let text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    text = String(text);
+
+    if (!text || text.length < 100) {
+
+      await addDoc(
+        collection(db, "cron_logs"),
         {
-          method: "POST",
+          type: "auto_blog",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+          status: "error",
 
-          body: JSON.stringify({
-            url: targetUrl,
-          }),
+          message: "Empty AI response",
+
+          keyword,
+
+          createdAt:
+            serverTimestamp(),
         }
       );
-    } catch (e) {
-      console.log(
-        "Index Error:",
-        e.message
-      );
+
+      return res.status(500).json({
+        error: "Empty AI response",
+      });
     }
 
-    /* ================= 2️⃣ UPDATE SITEMAP ================= */
-    try {
-      await fetch(
-        `${baseUrl}/api/sitemap`,
-        {
-          method: "POST",
-        }
-      );
-    } catch (e) {
-      console.log(
-        "Sitemap Error:",
-        e.message
-      );
-    }
+    /* ================= GET PRODUCTS ================= */
 
-    /* ================= 3️⃣ GOOGLE + BING PING ================= */
-    try {
-      await fetch(
-        `${baseUrl}/api/ping-google`,
-        {
-          method: "POST",
-        }
-      );
-    } catch (e) {
-      console.log(
-        "Google Ping Error:",
-        e.message
-      );
-    }
-
-    /* ================= 4️⃣ OPTIONAL SOCIAL HOOK ================= */
-    try {
-      await fetch(
-        `${baseUrl}/api/social-hook`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            url: targetUrl,
-            type,
-          }),
-        }
-      );
-    } catch {
-      // silent fail
-    }
-
-    /* ================= 5️⃣ LOGGING ================= */
-    try {
-      await fetch(
-        `${baseUrl}/api/cron-logs`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            type: "master_pipeline",
-
-            status: "success",
-
-            target: targetUrl,
-
-            source: `${type}/${id}`,
-
-            createdAt:
-              new Date().toISOString(),
-          }),
-        }
-      );
-    } catch (e) {
-      console.log(
-        "Log Error:",
-        e.message
-      );
-    }
-
-    /* ================= 6️⃣ SEO BOOST SIGNAL ================= */
-    try {
-
-      if (type === "blog") {
-
-        await fetch(
-          `${baseUrl}/api/seo/boost-blog`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              id,
-              url: targetUrl,
-            }),
-          }
-        );
-      }
-
-      if (type === "product") {
-
-        await fetch(
-          `${baseUrl}/api/seo/boost-product`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              id,
-              url: targetUrl,
-            }),
-          }
-        );
-      }
-
-    } catch (e) {
-
-      console.log(
-        "SEO Boost Error:",
-        e.message
-      );
-    }
-
-    /* ================= FINAL RESPONSE ================= */
-    console.log(
-      "✅ PIPELINE DONE:",
-      targetUrl
+    const productsSnap = await getDocs(
+      collection(db, "products")
     );
+
+    const products =
+      productsSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+    /* ================= SMART MATCHING ================= */
+
+    const keywords =
+      keyword.toLowerCase().split(" ");
+
+    const relatedProducts =
+      products
+        .map((p) => {
+
+          let score = 0;
+
+          keywords.forEach((k) => {
+
+            if (
+              p.title
+                ?.toLowerCase()
+                ?.includes(k)
+            ) {
+              score += 5;
+            }
+
+            if (
+              p.category
+                ?.toLowerCase()
+                ?.includes(k)
+            ) {
+              score += 3;
+            }
+
+          });
+
+          return {
+            id: p.id,
+
+            title: p.title || "",
+
+            category:
+              p.category || "",
+
+            link: p.link || "",
+
+            image: p.image || "",
+
+            price: p.price || 0,
+
+            score,
+          };
+        })
+
+        .sort(
+          (a, b) =>
+            b.score - a.score
+        )
+
+        .slice(0, 6);
+
+    /* ================= INTERNAL LINKS ================= */
+
+    relatedProducts.forEach((p) => {
+
+      if (!p.title || !p.id) return;
+
+      const link =
+        `https://koloonline.online/product/${p.id}`;
+
+      const firstWord =
+        p.title.split(" ")[0];
+
+      if (!firstWord) return;
+
+      const regex =
+        new RegExp(firstWord, "gi");
+
+      text = text.replace(
+        regex,
+
+        `<a href="${link}" style="color:#ff9900;font-weight:bold">${p.title}</a>`
+      );
+    });
+
+    /* ================= FAQ + SEO BOOST ================= */
+
+    text += `
+
+<h2>❓ Frequently Asked Questions</h2>
+
+<h3>What is the best product?</h3>
+<p>The best product depends on your needs, budget, and reviews.</p>
+
+<h3>Are Amazon deals updated daily?</h3>
+<p>Yes, Koloonline updates trending Amazon products daily.</p>
+
+<h2>🛒 Related Products</h2>
+
+<p>
+Browse more trending products on
+<a href="/products">
+Koloonline Products
+</a>
+</p>
+`;
+
+    /* ================= SAVE BLOG ================= */
+
+    const blogRef = await addDoc(
+      collection(db, "blog"),
+      {
+        title: keyword,
+
+        slug:
+          keyword
+            .toLowerCase()
+            .replace(
+              /[^a-z0-9]+/g,
+              "-"
+            ),
+
+        content: text,
+
+        auto: true,
+
+        seo: true,
+
+        relatedProducts:
+          relatedProducts.map(
+            (p) => p.id
+          ),
+
+        createdAt:
+          serverTimestamp(),
+      }
+    );
+
+    /* ================= LOG SUCCESS ================= */
+
+    await addDoc(
+      collection(db, "cron_logs"),
+      {
+        type: "auto_blog",
+
+        status: "success",
+
+        message:
+          "Blog generated successfully",
+
+        keyword,
+
+        blogId: blogRef.id,
+
+        createdAt:
+          serverTimestamp(),
+      }
+    );
+
+    /* ================= MASTER PIPELINE ================= */
+
+    try {
+
+      await fetch(
+        "https://koloonline.online/api/master-pipeline",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            type: "blog",
+
+            id: blogRef.id,
+          }),
+        }
+      );
+
+    } catch (e) {
+
+      console.log(
+        "Pipeline Error:",
+        e.message
+      );
+    }
+
+    /* ================= RESPONSE ================= */
 
     return res.status(200).json({
       success: true,
 
-      message:
-        "Pipeline executed successfully",
+      blogId: blogRef.id,
 
-      url: targetUrl,
+      keyword,
+
+      relatedProducts,
     });
 
   } catch (e) {
 
     console.error(
-      "❌ MASTER PIPELINE ERROR:",
+      "AI ERROR:",
       e
     );
 
     return res.status(500).json({
-      success: false,
+      error:
+        "AI generation failed",
 
-      error: e.message,
+      details:
+        e?.message || "",
     });
   }
-}
+      }
