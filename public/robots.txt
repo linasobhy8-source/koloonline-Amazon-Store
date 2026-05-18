@@ -16,11 +16,9 @@ Disallow: /private/
 Disallow: /*?q=
 Disallow: /*?search=
 
-# ❌ IMPORTANT: DO NOT block all query params (removed /*?*)
-
 # ================= OPTIONAL LOW VALUE PAGES =================
 Disallow: /success
 Disallow: /store
 
 # ================= SITEMAP =================
-Sitemap: https://koloonline.online/api/sitemap
+Sitemap: https://koloonline.online/sitemap.xml
