@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import {
   collection,
@@ -10,6 +11,12 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../../config/firebase";
+
+/* ================= HELPERS ================= */
+function estimateReadingTime(text = "") {
+  const words = text.replace(/<[^>]+>/g, "").split(" ").length;
+  return Math.max(1, Math.ceil(words / 200));
+}
 
 /* ================= PAGE ================= */
 export default function BlogPost({
@@ -27,14 +34,17 @@ export default function BlogPost({
 
   const url = `https://koloonline.online/blog/${post.slug}`;
 
-  /* ================= ARTICLE SCHEMA ================= */
+  const readingTime = useMemo(
+    () => estimateReadingTime(post.content),
+    [post.content]
+  );
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: post.title,
     description: post.excerpt || post.title,
-    image:
-      post.image || "https://via.placeholder.com/1200x630",
+    image: post.image || "https://via.placeholder.com/1200x630",
     author: {
       "@type": "Organization",
       name: "Koloonline",
@@ -48,57 +58,30 @@ export default function BlogPost({
       },
     },
     mainEntityOfPage: url,
-    datePublished: post.createdAt || new Date(),
-    dateModified:
-      post.updatedAt || post.createdAt || new Date(),
+    datePublished: new Date(post.createdAt?.seconds * 1000 || Date.now()).toISOString(),
+    dateModified: new Date(post.updatedAt?.seconds * 1000 || Date.now()).toISOString(),
   };
 
   return (
-    <div
-      style={{
-        fontFamily: "Arial",
-        background: "#f5f5f5",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
+
       {/* ================= SEO ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
 
-        <meta
-          name="description"
-          content={post.excerpt || post.title}
-        />
-
-        <meta
-          name="keywords"
-          content={post.keywords || post.title}
-        />
-
-        <meta name="robots" content="index, follow" />
+        <meta name="description" content={post.excerpt || post.title} />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
         <link rel="canonical" href={url} />
 
         {/* OG */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={post.title} />
-        <meta
-          property="og:description"
-          content={post.excerpt || post.title}
-        />
+        <meta property="og:description" content={post.excerpt || post.title} />
+        <meta property="og:image" content={post.image} />
         <meta property="og:url" content={url} />
-        <meta
-          property="og:image"
-          content={
-            post.image ||
-            "https://via.placeholder.com/1200x630"
-          }
-        />
 
         {/* Twitter */}
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
+        <meta name="twitter:card" content="summary_large_image" />
 
         {/* Schema */}
         <script
@@ -109,59 +92,42 @@ export default function BlogPost({
         />
       </Head>
 
-      {/* ================= BREADCRUMB (NEW) ================= */}
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: "auto",
-          padding: "15px 20px",
-          fontSize: 14,
-        }}
-      >
-        <Link href="/">Home</Link>{" "}
-        {" > "}{" "}
-        <Link href="/blog">Blog</Link>{" "}
-        {" > "}{" "}
+      {/* ================= BREADCRUMB (SEO) ================= */}
+      <div style={{ maxWidth: 1100, margin: "auto", padding: "15px 20px", fontSize: 14 }}>
+        <Link href="/">Home</Link> {" > "}
+        <Link href="/blog">Blog</Link> {" > "}
         <span>{post.title}</span>
       </div>
 
+      {/* ================= AD SLOT (TOP) ================= */}
+      <div style={{ maxWidth: 900, margin: "10px auto", textAlign: "center" }}>
+        {/* Google AdSense Top */}
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="pub-1294940976431468"
+          data-ad-slot="auto"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+      </div>
+
       {/* ================= ARTICLE ================= */}
-      <article
-        style={{
-          maxWidth: 900,
-          margin: "auto",
-          background: "white",
-          padding: 25,
-        }}
-      >
+      <article style={{ maxWidth: 900, margin: "auto", background: "white", padding: 25 }}>
+
         {/* BADGE */}
         {post.auto && (
-          <span
-            style={{
-              background: "#0f9d58",
-              color: "white",
-              padding: "5px 10px",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-          >
+          <span style={{ background: "#0f9d58", color: "white", padding: "5px 10px", borderRadius: 8 }}>
             🔥 AI Generated Article
           </span>
         )}
 
         {/* TITLE */}
-        <h1
-          style={{
-            marginTop: 20,
-            fontSize: 34,
-            lineHeight: 1.4,
-          }}
-        >
-          {post.title}
-        </h1>
+        <h1 style={{ fontSize: 34, marginTop: 20 }}>{post.title}</h1>
 
-        <p style={{ color: "gray", marginBottom: 30 }}>
-          Published by Koloonline
+        {/* META */}
+        <p style={{ color: "gray" }}>
+          Published • {readingTime} min read
         </p>
 
         {/* IMAGE */}
@@ -170,83 +136,41 @@ export default function BlogPost({
             src={post.image}
             alt={post.title}
             loading="lazy"
-            style={{
-              width: "100%",
-              borderRadius: 12,
-              marginBottom: 30,
-            }}
+            style={{ width: "100%", borderRadius: 12, margin: "20px 0" }}
           />
         )}
 
         {/* CONTENT */}
         <div
-          dangerouslySetInnerHTML={{
-            __html: post.content,
-          }}
-          style={{
-            lineHeight: 1.9,
-            fontSize: 18,
-          }}
+          dangerouslySetInnerHTML={{ __html: post.content }}
+          style={{ fontSize: 18, lineHeight: 1.9 }}
         />
+
       </article>
+
+      {/* ================= AD SLOT (MIDDLE) ================= */}
+      <div style={{ maxWidth: 900, margin: "30px auto", textAlign: "center" }}>
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="pub-1294940976431468"
+          data-ad-slot="auto"
+          data-ad-format="fluid"
+        />
+      </div>
 
       {/* ================= RELATED PRODUCTS ================= */}
       {relatedProducts?.length > 0 && (
-        <section
-          style={{
-            maxWidth: 1100,
-            margin: "30px auto",
-            padding: 20,
-          }}
-        >
+        <section style={{ maxWidth: 1100, margin: "30px auto" }}>
           <h2>🛒 Related Products</h2>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(220px,1fr))",
-              gap: 15,
-              marginTop: 20,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 15 }}>
             {relatedProducts.map((p) => (
               <Link key={p.id} href={`/product/${p.id}`}>
-                <div
-                  style={{
-                    background: "white",
-                    padding: 15,
-                    borderRadius: 10,
-                    cursor: "pointer",
-                  }}
-                >
-                  <img
-                    src={
-                      p.image ||
-                      "https://via.placeholder.com/300"
-                    }
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 200,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                    }}
-                  />
-
-                  <h3 style={{ fontSize: 16 }}>
-                    {p.title}
-                  </h3>
-
-                  <p
-                    style={{
-                      color: "#B12704",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    ${p.price || 0}
-                  </p>
+                <div style={{ background: "white", padding: 15, borderRadius: 10 }}>
+                  <img src={p.image} style={{ width: "100%", height: 180, objectFit: "cover" }} />
+                  <h3>{p.title}</h3>
+                  <p style={{ color: "#B12704" }}>${p.price}</p>
                 </div>
               </Link>
             ))}
@@ -256,44 +180,31 @@ export default function BlogPost({
 
       {/* ================= RELATED POSTS ================= */}
       {relatedPosts?.length > 0 && (
-        <section
-          style={{
-            maxWidth: 1100,
-            margin: "30px auto",
-            padding: 20,
-          }}
-        >
+        <section style={{ maxWidth: 1100, margin: "30px auto" }}>
           <h2>📚 Related Articles</h2>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(250px,1fr))",
-              gap: 15,
-              marginTop: 20,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))", gap: 15 }}>
             {relatedPosts.map((p) => (
               <Link key={p.id} href={`/blog/${p.slug}`}>
-                <div
-                  style={{
-                    background: "white",
-                    padding: 15,
-                    borderRadius: 10,
-                    cursor: "pointer",
-                  }}
-                >
+                <div style={{ background: "white", padding: 15, borderRadius: 10 }}>
                   <h3>{p.title}</h3>
-                  <p style={{ color: "#666", fontSize: 14 }}>
-                    {p.excerpt || "Read more..."}
-                  </p>
+                  <p>{p.excerpt}</p>
                 </div>
               </Link>
             ))}
           </div>
         </section>
       )}
+
+      {/* ================= AD SLOT (BOTTOM) ================= */}
+      <div style={{ maxWidth: 900, margin: "40px auto", textAlign: "center" }}>
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="pub-1294940976431468"
+          data-ad-slot="auto"
+        />
+      </div>
     </div>
   );
 }
@@ -304,51 +215,31 @@ export async function getServerSideProps({ params }) {
     const slug = params?.slug || "";
 
     const blogSnap = await getDocs(
-      query(
-        collection(db, "blog"),
-        where("slug", "==", slug),
-        limit(1)
-      )
+      query(collection(db, "blog"), where("slug", "==", slug), limit(1))
     );
 
-    if (blogSnap.empty) {
-      return { notFound: true };
-    }
-
-    const blogDoc = blogSnap.docs[0];
+    if (blogSnap.empty) return { notFound: true };
 
     const post = {
-      id: blogDoc.id,
-      ...blogDoc.data(),
+      id: blogSnap.docs[0].id,
+      ...blogSnap.docs[0].data(),
     };
 
-    const relatedSnap = await getDocs(
-      query(collection(db, "blog"), limit(6))
-    );
+    const relatedSnap = await getDocs(query(collection(db, "blog"), limit(6)));
 
     const relatedPosts = relatedSnap.docs
-      .map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }))
+      .map((d) => ({ id: d.id, ...d.data() }))
       .filter((p) => p.slug !== slug)
       .slice(0, 4);
 
     let relatedProducts = [];
 
     if (post.relatedProducts?.length) {
-      const productsSnap = await getDocs(
-        collection(db, "products")
-      );
+      const productsSnap = await getDocs(collection(db, "products"));
 
       relatedProducts = productsSnap.docs
-        .map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-        .filter((p) =>
-          post.relatedProducts.includes(p.id)
-        )
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((p) => post.relatedProducts.includes(p.id))
         .slice(0, 6);
     }
 
@@ -360,7 +251,6 @@ export async function getServerSideProps({ params }) {
       },
     };
   } catch (e) {
-    console.log(e);
     return { notFound: true };
   }
-          }
+        }
