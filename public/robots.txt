@@ -1,23 +1,24 @@
 User-agent: *
 Allow: /
 
-# ================= IMPORTANT =================
+# ================= IMPORTANT SECTIONS =================
 Allow: /product/
 Allow: /category/
 Allow: /blog/
 
-# ================= BLOCK SYSTEM PAGES =================
+# ================= SYSTEM PAGES =================
 Disallow: /api/
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /private/
 
-# ================= BLOCK FAKE / SEARCH PARAMETERS =================
+# ================= CLEAN SEARCH PARAMETERS ONLY =================
 Disallow: /*?q=
 Disallow: /*?search=
-Disallow: /*?*
 
-# ================= CLEAN NON-INDEX PAGES (OPTIONAL SAFETY) =================
+# ❌ IMPORTANT: DO NOT block all query params (removed /*?*)
+
+# ================= OPTIONAL LOW VALUE PAGES =================
 Disallow: /success
 Disallow: /store
 
