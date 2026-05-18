@@ -1,187 +1,210 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  serverTimestamp,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
-
-/* ================= FIREBASE INIT ================= */
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-};
-
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
-
-const db = getFirestore(app);
-
-/* ================= SLUG ================= */
-function createSlug(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-/* ================= SAFE TEXT ================= */
-function cleanText(text) {
-  return String(text)
-    .replace(/```/g, "")
-    .replace(/\n{3,}/g, "\n\n");
-}
-
-/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+    const { type, id, url } = req.body || {};
 
-    const { keyword } = req.body || {};
-    if (!keyword) {
-      return res.status(400).json({ error: "keyword required" });
-    }
-
-    const slug = createSlug(keyword);
-
-    /* ================= CHECK DUPLICATE BLOG ================= */
-    const existing = await getDocs(
-      query(collection(db, "blog"), where("slug", "==", slug), limit(1))
-    );
-
-    if (!existing.empty) {
-      return res.status(409).json({
-        error: "Blog already exists",
-        slug,
+    if (!type || !id) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing type or id",
       });
     }
 
-    /* ================= GEMINI REQUEST ================= */
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" +
-        process.env.GEMINI_API_KEY,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `
-اكتب مقال SEO احترافي عن: ${keyword}
+    const baseUrl = "https://koloonline.online";
 
-الشروط:
-- عنوان H1 جذاب
-- وصف Meta جاهز
-- 5 عناوين H2
-- مقدمة قوية
-- 1000 كلمة
-- كلمات تسويقية
-- FAQ في النهاية
-- أسلوب مناسب لأدسنس
-                  `,
-                },
-              ],
-            },
-          ],
-        }),
-      }
+    const targetUrl =
+      url || `${baseUrl}/${type}/${id}`;
+
+    console.log(
+      "🚀 Pipeline Started:",
+      targetUrl
     );
 
-    const data = await response.json();
+    /* ================= 1️⃣ AUTO INDEX ================= */
+    try {
+      await fetch(
+        `${baseUrl}/api/indexnow`,
+        {
+          method: "POST",
 
-    let text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-    if (!text || text.length < 100) {
-      return res.status(500).json({ error: "Empty AI response" });
+          body: JSON.stringify({
+            url: targetUrl,
+          }),
+        }
+      );
+    } catch (e) {
+      console.log(
+        "Index Error:",
+        e.message
+      );
     }
 
-    text = cleanText(text);
+    /* ================= 2️⃣ UPDATE SITEMAP ================= */
+    try {
+      await fetch(
+        `${baseUrl}/api/sitemap`,
+        {
+          method: "POST",
+        }
+      );
+    } catch (e) {
+      console.log(
+        "Sitemap Error:",
+        e.message
+      );
+    }
 
-    /* ================= PRODUCTS ================= */
-    const productsSnap = await getDocs(collection(db, "products"));
+    /* ================= 3️⃣ GOOGLE + BING PING ================= */
+    try {
+      await fetch(
+        `${baseUrl}/api/ping-google`,
+        {
+          method: "POST",
+        }
+      );
+    } catch (e) {
+      console.log(
+        "Google Ping Error:",
+        e.message
+      );
+    }
 
-    const products = productsSnap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    }));
+    /* ================= 4️⃣ OPTIONAL SOCIAL HOOK ================= */
+    try {
+      await fetch(
+        `${baseUrl}/api/social-hook`,
+        {
+          method: "POST",
 
-    const keywords = keyword.toLowerCase().split(" ");
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-    const relatedProducts = products
-      .map((p) => {
-        let score = 0;
+          body: JSON.stringify({
+            url: targetUrl,
+            type,
+          }),
+        }
+      );
+    } catch {
+      // silent fail
+    }
 
-        keywords.forEach((k) => {
-          if (p.title?.toLowerCase().includes(k)) score += 5;
-          if (p.category?.toLowerCase().includes(k)) score += 3;
-        });
+    /* ================= 5️⃣ LOGGING ================= */
+    try {
+      await fetch(
+        `${baseUrl}/api/cron-logs`,
+        {
+          method: "POST",
 
-        return {
-          id: p.id,
-          title: p.title,
-          link: p.link,
-          score,
-        };
-      })
-      .filter((p) => p.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-    /* ================= SMART LINKING ================= */
-    relatedProducts.forEach((p) => {
-      const word = p.title.split(" ")[0];
+          body: JSON.stringify({
+            type: "master_pipeline",
 
-      if (word) {
-        const regex = new RegExp(word, "gi");
+            status: "success",
 
-        text = text.replace(
-          regex,
-          `<a href="https://koloonline.online/product/${p.id}" style="color:#ff9900;font-weight:bold">${word}</a>`
+            target: targetUrl,
+
+            source: `${type}/${id}`,
+
+            createdAt:
+              new Date().toISOString(),
+          }),
+        }
+      );
+    } catch (e) {
+      console.log(
+        "Log Error:",
+        e.message
+      );
+    }
+
+    /* ================= 6️⃣ SEO BOOST SIGNAL ================= */
+    try {
+
+      if (type === "blog") {
+
+        await fetch(
+          `${baseUrl}/api/seo/boost-blog`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              id,
+              url: targetUrl,
+            }),
+          }
         );
       }
-    });
 
-    /* ================= SEO FIELDS ================= */
-    const seoTitle = `${keyword} - Best Amazon Deals 2026`;
-    const seoDesc = text.slice(0, 150);
+      if (type === "product") {
 
-    /* ================= SAVE BLOG ================= */
-    const blogRef = await addDoc(collection(db, "blog"), {
-      title: keyword,
-      seoTitle,
-      seoDesc,
-      slug,
-      content: text,
-      auto: true,
-      seo: true,
-      tags: keywords,
-      relatedProducts: relatedProducts.map((p) => p.id),
-      createdAt: serverTimestamp(),
-    });
+        await fetch(
+          `${baseUrl}/api/seo/boost-product`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              id,
+              url: targetUrl,
+            }),
+          }
+        );
+      }
+
+    } catch (e) {
+
+      console.log(
+        "SEO Boost Error:",
+        e.message
+      );
+    }
+
+    /* ================= FINAL RESPONSE ================= */
+    console.log(
+      "✅ PIPELINE DONE:",
+      targetUrl
+    );
 
     return res.status(200).json({
       success: true,
-      blogId: blogRef.id,
-      slug,
-      relatedProducts,
+
+      message:
+        "Pipeline executed successfully",
+
+      url: targetUrl,
     });
+
   } catch (e) {
-    console.error(e);
+
+    console.error(
+      "❌ MASTER PIPELINE ERROR:",
+      e
+    );
 
     return res.status(500).json({
       success: false,
+
       error: e.message,
     });
   }
-      }
+}
