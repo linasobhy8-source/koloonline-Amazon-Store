@@ -5,6 +5,9 @@ import {
   addDoc,
   getDocs,
   serverTimestamp,
+  query,
+  where,
+  limit,
 } from "firebase/firestore";
 
 /* ================= FIREBASE INIT ================= */
@@ -20,6 +23,21 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
+/* ================= SLUG ================= */
+function createSlug(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/* ================= SAFE TEXT ================= */
+function cleanText(text) {
+  return String(text)
+    .replace(/```/g, "")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
@@ -28,9 +46,22 @@ export default async function handler(req, res) {
     }
 
     const { keyword } = req.body || {};
+    if (!keyword) {
+      return res.status(400).json({ error: "keyword required" });
+    }
 
-    if (!keyword || typeof keyword !== "string") {
-      return res.status(400).json({ error: "keyword is required" });
+    const slug = createSlug(keyword);
+
+    /* ================= CHECK DUPLICATE BLOG ================= */
+    const existing = await getDocs(
+      query(collection(db, "blog"), where("slug", "==", slug), limit(1))
+    );
+
+    if (!existing.empty) {
+      return res.status(409).json({
+        error: "Blog already exists",
+        slug,
+      });
     }
 
     /* ================= GEMINI REQUEST ================= */
@@ -50,12 +81,13 @@ export default async function handler(req, res) {
 
 الشروط:
 - عنوان H1 جذاب
-- مقدمة قوية
+- وصف Meta جاهز
 - 5 عناوين H2
-- محتوى 1000 كلمة
-- Bullet points
-- أسلوب تسويقي
-- خاتمة قوية
+- مقدمة قوية
+- 1000 كلمة
+- كلمات تسويقية
+- FAQ في النهاية
+- أسلوب مناسب لأدسنس
                   `,
                 },
               ],
@@ -70,21 +102,13 @@ export default async function handler(req, res) {
     let text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    text = String(text);
-
     if (!text || text.length < 100) {
-      await addDoc(collection(db, "cron_logs"), {
-        type: "auto_blog",
-        status: "error",
-        message: "Empty AI response",
-        keyword,
-        createdAt: serverTimestamp(),
-      });
-
       return res.status(500).json({ error: "Empty AI response" });
     }
 
-    /* ================= GET PRODUCTS ================= */
+    text = cleanText(text);
+
+    /* ================= PRODUCTS ================= */
     const productsSnap = await getDocs(collection(db, "products"));
 
     const products = productsSnap.docs.map((d) => ({
@@ -92,7 +116,6 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    /* ================= SMART MATCHING ================= */
     const keywords = keyword.toLowerCase().split(" ");
 
     const relatedProducts = products
@@ -100,95 +123,24 @@ export default async function handler(req, res) {
         let score = 0;
 
         keywords.forEach((k) => {
-          if (p.title?.toLowerCase()?.includes(k)) score += 5;
-          if (p.category?.toLowerCase()?.includes(k)) score += 3;
+          if (p.title?.toLowerCase().includes(k)) score += 5;
+          if (p.category?.toLowerCase().includes(k)) score += 3;
         });
 
         return {
           id: p.id,
-          title: p.title || "",
-          category: p.category || "",
-          link: p.link || "",
+          title: p.title,
+          link: p.link,
           score,
         };
       })
+      .filter((p) => p.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 6);
+      .slice(0, 5);
 
-    /* ================= INTERNAL LINKS ================= */
+    /* ================= SMART LINKING ================= */
     relatedProducts.forEach((p) => {
-      if (!p.title || !p.id) return;
+      const word = p.title.split(" ")[0];
 
-      const link = `https://koloonline.online/product/${p.id}`;
-      const firstWord = p.title.split(" ")[0];
-
-      if (!firstWord) return;
-
-      const regex = new RegExp(firstWord, "gi");
-
-      text = text.replace(
-        regex,
-        `<a href="${link}" style="color:#ff9900;font-weight:bold">${p.title}</a>`
-      );
-    });
-
-    /* ================= SAVE BLOG ================= */
-    const blogRef = await addDoc(collection(db, "blog"), {
-      title: keyword,
-      slug: keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      content: text,
-      auto: true,
-      seo: true,
-      relatedProducts: relatedProducts.map((p) => p.id),
-      createdAt: serverTimestamp(),
-    });
-
-    /* ================= LOG SUCCESS ================= */
-    await addDoc(collection(db, "cron_logs"), {
-      type: "auto_blog",
-      status: "success",
-      message: "Blog generated successfully",
-      keyword,
-      blogId: blogRef.id,
-      createdAt: serverTimestamp(),
-    });
-
-    /* ================= AUTO INDEX ================= */
-    try {
-      await fetch("https://koloonline.online/api/master-pipeline", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "blog",
-          id: blogRef.id,
-        }),
-      });
-    } catch (e) {
-      console.log("Pipeline Error:", e.message);
-    }
-
-    /* ================= RESPONSE ================= */
-    return res.status(200).json({
-      success: true,
-      blogId: blogRef.id,
-      keyword,
-      relatedProducts,
-    });
-  } catch (e) {
-    console.error("AI ERROR:", e);
-
-    try {
-      await addDoc(collection(db, "cron_logs"), {
-        type: "auto_blog",
-        status: "error",
-        message: e?.message || "Unknown error",
-        createdAt: serverTimestamp(),
-      });
-    } catch {}
-
-    return res.status(500).json({
-      error: "AI generation failed",
-      details: e?.message || "",
-    });
-  }
-}
+      if (word) {
+        const
