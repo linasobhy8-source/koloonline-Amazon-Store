@@ -58,6 +58,14 @@ export default function BlogPost({
     [post.content]
   );
 
+  const publishedTime = new Date(
+    post.createdAt?.seconds * 1000 || Date.now()
+  ).toISOString();
+
+  const modifiedTime = new Date(
+    post.updatedAt?.seconds * 1000 || post.createdAt?.seconds * 1000 || Date.now()
+  ).toISOString();
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -74,34 +82,31 @@ export default function BlogPost({
       },
     },
     mainEntityOfPage: url,
-    datePublished: new Date(
-      post.createdAt?.seconds * 1000 || Date.now()
-    ).toISOString(),
-    dateModified: new Date(
-      post.updatedAt?.seconds * 1000 || Date.now()
-    ).toISOString(),
+    datePublished: publishedTime,
+    dateModified: modifiedTime,
   };
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
 
-      {/* ================= SEO + DISCOVER OPTIMIZED ================= */}
+      {/* ================= SEO + DISCOVER ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
 
         <meta name="description" content={post.excerpt || post.title} />
 
         {/* SEO CORE */}
+        <meta name="author" content="Koloonline" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <meta name="googlebot" content="index, follow, max-snippet:-1" />
-        <meta name="author" content="Koloonline" />
 
-        {/* OPTIONAL KEYWORDS FOR DISCOVER */}
-        <meta name="keywords" content={post.keywords || post.title} />
+        {/* DISCOVER / NEWS BOOST */}
+        <meta property="article:published_time" content={publishedTime} />
+        <meta property="article:modified_time" content={modifiedTime} />
 
-        <link rel="canonical" href={url} />
+        <meta name="news_keywords" content={post.keywords || post.title} />
 
-        {/* OG (Google Discover IMPORTANT) */}
+        {/* OG */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt || post.title} />
@@ -110,6 +115,9 @@ export default function BlogPost({
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
+
+        {/* Canonical */}
+        <link rel="canonical" href={url} />
 
         {/* Schema */}
         <script
@@ -227,7 +235,9 @@ export async function getServerSideProps({ params }) {
       ...blogSnap.docs[0].data(),
     };
 
-    const relatedSnap = await getDocs(query(collection(db, "blog"), limit(6)));
+    const relatedSnap = await getDocs(
+      query(collection(db, "blog"), limit(6))
+    );
 
     const relatedPosts = relatedSnap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
@@ -255,4 +265,4 @@ export async function getServerSideProps({ params }) {
   } catch (e) {
     return { notFound: true };
   }
-        }
+                                                        }
