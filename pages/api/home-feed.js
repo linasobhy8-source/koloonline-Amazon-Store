@@ -1,9 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs
-} from "firebase/firestore";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -18,136 +14,119 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
-/* ================= PROFIT ENGINE ================= */
+/* ================= SAFE ================= */
+const num = (v) => Number(v || 0);
+
+/* ================= PROFIT SCORE ================= */
 function profitScore(p) {
-  const views = Number(p.views || 0);
-  const clicks = Number(p.clicks || 0);
-  const orders = Number(p.orders || 0);
-  const price = Number(p.price || 0);
-  const score = Number(p.score || 0);
+  const views = num(p.views);
+  const clicks = num(p.clicks);
+  const orders = num(p.orders);
+  const price = num(p.price);
+  const score = num(p.score);
 
-  const ctr = views > 0
-    ? clicks / views
-    : 0;
-
-  const cvr = clicks > 0
-    ? orders / clicks
-    : 0;
+  const ctr = views > 0 ? clicks / views : 0;
+  const cvr = clicks > 0 ? orders / clicks : 0;
 
   let profit =
     score * 2 +
-    clicks * 1.5 +
+    clicks * 1.2 +
     orders * 10 +
-    ctr * 50 +
+    ctr * 60 +
     cvr * 120;
 
-  /* ================= PRICE BOOST ================= */
-  if (price > 50) profit += 20;
-  if (price > 100) profit += 40;
+  if (price > 50) profit += 15;
+  if (price > 100) profit += 30;
+  if (p.viralBoost) profit += 25;
 
-  /* ================= VIRAL BOOST ================= */
-  if (p.viralBoost === true) {
-    profit += 25;
-  }
+  return profit;
+}
 
-  return Math.round(profit);
+/* ================= TREND SCORE ================= */
+function trendScore(p) {
+  const now = Date.now();
+
+  let updatedAt = p.updatedAt
+    ? new Date(p.updatedAt).getTime()
+    : now;
+
+  const hoursOld =
+    (now - updatedAt) / (1000 * 60 * 60);
+
+  const freshness = Math.max(
+    0,
+    50 - hoursOld * 0.7
+  );
+
+  const engagement =
+    num(p.clicks) * 2 +
+    num(p.views) * 0.5 +
+    num(p.orders) * 8;
+
+  const viral = p.viralBoost ? 30 : 0;
+
+  return engagement + freshness + viral;
+}
+
+/* ================= FINAL AI SCORE ================= */
+function aiScore(p) {
+  return profitScore(p) * 0.6 + trendScore(p) * 0.4;
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= GET PRODUCTS ================= */
-    const snap = await getDocs(
-      collection(db, "products")
-    );
+    const snap = await getDocs(collection(db, "products"));
 
-    let products = snap.docs.map((docItem) => {
-      const p = docItem.data() || {};
+    let products = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
 
-      return {
-        id: String(docItem.id || ""),
+    products = products.filter(p => p.id && p.title);
 
-        title: String(p.title || ""),
-        image: String(p.image || ""),
-        category: String(
-          p.category || "general"
-        ),
-        link: String(p.link || "#"),
+    products = products.map(p => ({
+      ...p,
+      profitScore: profitScore(p),
+      trendScore: trendScore(p),
+      aiScore: aiScore(p),
+    }));
 
-        price: Number(p.price || 0),
-
-        views: Number(p.views || 0),
-        clicks: Number(p.clicks || 0),
-        orders: Number(p.orders || 0),
-        score: Number(p.score || 0),
-
-        viralBoost:
-          p.viralBoost === true,
-      };
-    });
-
-    /* ================= REMOVE INVALID ================= */
-    products = products.filter(
-      (p) => p.id && p.title
-    );
-
-    /* ================= PROFIT SCORING ================= */
-    products = products
-      .map((p) => ({
-        ...p,
-        profitScore: profitScore(p),
-      }))
-      .sort(
-        (a, b) =>
-          b.profitScore - a.profitScore
-      );
+    products.sort((a, b) => b.aiScore - a.aiScore);
 
     /* ================= SEGMENTS ================= */
-    const topProducts =
-      products.slice(0, 10);
+    const topProducts = products.slice(0, 10);
 
-    const trendingProducts =
-      products.filter(
-        (p) => p.profitScore > 80
-      );
+    const trendingProducts = [...products]
+      .sort((a, b) => b.trendScore - a.trendScore)
+      .slice(0, 10);
 
-    const viralProducts =
-      products.filter(
-        (p) => p.viralBoost === true
-      );
+    const viralProducts = products
+      .filter(p => p.viralBoost)
+      .slice(0, 10);
 
-    const highConversionProducts =
-      products.filter(
-        (p) =>
-          p.orders > 0 &&
-          p.clicks > 0
-      );
+    const bestROI = [...products]
+      .sort((a, b) => b.profitScore - a.profitScore)
+      .slice(0, 10);
 
-    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
+      engine: "ai-home-feed-v2",
 
       topProducts,
       trendingProducts,
       viralProducts,
-      highConversionProducts,
+      bestROI,
 
       total: products.length,
-
-      engine: "profit-v1-ai",
     });
 
   } catch (e) {
-    console.error(
-      "HOME FEED ERROR:",
-      e
-    );
+    console.error("HOME FEED ERROR:", e);
 
     return res.status(500).json({
       success: false,
-      error: String(
-        e?.message || "Unknown error"
-      ),
+      error: e.message,
     });
   }
       }
