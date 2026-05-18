@@ -143,4 +143,45 @@ export default async function handler(req, res) {
       const word = p.title.split(" ")[0];
 
       if (word) {
-        const
+        const regex = new RegExp(word, "gi");
+
+        text = text.replace(
+          regex,
+          `<a href="https://koloonline.online/product/${p.id}" style="color:#ff9900;font-weight:bold">${word}</a>`
+        );
+      }
+    });
+
+    /* ================= SEO FIELDS ================= */
+    const seoTitle = `${keyword} - Best Amazon Deals 2026`;
+    const seoDesc = text.slice(0, 150);
+
+    /* ================= SAVE BLOG ================= */
+    const blogRef = await addDoc(collection(db, "blog"), {
+      title: keyword,
+      seoTitle,
+      seoDesc,
+      slug,
+      content: text,
+      auto: true,
+      seo: true,
+      tags: keywords,
+      relatedProducts: relatedProducts.map((p) => p.id),
+      createdAt: serverTimestamp(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      blogId: blogRef.id,
+      slug,
+      relatedProducts,
+    });
+  } catch (e) {
+    console.error(e);
+
+    return res.status(500).json({
+      success: false,
+      error: e.message,
+    });
+  }
+      }
