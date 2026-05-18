@@ -16,9 +16,7 @@ const db = getFirestore(app);
 
 /* ================= HELPERS ================= */
 function cleanUrl(url) {
-  return url
-    ?.replace(/\/+$/, "")
-    ?.trim();
+  return url?.replace(/\/+$/, "")?.trim();
 }
 
 /* ================= HANDLER ================= */
@@ -27,37 +25,34 @@ export default async function handler(req, res) {
     const key = process.env.INDEXNOW_KEY;
     const baseUrl = "https://koloonline.online";
 
-    /* ================= CORE PAGES ================= */
+    /* ================= CORE SEO PAGES ================= */
     let urls = [
       `${baseUrl}`,
+      `${baseUrl}/blog`,
+      `${baseUrl}/products`,
       `${baseUrl}/categories`,
       `${baseUrl}/search`,
-      `${baseUrl}/blog`,
-      `${baseUrl}/amazon-haul`,
-      `${baseUrl}/products`,
-      `${baseUrl}/sitemap.xml`,
     ];
 
-    /* ================= PRODUCTS ================= */
+    /* ================= PRODUCTS (LIMIT FOR PERFORMANCE) ================= */
     const productsSnap = await getDocs(collection(db, "products"));
 
-    const productUrls = productsSnap.docs.map((doc) =>
-      `${baseUrl}/product/${doc.id}`
-    );
+    const productUrls = productsSnap.docs
+      .slice(0, 200)
+      .map((doc) => `${baseUrl}/product/${doc.id}`);
 
-    /* ================= BLOGS (SEO FIX: SLUG SUPPORT) ================= */
+    /* ================= BLOGS (SLUG SAFE) ================= */
     const blogSnap = await getDocs(collection(db, "blog"));
 
-    const blogUrls = blogSnap.docs.map((doc) => {
-      const d = doc.data();
+    const blogUrls = blogSnap.docs
+      .slice(0, 100)
+      .map((doc) => {
+        const d = doc.data();
+        const slug = d.slug || doc.id;
+        return `${baseUrl}/blog/${slug}`;
+      });
 
-      const slug =
-        d.slug || doc.id;
-
-      return `${baseUrl}/blog/${slug}`;
-    });
-
-    /* ================= CATEGORIES (DEDUP FIX) ================= */
+    /* ================= CATEGORIES ================= */
     const categoriesSnap = await getDocs(collection(db, "products"));
 
     const categoryUrls = [
@@ -81,12 +76,19 @@ export default async function handler(req, res) {
       ]),
     ].map(cleanUrl);
 
-    /* ================= LIMIT SAFETY (IndexNow best practice) ================= */
-    const chunks = [];
-    const chunkSize = 100;
+    /* ================= HIGH PRIORITY ONLY ================= */
+    const highPriorityUrls = urls.filter((u) =>
+      u.includes("/product/") ||
+      u.includes("/blog/") ||
+      u === baseUrl
+    );
 
-    for (let i = 0; i < urls.length; i += chunkSize) {
-      chunks.push(urls.slice(i, i + chunkSize));
+    /* ================= CHUNKING (INDEXNOW LIMIT SAFE) ================= */
+    const chunks = [];
+    const chunkSize = 50;
+
+    for (let i = 0; i < highPriorityUrls.length; i += chunkSize) {
+      chunks.push(highPriorityUrls.slice(i, i + chunkSize));
     }
 
     /* ================= SEND TO INDEXNOW ================= */
@@ -109,11 +111,9 @@ export default async function handler(req, res) {
           }
         );
 
-        const text = await response.text();
-
         results.push({
           count: chunk.length,
-          result: text,
+          result: await response.text(),
         });
       } catch (err) {
         results.push({
@@ -122,10 +122,10 @@ export default async function handler(req, res) {
       }
     }
 
-    /* ================= OPTIONAL GOOGLE PING ================= */
+    /* ================= GOOGLE PING (FIXED SITEMAP) ================= */
     try {
       await fetch(
-        `https://www.google.com/ping?sitemap=${baseUrl}/api/sitemap`
+        `https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml`
       );
     } catch {}
 
@@ -133,16 +133,17 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       totalUrls: urls.length,
+      indexedUrls: highPriorityUrls.length,
       chunks: chunks.length,
       results,
     });
 
   } catch (e) {
-    console.log("IndexNow Error:", e.message);
+    console.error("IndexNow Error:", e);
 
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-  }
+      }
