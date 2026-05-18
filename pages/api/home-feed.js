@@ -46,17 +46,13 @@ function profitScore(p) {
 function trendScore(p) {
   const now = Date.now();
 
-  let updatedAt = p.updatedAt
+  const updatedAt = p.updatedAt
     ? new Date(p.updatedAt).getTime()
     : now;
 
-  const hoursOld =
-    (now - updatedAt) / (1000 * 60 * 60);
+  const hoursOld = (now - updatedAt) / (1000 * 60 * 60);
 
-  const freshness = Math.max(
-    0,
-    50 - hoursOld * 0.7
-  );
+  const freshness = Math.max(0, 50 - hoursOld * 0.7);
 
   const engagement =
     num(p.clicks) * 2 +
@@ -76,6 +72,7 @@ function aiScore(p) {
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
+    /* ================= LOAD PRODUCTS ================= */
     const snap = await getDocs(collection(db, "products"));
 
     let products = snap.docs.map((d) => ({
@@ -83,18 +80,22 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    products = products.filter(p => p.id && p.title);
+    /* ================= CLEAN DATA ================= */
+    products = products.filter((p) => p.id && p.title);
 
-    products = products.map(p => ({
+    /* ================= ENRICH SCORES ================= */
+    products = products.map((p) => ({
       ...p,
       profitScore: profitScore(p),
       trendScore: trendScore(p),
       aiScore: aiScore(p),
     }));
 
+    /* ================= MAIN SORT (AI CORE) ================= */
     products.sort((a, b) => b.aiScore - a.aiScore);
 
     /* ================= SEGMENTS ================= */
+
     const topProducts = products.slice(0, 10);
 
     const trendingProducts = [...products]
@@ -102,13 +103,14 @@ export default async function handler(req, res) {
       .slice(0, 10);
 
     const viralProducts = products
-      .filter(p => p.viralBoost)
+      .filter((p) => p.viralBoost === true)
       .slice(0, 10);
 
     const bestROI = [...products]
       .sort((a, b) => b.profitScore - a.profitScore)
       .slice(0, 10);
 
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       engine: "ai-home-feed-v2",
@@ -126,7 +128,7 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: e?.message || "Unknown error",
     });
   }
       }
