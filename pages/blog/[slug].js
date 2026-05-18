@@ -17,7 +17,6 @@ export default function BlogPost({
   relatedPosts,
   relatedProducts,
 }) {
-
   if (!post) {
     return (
       <div style={{ padding: 20 }}>
@@ -26,53 +25,32 @@ export default function BlogPost({
     );
   }
 
-  const url =
-    `https://koloonline.online/blog/${post.slug}`;
+  const url = `https://koloonline.online/blog/${post.slug}`;
 
   /* ================= ARTICLE SCHEMA ================= */
-
   const articleSchema = {
     "@context": "https://schema.org",
-
     "@type": "Article",
-
     headline: post.title,
-
-    description:
-      post.excerpt ||
-      post.title,
-
+    description: post.excerpt || post.title,
     image:
-      post.image ||
-      "https://via.placeholder.com/1200x630",
-
+      post.image || "https://via.placeholder.com/1200x630",
     author: {
       "@type": "Organization",
       name: "Koloonline",
     },
-
     publisher: {
       "@type": "Organization",
-
       name: "Koloonline",
-
       logo: {
         "@type": "ImageObject",
-
-        url:
-          "https://koloonline.online/logo.png",
+        url: "https://koloonline.online/logo.png",
       },
     },
-
     mainEntityOfPage: url,
-
-    datePublished:
-      post.createdAt || new Date(),
-
+    datePublished: post.createdAt || new Date(),
     dateModified:
-      post.updatedAt ||
-      post.createdAt ||
-      new Date(),
+      post.updatedAt || post.createdAt || new Date(),
   };
 
   return (
@@ -83,67 +61,31 @@ export default function BlogPost({
         minHeight: "100vh",
       }}
     >
-
       {/* ================= SEO ================= */}
-
       <Head>
-
-        <title>
-          {post.title} |
-          Koloonline
-        </title>
+        <title>{post.title} | Koloonline</title>
 
         <meta
           name="description"
-          content={
-            post.excerpt ||
-            post.title
-          }
+          content={post.excerpt || post.title}
         />
 
         <meta
           name="keywords"
-          content={
-            post.keywords ||
-            post.title
-          }
+          content={post.keywords || post.title}
         />
 
-        <meta
-          name="robots"
-          content="index, follow"
-        />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={url} />
 
-        <link
-          rel="canonical"
-          href={url}
-        />
-
-        {/* ================= OG ================= */}
-
-        <meta
-          property="og:type"
-          content="article"
-        />
-
-        <meta
-          property="og:title"
-          content={post.title}
-        />
-
+        {/* OG */}
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={post.title} />
         <meta
           property="og:description"
-          content={
-            post.excerpt ||
-            post.title
-          }
+          content={post.excerpt || post.title}
         />
-
-        <meta
-          property="og:url"
-          content={url}
-        />
-
+        <meta property="og:url" content={url} />
         <meta
           property="og:image"
           content={
@@ -152,29 +94,38 @@ export default function BlogPost({
           }
         />
 
-        {/* ================= TWITTER ================= */}
-
+        {/* Twitter */}
         <meta
           name="twitter:card"
           content="summary_large_image"
         />
 
-        {/* ================= SCHEMA ================= */}
-
+        {/* Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html:
-              JSON.stringify(
-                articleSchema
-              ),
+            __html: JSON.stringify(articleSchema),
           }}
         />
-
       </Head>
 
-      {/* ================= ARTICLE ================= */}
+      {/* ================= BREADCRUMB (NEW) ================= */}
+      <div
+        style={{
+          maxWidth: 1100,
+          margin: "auto",
+          padding: "15px 20px",
+          fontSize: 14,
+        }}
+      >
+        <Link href="/">Home</Link>{" "}
+        {" > "}{" "}
+        <Link href="/blog">Blog</Link>{" "}
+        {" > "}{" "}
+        <span>{post.title}</span>
+      </div>
 
+      {/* ================= ARTICLE ================= */}
       <article
         style={{
           maxWidth: 900,
@@ -183,9 +134,7 @@ export default function BlogPost({
           padding: 25,
         }}
       >
-
-        {/* ================= BADGE ================= */}
-
+        {/* BADGE */}
         {post.auto && (
           <span
             style={{
@@ -200,8 +149,7 @@ export default function BlogPost({
           </span>
         )}
 
-        {/* ================= TITLE ================= */}
-
+        {/* TITLE */}
         <h1
           style={{
             marginTop: 20,
@@ -212,27 +160,16 @@ export default function BlogPost({
           {post.title}
         </h1>
 
-        {/* ================= DATE ================= */}
-
-        <p
-          style={{
-            color: "gray",
-            marginBottom: 30,
-          }}
-        >
+        <p style={{ color: "gray", marginBottom: 30 }}>
           Published by Koloonline
         </p>
 
-        {/* ================= IMAGE ================= */}
-
+        {/* IMAGE */}
         {post.image && (
           <img
             src={post.image}
-
             alt={post.title}
-
             loading="lazy"
-
             style={{
               width: "100%",
               borderRadius: 12,
@@ -241,25 +178,20 @@ export default function BlogPost({
           />
         )}
 
-        {/* ================= CONTENT ================= */}
-
+        {/* CONTENT */}
         <div
           dangerouslySetInnerHTML={{
             __html: post.content,
           }}
-
           style={{
             lineHeight: 1.9,
             fontSize: 18,
           }}
         />
-
       </article>
 
       {/* ================= RELATED PRODUCTS ================= */}
-
       {relatedProducts?.length > 0 && (
-
         <section
           style={{
             maxWidth: 1100,
@@ -267,100 +199,63 @@ export default function BlogPost({
             padding: 20,
           }}
         >
-
-          <h2>
-            🛒 Related Products
-          </h2>
+          <h2>🛒 Related Products</h2>
 
           <div
             style={{
               display: "grid",
-
               gridTemplateColumns:
                 "repeat(auto-fit,minmax(220px,1fr))",
-
               gap: 15,
-
               marginTop: 20,
             }}
           >
-
             {relatedProducts.map((p) => (
-
-              <Link
-                key={p.id}
-                href={`/product/${p.id}`}
-              >
-
+              <Link key={p.id} href={`/product/${p.id}`}>
                 <div
                   style={{
-                    background:
-                      "white",
-
+                    background: "white",
                     padding: 15,
-
                     borderRadius: 10,
-
                     cursor: "pointer",
                   }}
                 >
-
                   <img
                     src={
                       p.image ||
                       "https://via.placeholder.com/300"
                     }
-
                     alt={p.title}
-
                     loading="lazy"
-
                     style={{
                       width: "100%",
-
                       height: 200,
-
-                      objectFit:
-                        "cover",
-
+                      objectFit: "cover",
                       borderRadius: 8,
                     }}
                   />
 
-                  <h3
-                    style={{
-                      fontSize: 16,
-                    }}
-                  >
+                  <h3 style={{ fontSize: 16 }}>
                     {p.title}
                   </h3>
 
                   <p
                     style={{
                       color: "#B12704",
-
-                      fontWeight:
-                        "bold",
+                      fontWeight: "bold",
                     }}
                   >
                     ${p.price || 0}
                   </p>
-
                 </div>
-
               </Link>
-
             ))}
-
           </div>
-
         </section>
       )}
 
-      {/* ================= RELATED ARTICLES ================= */}
-
+      {/* ================= RELATED POSTS ================= */}
       {relatedPosts?.length > 0 && (
-
         <section
           style={{
             maxWidth: 1100,
@@ -368,187 +263,104 @@ export default function BlogPost({
             padding: 20,
           }}
         >
-
-          <h2>
-            📚 Related Articles
-          </h2>
+          <h2>📚 Related Articles</h2>
 
           <div
             style={{
               display: "grid",
-
               gridTemplateColumns:
                 "repeat(auto-fit,minmax(250px,1fr))",
-
               gap: 15,
-
               marginTop: 20,
             }}
           >
-
             {relatedPosts.map((p) => (
-
-              <Link
-                key={p.id}
-                href={`/blog/${p.slug}`}
-              >
-
+              <Link key={p.id} href={`/blog/${p.slug}`}>
                 <div
                   style={{
-                    background:
-                      "white",
-
+                    background: "white",
                     padding: 15,
-
                     borderRadius: 10,
-
                     cursor: "pointer",
                   }}
                 >
-
-                  <h3>
-                    {p.title}
-                  </h3>
-
-                  <p
-                    style={{
-                      color: "#666",
-                      fontSize: 14,
-                    }}
-                  >
-                    {p.excerpt ||
-                      "Read more..."}
+                  <h3>{p.title}</h3>
+                  <p style={{ color: "#666", fontSize: 14 }}>
+                    {p.excerpt || "Read more..."}
                   </p>
-
                 </div>
-
               </Link>
-
             ))}
-
           </div>
-
         </section>
       )}
-
     </div>
   );
 }
 
 /* ================= DATA ================= */
-
-export async function getServerSideProps({
-  params,
-}) {
-
+export async function getServerSideProps({ params }) {
   try {
+    const slug = params?.slug || "";
 
-    const slug =
-      params?.slug || "";
-
-    /* ================= BLOG ================= */
-
-    const blogSnap =
-      await getDocs(
-        query(
-          collection(db, "blog"),
-
-          where("slug", "==", slug),
-
-          limit(1)
-        )
-      );
+    const blogSnap = await getDocs(
+      query(
+        collection(db, "blog"),
+        where("slug", "==", slug),
+        limit(1)
+      )
+    );
 
     if (blogSnap.empty) {
-
-      return {
-        notFound: true,
-      };
+      return { notFound: true };
     }
 
-    const blogDoc =
-      blogSnap.docs[0];
+    const blogDoc = blogSnap.docs[0];
 
     const post = {
       id: blogDoc.id,
       ...blogDoc.data(),
     };
 
-    /* ================= RELATED POSTS ================= */
+    const relatedSnap = await getDocs(
+      query(collection(db, "blog"), limit(6))
+    );
 
-    const relatedSnap =
-      await getDocs(
-        query(
-          collection(db, "blog"),
+    const relatedPosts = relatedSnap.docs
+      .map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }))
+      .filter((p) => p.slug !== slug)
+      .slice(0, 4);
 
-          limit(6)
-        )
+    let relatedProducts = [];
+
+    if (post.relatedProducts?.length) {
+      const productsSnap = await getDocs(
+        collection(db, "products")
       );
 
-    const relatedPosts =
-      relatedSnap.docs
-
+      relatedProducts = productsSnap.docs
         .map((d) => ({
           id: d.id,
           ...d.data(),
         }))
-
-        .filter(
-          (p) =>
-            p.slug !== slug
+        .filter((p) =>
+          post.relatedProducts.includes(p.id)
         )
-
-        .slice(0, 4);
-
-    /* ================= RELATED PRODUCTS ================= */
-
-    let relatedProducts = [];
-
-    if (
-      post.relatedProducts?.length
-    ) {
-
-      const productsSnap =
-        await getDocs(
-          collection(
-            db,
-            "products"
-          )
-        );
-
-      relatedProducts =
-        productsSnap.docs
-
-          .map((d) => ({
-            id: d.id,
-            ...d.data(),
-          }))
-
-          .filter((p) =>
-            post.relatedProducts.includes(
-              p.id
-            )
-          )
-
-          .slice(0, 6);
+        .slice(0, 6);
     }
 
     return {
       props: {
         post,
-
         relatedPosts,
-
         relatedProducts,
       },
     };
-
   } catch (e) {
-
     console.log(e);
-
-    return {
-      notFound: true,
-    };
+    return { notFound: true };
   }
-}
+          }
