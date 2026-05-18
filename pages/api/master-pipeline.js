@@ -40,12 +40,14 @@ export default async function handler(req, res) {
 
     /* ================= 3️⃣ GOOGLE + BING PING ================= */
     try {
-      await fetch(`${baseUrl}/api/ping-google`, { method: "POST" });
+      await fetch(`${baseUrl}/api/ping-google`, {
+        method: "POST",
+      });
     } catch (e) {
       console.log("Google Ping Error:", e.message);
     }
 
-    /* ================= 4️⃣ OPTIONAL SOCIAL HOOK (future growth) ================= */
+    /* ================= 4️⃣ OPTIONAL SOCIAL HOOK ================= */
     try {
       await fetch(`${baseUrl}/api/social-hook`, {
         method: "POST",
@@ -58,7 +60,7 @@ export default async function handler(req, res) {
         }),
       });
     } catch {
-      // silent fail (future feature)
+      // silent fail
     }
 
     /* ================= 5️⃣ LOGGING ================= */
@@ -80,6 +82,27 @@ export default async function handler(req, res) {
       console.log("Log Error:", e.message);
     }
 
+    /* ================= 6️⃣ SEO BOOST SIGNAL ================= */
+    try {
+      if (type === "blog") {
+        await fetch(`${baseUrl}/api/seo/boost-blog`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, url: targetUrl }),
+        });
+      }
+
+      if (type === "product") {
+        await fetch(`${baseUrl}/api/seo/boost-product`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, url: targetUrl }),
+        });
+      }
+    } catch (e) {
+      console.log("SEO Boost Error:", e.message);
+    }
+
     /* ================= FINAL RESPONSE ================= */
     console.log("✅ PIPELINE DONE:", targetUrl);
 
@@ -97,4 +120,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-  }
+      }
