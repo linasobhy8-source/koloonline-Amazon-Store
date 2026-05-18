@@ -53,58 +53,7 @@ function SeoSection() {
   );
 }
 
-/* ================= HOME FEED ================= */
-function HomeFeed() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    fetch("/api/home-feed")
-      .then((res) => res.json())
-      .then((data) => setProducts(data.topProducts || []))
-      .catch(() => setProducts([]));
-  }, []);
-
-  return (
-    <section style={{ padding: 20 }}>
-      <h2>🔥 Auto Trending Deals</h2>
-      <p>Live updated Amazon products with high engagement and conversions.</p>
-
-      <div style={{ display: "grid", gap: 15, marginTop: 15 }}>
-        {products.map((p) => (
-          <div key={p.id} style={{ padding: 10, border: "1px solid #ddd" }}>
-            <h3>{p.title}</h3>
-            <p>🔥 Score: {p.profitScore}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ================= SUBSCRIPTIONS ================= */
-function Subscriptions() {
-  return (
-    <section style={{ padding: 20, background: "#f9f9f9", marginTop: 30 }}>
-      <h2>🔥 Amazon Services & Free Trials</h2>
-
-      <p>
-        Explore Amazon services like Audible and exclusive free trials that
-        enhance your shopping and entertainment experience.
-      </p>
-
-      <div style={{ marginTop: 15 }}>
-        <h3>🎧 Audible</h3>
-        <p>Listen to audiobooks anywhere with free trial access.</p>
-
-        <Link href="/audible">
-          <button style={{ padding: 10 }}>Start Free Trial</button>
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-/* ================= MAIN PAGE ================= */
+/* ================= HOME ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
   const [category] = useState("all");
@@ -133,7 +82,6 @@ export default function Home({ products }) {
 
   const trendingProducts = filtered.slice(0, 10);
 
-  /* ================= STEP 3 SCHEMAS ================= */
   const websiteSchema = generateWebsiteSchema();
   const itemListSchema = generateItemListSchema(trendingProducts);
 
@@ -141,31 +89,24 @@ export default function Home({ products }) {
     <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
 
       <Head>
-        <title>
-          Koloonline - Best Amazon Deals, Trending Products & Smart Shopping Guide 2026
-        </title>
+        <title>Koloonline - Best Amazon Deals & Trending Products 2026</title>
 
-        <meta
-          name="description"
-          content="Discover the best Amazon deals, trending products, smart gadgets, and buying guides updated daily."
-        />
+        <meta name="description" content="Discover Amazon deals, trending products, and smart shopping guides updated daily." />
 
-        <meta
-          name="keywords"
-          content="amazon deals, trending products, amazon gadgets, best amazon products 2026, smart shopping"
-        />
+        {/* ================= SEO CORE ================= */}
+        <meta name="author" content="Koloonline" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="googlebot" content="index, follow, max-snippet:-1" />
 
-        <link rel="canonical" href="https://koloonline.online/" />
-        <meta name="robots" content="index, follow" />
+        {/* ================= DISCOVER BOOST ================= */}
+        <meta name="keywords" content="amazon deals, trending products, smart shopping, viral gadgets, best amazon products 2026" />
 
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Koloonline Amazon Deals 2026" />
-        <meta
-          property="og:description"
-          content="Best Amazon deals, trending products, and smart shopping guides."
-        />
+        <meta property="og:title" content="Koloonline Smart Shopping Platform" />
+        <meta property="og:description" content="Discover trending Amazon deals & viral products daily." />
         <meta property="og:url" content="https://koloonline.online/" />
 
+        {/* SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -198,25 +139,6 @@ export default function Home({ products }) {
         />
       </section>
 
-      <HomeFeed />
-
-      <section style={{ padding: 20 }}>
-        <h2>🔥 Best Conversion Products</h2>
-
-        <div style={{ display: "grid", gap: 15 }}>
-          {recommendations.map((p) => (
-            <div key={p.id} style={{ padding: 10, border: "1px solid #ddd" }}>
-              <h3>{p.title}</h3>
-              <p>🔥 Conversion Score: {p.conversionScore}</p>
-
-              <a href={p.link} target="_blank" rel="noopener noreferrer">
-                Buy Now
-              </a>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section style={{ padding: 20 }}>
         <h2>🔥 Trending Now</h2>
 
@@ -240,25 +162,21 @@ export default function Home({ products }) {
         </ul>
       </section>
 
-      <Subscriptions />
-
       <section style={{ padding: 20 }}>
-        <h2>❓ Frequently Asked Questions</h2>
+        <h2>❓ FAQ</h2>
 
         <h3>What is Koloonline?</h3>
-        <p>
-          Koloonline is a platform for discovering Amazon deals, trending products,
-          and smart shopping recommendations.
-        </p>
+        <p>Platform for Amazon deals & smart shopping insights.</p>
 
         <h3>Is it updated daily?</h3>
-        <p>Yes, all products are updated automatically every day.</p>
+        <p>Yes, automatically every day.</p>
       </section>
 
     </div>
   );
 }
 
+/* ================= DATA ================= */
 export async function getStaticProps() {
   const snap = await getDocs(
     query(collection(db, "products"), limit(50))
@@ -273,4 +191,4 @@ export async function getStaticProps() {
     },
     revalidate: 60,
   };
-          }
+  }
