@@ -63,7 +63,9 @@ export default function BlogPost({
   ).toISOString();
 
   const modifiedTime = new Date(
-    post.updatedAt?.seconds * 1000 || post.createdAt?.seconds * 1000 || Date.now()
+    post.updatedAt?.seconds * 1000 ||
+    post.createdAt?.seconds * 1000 ||
+    Date.now()
   ).toISOString();
 
   const articleSchema = {
@@ -95,31 +97,24 @@ export default function BlogPost({
 
         <meta name="description" content={post.excerpt || post.title} />
 
-        {/* SEO CORE */}
         <meta name="author" content="Koloonline" />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <meta name="googlebot" content="index, follow, max-snippet:-1" />
 
-        {/* DISCOVER / NEWS BOOST */}
         <meta property="article:published_time" content={publishedTime} />
         <meta property="article:modified_time" content={modifiedTime} />
-
         <meta name="news_keywords" content={post.keywords || post.title} />
 
-        {/* OG */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt || post.title} />
         <meta property="og:image" content={post.image} />
         <meta property="og:url" content={url} />
 
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
 
-        {/* Canonical */}
         <link rel="canonical" href={url} />
 
-        {/* Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -167,6 +162,22 @@ export default function BlogPost({
           dangerouslySetInnerHTML={{ __html: post.content }}
           style={{ fontSize: 18, lineHeight: 1.9 }}
         />
+
+        {/* ================= INTERNAL LINKING (SEO BOOST) ================= */}
+        <div style={{
+          marginTop: 30,
+          padding: 15,
+          background: "#f9f9f9",
+          borderRadius: 10
+        }}>
+          <Link href="/blog" style={{ display: "block", marginBottom: 10 }}>
+            📚 More articles
+          </Link>
+
+          <Link href="/products" style={{ display: "block" }}>
+            🛒 Best deals
+          </Link>
+        </div>
       </article>
 
       {/* ================= MIDDLE AD ================= */}
@@ -217,52 +228,4 @@ export default function BlogPost({
       </div>
     </div>
   );
-}
-
-/* ================= DATA ================= */
-export async function getServerSideProps({ params }) {
-  try {
-    const slug = params?.slug || "";
-
-    const blogSnap = await getDocs(
-      query(collection(db, "blog"), where("slug", "==", slug), limit(1))
-    );
-
-    if (blogSnap.empty) return { notFound: true };
-
-    const post = {
-      id: blogSnap.docs[0].id,
-      ...blogSnap.docs[0].data(),
-    };
-
-    const relatedSnap = await getDocs(
-      query(collection(db, "blog"), limit(6))
-    );
-
-    const relatedPosts = relatedSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((p) => p.slug !== slug)
-      .slice(0, 4);
-
-    let relatedProducts = [];
-
-    if (post.relatedProducts?.length) {
-      const productsSnap = await getDocs(collection(db, "products"));
-
-      relatedProducts = productsSnap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((p) => post.relatedProducts.includes(p.id))
-        .slice(0, 6);
     }
-
-    return {
-      props: {
-        post,
-        relatedPosts,
-        relatedProducts,
-      },
-    };
-  } catch (e) {
-    return { notFound: true };
-  }
-                                                        }
