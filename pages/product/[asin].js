@@ -1,85 +1,340 @@
 import Head from "next/head";
-import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
+
 import { db } from "../../config/firebase";
-import { calculateTrendScore } from "../../lib/trendScore";
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+/* ================= SEO INTERNAL LINKS ================= */
+import InternalLinks from "@/components/seo/InternalLinks";
 
-  /* ================= UI STATES ================= */
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("trending"); // trending | price_low | price_high
-  const [page, setPage] = useState(1);
+import { generateInternalLinks }
+from "@/lib/seo/internalLinks";
 
-  const ITEMS_PER_PAGE = 12;
+/* ================= FALLBACK ================= */
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Koloonline";
 
-  /* ================= LOAD DATA ================= */
+/* ================= WHATSAPP TRACK ================= */
+function sendWhatsApp(product) {
+  const message = `🔥 Product Interest:
+${product.title}
+Price: $${product.price}
+Link: ${product.link}`;
+
+  const whatsappURL =
+    `https://wa.me/201234567890?text=${encodeURIComponent(message)}`;
+
+  fetch("/api/track-event", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      type: "whatsapp_click",
+      asin: product.asin,
+    }),
+  }).catch(() => {});
+
+  window.open(whatsappURL, "_blank");
+}
+
+/* ================= STARS ================= */
+function Stars({ rating = 4.5 }) {
+  const full = Math.floor(rating);
+
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {"⭐".repeat(full)}
+
+      <span style={{ marginLeft: 6 }}>
+        {rating}/5
+      </span>
+    </div>
+  );
+}
+
+/* ================= PAGE ================= */
+export default function ProductPage() {
+
+  const router = useRouter();
+  const { asin } = router.query;
+
+  const [product, setProduct] =
+    useState(null);
+
+  const [products, setProducts] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
   useEffect(() => {
+
+    if (!router.isReady || !asin) return;
+
     const load = async () => {
+
       try {
-        const snap = await getDocs(collection(db, "products"));
 
-        const data = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-          trendScore: calculateTrendScore(d.data()),
-        }));
+        /* ================= CURRENT PRODUCT ================= */
+        const snap = await getDoc(
+          doc(db, "products", String(asin))
+        );
 
-        setProducts(data);
-      } catch (e) {
-        console.log("Products load error:", e);
+        if (snap.exists()) {
+
+          const data = snap.data();
+
+          setProduct({
+            asin,
+            ...data,
+          });
+
+        } else {
+
+          setLoading(false);
+          return;
+        }
+
+        /* ================= RELATED PRODUCTS ================= */
+        const productsSnap = await getDocs(
+          collection(db, "products")
+        );
+
+        const allProducts =
+          productsSnap.docs.map((doc) => ({
+            asin: doc.id,
+            ...doc.data(),
+          }));
+
+        setProducts(allProducts);
+
+      } catch (err) {
+
+        console.error(
+          "PRODUCT PAGE ERROR:",
+          err
+        );
+
       } finally {
+
         setLoading(false);
+
       }
     };
 
     load();
-  }, []);
 
-  /* ================= FILTER + SEARCH ================= */
-  const filtered = useMemo(() => {
-    return products
-      .filter((p) =>
-        p.title?.toLowerCase().includes(search.toLowerCase())
-      )
-      .sort((a, b) => {
-        if (sort === "price_low") return (a.price || 0) - (b.price || 0);
-        if (sort === "price_high") return (b.price || 0) - (a.price || 0);
-        return (b.trendScore || 0) - (a.trendScore || 0);
-      });
-  }, [products, search, sort]);
+  }, [router.isReady, asin]);
 
-  /* ================= PAGINATION ================= */
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  /* ================= LOADING ================= */
+  if (loading) {
+    return (
+      <p style={{ padding: 20 }}>
+        Loading...
+      </p>
+    );
+  }
 
-  const paginated = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return filtered.slice(start, start + ITEMS_PER_PAGE);
-  }, [filtered, page]);
+  /* ================= NOT FOUND ================= */
+  if (!product) {
 
-  /* ================= SEO SCHEMA ================= */
+    return (
+      <>
+        <Head>
+          <title>
+            Product Not Found | Koloonline
+          </title>
+
+          <meta
+            name="robots"
+            content="noindex"
+          />
+        </Head>
+
+        <p style={{ padding: 20 }}>
+          Product Not Found
+        </p>
+      </>
+    );
+  }
+
+  /* ================= SAFE VALUES ================= */
+
+  const title =
+    product.title ||
+    "Amazon Product";
+
+  const description =
+    product.description ||
+    `${title} best Amazon deal and smart shopping recommendation.`;
+
+  const imageUrl =
+    product.image ||
+    fallbackImage;
+
+  const price =
+    Number(product.price || 0);
+
+  const rating =
+    Number(product.rating || 4.4);
+
+  const category =
+    product.category || "general";
+
+  const url =
+    `https://koloonline.online/product/${product.asin}`;
+
+  /* ================= RELATED ================= */
+
+  const relatedProducts =
+    generateInternalLinks({
+      currentItem: product,
+      allItems: products,
+      limit: 8,
+    });
+
+  /* ================= PRODUCT SCHEMA ================= */
+
   const schema = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Koloonline Products",
-    description: "Browse trending Amazon products",
-    url: "https://koloonline.online/products",
+    "@context": "https://schema.org/",
+    "@type": "Product",
+
+    name: title,
+
+    image: [imageUrl],
+
+    description,
+
+    sku: product.asin,
+
+    brand: {
+      "@type": "Brand",
+      name: "Amazon",
+    },
+
+    category,
+
+    offers: {
+      "@type": "Offer",
+
+      priceCurrency: "USD",
+
+      price,
+
+      availability:
+        "https://schema.org/InStock",
+
+      itemCondition:
+        "https://schema.org/NewCondition",
+
+      url,
+    },
+
+    aggregateRating: {
+      "@type": "AggregateRating",
+
+      ratingValue: rating,
+
+      reviewCount:
+        Number(product.reviewCount || 120),
+    },
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
 
       {/* ================= SEO ================= */}
+
       <Head>
-        <title>All Products | Koloonline</title>
+
+        <title>
+          {title} | Best Amazon Deal 2026
+        </title>
+
         <meta
           name="description"
-          content="Browse all trending Amazon products with smart filtering and deals"
+          content={description}
         />
-        <link rel="canonical" href="https://koloonline.online/products" />
+
+        <meta
+          name="keywords"
+          content={`${title}, amazon deals, ${category}, best amazon products`}
+        />
+
+        <link
+          rel="canonical"
+          href={url}
+        />
+
+        <meta
+          name="robots"
+          content="index, follow"
+        />
+
+        {/* ================= OPEN GRAPH ================= */}
+
+        <meta
+          property="og:type"
+          content="product"
+        />
+
+        <meta
+          property="og:title"
+          content={title}
+        />
+
+        <meta
+          property="og:description"
+          content={description}
+        />
+
+        <meta
+          property="og:image"
+          content={imageUrl}
+        />
+
+        <meta
+          property="og:url"
+          content={url}
+        />
+
+        {/* ================= TWITTER ================= */}
+
+        <meta
+          name="twitter:card"
+          content="summary_large_image"
+        />
+
+        <meta
+          name="twitter:title"
+          content={title}
+        />
+
+        <meta
+          name="twitter:description"
+          content={description}
+        />
+
+        <meta
+          name="twitter:image"
+          content={imageUrl}
+        />
+
+        {/* ================= SCHEMA ================= */}
 
         <script
           type="application/ld+json"
@@ -87,95 +342,215 @@ export default function ProductsPage() {
             __html: JSON.stringify(schema),
           }}
         />
+
       </Head>
 
-      <h1>📦 All Products</h1>
+      {/* ================= PRODUCT ================= */}
 
-      {/* ================= SEARCH + SORT ================= */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 15 }}>
-        <input
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          style={{ padding: 10, flex: 1 }}
+      <div style={container}>
+
+        <img
+          src={imageUrl}
+          alt={title}
+          style={image}
+          loading="lazy"
         />
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          style={{ padding: 10 }}
-        >
-          <option value="trending">Trending</option>
-          <option value="price_low">Price: Low → High</option>
-          <option value="price_high">Price: High → Low</option>
-        </select>
-      </div>
+        <div style={{ flex: 1 }}>
 
-      {/* ================= CONTENT ================= */}
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-              gap: 15,
-            }}
-          >
-            {paginated.map((p) => (
-              <Link key={p.id} href={`/product/${p.id}`}>
-                <div
-                  style={{
-                    background: "white",
-                    padding: 10,
-                    borderRadius: 10,
-                    cursor: "pointer",
-                  }}
-                >
-                  <img
-                    src={p.image || "/placeholder.png"}
-                    style={{ width: "100%" }}
-                  />
-                  <h4>{p.title}</h4>
-                  <p style={{ color: "red" }}>${p.price}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <h1>{title}</h1>
 
-          {/* ================= PAGINATION ================= */}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 20,
-              justifyContent: "center",
-            }}
-          >
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+          <Stars rating={rating} />
+
+          <h2 style={{ color: "#B12704" }}>
+            ${price}
+          </h2>
+
+          {/* ================= VIRAL ================= */}
+
+          {product.viralBoost && (
+
+            <span
+              style={{
+                background:
+                  "linear-gradient(45deg,#ff0000,#ff6600)",
+
+                color: "white",
+
+                padding: "6px 12px",
+
+                borderRadius: 20,
+
+                fontWeight: "bold",
+
+                fontSize: 12,
+
+                display: "inline-block",
+
+                marginTop: 10,
+              }}
             >
-              Prev
-            </button>
-
-            <span>
-              Page {page} / {totalPages}
+              🔥 VIRAL TRENDING NOW
             </span>
 
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+          )}
+
+          {/* ================= DESCRIPTION ================= */}
+
+          <p
+            style={{
+              marginTop: 20,
+              lineHeight: 1.7,
+            }}
+          >
+            {description}
+          </p>
+
+          {/* ================= BUY ================= */}
+
+          <button
+            style={buyBtn}
+            onClick={() => {
+
+              fetch("/api/track-event", {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body: JSON.stringify({
+                  type: "affiliate_click",
+                  asin: product.asin,
+                }),
+              });
+
+              window.open(
+                product.link,
+                "_blank"
+              );
+            }}
+          >
+            🛒 Buy on Amazon
+          </button>
+
+          {/* ================= WHATSAPP ================= */}
+
+          <button
+            style={waBtn}
+            onClick={() =>
+              sendWhatsApp(product)
+            }
+          >
+            💬 Order via WhatsApp
+          </button>
+
+          {/* ================= TRUST ================= */}
+
+          <p
+            style={{
+              marginTop: 10,
+              color: "gray",
+              fontSize: 12,
+            }}
+          >
+            ⚡ Limited-time Amazon deal —
+            prices may change anytime.
+          </p>
+
+        </div>
+      </div>
+
+      {/* ================= RELATED ================= */}
+
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: 20,
+        }}
+      >
+
+        <InternalLinks
+          items={relatedProducts}
+          title="Customers Also Viewed"
+        />
+
+      </div>
+
     </div>
   );
-          }
+}
+
+/* ================= STYLES ================= */
+
+const container = {
+
+  display: "flex",
+
+  flexWrap: "wrap",
+
+  gap: 20,
+
+  padding: 20,
+
+  background: "white",
+
+  maxWidth: 1200,
+
+  margin: "0 auto",
+};
+
+const image = {
+
+  width: 320,
+
+  maxWidth: "100%",
+
+  height: 320,
+
+  objectFit: "contain",
+
+  borderRadius: 10,
+};
+
+const buyBtn = {
+
+  width: "100%",
+
+  padding: 15,
+
+  background: "#ff9900",
+
+  border: "none",
+
+  color: "white",
+
+  fontWeight: "bold",
+
+  marginTop: 20,
+
+  cursor: "pointer",
+
+  borderRadius: 8,
+};
+
+const waBtn = {
+
+  width: "100%",
+
+  padding: 15,
+
+  background: "#25D366",
+
+  color: "white",
+
+  border: "none",
+
+  marginTop: 10,
+
+  cursor: "pointer",
+
+  borderRadius: 8,
+};
