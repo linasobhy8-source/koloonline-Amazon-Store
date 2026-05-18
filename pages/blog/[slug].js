@@ -1,7 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useMemo } from "react";
-
+import { useMemo, useEffect } from "react";
 import {
   collection,
   getDocs,
@@ -11,6 +10,26 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../../config/firebase";
+
+/* ================= AD COMPONENT ================= */
+function AdSenseBlock() {
+  useEffect(() => {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {}
+  }, []);
+
+  return (
+    <ins
+      className="adsbygoogle"
+      style={{ display: "block", textAlign: "center" }}
+      data-ad-client="ca-pub-1294940976431468"
+      data-ad-slot="auto"
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    />
+  );
+}
 
 /* ================= HELPERS ================= */
 function estimateReadingTime(text = "") {
@@ -45,10 +64,7 @@ export default function BlogPost({
     headline: post.title,
     description: post.excerpt || post.title,
     image: post.image || "https://via.placeholder.com/1200x630",
-    author: {
-      "@type": "Organization",
-      name: "Koloonline",
-    },
+    author: { "@type": "Organization", name: "Koloonline" },
     publisher: {
       "@type": "Organization",
       name: "Koloonline",
@@ -58,8 +74,12 @@ export default function BlogPost({
       },
     },
     mainEntityOfPage: url,
-    datePublished: new Date(post.createdAt?.seconds * 1000 || Date.now()).toISOString(),
-    dateModified: new Date(post.updatedAt?.seconds * 1000 || Date.now()).toISOString(),
+    datePublished: new Date(
+      post.createdAt?.seconds * 1000 || Date.now()
+    ).toISOString(),
+    dateModified: new Date(
+      post.updatedAt?.seconds * 1000 || Date.now()
+    ).toISOString(),
   };
 
   return (
@@ -68,7 +88,6 @@ export default function BlogPost({
       {/* ================= SEO ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
-
         <meta name="description" content={post.excerpt || post.title} />
         <meta name="robots" content="index, follow, max-image-preview:large" />
         <link rel="canonical" href={url} />
@@ -80,9 +99,6 @@ export default function BlogPost({
         <meta property="og:image" content={post.image} />
         <meta property="og:url" content={url} />
 
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-
         {/* Schema */}
         <script
           type="application/ld+json"
@@ -92,24 +108,16 @@ export default function BlogPost({
         />
       </Head>
 
-      {/* ================= BREADCRUMB (SEO) ================= */}
-      <div style={{ maxWidth: 1100, margin: "auto", padding: "15px 20px", fontSize: 14 }}>
+      {/* ================= BREADCRUMB ================= */}
+      <div style={{ maxWidth: 1100, margin: "auto", padding: 15, fontSize: 14 }}>
         <Link href="/">Home</Link> {" > "}
         <Link href="/blog">Blog</Link> {" > "}
         <span>{post.title}</span>
       </div>
 
-      {/* ================= AD SLOT (TOP) ================= */}
-      <div style={{ maxWidth: 900, margin: "10px auto", textAlign: "center" }}>
-        {/* Google AdSense Top */}
-        <ins
-          className="adsbygoogle"
-          style={{ display: "block" }}
-          data-ad-client="pub-1294940976431468"
-          data-ad-slot="auto"
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        />
+      {/* ================= TOP AD ================= */}
+      <div style={{ maxWidth: 900, margin: "10px auto" }}>
+        <AdSenseBlock />
       </div>
 
       {/* ================= ARTICLE ================= */}
@@ -125,7 +133,6 @@ export default function BlogPost({
         {/* TITLE */}
         <h1 style={{ fontSize: 34, marginTop: 20 }}>{post.title}</h1>
 
-        {/* META */}
         <p style={{ color: "gray" }}>
           Published • {readingTime} min read
         </p>
@@ -135,7 +142,6 @@ export default function BlogPost({
           <img
             src={post.image}
             alt={post.title}
-            loading="lazy"
             style={{ width: "100%", borderRadius: 12, margin: "20px 0" }}
           />
         )}
@@ -145,18 +151,11 @@ export default function BlogPost({
           dangerouslySetInnerHTML={{ __html: post.content }}
           style={{ fontSize: 18, lineHeight: 1.9 }}
         />
-
       </article>
 
-      {/* ================= AD SLOT (MIDDLE) ================= */}
-      <div style={{ maxWidth: 900, margin: "30px auto", textAlign: "center" }}>
-        <ins
-          className="adsbygoogle"
-          style={{ display: "block" }}
-          data-ad-client="pub-1294940976431468"
-          data-ad-slot="auto"
-          data-ad-format="fluid"
-        />
+      {/* ================= MIDDLE AD ================= */}
+      <div style={{ maxWidth: 900, margin: "30px auto" }}>
+        <AdSenseBlock />
       </div>
 
       {/* ================= RELATED PRODUCTS ================= */}
@@ -196,14 +195,9 @@ export default function BlogPost({
         </section>
       )}
 
-      {/* ================= AD SLOT (BOTTOM) ================= */}
-      <div style={{ maxWidth: 900, margin: "40px auto", textAlign: "center" }}>
-        <ins
-          className="adsbygoogle"
-          style={{ display: "block" }}
-          data-ad-client="pub-1294940976431468"
-          data-ad-slot="auto"
-        />
+      {/* ================= BOTTOM AD ================= */}
+      <div style={{ maxWidth: 900, margin: "40px auto" }}>
+        <AdSenseBlock />
       </div>
     </div>
   );
@@ -253,4 +247,4 @@ export async function getServerSideProps({ params }) {
   } catch (e) {
     return { notFound: true };
   }
-        }
+       }
