@@ -1,20 +1,36 @@
+import Head from "next/head";
+
 export default function Privacy() {
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
-      <h1>🔐 Privacy Policy – Koloonline</h1>
+    <div style={{ maxWidth: 900, margin: "auto", padding: 20 }}>
+      <Head>
+        <title>Privacy Policy | Koloonline</title>
+        <meta name="robots" content="index, follow" />
+      </Head>
 
-      <h2>📌 Introduction</h2>
+      <h1>Privacy Policy</h1>
+
       <p>
-        We respect your privacy and protect your data.
+        Koloonline respects your privacy. We do not sell personal data.
       </p>
 
-      <h2>📊 Data Collection</h2>
+      <h2>Cookies</h2>
       <p>
-        We collect analytics only for improving user experience.
+        We use cookies to improve user experience and show relevant ads via Google AdSense.
       </p>
 
-      <h2>📞 Contact</h2>
-      <p>Contact us anytime via our website.</p>
+      <h2>Google AdSense</h2>
+      <p>
+        Third-party vendors, including Google, use cookies to serve ads based on prior visits.
+      </p>
+
+      <h2>Data Collection</h2>
+      <p>
+        We may collect analytics data (non-personal) to improve website performance.
+      </p>
+
+      <h2>Contact</h2>
+      <p>support@koloonline.online</p>
     </div>
   );
-}
+  }
