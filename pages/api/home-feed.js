@@ -14,35 +14,37 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
-/* ================= SAFE ================= */
+/* ================= SAFE NUMBER ================= */
 const num = (v) => Number(v || 0);
 
-/* ================= PROFIT SCORE ================= */
+/* ================= PROFIT ENGINE ================= */
 function profitScore(p) {
   const views = num(p.views);
   const clicks = num(p.clicks);
   const orders = num(p.orders);
   const price = num(p.price);
-  const score = num(p.score);
+  const baseScore = num(p.score);
 
   const ctr = views > 0 ? clicks / views : 0;
   const cvr = clicks > 0 ? orders / clicks : 0;
 
-  let profit =
-    score * 2 +
+  let score =
+    baseScore * 2 +
     clicks * 1.2 +
     orders * 10 +
     ctr * 60 +
     cvr * 120;
 
-  if (price > 50) profit += 15;
-  if (price > 100) profit += 30;
-  if (p.viralBoost) profit += 25;
+  if (price > 50) score += 15;
+  if (price > 100) score += 30;
+  if (price > 200) score += 50;
 
-  return profit;
+  if (p.viralBoost) score += 25;
+
+  return score;
 }
 
-/* ================= TREND SCORE ================= */
+/* ================= TREND ENGINE ================= */
 function trendScore(p) {
   const now = Date.now();
 
@@ -52,27 +54,42 @@ function trendScore(p) {
 
   const hoursOld = (now - updatedAt) / (1000 * 60 * 60);
 
-  const freshness = Math.max(0, 50 - hoursOld * 0.7);
+  const freshnessBoost = Math.max(0, 50 - hoursOld * 0.7);
 
   const engagement =
     num(p.clicks) * 2 +
     num(p.views) * 0.5 +
     num(p.orders) * 8;
 
-  const viral = p.viralBoost ? 30 : 0;
+  const viralBoost = p.viralBoost ? 30 : 0;
 
-  return engagement + freshness + viral;
+  const ctrBoost =
+    num(p.views) > 0 ? (num(p.clicks) / num(p.views)) * 100 : 0;
+
+  return engagement + freshnessBoost + viralBoost + ctrBoost;
 }
 
-/* ================= FINAL AI SCORE ================= */
+/* ================= AI FINAL SCORE ================= */
 function aiScore(p) {
   return profitScore(p) * 0.6 + trendScore(p) * 0.4;
+}
+
+/* ================= CLUSTER ENGINE (NEW) ================= */
+function clusterProduct(p) {
+  const price = num(p.price);
+
+  if (p.viralBoost) return "viral";
+  if (price < 20) return "cheap";
+  if (price < 100) return "mid";
+  if (price >= 100) return "premium";
+
+  return "general";
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= LOAD PRODUCTS ================= */
+    /* ================= LOAD ================= */
     const snap = await getDocs(collection(db, "products"));
 
     let products = snap.docs.map((d) => ({
@@ -80,22 +97,22 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    /* ================= CLEAN DATA ================= */
+    /* ================= CLEAN ================= */
     products = products.filter((p) => p.id && p.title);
 
-    /* ================= ENRICH SCORES ================= */
+    /* ================= ENRICH ================= */
     products = products.map((p) => ({
       ...p,
       profitScore: profitScore(p),
       trendScore: trendScore(p),
       aiScore: aiScore(p),
+      cluster: clusterProduct(p),
     }));
 
-    /* ================= MAIN SORT (AI CORE) ================= */
+    /* ================= SORT AI CORE ================= */
     products.sort((a, b) => b.aiScore - a.aiScore);
 
     /* ================= SEGMENTS ================= */
-
     const topProducts = products.slice(0, 10);
 
     const trendingProducts = [...products]
@@ -103,28 +120,38 @@ export default async function handler(req, res) {
       .slice(0, 10);
 
     const viralProducts = products
-      .filter((p) => p.viralBoost === true)
+      .filter((p) => p.cluster === "viral")
       .slice(0, 10);
 
     const bestROI = [...products]
       .sort((a, b) => b.profitScore - a.profitScore)
       .slice(0, 10);
 
+    const cheapProducts = products
+      .filter((p) => p.cluster === "cheap")
+      .slice(0, 10);
+
+    const premiumProducts = products
+      .filter((p) => p.cluster === "premium")
+      .slice(0, 10);
+
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      engine: "ai-home-feed-v2",
+      engine: "growth-engine-final-v3",
 
       topProducts,
       trendingProducts,
       viralProducts,
       bestROI,
+      cheapProducts,
+      premiumProducts,
 
       total: products.length,
     });
 
   } catch (e) {
-    console.error("HOME FEED ERROR:", e);
+    console.error("GROWTH ENGINE ERROR:", e);
 
     return res.status(500).json({
       success: false,
