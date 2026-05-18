@@ -1,122 +1,137 @@
 import Head from "next/head";
-import Link from "next/link";
+import { useRouter } from "next/router";
 import { useEffect, useState, useMemo } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
+
 import { db } from "../../config/firebase";
 import { calculateTrendScore } from "../../lib/trendScore";
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
+const fallbackImage = "https://via.placeholder.com/500";
+
+/* ================= STARS ================= */
+function Stars({ rating = 4.3 }) {
+  const full = Math.round(rating);
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {"⭐".repeat(full)}
+      <span style={{ marginLeft: 6 }}>{rating}/5</span>
+    </div>
+  );
+}
+
+/* ================= WHATSAPP ================= */
+function sendWhatsApp(product) {
+  const msg = `🔥 Product Interest:
+${product.title}
+Price: $${product.price}
+Link: https://koloonline.online/product/${product.asin}`;
+
+  window.open(
+    `https://wa.me/201234567890?text=${encodeURIComponent(msg)}`,
+    "_blank"
+  );
+}
+
+export default function ProductPage() {
+  const router = useRouter();
+  const { asin } = router.query;
+
+  const [product, setProduct] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("trending");
-  const [page, setPage] = useState(1);
-
-  const ITEMS_PER_PAGE = 12;
-
-  const fallbackImage = "https://via.placeholder.com/300";
-
   useEffect(() => {
+    if (!router.isReady || !asin) return;
+
     const load = async () => {
       try {
-        const snap = await getDocs(collection(db, "products"));
+        const snap = await getDoc(doc(db, "products", asin));
 
-        const data = snap.docs.map((d) => {
-          const item = d.data();
+        if (snap.exists()) {
+          setProduct({ asin, ...snap.data() });
+        }
 
-          return {
-            id: d.id,
-            ...item,
-            trendScore: calculateTrendScore(item || {}),
-          };
-        });
+        const allSnap = await getDocs(collection(db, "products"));
 
-        setProducts(data);
+        setAllProducts(
+          allSnap.docs.map((d) => ({
+            asin: d.id,
+            ...d.data(),
+          }))
+        );
       } catch (e) {
-        console.log("Error loading products:", e);
+        console.log(e);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, []);
+  }, [router.isReady, asin]);
 
-  /* ================= FILTER ================= */
-  const filtered = useMemo(() => {
-    let result = [...products];
+  /* ================= RELATED PRODUCTS ================= */
+  const related = useMemo(() => {
+    if (!product) return [];
 
-    if (search) {
-      result = result.filter((p) =>
-        (p.title || "")
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      );
-    }
+    return allProducts
+      .filter((p) => p.asin !== product.asin)
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 6);
+  }, [allProducts, product]);
 
-    if (sort === "price_low") {
-      result.sort((a, b) => (a.price || 0) - (b.price || 0));
-    } else if (sort === "price_high") {
-      result.sort((a, b) => (b.price || 0) - (a.price || 0));
-    } else {
-      result.sort((a, b) => (b.trendScore || 0) - (a.trendScore || 0));
-    }
+  if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
 
-    return result;
-  }, [products, search, sort]);
+  if (!product) return <p style={{ padding: 20 }}>Product Not Found</p>;
 
-  /* ================= PAGINATION ================= */
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  );
+  const url = `https://koloonline.online/product/${product.asin}`;
 
-  const safePage = Math.min(page, totalPages);
-
-  const paginated = useMemo(() => {
-    const start = (safePage - 1) * ITEMS_PER_PAGE;
-    return filtered.slice(start, start + ITEMS_PER_PAGE);
-  }, [filtered, safePage]);
+  const rating = product.rating || 4.3;
 
   /* ================= SEO SCHEMA ================= */
   const schema = {
     "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Koloonline Products",
-    description: "Browse trending Amazon products and smart shopping deals.",
-    url: "https://koloonline.online/products",
+    "@type": "Product",
+    name: product.title,
+    image: product.image || fallbackImage,
+    description: product.title,
+    sku: product.asin,
+    brand: {
+      "@type": "Brand",
+      name: "Amazon Product",
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "USD",
+      price: product.price || 0,
+      availability: "https://schema.org/InStock",
+      url,
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: rating,
+      reviewCount: product.reviews || 120,
+    },
   };
 
-  const ogImage = "https://koloonline.online/og-products.jpg";
-
   return (
-    <div
-      style={{
-        padding: 20,
-        fontFamily: "Arial",
-        background: "#f5f5f5",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
       {/* ================= SEO ================= */}
       <Head>
-        <title>All Products | Koloonline</title>
+        <title>{product.title} | Koloonline</title>
 
-        <meta
-          name="description"
-          content="Browse trending Amazon products, smart deals, and best offers on Koloonline."
-        />
-
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://koloonline.online/products" />
+        <meta name="description" content={product.title} />
+        <link rel="canonical" href={url} />
 
         {/* OG */}
-        <meta property="og:title" content="All Products | Koloonline" />
-        <meta property="og:description" content="Trending Amazon deals & smart shopping." />
-        <meta property="og:url" content="https://koloonline.online/products" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content={ogImage} />
+        <meta property="og:title" content={product.title} />
+        <meta property="og:image" content={product.image} />
+        <meta property="og:url" content={url} />
+        <meta property="og:type" content="product" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
@@ -130,117 +145,131 @@ export default function ProductsPage() {
         />
       </Head>
 
-      <h1>📦 All Products</h1>
-
-      {/* ================= SEARCH + SORT ================= */}
+      {/* ================= PRODUCT ================= */}
       <div
         style={{
           display: "flex",
-          gap: 10,
-          margin: "20px 0",
-          flexWrap: "wrap",
+          gap: 20,
+          padding: 20,
+          maxWidth: 1100,
+          margin: "auto",
+          background: "white",
         }}
       >
-        <input
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
+        <img
+          src={product.image || fallbackImage}
+          style={{
+            width: 350,
+            height: 350,
+            objectFit: "contain",
           }}
-          style={{ padding: 10, flex: 1, minWidth: 200 }}
         />
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          style={{ padding: 10 }}
-        >
-          <option value="trending">Trending</option>
-          <option value="price_low">Price Low → High</option>
-          <option value="price_high">Price High → Low</option>
-        </select>
+        <div style={{ flex: 1 }}>
+          <h1>{product.title}</h1>
+
+          <Stars rating={rating} />
+
+          <h2 style={{ color: "#B12704" }}>
+            ${product.price || 0}
+          </h2>
+
+          {/* 🔥 badge */}
+          {product.viralBoost && (
+            <span
+              style={{
+                background: "red",
+                color: "white",
+                padding: "6px 12px",
+                borderRadius: 20,
+                display: "inline-block",
+                marginTop: 10,
+              }}
+            >
+              🔥 Trending Now
+            </span>
+          )}
+
+          {/* BUY */}
+          <button
+            onClick={() => {
+              fetch("/api/track", {
+                method: "POST",
+                body: JSON.stringify({
+                  type: "affiliate_click",
+                  asin: product.asin,
+                }),
+              });
+
+              window.open(product.link, "_blank");
+            }}
+            style={{
+              width: "100%",
+              padding: 15,
+              marginTop: 15,
+              background: "#ff9900",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            🛒 Buy on Amazon
+          </button>
+
+          {/* WHATSAPP */}
+          <button
+            onClick={() => sendWhatsApp(product)}
+            style={{
+              width: "100%",
+              padding: 15,
+              marginTop: 10,
+              background: "#25D366",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            💬 WhatsApp Order
+          </button>
+
+          <p style={{ marginTop: 10, color: "gray", fontSize: 12 }}>
+            ⚡ Prices may change anytime
+          </p>
+        </div>
       </div>
 
-      {/* ================= CONTENT ================= */}
-      {loading ? (
-        <p>Loading products...</p>
-      ) : filtered.length === 0 ? (
-        <p>No products found</p>
-      ) : (
-        <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(220px,1fr))",
-              gap: 15,
-            }}
-          >
-            {paginated.map((p) => (
-              <Link key={p.id} href={`/product/${p.id}`}>
-                <div
-                  style={{
-                    background: "white",
-                    padding: 10,
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <img
-                    src={p.image || fallbackImage}
-                    alt={p.title || "product"}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 220,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                    }}
-                  />
+      {/* ================= RELATED ================= */}
+      <div style={{ maxWidth: 1100, margin: "auto", padding: 20 }}>
+        <h2>🔥 Related Products</h2>
 
-                  <h4 style={{ marginTop: 10 }}>
-                    {p.title || "Untitled"}
-                  </h4>
-
-                  <p style={{ color: "red", fontWeight: "bold" }}>
-                    ${p.price || 0}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* ================= PAGINATION ================= */}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              justifyContent: "center",
-              marginTop: 30,
-            }}
-          >
-            <button
-              disabled={safePage === 1}
-              onClick={() => setPage(safePage - 1)}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(180px,1fr))",
+            gap: 10,
+          }}
+        >
+          {related.map((p) => (
+            <a
+              key={p.asin}
+              href={`/product/${p.asin}`}
+              style={{
+                background: "white",
+                padding: 10,
+                textDecoration: "none",
+                color: "black",
+              }}
             >
-              Prev
-            </button>
-
-            <span>
-              Page {safePage} / {totalPages}
-            </span>
-
-            <button
-              disabled={safePage === totalPages}
-              onClick={() => setPage(safePage + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+              <img
+                src={p.image || fallbackImage}
+                style={{ width: "100%", height: 120 }}
+              />
+              <p>{p.title}</p>
+              <b>${p.price || 0}</b>
+            </a>
+          ))}
+        </div>
+      </div>
     </div>
   );
-            }
+        }
