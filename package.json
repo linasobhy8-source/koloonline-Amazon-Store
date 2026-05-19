@@ -5,8 +5,6 @@
   "description": "Amazon Affiliate Store built with Next.js + Firebase + AI Engine",
   "author": "Lina Sobhy",
 
-  "type": "module",
-
   "scripts": {
     "dev": "next dev",
     "build": "next build",
