@@ -14,6 +14,8 @@ import { db } from "../../config/firebase";
 import { buildSeoGraph } from "@/lib/seo/aiSeoGraph";
 import InternalLinks from "@/components/seo/InternalLinks";
 
+import Link from "next/link";
+
 /* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
@@ -68,6 +70,7 @@ export default function ProductPage() {
 
     const load = async () => {
       try {
+        /* ================= CURRENT PRODUCT ================= */
         const snap = await getDoc(doc(db, "products", String(asin)));
 
         if (snap.exists()) {
@@ -80,6 +83,7 @@ export default function ProductPage() {
           return;
         }
 
+        /* ================= ALL PRODUCTS ================= */
         const productsSnap = await getDocs(collection(db, "products"));
 
         const allProducts = productsSnap.docs.map((doc) => ({
@@ -120,6 +124,7 @@ export default function ProductPage() {
 
   /* ================= SAFE VALUES ================= */
   const title = product.title || "Amazon Product";
+
   const description =
     product.description ||
     `${title} best Amazon deal and smart shopping recommendation.`;
@@ -137,37 +142,13 @@ export default function ProductPage() {
   const relatedProducts =
     graph.find((p) => p.asin === product.asin)?.internalLinks || [];
 
-  /* ================= SCHEMA ================= */
-  const schema = {
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    name: title,
-    image: [imageUrl],
-    description,
-    sku: product.asin,
-    brand: { "@type": "Brand", name: "Amazon" },
-    category,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "USD",
-      price,
-      availability: "https://schema.org/InStock",
-      itemCondition: "https://schema.org/NewCondition",
-      url,
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: rating,
-      reviewCount: Number(product.reviewCount || 120),
-    },
-  };
-
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
 
       {/* ================= SEO ================= */}
       <Head>
         <title>{title} | Best Amazon Deal 2026</title>
+
         <meta name="description" content={description} />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={url} />
@@ -181,22 +162,45 @@ export default function ProductPage() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(schema),
+            __html: JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              name: title,
+              image: [imageUrl],
+              description,
+              sku: product.asin,
+              brand: { "@type": "Brand", name: "Amazon" },
+              category,
+              offers: {
+                "@type": "Offer",
+                priceCurrency: "USD",
+                price,
+                availability: "https://schema.org/InStock",
+                itemCondition: "https://schema.org/NewCondition",
+                url,
+              },
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: rating,
+                reviewCount: Number(product.reviewCount || 120),
+              },
+            }),
           }}
         />
       </Head>
 
       {/* ================= PRODUCT ================= */}
-      <div style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 20,
-        padding: 20,
-        background: "white",
-        maxWidth: 1200,
-        margin: "0 auto",
-      }}>
-
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 20,
+          padding: 20,
+          background: "white",
+          maxWidth: 1200,
+          margin: "0 auto",
+        }}
+      >
         <img
           src={imageUrl}
           alt={title}
@@ -217,25 +221,30 @@ export default function ProductPage() {
 
           <h2 style={{ color: "#B12704" }}>${price}</h2>
 
+          {/* ================= VIRAL BADGE ================= */}
           {product.viralBoost && (
-            <span style={{
-              background: "linear-gradient(45deg,#ff0000,#ff6600)",
-              color: "white",
-              padding: "6px 12px",
-              borderRadius: 20,
-              fontWeight: "bold",
-              fontSize: 12,
-              display: "inline-block",
-              marginTop: 10,
-            }}>
+            <span
+              style={{
+                background: "linear-gradient(45deg,#ff0000,#ff6600)",
+                color: "white",
+                padding: "6px 12px",
+                borderRadius: 20,
+                fontWeight: "bold",
+                fontSize: 12,
+                display: "inline-block",
+                marginTop: 10,
+              }}
+            >
               🔥 VIRAL TRENDING NOW
             </span>
           )}
 
+          {/* ================= DESCRIPTION ================= */}
           <p style={{ marginTop: 20, lineHeight: 1.7 }}>
             {description}
           </p>
 
+          {/* ================= BUY BUTTON ================= */}
           <button
             style={{
               width: "100%",
@@ -251,7 +260,9 @@ export default function ProductPage() {
             onClick={() => {
               fetch("/api/track-event", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
                   type: "affiliate_click",
                   asin: product.asin,
@@ -264,6 +275,7 @@ export default function ProductPage() {
             🛒 Buy on Amazon
           </button>
 
+          {/* ================= WHATSAPP ================= */}
           <button
             style={{
               width: "100%",
@@ -279,6 +291,24 @@ export default function ProductPage() {
           >
             💬 Order via WhatsApp
           </button>
+
+          {/* ================= CATEGORY CLUSTER LINK ================= */}
+          <div style={{ marginTop: 15 }}>
+            <Link href={`/category/${category}`}>
+              <span
+                style={{
+                  display: "inline-block",
+                  padding: "6px 12px",
+                  borderRadius: 20,
+                  background: "#f0f0f0",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                🔗 Explore more in {category}
+              </span>
+            </Link>
+          </div>
         </div>
       </div>
 
