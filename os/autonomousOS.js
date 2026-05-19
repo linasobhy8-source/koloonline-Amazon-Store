@@ -2,47 +2,47 @@ import { runGrowthEngine } from "../engine/growthEngine";
 import { executeActions } from "./executeActions";
 
 /* ================= COMPANY MEMORY ================= */
-let companyState = {
+const createInitialState = () => ({
   revenueFocus: [],
   trafficFocus: [],
   contentFocus: [],
   weakPoints: [],
-};
+});
+
+/* نخليها داخل function بدل global mutable state */
+let companyState = createInitialState();
 
 /* ================= ANALYTICS ENGINE ================= */
-function analyze(data) {
-  const products = data?.topProducts || [];
-  const trending = data?.trendingProducts || [];
-  const viral = data?.viralProducts || [];
+function analyze(data = {}) {
+  const products = data.topProducts || [];
+  const trending = data.trendingProducts || [];
+  const viral = data.viralProducts || [];
 
   const all = [...products, ...trending, ...viral];
 
-  const scored = all.map((p) => ({
-    ...p,
-    businessScore:
-      (p.views || 0) * 1 +
-      (p.clicks || 0) * 2 +
-      (p.orders || 0) * 10 +
-      (p.viralBoost ? 50 : 0),
-  }));
-
-  scored.sort((a, b) => b.businessScore - a.businessScore);
-
-  return scored;
+  return all
+    .map((p) => ({
+      ...p,
+      businessScore:
+        (p.views || 0) * 1 +
+        (p.clicks || 0) * 2 +
+        (p.orders || 0) * 10 +
+        (p.viralBoost ? 50 : 0),
+    }))
+    .sort((a, b) => b.businessScore - a.businessScore);
 }
 
 /* ================= STRATEGY BUILDER ================= */
-function buildStrategy(scored) {
+function buildStrategy(scored = []) {
   const top = scored.slice(0, 10);
   const weak = scored.slice(-5);
 
-  companyState.revenueFocus = top.slice(0, 5);
-  companyState.trafficFocus = top.slice(5, 10);
-  companyState.weakPoints = weak;
-
-  companyState.contentFocus = top
-    .filter((p) => p.views > 100)
-    .slice(0, 5);
+  companyState = {
+    revenueFocus: top.slice(0, 5),
+    trafficFocus: top.slice(5, 10),
+    contentFocus: top.filter((p) => (p.views || 0) > 100).slice(0, 5),
+    weakPoints: weak,
+  };
 
   return {
     homepage: companyState.trafficFocus,
@@ -53,63 +53,64 @@ function buildStrategy(scored) {
 }
 
 /* ================= AUTO GROWTH LOOP ================= */
-async function growthLoop(strategy) {
-  const actions = await executeActions({
-    ...strategy,
-    mode: "AUTONOMOUS_COMPANY_OS",
-  });
-
-  return actions;
+async function growthLoop(strategy = {}) {
+  try {
+    return await executeActions({
+      ...strategy,
+      mode: "AUTONOMOUS_COMPANY_OS",
+    });
+  } catch (err) {
+    console.error("Growth loop error:", err);
+    return {
+      success: false,
+      error: err.message,
+    };
+  }
 }
 
 /* ================= SELF HEALING ================= */
-function selfRepair(data) {
+function selfRepair(data = {}) {
   const issues = [];
 
-  if (!data?.topProducts?.length) {
-    issues.push("NO_TOP_PRODUCTS");
-  }
-
-  if (!data?.trendingProducts?.length) {
-    issues.push("NO_TRENDING_DATA");
-  }
-
-  if (issues.length) {
-    return {
-      status: "DEGRADED",
-      issues,
-      action: "FALLBACK_MODE",
-    };
-  }
+  if (!data.topProducts?.length) issues.push("NO_TOP_PRODUCTS");
+  if (!data.trendingProducts?.length) issues.push("NO_TRENDING_DATA");
+  if (!data.viralProducts?.length) issues.push("NO_VIRAL_DATA");
 
   return {
-    status: "HEALTHY",
-    issues: [],
+    status: issues.length ? "DEGRADED" : "HEALTHY",
+    issues,
+    action: issues.length ? "FALLBACK_MODE" : "NORMAL",
   };
+}
+
+/* ================= RESET FUNCTION (important for serverless) ================= */
+function resetState() {
+  companyState = createInitialState();
 }
 
 /* ================= MAIN COMPANY BRAIN ================= */
 export async function autonomousCompanyOS() {
   try {
-    /* ================= STEP 1: COLLECT DATA ================= */
+    resetState();
+
+    /* STEP 1: DATA */
     const data = await runGrowthEngine();
 
-    /* ================= STEP 2: SELF CHECK ================= */
+    /* STEP 2: HEALTH CHECK */
     const health = selfRepair(data);
 
-    /* ================= STEP 3: ANALYZE ================= */
+    /* STEP 3: ANALYSIS */
     const scored = analyze(data);
 
-    /* ================= STEP 4: STRATEGY ================= */
+    /* STEP 4: STRATEGY */
     const strategy = buildStrategy(scored);
 
-    /* ================= STEP 5: EXECUTE ================= */
+    /* STEP 5: EXECUTION */
     const actions = await growthLoop(strategy);
 
     return {
       success: true,
-
-      mode: "AUTONOMOUS_COMPANY_OS_V1",
+      mode: "AUTONOMOUS_COMPANY_OS_V2",
 
       health,
       strategy,
@@ -119,16 +120,16 @@ export async function autonomousCompanyOS() {
         total: scored.length,
         revenueTargets: companyState.revenueFocus.length,
         trafficTargets: companyState.trafficFocus.length,
+        contentTargets: companyState.contentFocus.length,
       },
 
       timestamp: new Date().toISOString(),
     };
-
   } catch (e) {
     return {
       success: false,
-      mode: "AUTONOMOUS_COMPANY_OS_V1",
-      error: e.message,
+      mode: "AUTONOMOUS_COMPANY_OS_V2",
+      error: e?.message || "UNKNOWN_ERROR",
     };
   }
-  }
+}
