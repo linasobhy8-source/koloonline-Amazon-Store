@@ -10,6 +10,9 @@ import {
 
 import { db } from "../../config/firebase";
 
+/* ================= AI SEO GRAPH ================= */
+import { buildSeoGraph } from "@/lib/seo/aiSeoGraph";
+
 /* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
@@ -77,7 +80,7 @@ export default function ProductPage() {
           return;
         }
 
-        /* ================= ALL PRODUCTS (FOR RELATED) ================= */
+        /* ================= ALL PRODUCTS ================= */
         const productsSnap = await getDocs(collection(db, "products"));
 
         const allProducts = productsSnap.docs.map((doc) => ({
@@ -117,6 +120,7 @@ export default function ProductPage() {
 
   /* ================= SAFE VALUES ================= */
   const title = product.title || "Amazon Product";
+
   const description =
     product.description ||
     `${title} best Amazon deal and smart shopping recommendation.`;
@@ -127,6 +131,12 @@ export default function ProductPage() {
   const category = product.category || "general";
 
   const url = `https://koloonline.online/product/${product.asin}`;
+
+  /* ================= AI SEO GRAPH ================= */
+  const graph = buildSeoGraph(products, 6);
+
+  const relatedProducts =
+    graph.find((p) => p.asin === product.asin)?.internalLinks || [];
 
   /* ================= SCHEMA ================= */
   const schema = {
@@ -164,14 +174,12 @@ export default function ProductPage() {
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={url} />
 
-        {/* OG */}
         <meta property="og:type" content="product" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={imageUrl} />
         <meta property="og:url" content={url} />
 
-        {/* SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -181,12 +189,32 @@ export default function ProductPage() {
       </Head>
 
       {/* ================= PRODUCT ================= */}
-      <div style={container}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 20,
+          padding: 20,
+          background: "white",
+          maxWidth: 1200,
+          margin: "0 auto",
+        }}
+      >
 
-        <img src={imageUrl} alt={title} style={image} loading="lazy" />
+        <img
+          src={imageUrl}
+          alt={title}
+          style={{
+            width: 320,
+            maxWidth: "100%",
+            height: 320,
+            objectFit: "contain",
+            borderRadius: 10,
+          }}
+          loading="lazy"
+        />
 
         <div style={{ flex: 1 }}>
-
           <h1>{title}</h1>
 
           <Stars rating={rating} />
@@ -194,7 +222,18 @@ export default function ProductPage() {
           <h2 style={{ color: "#B12704" }}>${price}</h2>
 
           {product.viralBoost && (
-            <span style={badge}>
+            <span
+              style={{
+                background: "linear-gradient(45deg,#ff0000,#ff6600)",
+                color: "white",
+                padding: "6px 12px",
+                borderRadius: 20,
+                fontWeight: "bold",
+                fontSize: 12,
+                display: "inline-block",
+                marginTop: 10,
+              }}
+            >
               🔥 VIRAL TRENDING NOW
             </span>
           )}
@@ -204,11 +243,23 @@ export default function ProductPage() {
           </p>
 
           <button
-            style={buyBtn}
+            style={{
+              width: "100%",
+              padding: 15,
+              background: "#ff9900",
+              border: "none",
+              color: "white",
+              fontWeight: "bold",
+              marginTop: 20,
+              cursor: "pointer",
+              borderRadius: 8,
+            }}
             onClick={() => {
               fetch("/api/track-event", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
                   type: "affiliate_click",
                   asin: product.asin,
@@ -222,7 +273,16 @@ export default function ProductPage() {
           </button>
 
           <button
-            style={waBtn}
+            style={{
+              width: "100%",
+              padding: 15,
+              background: "#25D366",
+              color: "white",
+              border: "none",
+              marginTop: 10,
+              cursor: "pointer",
+              borderRadius: 8,
+            }}
             onClick={() => sendWhatsApp(product)}
           >
             💬 Order via WhatsApp
@@ -231,62 +291,48 @@ export default function ProductPage() {
           <p style={{ marginTop: 10, color: "gray", fontSize: 12 }}>
             ⚡ Limited-time Amazon deal — prices may change anytime.
           </p>
-
         </div>
       </div>
+
+      {/* ================= AI SEO GRAPH LINKS ================= */}
+      {relatedProducts.length > 0 && (
+        <div style={{ maxWidth: 1200, margin: "30px auto", padding: 20 }}>
+          <h2>🔗 Customers Also Viewed</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 15,
+              marginTop: 15,
+            }}
+          >
+            {relatedProducts.map((p) => (
+              <a
+                key={p.asin}
+                href={`/product/${p.asin}`}
+                style={{
+                  padding: 12,
+                  border: "1px solid #ddd",
+                  borderRadius: 10,
+                  background: "white",
+                  textDecoration: "none",
+                  color: "black",
+                }}
+              >
+                <div style={{ fontWeight: "bold" }}>{p.title}</div>
+
+                {p.price && (
+                  <div style={{ color: "#B12704", marginTop: 5 }}>
+                    ${p.price}
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
-}
-
-/* ================= STYLES ================= */
-const container = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 20,
-  padding: 20,
-  background: "white",
-  maxWidth: 1200,
-  margin: "0 auto",
-};
-
-const image = {
-  width: 320,
-  maxWidth: "100%",
-  height: 320,
-  objectFit: "contain",
-  borderRadius: 10,
-};
-
-const buyBtn = {
-  width: "100%",
-  padding: 15,
-  background: "#ff9900",
-  border: "none",
-  color: "white",
-  fontWeight: "bold",
-  marginTop: 20,
-  cursor: "pointer",
-  borderRadius: 8,
-};
-
-const waBtn = {
-  width: "100%",
-  padding: 15,
-  background: "#25D366",
-  color: "white",
-  border: "none",
-  marginTop: 10,
-  cursor: "pointer",
-  borderRadius: 8,
-};
-
-const badge = {
-  background: "linear-gradient(45deg,#ff0000,#ff6600)",
-  color: "white",
-  padding: "6px 12px",
-  borderRadius: 20,
-  fontWeight: "bold",
-  fontSize: 12,
-  display: "inline-block",
-  marginTop: 10,
-};
+      }
