@@ -12,6 +12,7 @@ import { db } from "../../config/firebase";
 
 /* ================= AI SEO GRAPH ================= */
 import { buildSeoGraph } from "@/lib/seo/aiSeoGraph";
+import InternalLinks from "@/components/seo/InternalLinks";
 
 /* ================= FALLBACK ================= */
 const fallbackImage =
@@ -67,7 +68,6 @@ export default function ProductPage() {
 
     const load = async () => {
       try {
-        /* ================= CURRENT PRODUCT ================= */
         const snap = await getDoc(doc(db, "products", String(asin)));
 
         if (snap.exists()) {
@@ -80,7 +80,6 @@ export default function ProductPage() {
           return;
         }
 
-        /* ================= ALL PRODUCTS ================= */
         const productsSnap = await getDocs(collection(db, "products"));
 
         const allProducts = productsSnap.docs.map((doc) => ({
@@ -89,6 +88,7 @@ export default function ProductPage() {
         }));
 
         setProducts(allProducts);
+
       } catch (err) {
         console.error("PRODUCT PAGE ERROR:", err);
       } finally {
@@ -120,7 +120,6 @@ export default function ProductPage() {
 
   /* ================= SAFE VALUES ================= */
   const title = product.title || "Amazon Product";
-
   const description =
     product.description ||
     `${title} best Amazon deal and smart shopping recommendation.`;
@@ -169,7 +168,6 @@ export default function ProductPage() {
       {/* ================= SEO ================= */}
       <Head>
         <title>{title} | Best Amazon Deal 2026</title>
-
         <meta name="description" content={description} />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={url} />
@@ -189,17 +187,15 @@ export default function ProductPage() {
       </Head>
 
       {/* ================= PRODUCT ================= */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 20,
-          padding: 20,
-          background: "white",
-          maxWidth: 1200,
-          margin: "0 auto",
-        }}
-      >
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 20,
+        padding: 20,
+        background: "white",
+        maxWidth: 1200,
+        margin: "0 auto",
+      }}>
 
         <img
           src={imageUrl}
@@ -222,18 +218,16 @@ export default function ProductPage() {
           <h2 style={{ color: "#B12704" }}>${price}</h2>
 
           {product.viralBoost && (
-            <span
-              style={{
-                background: "linear-gradient(45deg,#ff0000,#ff6600)",
-                color: "white",
-                padding: "6px 12px",
-                borderRadius: 20,
-                fontWeight: "bold",
-                fontSize: 12,
-                display: "inline-block",
-                marginTop: 10,
-              }}
-            >
+            <span style={{
+              background: "linear-gradient(45deg,#ff0000,#ff6600)",
+              color: "white",
+              padding: "6px 12px",
+              borderRadius: 20,
+              fontWeight: "bold",
+              fontSize: 12,
+              display: "inline-block",
+              marginTop: 10,
+            }}>
               🔥 VIRAL TRENDING NOW
             </span>
           )}
@@ -257,9 +251,7 @@ export default function ProductPage() {
             onClick={() => {
               fetch("/api/track-event", {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   type: "affiliate_click",
                   asin: product.asin,
@@ -287,52 +279,17 @@ export default function ProductPage() {
           >
             💬 Order via WhatsApp
           </button>
-
-          <p style={{ marginTop: 10, color: "gray", fontSize: 12 }}>
-            ⚡ Limited-time Amazon deal — prices may change anytime.
-          </p>
         </div>
       </div>
 
-      {/* ================= AI SEO GRAPH LINKS ================= */}
-      {relatedProducts.length > 0 && (
-        <div style={{ maxWidth: 1200, margin: "30px auto", padding: 20 }}>
-          <h2>🔗 Customers Also Viewed</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 15,
-              marginTop: 15,
-            }}
-          >
-            {relatedProducts.map((p) => (
-              <a
-                key={p.asin}
-                href={`/product/${p.asin}`}
-                style={{
-                  padding: 12,
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  background: "white",
-                  textDecoration: "none",
-                  color: "black",
-                }}
-              >
-                <div style={{ fontWeight: "bold" }}>{p.title}</div>
-
-                {p.price && (
-                  <div style={{ color: "#B12704", marginTop: 5 }}>
-                    ${p.price}
-                  </div>
-                )}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ================= AI SEO INTERNAL LINKS ================= */}
+      <div style={{ maxWidth: 1200, margin: "30px auto", padding: 20 }}>
+        <InternalLinks
+          items={relatedProducts}
+          title="Customers Also Viewed"
+        />
+      </div>
 
     </div>
   );
-      }
+}
