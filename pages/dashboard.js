@@ -13,18 +13,39 @@ export default function Dashboard() {
   const [blogsData, setBlogsData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const firstLoad = useRef(true);
+  const isInitial = useRef(true);
 
   useEffect(() => {
     loadAnalytics();
 
-    // 🔥 بدل كل 15 ثانية reload كامل → خليه أهدى
     const interval = setInterval(() => {
       loadAnalytics(true);
-    }, 60000); // كل دقيقة بدل 15 ثانية
+    }, 60000); // optimized refresh
 
     return () => clearInterval(interval);
   }, []);
+
+  /* ================= AI ENGINE ================= */
+  function calculateAIScore(p) {
+    const clicks = p.clicks || 0;
+    const orders = p.orders || 0;
+    const views = p.views || 0;
+
+    const conversion = clicks ? orders / clicks : 0;
+
+    const velocity = (clicks + orders) / 10;
+
+    const engagement =
+      views * 0.15 +
+      clicks * 1.8 +
+      orders * 10 +
+      conversion * 120 +
+      velocity;
+
+    const viralBoost = p.viralBoost ? 50 : 0;
+
+    return engagement + viralBoost;
+  }
 
   async function loadAnalytics(isRefresh = false) {
     try {
@@ -42,52 +63,51 @@ export default function Dashboard() {
       }));
 
       products = products.map((p) => {
+        const aiScore = calculateAIScore(p);
+
         const clicks = p.clicks || 0;
         const orders = p.orders || 0;
-        const views = p.views || 0;
-
-        const conversion = clicks ? orders / clicks : 0;
-
-        const aiScore =
-          views * 0.2 +
-          clicks * 1.5 +
-          orders * 8 +
-          conversion * 100;
 
         return {
           ...p,
-          conversion: (conversion * 100).toFixed(1),
           aiScore,
-          isHot: aiScore > 50,
+          conversion: clicks ? ((orders / clicks) * 100).toFixed(1) : 0,
+          isHot: aiScore > 80, // 🔥 upgraded threshold
+          isViral: p.viralBoost || aiScore > 120,
         };
       });
 
       products.sort((a, b) => b.aiScore - a.aiScore);
 
-      const bestProduct = products[0];
+      const bestProduct = products[0] || null;
 
       /* ================= BLOGS ================= */
       const blogSnap = await getDocs(collection(db, "blog"));
 
-      const blogs = blogSnap.docs.map(d => ({
+      const blogs = blogSnap.docs.map((d) => ({
         id: d.id,
-        ...d.data()
+        ...d.data(),
       }));
 
-      const autoBlogs = blogs.filter(b => b.auto);
-      const latestBlog = blogs[0];
+      const autoBlogs = blogs.filter((b) => b.auto);
+      const latestBlog = blogs[0] || null;
 
-      /* ================= UPDATE STATE ================= */
+      /* ================= STATE ================= */
       setData({
         clicks: stats.totalClicks || 0,
         orders: stats.totalOrders || 0,
         revenue: (stats.totalOrders || 0) * 12,
+
         products,
         hot: products.filter((p) => p.isHot).length,
+        viral: products.filter((p) => p.isViral).length,
+
         bestProduct,
-        ctr: stats.totalClicks && stats.totalViews
-          ? ((stats.totalClicks / stats.totalViews) * 100).toFixed(2)
-          : 0,
+
+        ctr:
+          stats.totalViews && stats.totalClicks
+            ? ((stats.totalClicks / stats.totalViews) * 100).toFixed(2)
+            : 0,
       });
 
       setBlogsData({
@@ -97,12 +117,13 @@ export default function Dashboard() {
       });
 
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard Error:", err);
     } finally {
       if (!isRefresh) setLoading(false);
     }
   }
 
+  /* ================= LOADING ================= */
   if (loading || !data) {
     return <div style={styles.loading}>Loading AI Dashboard...</div>;
   }
@@ -113,40 +134,47 @@ export default function Dashboard() {
       <div style={styles.header}>
         🧠 AI Analytics Dashboard
         <span style={styles.subHeader}>
-          Amazon-Level Conversion Intelligence System
+          Autonomous Growth Intelligence v2
         </span>
       </div>
 
+      {/* ================= CARDS ================= */}
       <div style={styles.grid}>
         <Card title="Clicks" value={data.clicks} color="#007bff" />
         <Card title="Orders" value={data.orders} color="#28a745" />
         <Card title="Revenue" value={`$${data.revenue}`} color="#ff9900" />
-        <Card title="Hot Products" value={data.hot} color="#ff3b30" />
+        <Card title="Hot" value={data.hot} color="#ff3b30" />
+        <Card title="Viral" value={data.viral} color="#ff0066" />
       </div>
 
+      {/* ================= BLOGS ================= */}
       {blogsData && (
         <div style={styles.insights}>
           <h3>📚 Blog System</h3>
-          <p>📌 Total Blogs: {blogsData.total}</p>
-          <p>🤖 Auto Generated: {blogsData.auto}</p>
-          <p>📰 Latest Blog: {blogsData.latest?.title || "No blogs yet"}</p>
+          <p>📌 Total: {blogsData.total}</p>
+          <p>🤖 Auto: {blogsData.auto}</p>
+          <p>📰 Latest: {blogsData.latest?.title || "No blogs"}</p>
         </div>
       )}
 
+      {/* ================= INSIGHTS ================= */}
       <div style={styles.insights}>
         <h3>🔥 Conversion Insights</h3>
         <p>📊 CTR: {data.ctr}%</p>
-        <p>🧠 Best Product: <b>{data.bestProduct?.id}</b></p>
+        <p>🏆 Best: <b>{data.bestProduct?.id || "N/A"}</b></p>
       </div>
 
+      {/* ================= BEST PRODUCT ================= */}
       {data.bestProduct && (
         <div style={styles.bestBox}>
-          <h3>🏆 Top Product</h3>
+          <h3>🏆 Top AI Product</h3>
           <p>AI Score: {data.bestProduct.aiScore.toFixed(1)}</p>
           <p>Conversion: {data.bestProduct.conversion}%</p>
+          <p>Status: {data.bestProduct.isViral ? "🔥 VIRAL" : "Normal"}</p>
         </div>
       )}
 
+      {/* ================= TABLE ================= */}
       <div style={styles.section}>
         <h2>🔥 Top Products</h2>
 
@@ -169,12 +197,13 @@ export default function Dashboard() {
               <span style={{ color: "#ff9900", fontWeight: "bold" }}>
                 {p.aiScore.toFixed(1)}
               </span>
-              <span>{p.isHot ? "🔥 HOT" : "Normal"}</span>
+              <span>
+                {p.isViral ? "🔥 VIRAL" : p.isHot ? "🔥 HOT" : "Normal"}
+              </span>
             </div>
           ))}
         </div>
       </div>
-
     </div>
   );
 }
