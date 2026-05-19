@@ -2,7 +2,13 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
+/* ================= SAFE IDLE HELPER ================= */
+const safeIdle = (cb) =>
+  typeof window !== "undefined" && "requestIdleCallback" in window
+    ? requestIdleCallback(cb)
+    : setTimeout(cb, 1);
 
 /* ================= V6 REVENUE STATE ================= */
 const revenueState = {
@@ -20,17 +26,19 @@ function useRevenueOS() {
 
     const path = window.location.pathname;
 
+    /* ================= INTENT DETECTION ================= */
     revenueState.trafficIntent = path.includes("/product/")
       ? "high_intent"
       : path.includes("/blog/")
       ? "medium_intent"
       : "low_intent";
 
+    /* ================= REVENUE SIGNAL ================= */
     const fireSignal = () => {
       if (window.__REVENUE_OS_ACTIVE__) return;
       window.__REVENUE_OS_ACTIVE__ = true;
 
-      requestIdleCallback(() => {
+      safeIdle(() => {
         window.gtag?.("event", "revenue_intent", {
           intent: revenueState.trafficIntent,
           page: path,
@@ -55,9 +63,10 @@ function useRevenueOS() {
     };
   }, []);
 
+  /* ================= ROUTE TRACKING ================= */
   useEffect(() => {
     const handleRoute = (url) => {
-      requestIdleCallback(() => {
+      safeIdle(() => {
         window.gtag?.("config", "G-YS8L61XLPR", {
           page_path: url,
         });
@@ -69,21 +78,27 @@ function useRevenueOS() {
   }, [router.events]);
 }
 
-/* ================= APP ================= */
+/* ================= GLOBAL APP ================= */
 export default function App({ Component, pageProps }) {
   useRevenueOS();
 
   return (
     <>
-      {/* SEO */}
+      {/* ================= SEO CORE ================= */}
       <Head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <meta
+          name="description"
+          content="Koloonline Amazon Affiliate Store - AI Revenue Engine"
+        />
+
         <meta name="robots" content="index, follow" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* GA4 */}
+      {/* ================= GA4 ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
         strategy="afterInteractive"
@@ -94,12 +109,15 @@ export default function App({ Component, pageProps }) {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
+
           gtag('js', new Date());
-          gtag('config', 'G-YS8L61XLPR', { send_page_view: false });
+          gtag('config', 'G-YS8L61XLPR', {
+            send_page_view: false
+          });
         `}
       </Script>
 
-      {/* Facebook Pixel */}
+      {/* ================= FACEBOOK PIXEL ================= */}
       <Script id="fb" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
@@ -115,17 +133,18 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ADS */}
+      {/* ================= ADSENSE ================= */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
         strategy="lazyOnload"
         crossOrigin="anonymous"
       />
 
-      {/* ✅ SPEED INSIGHTS (FIXED) */}
+      {/* ================= SPEED INSIGHTS ================= */}
       <SpeedInsights />
 
+      {/* ================= APP ================= */}
       <Component {...pageProps} />
     </>
   );
-        }
+          }
