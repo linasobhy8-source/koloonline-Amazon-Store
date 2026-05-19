@@ -2,22 +2,22 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-
-/* ================= SPEED INSIGHTS ================= */
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
 /* ================= GLOBAL APP ================= */
 export default function App({ Component, pageProps }) {
   const router = useRouter();
 
-  /* ================= TRACK PAGE VIEWS (GA4 SPA FIX) ================= */
+  /* ================= GA4 SPA TRACK (OPTIMIZED) ================= */
   useEffect(() => {
     const handleRouteChange = (url) => {
-      if (typeof window.gtag !== "undefined") {
-        window.gtag("config", "G-YS8L61XLPR", {
-          page_path: url,
-        });
-      }
+      requestIdleCallback(() => {
+        if (typeof window.gtag !== "undefined") {
+          window.gtag("config", "G-YS8L61XLPR", {
+            page_path: url,
+          });
+        }
+      });
     };
 
     router.events.on("routeChangeComplete", handleRouteChange);
@@ -26,7 +26,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
-      {/* ================= GLOBAL SEO ================= */}
+      {/* ================= SEO (STATIC ONLY) ================= */}
       <Head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,52 +35,19 @@ export default function App({ Component, pageProps }) {
           name="description"
           content="Koloonline Amazon Affiliate Store - Best Deals Daily Updated"
         />
-        <meta
-          name="keywords"
-          content="amazon deals, online shopping, best offers, electronics, fashion, koloonline"
-        />
-        <meta name="author" content="Koloonline" />
-
         <meta name="robots" content="index, follow" />
-        <meta name="googlebot" content="index, follow" />
-
         <link rel="canonical" href="https://koloonline.online" />
-
-        {/* Open Graph */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Koloonline Amazon Store" />
-        <meta
-          property="og:description"
-          content="Best Amazon Deals Updated Daily - Save More Now"
-        />
-        <meta
-          property="og:image"
-          content="https://koloonline.online/favicon.ico"
-        />
-        <meta property="og:url" content="https://koloonline.online" />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Koloonline Amazon Store" />
-        <meta
-          name="twitter:description"
-          content="Best Amazon Deals Updated Daily"
-        />
-        <meta
-          name="twitter:image"
-          content="https://koloonline.online/favicon.ico"
-        />
 
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* ================= GOOGLE ANALYTICS ================= */}
+      {/* ================= GA4 (NON BLOCKING) ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
 
-      <Script id="ga4" strategy="afterInteractive">
+      <Script id="ga4" strategy="lazyOnload">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
@@ -91,8 +58,8 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= FACEBOOK PIXEL ================= */}
-      <Script id="fb-pixel" strategy="afterInteractive">
+      {/* ================= FACEBOOK PIXEL (DEFERRED) ================= */}
+      <Script id="fb-pixel" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -108,18 +75,18 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= ADSENSE ================= */}
+      {/* ================= ADSENSE (SAFE LOAD) ================= */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         crossOrigin="anonymous"
       />
 
-      {/* ================= SPEED INSIGHTS (VERCEL) ================= */}
+      {/* ================= SPEED INSIGHTS (NO BLOCKING) ================= */}
       <SpeedInsights />
 
       {/* ================= APP ================= */}
       <Component {...pageProps} />
     </>
   );
-  }
+        }
