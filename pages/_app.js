@@ -2,16 +2,14 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/react";
+import { SpeedInsights } from "@vercel/speed-insights/next"; // ✅ FIXED IMPORT
 
 /* ================= V6 REVENUE STATE ================= */
 const revenueState = {
-  productPerformance: {},
-  pageRevenueScore: {},
   trafficIntent: "unknown",
 };
 
-/* ================= V6 REVENUE ENGINE ================= */
+/* ================= REVENUE ENGINE (OPTIMIZED) ================= */
 function useRevenueOS(router) {
   const initialized = useRef(false);
 
@@ -22,51 +20,48 @@ function useRevenueOS(router) {
     const path = window.location.pathname;
 
     /* ================= INTENT DETECTION ================= */
-    if (path.includes("/product/")) {
-      revenueState.trafficIntent = "high_intent";
-    } else if (path.includes("/blog/")) {
-      revenueState.trafficIntent = "medium_intent";
-    } else {
-      revenueState.trafficIntent = "low_intent";
-    }
+    revenueState.trafficIntent = path.includes("/product/")
+      ? "high_intent"
+      : path.includes("/blog/")
+      ? "medium_intent"
+      : "low_intent";
 
-    /* ================= REVENUE TRACKING ================= */
-    const trackRevenueSignal = () => {
+    /* ================= LAZY REVENUE SIGNAL ================= */
+    const fireRevenueSignal = () => {
       if (window.__REVENUE_OS_ACTIVE__) return;
       window.__REVENUE_OS_ACTIVE__ = true;
 
-      /* GA4 REVENUE EVENT */
-      if (typeof window.gtag !== "undefined") {
-        window.gtag("event", "revenue_intent", {
-          intent: revenueState.trafficIntent,
-          page: path,
-        });
-      }
+      requestIdleCallback(() => {
+        if (typeof window.gtag !== "undefined") {
+          window.gtag("event", "revenue_intent", {
+            intent: revenueState.trafficIntent,
+            page: path,
+          });
+        }
 
-      /* FACEBOOK VALUE SIGNAL */
-      if (typeof window.fbq !== "undefined") {
-        window.fbq("trackCustom", "RevenueIntent", {
-          intent: revenueState.trafficIntent,
-        });
-      }
+        if (typeof window.fbq !== "undefined") {
+          window.fbq("trackCustom", "RevenueIntent", {
+            intent: revenueState.trafficIntent,
+          });
+        }
+      });
     };
 
-    /* ================= DELAYED ACTIVATION ================= */
-    const events = ["scroll", "click", "touchstart"];
-
+    /* ================= INTERACTION TRIGGER ================= */
     const handler = () => {
-      trackRevenueSignal();
-      events.forEach((e) =>
+      fireRevenueSignal();
+
+      ["scroll", "click", "touchstart"].forEach((e) =>
         window.removeEventListener(e, handler)
       );
     };
 
-    events.forEach((e) =>
+    ["scroll", "click", "touchstart"].forEach((e) =>
       window.addEventListener(e, handler, { passive: true })
     );
 
     return () => {
-      events.forEach((e) =>
+      ["scroll", "click", "touchstart"].forEach((e) =>
         window.removeEventListener(e, handler)
       );
     };
@@ -79,21 +74,18 @@ export default function App({ Component, pageProps }) {
 
   useRevenueOS(router);
 
-  /* ================= ROUTE REVENUE TRACKING ================= */
+  /* ================= ROUTE TRACKING (OPTIMIZED) ================= */
   useEffect(() => {
     const handleRoute = (url) => {
       requestIdleCallback(() => {
-        if (typeof window.gtag !== "undefined") {
-          window.gtag("config", "G-YS8L61XLPR", {
-            page_path: url,
-          });
-        }
+        window.gtag?.("config", "G-YS8L61XLPR", {
+          page_path: url,
+        });
       });
     };
 
     router.events.on("routeChangeComplete", handleRoute);
-    return () =>
-      router.events.off("routeChangeComplete", handleRoute);
+    return () => router.events.off("routeChangeComplete", handleRoute);
   }, [router.events]);
 
   return (
@@ -105,33 +97,33 @@ export default function App({ Component, pageProps }) {
 
         <meta
           name="description"
-          content="Koloonline V6 Revenue OS - Autonomous Affiliate Profit Engine"
+          content="Koloonline V6 Revenue OS - AI Affiliate Profit Engine"
         />
-
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://koloonline.online" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* ================= GA4 ================= */}
+      {/* ================= GA4 (NON-BLOCKING) ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
 
-      <Script id="ga4" strategy="lazyOnload">
+      <Script id="ga4" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
 
           gtag('js', new Date());
           gtag('config', 'G-YS8L61XLPR', {
-            page_path: window.location.pathname,
+            send_page_view: false
           });
         `}
       </Script>
 
-      {/* ================= FACEBOOK PIXEL ================= */}
+      {/* ================= FACEBOOK PIXEL (LAZY) ================= */}
       <Script id="fb-pixel" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
@@ -148,14 +140,14 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= ADSENSE ================= */}
+      {/* ================= ADSENSE (DEFERRED) ================= */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
         strategy="lazyOnload"
         crossOrigin="anonymous"
       />
 
-      {/* ================= SPEED INSIGHTS ================= */}
+      {/* ================= SPEED INSIGHTS (CLEAN INTEGRATION) ================= */}
       <SpeedInsights />
 
       {/* ================= APP ================= */}
