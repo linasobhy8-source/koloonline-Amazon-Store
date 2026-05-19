@@ -4,12 +4,15 @@ import { db } from "../../config/firebase";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+/* ================= CATEGORY PAGE (AI ENHANCED) ================= */
+
 export default function CategoryPage() {
   const router = useRouter();
   const { category } = router.query;
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [allProducts, setAllProducts] = useState([]);
 
   useEffect(() => {
     if (category) fetchProducts();
@@ -23,21 +26,24 @@ export default function CategoryPage() {
 
       const normalizedCategory = (category || "").toLowerCase();
 
-      let filtered = snap.docs
-        .map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
+      const all = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      setAllProducts(all);
+
+      let filtered = all
         .filter((p) => {
-          const productCategory = (p.category || "").toLowerCase();
-          return productCategory === normalizedCategory;
+          return (p.category || "").toLowerCase() === normalizedCategory;
         })
         .map((p) => {
-          // 🔥 TRENDING + VIRAL BOOST ENGINE
+          /* ================= AI TREND ENGINE ================= */
           const trendScore =
             (p.score || 0) * 3 +
             (p.clicks || 0) * 2 +
             (p.views || 0) * 1 +
+            (p.orders || 0) * 5 +
             (p.viralBoost ? 50 : 0);
 
           return {
@@ -45,7 +51,7 @@ export default function CategoryPage() {
             trendScore,
           };
         })
-        .sort((a, b) => b.trendScore - a.trendScore); // 🔥 SORTING
+        .sort((a, b) => b.trendScore - a.trendScore);
 
       setProducts(filtered);
     } catch (err) {
@@ -56,19 +62,46 @@ export default function CategoryPage() {
     }
   }
 
+  /* ================= RELATED CATEGORIES ================= */
+
+  const relatedCategories = [
+    ...new Set(allProducts.map((p) => p.category).filter(Boolean)),
+  ].slice(0, 6);
+
   return (
     <div style={{ padding: 20, fontFamily: "Arial" }}>
 
       {/* ================= HEADER ================= */}
-      <h1 style={{ marginBottom: 20 }}>
-        📦 {category ? category : "Category"}
-      </h1>
+      <h1>📦 {category}</h1>
+
+      {/* ================= RELATED CATEGORIES (SEO BOOST) ================= */}
+      {relatedCategories.length > 0 && (
+        <div style={{ margin: "15px 0" }}>
+          <h3>🔥 Explore Other Categories</h3>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {relatedCategories.map((c) => (
+              <Link key={c} href={`/category/${c}`}>
+                <span style={{
+                  padding: "6px 10px",
+                  border: "1px solid #ddd",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  background: "#f5f5f5",
+                }}>
+                  {c}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ================= LOADING ================= */}
       {loading ? (
         <p>Loading products...</p>
       ) : products.length === 0 ? (
-        <p>No products found in this category</p>
+        <p>No products found</p>
       ) : (
         <div
           style={{
@@ -81,7 +114,6 @@ export default function CategoryPage() {
             <Link key={p.id} href={`/product/${p.asin || p.id}`}>
               <div style={card}>
 
-                {/* ================= IMAGE ================= */}
                 <img
                   src={p.image}
                   alt={p.title}
@@ -93,27 +125,23 @@ export default function CategoryPage() {
                   }}
                 />
 
-                {/* ================= TITLE ================= */}
                 <h4 style={{ marginTop: 10 }}>{p.title}</h4>
 
-                {/* ================= PRICE ================= */}
                 <p style={{ color: "#B12704", fontWeight: "bold" }}>
                   ${p.price}
                 </p>
 
-                {/* ================= VIRAL BADGE ================= */}
+                {/* ================= VIRAL ================= */}
                 {p.viralBoost && (
-                  <span
-                    style={{
-                      background: "red",
-                      color: "white",
-                      fontSize: 10,
-                      padding: "3px 6px",
-                      borderRadius: 6,
-                      display: "inline-block",
-                      marginTop: 5,
-                    }}
-                  >
+                  <span style={{
+                    background: "linear-gradient(45deg,#ff0000,#ff6600)",
+                    color: "white",
+                    fontSize: 10,
+                    padding: "3px 6px",
+                    borderRadius: 6,
+                    display: "inline-block",
+                    marginTop: 5,
+                  }}>
                     🔥 VIRAL
                   </span>
                 )}
@@ -127,7 +155,7 @@ export default function CategoryPage() {
   );
 }
 
-/* ================= CARD STYLE ================= */
+/* ================= CARD ================= */
 const card = {
   background: "white",
   padding: 12,
