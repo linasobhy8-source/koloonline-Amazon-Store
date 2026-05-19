@@ -10,12 +10,6 @@ import {
 
 import { db } from "../../config/firebase";
 
-/* ================= SEO INTERNAL LINKS ================= */
-import InternalLinks from "@/components/seo/InternalLinks";
-
-import { generateInternalLinks }
-from "@/lib/seo/internalLinks";
-
 /* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
@@ -35,7 +29,6 @@ Link: ${product.link}`;
     headers: {
       "Content-Type": "application/json",
     },
-
     body: JSON.stringify({
       type: "whatsapp_click",
       asin: product.asin,
@@ -52,309 +45,145 @@ function Stars({ rating = 4.5 }) {
   return (
     <div style={{ display: "flex", gap: 4 }}>
       {"⭐".repeat(full)}
-
-      <span style={{ marginLeft: 6 }}>
-        {rating}/5
-      </span>
+      <span style={{ marginLeft: 6 }}>{rating}/5</span>
     </div>
   );
 }
 
 /* ================= PAGE ================= */
 export default function ProductPage() {
-
   const router = useRouter();
   const { asin } = router.query;
 
-  const [product, setProduct] =
-    useState(null);
-
-  const [products, setProducts] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [product, setProduct] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     if (!router.isReady || !asin) return;
 
     const load = async () => {
-
       try {
-
         /* ================= CURRENT PRODUCT ================= */
-        const snap = await getDoc(
-          doc(db, "products", String(asin))
-        );
+        const snap = await getDoc(doc(db, "products", String(asin)));
 
         if (snap.exists()) {
-
-          const data = snap.data();
-
           setProduct({
             asin,
-            ...data,
+            ...snap.data(),
           });
-
         } else {
-
           setLoading(false);
           return;
         }
 
-        /* ================= RELATED PRODUCTS ================= */
-        const productsSnap = await getDocs(
-          collection(db, "products")
-        );
+        /* ================= ALL PRODUCTS (FOR RELATED) ================= */
+        const productsSnap = await getDocs(collection(db, "products"));
 
-        const allProducts =
-          productsSnap.docs.map((doc) => ({
-            asin: doc.id,
-            ...doc.data(),
-          }));
+        const allProducts = productsSnap.docs.map((doc) => ({
+          asin: doc.id,
+          ...doc.data(),
+        }));
 
         setProducts(allProducts);
-
       } catch (err) {
-
-        console.error(
-          "PRODUCT PAGE ERROR:",
-          err
-        );
-
+        console.error("PRODUCT PAGE ERROR:", err);
       } finally {
-
         setLoading(false);
-
       }
     };
 
     load();
-
   }, [router.isReady, asin]);
 
   /* ================= LOADING ================= */
   if (loading) {
-    return (
-      <p style={{ padding: 20 }}>
-        Loading...
-      </p>
-    );
+    return <p style={{ padding: 20 }}>Loading...</p>;
   }
 
   /* ================= NOT FOUND ================= */
   if (!product) {
-
     return (
       <>
         <Head>
-          <title>
-            Product Not Found | Koloonline
-          </title>
-
-          <meta
-            name="robots"
-            content="noindex"
-          />
+          <title>Product Not Found | Koloonline</title>
+          <meta name="robots" content="noindex" />
         </Head>
 
-        <p style={{ padding: 20 }}>
-          Product Not Found
-        </p>
+        <p style={{ padding: 20 }}>Product Not Found</p>
       </>
     );
   }
 
   /* ================= SAFE VALUES ================= */
-
-  const title =
-    product.title ||
-    "Amazon Product";
-
+  const title = product.title || "Amazon Product";
   const description =
     product.description ||
     `${title} best Amazon deal and smart shopping recommendation.`;
 
-  const imageUrl =
-    product.image ||
-    fallbackImage;
+  const imageUrl = product.image || fallbackImage;
+  const price = Number(product.price || 0);
+  const rating = Number(product.rating || 4.4);
+  const category = product.category || "general";
 
-  const price =
-    Number(product.price || 0);
+  const url = `https://koloonline.online/product/${product.asin}`;
 
-  const rating =
-    Number(product.rating || 4.4);
-
-  const category =
-    product.category || "general";
-
-  const url =
-    `https://koloonline.online/product/${product.asin}`;
-
-  /* ================= RELATED ================= */
-
-  const relatedProducts =
-    generateInternalLinks({
-      currentItem: product,
-      allItems: products,
-      limit: 8,
-    });
-
-  /* ================= PRODUCT SCHEMA ================= */
-
+  /* ================= SCHEMA ================= */
   const schema = {
     "@context": "https://schema.org/",
     "@type": "Product",
-
     name: title,
-
     image: [imageUrl],
-
     description,
-
     sku: product.asin,
-
-    brand: {
-      "@type": "Brand",
-      name: "Amazon",
-    },
-
+    brand: { "@type": "Brand", name: "Amazon" },
     category,
-
     offers: {
       "@type": "Offer",
-
       priceCurrency: "USD",
-
       price,
-
-      availability:
-        "https://schema.org/InStock",
-
-      itemCondition:
-        "https://schema.org/NewCondition",
-
+      availability: "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
       url,
     },
-
     aggregateRating: {
       "@type": "AggregateRating",
-
       ratingValue: rating,
-
-      reviewCount:
-        Number(product.reviewCount || 120),
+      reviewCount: Number(product.reviewCount || 120),
     },
   };
 
   return (
-    <div
-      style={{
-        fontFamily: "Arial",
-        background: "#f5f5f5",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
 
       {/* ================= SEO ================= */}
-
       <Head>
+        <title>{title} | Best Amazon Deal 2026</title>
 
-        <title>
-          {title} | Best Amazon Deal 2026
-        </title>
+        <meta name="description" content={description} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={url} />
 
-        <meta
-          name="description"
-          content={description}
-        />
+        {/* OG */}
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:url" content={url} />
 
-        <meta
-          name="keywords"
-          content={`${title}, amazon deals, ${category}, best amazon products`}
-        />
-
-        <link
-          rel="canonical"
-          href={url}
-        />
-
-        <meta
-          name="robots"
-          content="index, follow"
-        />
-
-        {/* ================= OPEN GRAPH ================= */}
-
-        <meta
-          property="og:type"
-          content="product"
-        />
-
-        <meta
-          property="og:title"
-          content={title}
-        />
-
-        <meta
-          property="og:description"
-          content={description}
-        />
-
-        <meta
-          property="og:image"
-          content={imageUrl}
-        />
-
-        <meta
-          property="og:url"
-          content={url}
-        />
-
-        {/* ================= TWITTER ================= */}
-
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
-
-        <meta
-          name="twitter:title"
-          content={title}
-        />
-
-        <meta
-          name="twitter:description"
-          content={description}
-        />
-
-        <meta
-          name="twitter:image"
-          content={imageUrl}
-        />
-
-        {/* ================= SCHEMA ================= */}
-
+        {/* SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(schema),
           }}
         />
-
       </Head>
 
       {/* ================= PRODUCT ================= */}
-
       <div style={container}>
 
-        <img
-          src={imageUrl}
-          alt={title}
-          style={image}
-          loading="lazy"
-        />
+        <img src={imageUrl} alt={title} style={image} loading="lazy" />
 
         <div style={{ flex: 1 }}>
 
@@ -362,195 +191,102 @@ export default function ProductPage() {
 
           <Stars rating={rating} />
 
-          <h2 style={{ color: "#B12704" }}>
-            ${price}
-          </h2>
-
-          {/* ================= VIRAL ================= */}
+          <h2 style={{ color: "#B12704" }}>${price}</h2>
 
           {product.viralBoost && (
-
-            <span
-              style={{
-                background:
-                  "linear-gradient(45deg,#ff0000,#ff6600)",
-
-                color: "white",
-
-                padding: "6px 12px",
-
-                borderRadius: 20,
-
-                fontWeight: "bold",
-
-                fontSize: 12,
-
-                display: "inline-block",
-
-                marginTop: 10,
-              }}
-            >
+            <span style={badge}>
               🔥 VIRAL TRENDING NOW
             </span>
-
           )}
 
-          {/* ================= DESCRIPTION ================= */}
-
-          <p
-            style={{
-              marginTop: 20,
-              lineHeight: 1.7,
-            }}
-          >
+          <p style={{ marginTop: 20, lineHeight: 1.7 }}>
             {description}
           </p>
-
-          {/* ================= BUY ================= */}
 
           <button
             style={buyBtn}
             onClick={() => {
-
               fetch("/api/track-event", {
                 method: "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-                },
-
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   type: "affiliate_click",
                   asin: product.asin,
                 }),
               });
 
-              window.open(
-                product.link,
-                "_blank"
-              );
+              window.open(product.link, "_blank");
             }}
           >
             🛒 Buy on Amazon
           </button>
 
-          {/* ================= WHATSAPP ================= */}
-
           <button
             style={waBtn}
-            onClick={() =>
-              sendWhatsApp(product)
-            }
+            onClick={() => sendWhatsApp(product)}
           >
             💬 Order via WhatsApp
           </button>
 
-          {/* ================= TRUST ================= */}
-
-          <p
-            style={{
-              marginTop: 10,
-              color: "gray",
-              fontSize: 12,
-            }}
-          >
-            ⚡ Limited-time Amazon deal —
-            prices may change anytime.
+          <p style={{ marginTop: 10, color: "gray", fontSize: 12 }}>
+            ⚡ Limited-time Amazon deal — prices may change anytime.
           </p>
 
         </div>
       </div>
-
-      {/* ================= RELATED ================= */}
-
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: 20,
-        }}
-      >
-
-        <InternalLinks
-          items={relatedProducts}
-          title="Customers Also Viewed"
-        />
-
-      </div>
-
     </div>
   );
 }
 
 /* ================= STYLES ================= */
-
 const container = {
-
   display: "flex",
-
   flexWrap: "wrap",
-
   gap: 20,
-
   padding: 20,
-
   background: "white",
-
   maxWidth: 1200,
-
   margin: "0 auto",
 };
 
 const image = {
-
   width: 320,
-
   maxWidth: "100%",
-
   height: 320,
-
   objectFit: "contain",
-
   borderRadius: 10,
 };
 
 const buyBtn = {
-
   width: "100%",
-
   padding: 15,
-
   background: "#ff9900",
-
   border: "none",
-
   color: "white",
-
   fontWeight: "bold",
-
   marginTop: 20,
-
   cursor: "pointer",
-
   borderRadius: 8,
 };
 
 const waBtn = {
-
   width: "100%",
-
   padding: 15,
-
   background: "#25D366",
-
   color: "white",
-
   border: "none",
-
   marginTop: 10,
-
   cursor: "pointer",
-
   borderRadius: 8,
+};
+
+const badge = {
+  background: "linear-gradient(45deg,#ff0000,#ff6600)",
+  color: "white",
+  padding: "6px 12px",
+  borderRadius: 20,
+  fontWeight: "bold",
+  fontSize: 12,
+  display: "inline-block",
+  marginTop: 10,
 };
