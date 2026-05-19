@@ -4,33 +4,83 @@ export default function InternalLinks({
   items = [],
   title = "Related Products",
 }) {
-  if (!items.length) return null;
+  if (!items || items.length === 0) return null;
 
   return (
-    <section className="mt-12">
-      <div className="border-t pt-6">
-        <h2 className="text-2xl font-bold mb-6">
+    <section style={{ marginTop: 40 }}>
+      <div style={{ borderTop: "1px solid #eee", paddingTop: 20 }}>
+        
+        <h2 style={{ fontSize: 22, fontWeight: "bold", marginBottom: 20 }}>
           {title}
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          {items.map((item) => (
-            <Link
-              key={item.asin}
-              href={`/product/${item.asin}`}
-              className="border rounded-2xl p-4 hover:shadow-md transition"
-            >
-              <div className="font-semibold line-clamp-2">
-                {item.title}
-              </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 15,
+          }}
+        >
+          {items.map((item, index) => {
+            const id = item.asin || item.id || item.slug || index;
 
-              {item.price && (
-                <div className="mt-2 text-sm text-gray-500">
-                  ${item.price}
+            const href = item.asin
+              ? `/product/${item.asin}`
+              : item.slug
+              ? `/blog/${item.slug}`
+              : "#";
+
+            return (
+              <Link key={id} href={href}>
+                <div
+                  style={{
+                    border: "1px solid #e5e5e5",
+                    borderRadius: 12,
+                    padding: 15,
+                    background: "#fff",
+                    cursor: "pointer",
+                    transition: "0.2s",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 14,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {item.title || "Untitled Product"}
+                  </div>
+
+                  {item.price !== undefined && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 13,
+                        color: "#B12704",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      ${item.price}
+                    </div>
+                  )}
+
+                  {item.excerpt && (
+                    <p
+                      style={{
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "#666",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {item.excerpt.slice(0, 90)}...
+                    </p>
+                  )}
                 </div>
-              )}
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
