@@ -2,14 +2,15 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-
+import { SpeedInsights } from "@vercel/speed-insights"; https/koloonline-amazon-store.vercel.app
 /* ================= SAFE IDLE HELPER ================= */
 const safeIdle = (cb) =>
   typeof window !== "undefined" && "requestIdleCallback" in window
     ? requestIdleCallback(cb)
     : setTimeout(cb, 1);
 
+=======
+ main
 /* ================= V6 REVENUE STATE ================= */
 const revenueState = {
   trafficIntent: "unknown",
@@ -26,19 +27,29 @@ function useRevenueOS() {
 
     const path = window.location.pathname;
 
+ https/koloonline-amazon-store.vercel.app
     /* ================= INTENT DETECTION ================= */
+=======
+ main
     revenueState.trafficIntent = path.includes("/product/")
       ? "high_intent"
       : path.includes("/blog/")
       ? "medium_intent"
       : "low_intent";
 
+ https/koloonline-amazon-store.vercel.app
     /* ================= REVENUE SIGNAL ================= */
+=======
+ main
     const fireSignal = () => {
       if (window.__REVENUE_OS_ACTIVE__) return;
       window.__REVENUE_OS_ACTIVE__ = true;
 
+ https/koloonline-amazon-store.vercel.app
       safeIdle(() => {
+=======
+      requestIdleCallback(() => {
+ main
         window.gtag?.("event", "revenue_intent", {
           intent: revenueState.trafficIntent,
           page: path,
@@ -63,10 +74,16 @@ function useRevenueOS() {
     };
   }, []);
 
+ https/koloonline-amazon-store.vercel.app
   /* ================= ROUTE TRACKING ================= */
   useEffect(() => {
     const handleRoute = (url) => {
       safeIdle(() => {
+=======
+  useEffect(() => {
+    const handleRoute = (url) => {
+      requestIdleCallback(() => {
+ main
         window.gtag?.("config", "G-YS8L61XLPR", {
           page_path: url,
         });
@@ -78,12 +95,17 @@ function useRevenueOS() {
   }, [router.events]);
 }
 
+ https/koloonline-amazon-store.vercel.app
 /* ================= GLOBAL APP ================= */
+=======
+/* ================= APP ================= */
+ main
 export default function App({ Component, pageProps }) {
   useRevenueOS();
 
   return (
     <>
+ https/koloonline-amazon-store.vercel.app
       {/* ================= SEO CORE ================= */}
       <Head>
         <meta charSet="UTF-8" />
@@ -94,11 +116,17 @@ export default function App({ Component, pageProps }) {
           content="Koloonline Amazon Affiliate Store - AI Revenue Engine"
         />
 
+=======
+      {/* SEO */}
+      <Head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+ main
         <meta name="robots" content="index, follow" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {/* ================= GA4 ================= */}
+      {/* GA4 */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
         strategy="afterInteractive"
@@ -111,6 +139,7 @@ export default function App({ Component, pageProps }) {
           window.gtag = gtag;
 
           gtag('js', new Date());
+ https/koloonline-amazon-store.vercel.app
           gtag('config', 'G-YS8L61XLPR', {
             send_page_view: false
           });
@@ -118,6 +147,13 @@ export default function App({ Component, pageProps }) {
       </Script>
 
       {/* ================= FACEBOOK PIXEL ================= */}
+=======
+          gtag('config', 'G-YS8L61XLPR', { send_page_view: false });
+        `}
+      </Script>
+
+      {/* Facebook Pixel */}
+ main
       <Script id="fb" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
@@ -133,17 +169,20 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= ADSENSE ================= */}
+      {/* ADS */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
         strategy="lazyOnload"
         crossOrigin="anonymous"
       />
 
+ https/koloonline-amazon-store.vercel.app
       {/* ================= SPEED INSIGHTS ================= */}
+=======
+      {/* ✅ SPEED INSIGHTS (FIXED) */}
+ main
       <SpeedInsights />
 
-      {/* ================= APP ================= */}
       <Component {...pageProps} />
     </>
   );
