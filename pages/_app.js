@@ -3,6 +3,9 @@ import Script from "next/script";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 
+/* ================= SPEED INSIGHTS ================= */
+import { SpeedInsights } from "@vercel/speed-insights/react";
+
 /* ================= GLOBAL APP ================= */
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -105,15 +108,18 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
 
-      {/* ================= ADSENSE (CORRECT VERSION) ================= */}
+      {/* ================= ADSENSE ================= */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
         strategy="afterInteractive"
         crossOrigin="anonymous"
       />
 
+      {/* ================= SPEED INSIGHTS (VERCEL) ================= */}
+      <SpeedInsights />
+
       {/* ================= APP ================= */}
       <Component {...pageProps} />
     </>
   );
-            }
+  }
