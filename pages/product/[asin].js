@@ -1,6 +1,10 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import Link from "next/link";
+
 import {
   doc,
   getDoc,
@@ -12,9 +16,15 @@ import { db } from "../../config/firebase";
 
 /* ================= AI SEO GRAPH ================= */
 import { buildSeoGraph } from "@/lib/seo/aiSeoGraph";
-import InternalLinks from "@/components/seo/InternalLinks";
 
-import Link from "next/link";
+/* ================= DYNAMIC SEO COMPONENT ================= */
+const InternalLinks = dynamic(
+  () => import("@/components/seo/InternalLinks"),
+  {
+    ssr: false,
+    loading: () => <p>Loading recommendations...</p>,
+  }
+);
 
 /* ================= FALLBACK ================= */
 const fallbackImage =
@@ -49,9 +59,18 @@ function Stars({ rating = 4.5 }) {
   const full = Math.floor(rating);
 
   return (
-    <div style={{ display: "flex", gap: 4 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        marginTop: 8,
+      }}
+    >
       {"⭐".repeat(full)}
-      <span style={{ marginLeft: 6 }}>{rating}/5</span>
+      <span style={{ marginLeft: 6 }}>
+        {rating}/5
+      </span>
     </div>
   );
 }
@@ -71,7 +90,9 @@ export default function ProductPage() {
     const load = async () => {
       try {
         /* ================= CURRENT PRODUCT ================= */
-        const snap = await getDoc(doc(db, "products", String(asin)));
+        const snap = await getDoc(
+          doc(db, "products", String(asin))
+        );
 
         if (snap.exists()) {
           setProduct({
@@ -84,7 +105,9 @@ export default function ProductPage() {
         }
 
         /* ================= ALL PRODUCTS ================= */
-        const productsSnap = await getDocs(collection(db, "products"));
+        const productsSnap = await getDocs(
+          collection(db, "products")
+        );
 
         const allProducts = productsSnap.docs.map((doc) => ({
           asin: doc.id,
@@ -105,7 +128,17 @@ export default function ProductPage() {
 
   /* ================= LOADING ================= */
   if (loading) {
-    return <p style={{ padding: 20 }}>Loading...</p>;
+    return (
+      <div
+        style={{
+          padding: 40,
+          textAlign: "center",
+          fontFamily: "Arial",
+        }}
+      >
+        Loading Product...
+      </div>
+    );
   }
 
   /* ================= NOT FOUND ================= */
@@ -117,7 +150,9 @@ export default function ProductPage() {
           <meta name="robots" content="noindex" />
         </Head>
 
-        <p style={{ padding: 20 }}>Product Not Found</p>
+        <div style={{ padding: 40 }}>
+          Product Not Found
+        </div>
       </>
     );
   }
@@ -130,8 +165,11 @@ export default function ProductPage() {
     `${title} best Amazon deal and smart shopping recommendation.`;
 
   const imageUrl = product.image || fallbackImage;
+
   const price = Number(product.price || 0);
+
   const rating = Number(product.rating || 4.4);
+
   const category = product.category || "general";
 
   const url = `https://koloonline.online/product/${product.asin}`;
@@ -140,25 +178,76 @@ export default function ProductPage() {
   const graph = buildSeoGraph(products, 6);
 
   const relatedProducts =
-    graph.find((p) => p.asin === product.asin)?.internalLinks || [];
+    graph.find((p) => p.asin === product.asin)
+      ?.internalLinks || [];
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
 
       {/* ================= SEO ================= */}
       <Head>
         <title>{title} | Best Amazon Deal 2026</title>
 
-        <meta name="description" content={description} />
-        <meta name="robots" content="index, follow" />
+        <meta
+          name="description"
+          content={description}
+        />
+
+        <meta
+          name="keywords"
+          content={`${title}, Amazon Deals, ${category}, Best Amazon Products`}
+        />
+
+        <meta
+          name="robots"
+          content="index, follow"
+        />
+
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1"
+        />
+
         <link rel="canonical" href={url} />
 
+        {/* ================= OPEN GRAPH ================= */}
         <meta property="og:type" content="product" />
         <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
+        <meta
+          property="og:description"
+          content={description}
+        />
         <meta property="og:image" content={imageUrl} />
         <meta property="og:url" content={url} />
 
+        {/* ================= TWITTER ================= */}
+        <meta
+          name="twitter:card"
+          content="summary_large_image"
+        />
+
+        <meta
+          name="twitter:title"
+          content={title}
+        />
+
+        <meta
+          name="twitter:description"
+          content={description}
+        />
+
+        <meta
+          name="twitter:image"
+          content={imageUrl}
+        />
+
+        {/* ================= SCHEMA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -169,20 +258,34 @@ export default function ProductPage() {
               image: [imageUrl],
               description,
               sku: product.asin,
-              brand: { "@type": "Brand", name: "Amazon" },
+
+              brand: {
+                "@type": "Brand",
+                name: "Amazon",
+              },
+
               category,
+
               offers: {
                 "@type": "Offer",
                 priceCurrency: "USD",
                 price,
-                availability: "https://schema.org/InStock",
-                itemCondition: "https://schema.org/NewCondition",
+
+                availability:
+                  "https://schema.org/InStock",
+
+                itemCondition:
+                  "https://schema.org/NewCondition",
+
                 url,
               },
+
               aggregateRating: {
                 "@type": "AggregateRating",
                 ratingValue: rating,
-                reviewCount: Number(product.reviewCount || 120),
+                reviewCount: Number(
+                  product.reviewCount || 120
+                ),
               },
             }),
           }}
@@ -199,40 +302,78 @@ export default function ProductPage() {
           background: "white",
           maxWidth: 1200,
           margin: "0 auto",
+          borderRadius: 14,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
         }}
       >
-        <img
-          src={imageUrl}
-          alt={title}
-          style={{
-            width: 320,
-            maxWidth: "100%",
-            height: 320,
-            objectFit: "contain",
-            borderRadius: 10,
-          }}
-          loading="lazy"
-        />
 
-        <div style={{ flex: 1 }}>
-          <h1>{title}</h1>
+        {/* ================= OPTIMIZED IMAGE ================= */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 300,
+            textAlign: "center",
+          }}
+        >
+          <Image
+            src={imageUrl}
+            alt={title}
+            width={500}
+            height={500}
+            priority={true}
+            quality={85}
+            sizes="(max-width:768px) 100vw, 500px"
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              height: "auto",
+              objectFit: "contain",
+              borderRadius: 12,
+            }}
+          />
+        </div>
+
+        {/* ================= INFO ================= */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 300,
+          }}
+        >
+          <h1
+            style={{
+              fontSize: 30,
+              lineHeight: 1.4,
+            }}
+          >
+            {title}
+          </h1>
 
           <Stars rating={rating} />
 
-          <h2 style={{ color: "#B12704" }}>${price}</h2>
+          <h2
+            style={{
+              color: "#B12704",
+              fontSize: 34,
+              marginTop: 20,
+            }}
+          >
+            ${price}
+          </h2>
 
           {/* ================= VIRAL BADGE ================= */}
           {product.viralBoost && (
             <span
               style={{
-                background: "linear-gradient(45deg,#ff0000,#ff6600)",
+                background:
+                  "linear-gradient(45deg,#ff0000,#ff6600)",
                 color: "white",
-                padding: "6px 12px",
-                borderRadius: 20,
+                padding: "8px 16px",
+                borderRadius: 30,
                 fontWeight: "bold",
-                fontSize: 12,
+                fontSize: 13,
                 display: "inline-block",
-                marginTop: 10,
+                marginTop: 15,
               }}
             >
               🔥 VIRAL TRENDING NOW
@@ -240,7 +381,14 @@ export default function ProductPage() {
           )}
 
           {/* ================= DESCRIPTION ================= */}
-          <p style={{ marginTop: 20, lineHeight: 1.7 }}>
+          <p
+            style={{
+              marginTop: 25,
+              lineHeight: 1.9,
+              color: "#444",
+              fontSize: 16,
+            }}
+          >
             {description}
           </p>
 
@@ -248,26 +396,28 @@ export default function ProductPage() {
           <button
             style={{
               width: "100%",
-              padding: 15,
+              padding: 16,
               background: "#ff9900",
               border: "none",
               color: "white",
               fontWeight: "bold",
-              marginTop: 20,
+              marginTop: 25,
               cursor: "pointer",
-              borderRadius: 8,
+              borderRadius: 10,
+              fontSize: 17,
             }}
             onClick={() => {
               fetch("/api/track-event", {
                 method: "POST",
                 headers: {
-                  "Content-Type": "application/json",
+                  "Content-Type":
+                    "application/json",
                 },
                 body: JSON.stringify({
                   type: "affiliate_click",
                   asin: product.asin,
                 }),
-              });
+              }).catch(() => {});
 
               window.open(product.link, "_blank");
             }}
@@ -279,30 +429,33 @@ export default function ProductPage() {
           <button
             style={{
               width: "100%",
-              padding: 15,
+              padding: 16,
               background: "#25D366",
               color: "white",
               border: "none",
-              marginTop: 10,
+              marginTop: 12,
               cursor: "pointer",
-              borderRadius: 8,
+              borderRadius: 10,
+              fontSize: 17,
+              fontWeight: "bold",
             }}
             onClick={() => sendWhatsApp(product)}
           >
             💬 Order via WhatsApp
           </button>
 
-          {/* ================= CATEGORY CLUSTER LINK ================= */}
-          <div style={{ marginTop: 15 }}>
+          {/* ================= CATEGORY ================= */}
+          <div style={{ marginTop: 20 }}>
             <Link href={`/category/${category}`}>
               <span
                 style={{
                   display: "inline-block",
-                  padding: "6px 12px",
+                  padding: "8px 14px",
                   borderRadius: 20,
                   background: "#f0f0f0",
-                  fontSize: 12,
+                  fontSize: 13,
                   cursor: "pointer",
+                  fontWeight: "bold",
                 }}
               >
                 🔗 Explore more in {category}
@@ -313,7 +466,13 @@ export default function ProductPage() {
       </div>
 
       {/* ================= AI SEO INTERNAL LINKS ================= */}
-      <div style={{ maxWidth: 1200, margin: "30px auto", padding: 20 }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "30px auto",
+          padding: 20,
+        }}
+      >
         <InternalLinks
           items={relatedProducts}
           title="Customers Also Viewed"
