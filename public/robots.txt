@@ -1,0 +1,32 @@
+User-agent: *
+Allow: /
+
+# ================= CORE INDEXABLE SECTIONS =================
+Allow: /product/
+Allow: /products/
+Allow: /category/
+Allow: /categories/
+Allow: /blog/
+
+# ================= IMPORTANT SYSTEM PROTECTION =================
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /private/
+Disallow: /_next/
+Disallow: /api/internal/
+
+# ================= BLOCK ONLY LOW-VALUE PAGES =================
+Disallow: /success
+Disallow: /store
+Disallow: /login
+Disallow: /register
+
+# ================= SEARCH CONTROL (IMPORTANT FOR ADSENSE) =================
+Disallow: /*?q=
+Disallow: /*?search=
+
+# ❌ مهم: لا تمنع كل parameters نهائيًا (يضر Discover و SEO)
+
+# ================= SITEMAP (IMPORTANT FIX) =================
+Sitemap: https://koloonline.online/sitemap.xml

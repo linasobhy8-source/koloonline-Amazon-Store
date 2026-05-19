@@ -58,9 +58,10 @@ build/Release
 .node_repl_history
 .vscode-test
 
-# ================= Config / Env =================
+# ================= Config / Env (IMPORTANT 🔐) =================
 .env
 .env.*
+.env.local
 !.env.example
 
 # ================= Lint / Cache =================

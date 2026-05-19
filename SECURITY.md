@@ -1,58 +1,76 @@
-# 🛡️ Security Policy – Koloonline Store
+# 🛡️ Security Policy – Koloonline Amazon Store
 
-## 🔹 Supported Versions
+## 🔐 Supported Versions
 
-We only provide security updates for the latest active version of the project.
+We only provide security updates for the latest production version of the project.
 
-| Version | Supported |
-|--------|----------|
-| main / production | ✅ Yes |
-| older branches | ❌ No |
-
----
-
-## 📝 Reporting a Vulnerability
-
-If you discover a security issue in Koloonline Store, please report it responsibly.
-
-### 📧 Contact
-Send details to:
-**security@koloonline.online**
-
-(If email is not available, use Contact page instead)
+| Version | Support |
+|--------|--------|
+| Production | ✅ Supported |
+| Older versions | ❌ Not supported |
 
 ---
 
-## 🔒 What to Include
-Please include:
-- Description of the issue
+## 🚨 Reporting a Vulnerability
+
+If you discover a security vulnerability, please report it responsibly.
+
+### 📧 Contact Methods:
+- Contact form: `/contact`
+- Email: Security@koloonline.online (if enabled)
+
+---
+
+## 📋 Required Information
+
+To help us investigate, please include:
+
+- Clear description of the issue
 - Steps to reproduce
-- Affected page (e.g. /cart, /product)
-- Screenshots (if applicable)
+- Affected page (e.g. `/product`, `/cart`)
+- Screenshots or proof of concept
 
 ---
 
-## ⏳ Response Time
-- 48–72 hours response time
-- Critical issues prioritized immediately
+## ⏱️ Response Time
+
+We aim to respond within:
+**48 – 72 hours**
 
 ---
 
-## ⚠️ Important Notes
-- Static frontend + affiliate tracking project
-- No user data stored on servers
-- Payments handled by Amazon
-- Dashboard is analytics-only
+## 🔒 Security Scope
+
+This project is a **frontend-based affiliate platform**, including:
+
+- Product display system
+- Affiliate tracking system
+- User interaction tracking (clicks/events)
+- Local storage (cart, preferences)
 
 ---
 
-## 🚀 Security Scope
+## 🧠 Important Notes
 
-Included:
-- Frontend website
-- GA4 / GTM tracking
-- LocalStorage cart
+- No sensitive user data (passwords or payments) is stored
+- Payments and purchases are handled externally via Amazon
+- Analytics is handled via:
+  - Google Analytics (GA4)
+  - Google Tag Manager (GTM)
 
-Not included:
-- Amazon systems
-- External services (Google, Vercel)
+---
+
+## ⚙️ Infrastructure Security
+
+The project relies on:
+
+- Firebase Firestore (data source)
+- Vercel (hosting platform)
+- Google services (analytics & tracking)
+
+---
+
+## 📌 Privacy
+
+We do not collect personal sensitive data.  
+Only anonymized analytics data is used to improve performance and user experience.
