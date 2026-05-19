@@ -1,138 +1,55 @@
 import Head from "next/head";
 import Script from "next/script";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-
-/* ================= V6 REVENUE STATE ================= */
-const revenueState = {
-  productPerformance: {},
-  pageRevenueScore: {},
-  trafficIntent: "unknown",
-};
-
-/* ================= V6 REVENUE ENGINE ================= */
-function useRevenueOS(router) {
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const path = window.location.pathname;
-
-    /* ================= INTENT DETECTION ================= */
-    if (path.includes("/product/")) {
-      revenueState.trafficIntent = "high_intent";
-    } else if (path.includes("/blog/")) {
-      revenueState.trafficIntent = "medium_intent";
-    } else {
-      revenueState.trafficIntent = "low_intent";
-    }
-
-    /* ================= REVENUE TRACKING ================= */
-    const trackRevenueSignal = () => {
-      if (window.__REVENUE_OS_ACTIVE__) return;
-      window.__REVENUE_OS_ACTIVE__ = true;
-
-      /* GA4 REVENUE EVENT */
-      if (typeof window.gtag !== "undefined") {
-        window.gtag("event", "revenue_intent", {
-          intent: revenueState.trafficIntent,
-          page: path,
-        });
-      }
-
-      /* FACEBOOK VALUE SIGNAL */
-      if (typeof window.fbq !== "undefined") {
-        window.fbq("trackCustom", "RevenueIntent", {
-          intent: revenueState.trafficIntent,
-        });
-      }
-    };
-
-    /* ================= DELAYED ACTIVATION ================= */
-    const events = ["scroll", "click", "touchstart"];
-
-    const handler = () => {
-      trackRevenueSignal();
-      events.forEach((e) =>
-        window.removeEventListener(e, handler)
-      );
-    };
-
-    events.forEach((e) =>
-      window.addEventListener(e, handler, { passive: true })
-    );
-
-    return () => {
-      events.forEach((e) =>
-        window.removeEventListener(e, handler)
-      );
-    };
-  }, []);
-}
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 /* ================= GLOBAL APP ================= */
 export default function App({ Component, pageProps }) {
   const router = useRouter();
 
-  useRevenueOS(router);
-
-  /* ================= ROUTE REVENUE TRACKING ================= */
+  /* ================= GA4 SPA FIX ================= */
   useEffect(() => {
-    const handleRoute = (url) => {
-      requestIdleCallback(() => {
-        if (typeof window.gtag !== "undefined") {
-          window.gtag("config", "G-YS8L61XLPR", {
-            page_path: url,
-          });
-        }
-      });
+    const handleRouteChange = (url) => {
+      if (typeof window.gtag !== "undefined") {
+        window.gtag("config", "G-YS8L61XLPR", {
+          page_path: url,
+        });
+      }
     };
 
-    router.events.on("routeChangeComplete", handleRoute);
-    return () =>
-      router.events.off("routeChangeComplete", handleRoute);
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => router.events.off("routeChangeComplete", handleRouteChange);
   }, [router.events]);
 
   return (
     <>
-      {/* ================= SEO CORE ================= */}
+      {/* ================= GLOBAL SEO ================= */}
       <Head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-        <meta
-          name="description"
-          content="Koloonline V6 Revenue OS - Autonomous Affiliate Profit Engine"
-        />
-
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://koloonline.online" />
+        <meta name="description" content="Koloonline Amazon Store" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       {/* ================= GA4 ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
 
-      <Script id="ga4" strategy="lazyOnload">
+      <Script id="ga4" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
-
+          window.gtag = gtag;
           gtag('js', new Date());
-          gtag('config', 'G-YS8L61XLPR', {
-            page_path: window.location.pathname,
-          });
+          gtag('config', 'G-YS8L61XLPR');
         `}
       </Script>
 
       {/* ================= FACEBOOK PIXEL ================= */}
-      <Script id="fb-pixel" strategy="lazyOnload">
+      <Script id="fb" strategy="afterInteractive">
         {`
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -151,15 +68,15 @@ export default function App({ Component, pageProps }) {
       {/* ================= ADSENSE ================= */}
       <Script
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         crossOrigin="anonymous"
       />
 
-      {/* ================= SPEED INSIGHTS ================= */}
+      {/* ================= SPEED INSIGHTS (FIXED) ================= */}
       <SpeedInsights />
 
       {/* ================= APP ================= */}
       <Component {...pageProps} />
     </>
   );
-            }
+    }
