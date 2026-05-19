@@ -1,77 +1,125 @@
 import { runGrowthEngine } from "../engine/growthEngine";
-import { trafficController } from "./trafficController";
-import { revenueOptimizer } from "./revenueOptimizer";
 import { executeActions } from "./executeActions";
-import { neuralFeedbackLoop } from "./neuralFeedbackLoop";
 
-/* ================= SAFE HELPERS ================= */
-const safeArray = (v) => (Array.isArray(v) ? v : []);
+/* ================= COMPANY MEMORY ================= */
+let companyState = {
+  revenueFocus: [],
+  trafficFocus: [],
+  contentFocus: [],
+  weakPoints: [],
+};
 
-/* ================= MAIN ORCHESTRATOR ================= */
-export async function autonomousOS() {
+/* ================= ANALYTICS ENGINE ================= */
+function analyze(data) {
+  const products = data?.topProducts || [];
+  const trending = data?.trendingProducts || [];
+  const viral = data?.viralProducts || [];
+
+  const all = [...products, ...trending, ...viral];
+
+  const scored = all.map((p) => ({
+    ...p,
+    businessScore:
+      (p.views || 0) * 1 +
+      (p.clicks || 0) * 2 +
+      (p.orders || 0) * 10 +
+      (p.viralBoost ? 50 : 0),
+  }));
+
+  scored.sort((a, b) => b.businessScore - a.businessScore);
+
+  return scored;
+}
+
+/* ================= STRATEGY BUILDER ================= */
+function buildStrategy(scored) {
+  const top = scored.slice(0, 10);
+  const weak = scored.slice(-5);
+
+  companyState.revenueFocus = top.slice(0, 5);
+  companyState.trafficFocus = top.slice(5, 10);
+  companyState.weakPoints = weak;
+
+  companyState.contentFocus = top
+    .filter((p) => p.views > 100)
+    .slice(0, 5);
+
+  return {
+    homepage: companyState.trafficFocus,
+    revenue: companyState.revenueFocus,
+    content: companyState.contentFocus,
+    cleanup: companyState.weakPoints,
+  };
+}
+
+/* ================= AUTO GROWTH LOOP ================= */
+async function growthLoop(strategy) {
+  const actions = await executeActions({
+    ...strategy,
+    mode: "AUTONOMOUS_COMPANY_OS",
+  });
+
+  return actions;
+}
+
+/* ================= SELF HEALING ================= */
+function selfRepair(data) {
+  const issues = [];
+
+  if (!data?.topProducts?.length) {
+    issues.push("NO_TOP_PRODUCTS");
+  }
+
+  if (!data?.trendingProducts?.length) {
+    issues.push("NO_TRENDING_DATA");
+  }
+
+  if (issues.length) {
+    return {
+      status: "DEGRADED",
+      issues,
+      action: "FALLBACK_MODE",
+    };
+  }
+
+  return {
+    status: "HEALTHY",
+    issues: [],
+  };
+}
+
+/* ================= MAIN COMPANY BRAIN ================= */
+export async function autonomousCompanyOS() {
   try {
-    /* ================= GROWTH ENGINE ================= */
+    /* ================= STEP 1: COLLECT DATA ================= */
     const data = await runGrowthEngine();
 
-    let {
-      trendingProducts,
-      topProducts,
-      viralProducts,
-      bestROI,
-    } = data || {};
+    /* ================= STEP 2: SELF CHECK ================= */
+    const health = selfRepair(data);
 
-    trendingProducts = safeArray(trendingProducts);
-    topProducts = safeArray(topProducts);
-    viralProducts = safeArray(viralProducts);
-    bestROI = safeArray(bestROI);
+    /* ================= STEP 3: ANALYZE ================= */
+    const scored = analyze(data);
 
-    /* ================= TRAFFIC INTELLIGENCE ================= */
-    const trafficSorted = trafficController(trendingProducts).slice(0, 10);
+    /* ================= STEP 4: STRATEGY ================= */
+    const strategy = buildStrategy(scored);
 
-    /* ================= REVENUE INTELLIGENCE ================= */
-    const revenueSorted = revenueOptimizer(topProducts).slice(0, 10);
+    /* ================= STEP 5: EXECUTE ================= */
+    const actions = await growthLoop(strategy);
 
-    /* ================= VIRAL BOOST LAYER ================= */
-    const viralBoosted = viralProducts
-      .map((p) => ({
-        ...p,
-        viralScore: (p.views || 0) * 2 + (p.clicks || 0) * 3,
-      }))
-      .sort((a, b) => b.viralScore - a.viralScore)
-      .slice(0, 10);
-
-    /* ================= DECISIONS ENGINE ================= */
-    const decisions = {
-      homepage: trafficSorted.slice(0, 5),
-      revenue: revenueSorted.slice(0, 5),
-      viral: viralBoosted.slice(0, 5),
-      roi: bestROI.slice(0, 5),
-    };
-
-    /* ================= NEURAL FEEDBACK LOOP ================= */
-    const neural = await neuralFeedbackLoop();
-
-    /* ================= AUTO PRIORITY EXECUTION ================= */
-    const actions = await executeActions({
-      ...decisions,
-      neuralInsights: neural,
-    });
-
-    /* ================= FINAL INTELLIGENCE OUTPUT ================= */
     return {
       success: true,
 
-      engine: "autonomous-os-v3",
+      mode: "AUTONOMOUS_COMPANY_OS_V1",
+
+      health,
+      strategy,
+      actions,
 
       metrics: {
-        trending: trendingProducts.length,
-        revenue: topProducts.length,
-        viral: viralProducts.length,
+        total: scored.length,
+        revenueTargets: companyState.revenueFocus.length,
+        trafficTargets: companyState.trafficFocus.length,
       },
-
-      decisions,
-      actions,
-      neural,
 
       timestamp: new Date().toISOString(),
     };
@@ -79,8 +127,8 @@ export async function autonomousOS() {
   } catch (e) {
     return {
       success: false,
-      engine: "autonomous-os-v3",
+      mode: "AUTONOMOUS_COMPANY_OS_V1",
       error: e.message,
     };
   }
-}
+  }
