@@ -2,14 +2,24 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next"; // ✅ FIXED IMPORT
+import { SpeedInsights } from "@vercel/speed-insights/next"; // ✅ FIXED
 
 /* ================= V6 REVENUE STATE ================= */
 const revenueState = {
   trafficIntent: "unknown",
 };
 
-/* ================= REVENUE ENGINE (OPTIMIZED) ================= */
+/* ================= SAFE REQUEST IDLE ================= */
+const safeIdle = (cb) => {
+  if (typeof window === "undefined") return cb();
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(cb);
+  } else {
+    setTimeout(cb, 200);
+  }
+};
+
+/* ================= REVENUE ENGINE ================= */
 function useRevenueOS(router) {
   const initialized = useRef(false);
 
@@ -20,48 +30,44 @@ function useRevenueOS(router) {
     const path = window.location.pathname;
 
     /* ================= INTENT DETECTION ================= */
-    revenueState.trafficIntent = path.includes("/product/")
-      ? "high_intent"
-      : path.includes("/blog/")
-      ? "medium_intent"
-      : "low_intent";
+    revenueState.trafficIntent =
+      path.includes("/product/")
+        ? "high_intent"
+        : path.includes("/blog/")
+        ? "medium_intent"
+        : "low_intent";
 
     /* ================= LAZY REVENUE SIGNAL ================= */
     const fireRevenueSignal = () => {
       if (window.__REVENUE_OS_ACTIVE__) return;
       window.__REVENUE_OS_ACTIVE__ = true;
 
-      requestIdleCallback(() => {
-        if (typeof window.gtag !== "undefined") {
-          window.gtag("event", "revenue_intent", {
-            intent: revenueState.trafficIntent,
-            page: path,
-          });
-        }
+      safeIdle(() => {
+        window.gtag?.("event", "revenue_intent", {
+          intent: revenueState.trafficIntent,
+          page: path,
+        });
 
-        if (typeof window.fbq !== "undefined") {
-          window.fbq("trackCustom", "RevenueIntent", {
-            intent: revenueState.trafficIntent,
-          });
-        }
+        window.fbq?.("trackCustom", "RevenueIntent", {
+          intent: revenueState.trafficIntent,
+        });
       });
     };
 
     /* ================= INTERACTION TRIGGER ================= */
+    const events = ["scroll", "click", "touchstart"];
+
     const handler = () => {
       fireRevenueSignal();
-
-      ["scroll", "click", "touchstart"].forEach((e) =>
-        window.removeEventListener(e, handler)
-      );
+      events.forEach((e) => window.removeEventListener(e, handler));
     };
 
-    ["scroll", "click", "touchstart"].forEach((e) =>
+    events.forEach((e) =>
       window.addEventListener(e, handler, { passive: true })
     );
 
     return () => {
-      ["scroll", "click", "touchstart"].forEach((e) =>
+      events.forEach((e) =>
         window.removeEventListener(e, handler)
       );
     };
@@ -74,10 +80,10 @@ export default function App({ Component, pageProps }) {
 
   useRevenueOS(router);
 
-  /* ================= ROUTE TRACKING (OPTIMIZED) ================= */
+  /* ================= ROUTE TRACKING ================= */
   useEffect(() => {
     const handleRoute = (url) => {
-      requestIdleCallback(() => {
+      safeIdle(() => {
         window.gtag?.("config", "G-YS8L61XLPR", {
           page_path: url,
         });
@@ -85,7 +91,9 @@ export default function App({ Component, pageProps }) {
     };
 
     router.events.on("routeChangeComplete", handleRoute);
-    return () => router.events.off("routeChangeComplete", handleRoute);
+
+    return () =>
+      router.events.off("routeChangeComplete", handleRoute);
   }, [router.events]);
 
   return (
@@ -93,12 +101,16 @@ export default function App({ Component, pageProps }) {
       {/* ================= SEO CORE ================= */}
       <Head>
         <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1"
+        />
 
         <meta
           name="description"
           content="Koloonline V6 Revenue OS - AI Affiliate Profit Engine"
         />
+
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://koloonline.online" />
         <link rel="icon" href="/favicon.ico" />
@@ -132,7 +144,8 @@ export default function App({ Component, pageProps }) {
           if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
           n.queue=[];t=b.createElement(e);t.async=!0;
           t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          s.parentNode.insertBefore(t,s)}
+          (window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
 
           fbq('init', '353894198840203');
@@ -147,7 +160,7 @@ export default function App({ Component, pageProps }) {
         crossOrigin="anonymous"
       />
 
-      {/* ================= SPEED INSIGHTS (CLEAN INTEGRATION) ================= */}
+      {/* ================= SPEED INSIGHTS ================= */}
       <SpeedInsights />
 
       {/* ================= APP ================= */}
