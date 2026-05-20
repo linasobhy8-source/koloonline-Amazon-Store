@@ -1,139 +1,215 @@
 import Head from "next/head";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../config/firebase";
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/router";
+import { useEffect, useState, useMemo } from "react";
 
-/* ================= PAGE ================= */
-export default function Categories() {
-  const [categories, setCategories] = useState([]);
+import {
+  collection,
+  getDocs,
+} from "firebase/firestore";
 
+import { db } from "../../config/firebase";
+
+/* ================= CATEGORY PAGE ================= */
+
+export default function CategoryPage() {
+  const router = useRouter();
+  const { category } = router.query;
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ================= SORT STATE ================= */
+  const [sort, setSort] = useState("trend");
+
+  /* ================= LOAD DATA ================= */
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (!category) return;
 
-  async function fetchCategories() {
-    const snap = await getDocs(collection(db, "products"));
+    const load = async () => {
+      try {
+        const snap = await getDocs(
+          collection(db, "products")
+        );
 
-    const cats = new Set();
+        const all = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
 
-    snap.forEach((doc) => {
-      const data = doc.data();
-      if (data.category) cats.add(data.category.toLowerCase());
+        const filtered = all.filter((p) =>
+          p.category
+            ?.toLowerCase()
+            .includes(
+              String(category).toLowerCase()
+            )
+        );
+
+        setProducts(filtered);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [category]);
+
+  /* ================= SORT LOGIC ================= */
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((a, b) => {
+      if (sort === "price_low")
+        return (a.price || 0) - (b.price || 0);
+
+      if (sort === "price_high")
+        return (b.price || 0) - (a.price || 0);
+
+      if (sort === "rating")
+        return (b.rating || 0) - (a.rating || 0);
+
+      /* default = trending */
+      return (
+        (b.trendScore || 0) -
+        (a.trendScore || 0)
+      );
     });
+  }, [products, sort]);
 
-    setCategories([...cats]);
+  /* ================= LOADING ================= */
+  if (loading) {
+    return (
+      <p style={{ padding: 20 }}>
+        Loading category...
+      </p>
+    );
   }
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f3f3f3", minHeight: "100vh" }}>
-
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        minHeight: "100vh",
+        padding: 20,
+      }}
+    >
       {/* ================= SEO ================= */}
       <Head>
-        <title>Categories | Koloonline Amazon Deals</title>
+        <title>
+          {category} Products | Koloonline
+        </title>
 
         <meta
           name="description"
-          content="Browse Amazon categories: Electronics, Fashion, Home, Sports - Best Deals Daily"
+          content={`Best ${category} Amazon deals and trending products`}
         />
 
-        <link rel="canonical" href="https://koloonline.online/categories" />
-
-        {/* Open Graph */}
-        <meta property="og:title" content="Amazon Categories - Koloonline" />
-        <meta property="og:description" content="Explore top Amazon product categories" />
-        <meta property="og:type" content="website" />
-
-        {/* ================= CATEGORY SCHEMA ================= */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "CollectionPage",
-              name: "Amazon Categories",
-              url: "https://koloonline.online/categories",
-              hasPart: categories.map((cat) => ({
-                "@type": "Thing",
-                name: cat,
-                url: `https://koloonline.online/category/${cat}`
-              }))
-            })
-          }}
-        />
+        <meta name="robots" content="index, follow" />
       </Head>
 
       {/* ================= HEADER ================= */}
-      <div style={header}>
-        🟠 Koloonline Categories
-      </div>
+      <h1>
+        🔥 {category} Products
+      </h1>
 
-      <p style={{ textAlign: "center", color: "#666" }}>
-        Browse Amazon product categories and find best deals
+      <p>
+        Discover trending {category} products,
+        best prices and AI-ranked deals.
       </p>
 
-      {/* ================= GRID ================= */}
-      <div style={grid}>
-        {categories.map((cat) => (
-          <Link key={cat} href={`/category/${cat}`}>
-            <div style={card}>
-              <div style={icon}>🛍️</div>
+      {/* ================= SORT DROPDOWN ================= */}
+      <div
+        style={{
+          marginTop: 20,
+          marginBottom: 20,
+        }}
+      >
+        <select
+          value={sort}
+          onChange={(e) =>
+            setSort(e.target.value)
+          }
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            fontSize: 14,
+          }}
+        >
+          <option value="trend">
+            Trending
+          </option>
 
-              <h3 style={title}>
-                {cat.toUpperCase()}
-              </h3>
+          <option value="rating">
+            Top Rated
+          </option>
 
-              <p style={desc}>
-                Explore best {cat} deals on Amazon
-              </p>
-            </div>
-          </Link>
-        ))}
+          <option value="price_low">
+            Lowest Price
+          </option>
+
+          <option value="price_high">
+            Highest Price
+          </option>
+        </select>
       </div>
 
+      {/* ================= GRID ================= */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit,minmax(220px,1fr))",
+          gap: 20,
+        }}
+      >
+        {sortedProducts.map((p) => (
+          <a
+            key={p.id}
+            href={`/product/${p.id}`}
+            style={{
+              background: "white",
+              padding: 15,
+              borderRadius: 12,
+              textDecoration: "none",
+              color: "black",
+              boxShadow:
+                "0 4px 10px rgba(0,0,0,0.05)",
+            }}
+          >
+            <img
+              src={p.image}
+              style={{
+                width: "100%",
+                height: 160,
+                objectFit: "contain",
+              }}
+            />
+
+            <h3
+              style={{
+                fontSize: 16,
+                marginTop: 10,
+              }}
+            >
+              {p.title}
+            </h3>
+
+            <p
+              style={{
+                color: "#B12704",
+                fontWeight: "bold",
+              }}
+            >
+              ${p.price || 0}
+            </p>
+
+            <p style={{ fontSize: 13 }}>
+              ⭐ {p.rating || 4.5}/5
+            </p>
+          </a>
+        ))}
+      </div>
     </div>
   );
-}
-
-/* ================= STYLES ================= */
-
-const header = {
-  background: "#131921",
-  color: "white",
-  padding: 20,
-  fontSize: 22,
-  textAlign: "center",
-  fontWeight: "bold",
-};
-
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-  gap: 15,
-  padding: 20,
-};
-
-const card = {
-  background: "white",
-  padding: 20,
-  borderRadius: 12,
-  textAlign: "center",
-  cursor: "pointer",
-  transition: "0.3s",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-};
-
-const icon = {
-  fontSize: 30,
-  marginBottom: 10,
-};
-
-const title = {
-  fontSize: 16,
-  fontWeight: "bold",
-};
-
-const desc = {
-  fontSize: 12,
-  color: "#777",
-};
+    }
