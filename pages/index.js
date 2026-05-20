@@ -1,6 +1,8 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useState } from "react";
+
 import {
   collection,
   getDocs,
@@ -11,7 +13,6 @@ import {
 import { db } from "../config/firebase";
 import { calculateTrendScore } from "../lib/trendScore";
 
-/* ================= SEO SCHEMA ENGINE ================= */
 import {
   generateWebsiteSchema,
   generateItemListSchema,
@@ -20,46 +21,313 @@ import {
 /* ================= HERO ================= */
 function Hero() {
   return (
-    <section style={{ padding: 20 }}>
-      <h1>
-        🟠 Koloonline - Best Amazon Deals, Trending Products & Smart Shopping Guide 2026
-      </h1>
+    <section
+      style={{
+        background:
+          "linear-gradient(135deg,#0f172a,#111827,#1e293b)",
+        color: "white",
+        padding: "80px 20px",
+        borderRadius: 24,
+        marginBottom: 30,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 40,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 300 }}>
+          <span
+            style={{
+              background: "#ff9900",
+              padding: "8px 16px",
+              borderRadius: 30,
+              fontWeight: "bold",
+              fontSize: 14,
+            }}
+          >
+            🔥 Trending Amazon Products
+          </span>
 
-      <p>
-        Discover the best Amazon deals, trending products, viral gadgets, and smart buying guides updated daily.
-      </p>
+          <h1
+            style={{
+              fontSize: 54,
+              lineHeight: 1.1,
+              marginTop: 25,
+              marginBottom: 20,
+            }}
+          >
+            Discover Viral Amazon Deals Before Everyone Else
+          </h1>
+
+          <p
+            style={{
+              fontSize: 20,
+              color: "#cbd5e1",
+              lineHeight: 1.8,
+              maxWidth: 650,
+            }}
+          >
+            AI-powered Amazon discovery platform helping
+            shoppers find viral gadgets, trending tech,
+            smart home products, and the best online deals.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 15,
+              flexWrap: "wrap",
+              marginTop: 30,
+            }}
+          >
+            <Link href="/products">
+              <button
+                style={{
+                  padding: "16px 30px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#ff9900",
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  cursor: "pointer",
+                }}
+              >
+                🛒 Explore Products
+              </button>
+            </Link>
+
+            <Link href="/blog">
+              <button
+                style={{
+                  padding: "16px 30px",
+                  borderRadius: 12,
+                  border: "1px solid #334155",
+                  background: "transparent",
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  cursor: "pointer",
+                }}
+              >
+                📚 Buying Guides
+              </button>
+            </Link>
+          </div>
+
+          {/* TRUST */}
+          <div
+            style={{
+              display: "flex",
+              gap: 20,
+              flexWrap: "wrap",
+              marginTop: 35,
+              color: "#cbd5e1",
+              fontSize: 14,
+            }}
+          >
+            <span>✅ Updated Daily</span>
+            <span>✅ AI Ranked Products</span>
+            <span>✅ Trending Deals</span>
+            <span>✅ Smart Recommendations</span>
+          </div>
+        </div>
+
+        {/* HERO IMAGE */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 300,
+            textAlign: "center",
+          }}
+        >
+          <img
+            src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop"
+            alt="Trending products"
+            style={{
+              width: "100%",
+              maxWidth: 500,
+              borderRadius: 24,
+              boxShadow:
+                "0 10px 40px rgba(0,0,0,0.4)",
+            }}
+          />
+        </div>
+      </div>
     </section>
   );
 }
 
-/* ================= SEO SECTION ================= */
-function SeoSection() {
+/* ================= PRODUCT CARD ================= */
+function ProductCard({ product }) {
   return (
-    <section style={{ padding: 20 }}>
-      <h2>Best Amazon Deals 2026</h2>
+    <Link
+      href={`/product/${product.asin || product.id}`}
+      style={{
+        textDecoration: "none",
+      }}
+    >
+      <div
+        style={{
+          background: "white",
+          borderRadius: 22,
+          overflow: "hidden",
+          transition: "0.3s",
+          cursor: "pointer",
+          border: "1px solid #e5e7eb",
+          boxShadow:
+            "0 4px 20px rgba(0,0,0,0.06)",
+          height: "100%",
+        }}
+      >
+        {/* IMAGE */}
+        <div
+          style={{
+            position: "relative",
+            background: "#f8fafc",
+            padding: 20,
+          }}
+        >
+          {product.viralBoost && (
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                left: 12,
+                background:
+                  "linear-gradient(45deg,#ff0000,#ff6600)",
+                color: "white",
+                padding: "6px 12px",
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: "bold",
+                zIndex: 2,
+              }}
+            >
+              🔥 Viral
+            </div>
+          )}
 
-      <p>
-        Koloonline helps users discover trending Amazon products and high-conversion deals using data-driven analysis.
-      </p>
-    </section>
+          <Image
+            src={
+              product.image ||
+              "https://via.placeholder.com/500"
+            }
+            alt={product.title}
+            width={400}
+            height={400}
+            style={{
+              width: "100%",
+              height: 240,
+              objectFit: "contain",
+            }}
+          />
+        </div>
+
+        {/* CONTENT */}
+        <div style={{ padding: 20 }}>
+          <h3
+            style={{
+              fontSize: 18,
+              lineHeight: 1.5,
+              color: "#111827",
+              height: 55,
+              overflow: "hidden",
+            }}
+          >
+            {product.title}
+          </h3>
+
+          {/* STARS */}
+          <div
+            style={{
+              marginTop: 10,
+              color: "#f59e0b",
+              fontSize: 14,
+            }}
+          >
+            ⭐⭐⭐⭐⭐
+            <span
+              style={{
+                color: "#6b7280",
+                marginLeft: 8,
+              }}
+            >
+              {product.rating || 4.5}/5
+            </span>
+          </div>
+
+          {/* PRICE */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 14,
+            }}
+          >
+            <h2
+              style={{
+                color: "#dc2626",
+                fontSize: 28,
+                margin: 0,
+              }}
+            >
+              ${product.price || 0}
+            </h2>
+
+            <span
+              style={{
+                textDecoration: "line-through",
+                color: "#9ca3af",
+              }}
+            >
+              $
+              {Math.floor(
+                (product.price || 50) * 1.3
+              )}
+            </span>
+          </div>
+
+          {/* BUTTON */}
+          <button
+            style={{
+              width: "100%",
+              marginTop: 18,
+              padding: 14,
+              borderRadius: 12,
+              border: "none",
+              background:
+                "linear-gradient(45deg,#ff9900,#ff6600)",
+              color: "white",
+              fontWeight: "bold",
+              fontSize: 15,
+              cursor: "pointer",
+            }}
+          >
+            🛒 View Deal
+          </button>
+        </div>
+      </div>
+    </Link>
   );
 }
 
 /* ================= MAIN ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
-  const [recommendations, setRecommendations] = useState([]);
-
-  useEffect(() => {
-    fetch("/api/recommendations")
-      .then((res) => res.json())
-      .then((data) => setRecommendations(data.topPicks || []))
-      .catch(() => setRecommendations([]));
-  }, []);
 
   const filtered = products
     .filter((p) =>
-      p.title?.toLowerCase().includes(search.toLowerCase())
+      p.title
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
     )
     .map((p) => ({
       ...p,
@@ -67,35 +335,62 @@ export default function Home({ products }) {
     }))
     .sort((a, b) => b.trendScore - a.trendScore);
 
-  const trendingProducts = filtered.slice(0, 10);
+  const trendingProducts = filtered.slice(0, 12);
 
   const websiteSchema = generateWebsiteSchema();
-  const itemListSchema = generateItemListSchema(trendingProducts);
+  const itemListSchema =
+    generateItemListSchema(trendingProducts);
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#eaeded" }}>
-
-      {/* ================= SEO + DISCOVER ================= */}
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f1f5f9",
+        minHeight: "100vh",
+      }}
+    >
+      {/* ================= SEO ================= */}
       <Head>
-        <title>Koloonline - Amazon Deals & Trending Products 2026</title>
+        <title>
+          Koloonline - Best Amazon Deals &
+          Trending Products 2026
+        </title>
 
-        <meta name="description" content="Discover Amazon deals, trending products, and smart shopping guides updated daily." />
+        <meta
+          name="description"
+          content="Discover trending Amazon products, viral gadgets, AI-ranked deals, and smart shopping recommendations."
+        />
 
-        {/* E-E-A-T CORE */}
-        <meta name="author" content="Koloonline" />
-        <meta name="robots" content="index, follow, max-image-preview:large" />
-        <meta name="googlebot" content="index, follow, max-snippet:-1" />
+        <meta
+          name="keywords"
+          content="amazon deals, trending products, viral amazon gadgets, best amazon finds"
+        />
 
-        {/* DISCOVER BOOST */}
-        <meta name="keywords" content="amazon deals, trending products, viral gadgets, smart shopping 2026" />
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large"
+        />
 
-        {/* OPEN GRAPH (CRITICAL FOR DISCOVER) */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Koloonline Smart Shopping Platform" />
-        <meta property="og:description" content="Best Amazon deals & trending products updated daily." />
-        <meta property="og:url" content="https://koloonline.online/" />
+        <meta
+          property="og:title"
+          content="Koloonline Smart Shopping Platform"
+        />
 
-        {/* SCHEMA */}
+        <meta
+          property="og:description"
+          content="Trending Amazon products & AI-powered deals."
+        />
+
+        <meta
+          property="og:image"
+          content="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop"
+        />
+
+        <meta
+          property="og:url"
+          content="https://koloonline.online"
+        />
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -111,70 +406,312 @@ export default function Home({ products }) {
         />
       </Head>
 
-      {/* ================= HEADER ================= */}
-      <header style={{ padding: 20 }}>
-        <h1>🟠 Koloonline</h1>
-        <p>Smart Amazon Deals Engine</p>
+      {/* ================= NAVBAR ================= */}
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 999,
+          background: "white",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "18px 20px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1300,
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          {/* LOGO */}
+          <Link
+            href="/"
+            style={{
+              textDecoration: "none",
+            }}
+          >
+            <h1
+              style={{
+                margin: 0,
+                color: "#111827",
+                fontSize: 30,
+              }}
+            >
+              🟠 Koloonline
+            </h1>
+          </Link>
+
+          {/* SEARCH */}
+          <div
+            style={{
+              flex: 1,
+              maxWidth: 500,
+            }}
+          >
+            <input
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              placeholder="Search trending products..."
+              style={{
+                width: "100%",
+                padding: 16,
+                borderRadius: 14,
+                border: "1px solid #d1d5db",
+                outline: "none",
+                fontSize: 15,
+              }}
+            />
+          </div>
+
+          {/* MENU */}
+          <div
+            style={{
+              display: "flex",
+              gap: 20,
+              flexWrap: "wrap",
+            }}
+          >
+            <Link href="/products">
+              Products
+            </Link>
+
+            <Link href="/categories">
+              Categories
+            </Link>
+
+            <Link href="/blog">Blog</Link>
+
+            <Link href="/about">About</Link>
+          </div>
+        </div>
       </header>
 
-      {/* ================= CONTENT ================= */}
-      <Hero />
-      <SeoSection />
+      {/* ================= CONTAINER ================= */}
+      <main
+        style={{
+          maxWidth: 1300,
+          margin: "0 auto",
+          padding: 20,
+        }}
+      >
+        {/* HERO */}
+        <Hero />
 
-      <section style={{ padding: 20 }}>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search products..."
-          style={{ padding: 10, width: "100%" }}
-        />
-      </section>
+        {/* ================= SECTION TITLE ================= */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 25,
+            marginTop: 20,
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                fontSize: 38,
+                marginBottom: 10,
+                color: "#111827",
+              }}
+            >
+              🔥 Trending Products
+            </h2>
 
-      {/* ================= TRENDING ================= */}
-      <section style={{ padding: 20 }}>
-        <h2>🔥 Trending Now</h2>
+            <p
+              style={{
+                color: "#6b7280",
+              }}
+            >
+              AI-ranked viral Amazon finds updated
+              daily.
+            </p>
+          </div>
 
-        <div style={{ display: "grid", gap: 15 }}>
-          {trendingProducts.map((p) => (
-            <div key={p.id} style={{ padding: 10, border: "1px solid #ddd", background: "#fff" }}>
-              <h3>{p.title}</h3>
-              <p>${p.price}</p>
-            </div>
+          <Link href="/products">
+            <button
+              style={{
+                padding: "14px 22px",
+                borderRadius: 12,
+                border: "none",
+                background: "#111827",
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              View All
+            </button>
+          </Link>
+        </div>
+
+        {/* ================= PRODUCTS GRID ================= */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(260px,1fr))",
+            gap: 24,
+          }}
+        >
+          {trendingProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+            />
           ))}
         </div>
-      </section>
 
-      {/* ================= GUIDES ================= */}
-      <section style={{ padding: 20 }}>
-        <h2>📚 Latest Guides</h2>
+        {/* ================= BLOG SECTION ================= */}
+        <section
+          style={{
+            marginTop: 80,
+            background: "white",
+            padding: 35,
+            borderRadius: 24,
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 36,
+              marginBottom: 20,
+            }}
+          >
+            📚 Latest Buying Guides
+          </h2>
 
-        <ul>
-          <li><Link href="/blog/best-smart-watches">Best Smart Watches</Link></li>
-          <li><Link href="/blog/best-headphones-2026">Best Headphones</Link></li>
-          <li><Link href="/blog/viral-products-amazon">Viral Amazon Products</Link></li>
-        </ul>
-      </section>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(250px,1fr))",
+              gap: 20,
+            }}
+          >
+            {[
+              {
+                title: "Best Smart Watches",
+                slug: "best-smart-watches",
+              },
 
-      {/* ================= ABOUT / E-E-A-T BOOST ================= */}
-      <section style={{ padding: 20, background: "#fff", marginTop: 20 }}>
-        <h2>About Koloonline</h2>
-        <p>
-          Koloonline is a smart affiliate platform focused on helping users find
-          the best Amazon deals using data-driven insights, trend analysis, and product research.
-        </p>
-      </section>
+              {
+                title: "Best Headphones 2026",
+                slug: "best-headphones-2026",
+              },
 
-      {/* ================= FAQ ================= */}
-      <section style={{ padding: 20 }}>
-        <h2>❓ FAQ</h2>
+              {
+                title: "Viral Amazon Products",
+                slug: "viral-products-amazon",
+              },
+            ].map((post) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                style={{
+                  textDecoration: "none",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    padding: 24,
+                    borderRadius: 18,
+                    border:
+                      "1px solid #e5e7eb",
+                  }}
+                >
+                  <h3
+                    style={{
+                      color: "#111827",
+                    }}
+                  >
+                    {post.title}
+                  </h3>
 
-        <h3>What is Koloonline?</h3>
-        <p>Amazon deals & smart shopping platform.</p>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                    }}
+                  >
+                    Read smart shopping guide →
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-        <h3>Is it updated daily?</h3>
-        <p>Yes, fully automated daily updates.</p>
-      </section>
+        {/* ================= ABOUT ================= */}
+        <section
+          style={{
+            marginTop: 60,
+            padding: 40,
+            borderRadius: 24,
+            background:
+              "linear-gradient(135deg,#111827,#1f2937)",
+            color: "white",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 38,
+            }}
+          >
+            Why Koloonline?
+          </h2>
 
+          <p
+            style={{
+              marginTop: 20,
+              lineHeight: 1.9,
+              color: "#d1d5db",
+              maxWidth: 900,
+            }}
+          >
+            Koloonline uses AI-driven trend analysis,
+            affiliate intelligence, smart product
+            ranking, and shopping behavior analytics to
+            help users discover the best Amazon deals
+            faster.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(220px,1fr))",
+              gap: 20,
+              marginTop: 40,
+            }}
+          >
+            {[
+              "🔥 Viral Product Detection",
+              "⚡ Fast Daily Updates",
+              "🧠 AI Recommendation Engine",
+              "📈 Trend Ranking System",
+            ].map((item) => (
+              <div
+                key={item}
+                style={{
+                  background:
+                    "rgba(255,255,255,0.06)",
+                  padding: 24,
+                  borderRadius: 18,
+                }}
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
@@ -182,16 +719,17 @@ export default function Home({ products }) {
 /* ================= DATA ================= */
 export async function getStaticProps() {
   const snap = await getDocs(
-    query(collection(db, "products"), limit(50))
+    query(collection(db, "products"), limit(60))
   );
 
   return {
     props: {
-      products: snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
+      products: snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
       })),
     },
+
     revalidate: 60,
   };
-             }
+              }
