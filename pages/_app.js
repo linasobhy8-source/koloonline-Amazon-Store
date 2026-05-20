@@ -2,22 +2,30 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-/* ================= SAFE IDLE HELPER ================= */
+import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer";
+
+import "../styles/globals.css";
+
+/* ================= SAFE IDLE ================= */
 const safeIdle = (cb) =>
-  typeof window !== "undefined" && "requestIdleCallback" in window
+  typeof window !== "undefined" &&
+  "requestIdleCallback" in window
     ? requestIdleCallback(cb)
     : setTimeout(cb, 1);
 
-/* ================= V6 REVENUE STATE ================= */
+/* ================= GLOBAL REVENUE STATE ================= */
 const revenueState = {
   trafficIntent: "unknown",
 };
 
-/* ================= REVENUE ENGINE ================= */
+/* ================= AI REVENUE ENGINE ================= */
 function useRevenueOS() {
   const initialized = useRef(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -25,98 +33,85 @@ function useRevenueOS() {
 
     initialized.current = true;
 
-    const path = window.location.pathname;
+    const detectIntent = () => {
+      const path = window.location.pathname;
 
-    /* ================= INTENT DETECTION ================= */
-    revenueState.trafficIntent = path.includes("/product/")
-      ? "high_intent"
-      : path.includes("/blog/")
-      ? "medium_intent"
-      : "low_intent";
+      revenueState.trafficIntent =
+        path.includes("/product/")
+          ? "high_intent"
+          : path.includes("/blog/")
+          ? "medium_intent"
+          : "low_intent";
 
-    /* ================= REVENUE SIGNAL ================= */
-    const fireSignal = () => {
-      if (window.__REVENUE_OS_ACTIVE__) return;
-
-      window.__REVENUE_OS_ACTIVE__ = true;
-
-      safeIdle(() => {
-        window.gtag?.("event", "revenue_intent", {
-          intent: revenueState.trafficIntent,
-          page: path,
-        });
-
-        window.fbq?.("trackCustom", "RevenueIntent", {
-          intent: revenueState.trafficIntent,
-        });
-      });
+      console.log(
+        "AI Revenue Intent:",
+        revenueState.trafficIntent
+      );
     };
 
-    const handler = () => fireSignal();
+    detectIntent();
 
-    ["scroll", "click", "touchstart"].forEach((event) => {
-      window.addEventListener(event, handler, {
-        passive: true,
-      });
-    });
+    router.events.on(
+      "routeChangeComplete",
+      detectIntent
+    );
 
     return () => {
-      ["scroll", "click", "touchstart"].forEach((event) => {
-        window.removeEventListener(event, handler);
-      });
+      router.events.off(
+        "routeChangeComplete",
+        detectIntent
+      );
     };
-  }, []);
-
-  /* ================= ROUTE TRACKING ================= */
-  useEffect(() => {
-    const handleRoute = (url) => {
-      safeIdle(() => {
-        window.gtag?.("config", "G-YS8L61XLPR", {
-          page_path: url,
-        });
-      });
-    };
-
-    router.events.on("routeChangeComplete", handleRoute);
-
-    return () => {
-      router.events.off("routeChangeComplete", handleRoute);
-    };
-  }, [router.events]);
+  }, [router]);
 }
 
-/* ================= GLOBAL APP ================= */
-export default function App({ Component, pageProps }) {
+/* ================= APP ================= */
+export default function App({
+  Component,
+  pageProps,
+}) {
   useRevenueOS();
+
+  useEffect(() => {
+    safeIdle(() => {
+      console.log(
+        "Koloonline AI Shopping OS Loaded"
+      );
+    });
+  }, []);
 
   return (
     <>
-      {/* ================= SEO ================= */}
+      {/* ================= GLOBAL SEO ================= */}
       <Head>
-        <meta charSet="UTF-8" />
-
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1"
         />
 
         <meta
-          name="description"
-          content="Koloonline Amazon Affiliate Store"
+          name="theme-color"
+          content="#111827"
         />
 
-        <meta name="robots" content="index, follow" />
+        <meta
+          name="googlebot"
+          content="index,follow,max-image-preview:large"
+        />
 
-        <link rel="icon" href="/favicon.ico" />
+        <link
+          rel="icon"
+          href="/favicon.ico"
+        />
       </Head>
 
-      {/* ================= GA4 ================= */}
+      {/* ================= GOOGLE ANALYTICS ================= */}
       <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
+        src={`https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR`}
         strategy="afterInteractive"
       />
 
-      <Script id="ga4" strategy="afterInteractive">
+      <Script id="google-analytics">
         {`
           window.dataLayer = window.dataLayer || [];
 
@@ -124,67 +119,23 @@ export default function App({ Component, pageProps }) {
             dataLayer.push(arguments);
           }
 
-          window.gtag = gtag;
-
           gtag('js', new Date());
 
-          gtag('config', 'G-YS8L61XLPR', {
-            send_page_view: false
-          });
+          gtag('config', 'G-YS8L61XLPR');
         `}
       </Script>
 
-      {/* ================= FACEBOOK PIXEL ================= */}
-      <Script id="facebook-pixel" strategy="lazyOnload">
-        {`
-          !function(f,b,e,v,n,t,s)
-          {
-            if(f.fbq)return;
-
-            n=f.fbq=function(){
-              n.callMethod
-                ? n.callMethod.apply(n,arguments)
-                : n.queue.push(arguments)
-            };
-
-            if(!f._fbq)f._fbq=n;
-
-            n.push=n;
-            n.loaded=!0;
-            n.version='2.0';
-            n.queue=[];
-
-            t=b.createElement(e);
-            t.async=!0;
-            t.src=v;
-
-            s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s);
-
-          }(
-            window,
-            document,
-            'script',
-            'https://connect.facebook.net/en_US/fbevents.js'
-          );
-
-          fbq('init', '353894198840203');
-          fbq('track', 'PageView');
-        `}
-      </Script>
-
-      {/* ================= ADSENSE ================= */}
-      <Script
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
-        strategy="lazyOnload"
-        crossOrigin="anonymous"
-      />
-
-      {/* ================= SPEED INSIGHTS ================= */}
-      <SpeedInsights />
+      {/* ================= NAVBAR ================= */}
+      <Navbar />
 
       {/* ================= PAGE ================= */}
       <Component {...pageProps} />
+
+      {/* ================= FOOTER ================= */}
+      <Footer />
+
+      {/* ================= VERCEL ANALYTICS ================= */}
+      <SpeedInsights />
     </>
   );
-    }
+            }
