@@ -6,7 +6,8 @@ import { SpeedInsights } from "@vercel/speed-insights";
 
 /* ================= SAFE IDLE HELPER ================= */
 const safeIdle = (cb) =>
-  typeof window !== "undefined" && "requestIdleCallback" in window
+  typeof window !== "undefined" &&
+  "requestIdleCallback" in window
     ? requestIdleCallback(cb)
     : setTimeout(cb, 1);
 
@@ -22,6 +23,7 @@ function useRevenueOS() {
 
   useEffect(() => {
     if (initialized.current) return;
+
     initialized.current = true;
 
     const path = window.location.pathname;
@@ -54,7 +56,9 @@ function useRevenueOS() {
     const handler = () => fireSignal();
 
     ["scroll", "click", "touchstart"].forEach((e) =>
-      window.addEventListener(e, handler, { passive: true })
+      window.addEventListener(e, handler, {
+        passive: true,
+      })
     );
 
     return () => {
@@ -76,13 +80,17 @@ function useRevenueOS() {
 
     router.events.on("routeChangeComplete", handleRoute);
 
-    return () =>
+    return () => {
       router.events.off("routeChangeComplete", handleRoute);
+    };
   }, [router.events]);
 }
 
 /* ================= GLOBAL APP ================= */
-export default function App({ Component, pageProps }) {
+export default function App({
+  Component,
+  pageProps,
+}) {
   useRevenueOS();
 
   return (
@@ -96,11 +104,14 @@ export default function App({ Component, pageProps }) {
           content="width=device-width, initial-scale=1"
         />
 
-        <meta name="robots" content="index, follow" />
-
         <meta
           name="description"
           content="Koloonline Amazon Affiliate Store - AI Revenue Engine"
+        />
+
+        <meta
+          name="robots"
+          content="index, follow"
         />
 
         <link
@@ -108,7 +119,10 @@ export default function App({ Component, pageProps }) {
           href="https://www.koloonline.online"
         />
 
-        <link rel="icon" href="/favicon.ico" />
+        <link
+          rel="icon"
+          href="/favicon.ico"
+        />
       </Head>
 
       {/* ================= GA4 ================= */}
@@ -117,11 +131,14 @@ export default function App({ Component, pageProps }) {
         strategy="afterInteractive"
       />
 
-      <Script id="ga4" strategy="afterInteractive">
+      <Script
+        id="ga4"
+        strategy="afterInteractive"
+      >
         {`
           window.dataLayer = window.dataLayer || [];
 
-          function gtag(){
+          function gtag() {
             dataLayer.push(arguments);
           }
 
@@ -136,7 +153,10 @@ export default function App({ Component, pageProps }) {
       </Script>
 
       {/* ================= FACEBOOK PIXEL ================= */}
-      <Script id="fb" strategy="lazyOnload">
+      <Script
+        id="fb"
+        strategy="lazyOnload"
+      >
         {`
           !function(f,b,e,v,n,t,s)
           {
@@ -144,8 +164,8 @@ export default function App({ Component, pageProps }) {
 
             n=f.fbq=function(){
               n.callMethod
-                ? n.callMethod.apply(n,arguments)
-                : n.queue.push(arguments)
+              ? n.callMethod.apply(n,arguments)
+              : n.queue.push(arguments)
             };
 
             if(!f._fbq)f._fbq=n;
@@ -188,4 +208,4 @@ export default function App({ Component, pageProps }) {
       <Component {...pageProps} />
     </>
   );
-            }
+}
