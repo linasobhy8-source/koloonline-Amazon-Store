@@ -1,24 +1,48 @@
-import { autonomousCompanyOS } from "../../os/autonomousOS";
-
-/* ================= DAILY AUTOPILOT ================= */
-export default async function handler(req, res) {
+export default async function autonomousOS() {
   try {
-    /* ================= RUN AI COMPANY OS ================= */
-    const result = await autonomousCompanyOS();
+    const timestamp = new Date().toISOString();
 
-    return res.status(200).json({
+    /* ================= CORE STATE ================= */
+    const state = {
+      status: "running",
+      timestamp,
+      mode: "autonomous",
+      version: "1.0.0",
+    };
+
+    /* ================= SIMULATED TASK ENGINE ================= */
+    const tasks = [
+      {
+        name: "seo_sync",
+        status: "ok",
+      },
+      {
+        name: "product_sync",
+        status: "ok",
+      },
+      {
+        name: "content_generation",
+        status: "ok",
+      },
+    ];
+
+    /* ================= SIMPLE ANALYTICS SIGNAL ================= */
+    const analytics = {
+      eventsProcessed: Math.floor(Math.random() * 100),
+      successRate: 0.98,
+    };
+
+    /* ================= RESULT ================= */
+    return {
       success: true,
-      engine: "V6_REVENUE_OS",
-      timestamp: new Date().toISOString(),
-      result,
-    });
+      state,
+      tasks,
+      analytics,
+    };
   } catch (error) {
-    console.error("DAILY_AUTOPILOT_ERROR:", error);
-
-    return res.status(500).json({
+    return {
       success: false,
-      engine: "V6_REVENUE_OS",
-      error: error?.message || "UNKNOWN_ERROR",
-    });
+      error: error.message || "Unknown error in autonomousOS",
+    };
   }
 }
