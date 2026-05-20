@@ -2,254 +2,96 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-import {
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
+function getScore(p) {
+  return (p.rating || 4) * 2 + (p.price || 0) * -0.01;
+}
+
 export default function ComparePage() {
-
   const router = useRouter();
-
   const { slug } = router.query;
 
-  const [products, setProducts] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     if (!slug) return;
 
     const load = async () => {
+      const snap = await getDocs(collection(db, "products"));
 
-      try {
+      const all = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
 
-        const snap = await getDocs(
-          collection(db, "products")
-        );
+      const keyword = String(slug).toLowerCase();
 
-        const all =
-          snap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-          }));
+      const matched = all
+        .filter((p) =>
+          p.title?.toLowerCase().includes(keyword.split("-")[0])
+        )
+        .slice(0, 2);
 
-        const cleanSlug =
-          String(slug)
-            .toLowerCase()
-            .replaceAll("-", " ");
-
-        const matched =
-          all.filter((p) =>
-            p.title
-              ?.toLowerCase()
-              .includes(cleanSlug.split(" ")[0])
-          );
-
-        setProducts(
-          matched.slice(0, 2)
-        );
-
-      } catch (e) {
-
-        console.log(e);
-
-      } finally {
-
-        setLoading(false);
-
-      }
+      setProducts(matched);
+      setLoading(false);
     };
 
     load();
-
   }, [slug]);
 
-  if (loading) {
-    return (
-      <p style={{ padding: 20 }}>
-        Loading...
-      </p>
-    );
-  }
+  if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
+  if (products.length < 2)
+    return <p style={{ padding: 20 }}>Not enough products</p>;
 
-  if (products.length < 2) {
-    return (
-      <p style={{ padding: 20 }}>
-        Not enough products to compare.
-      </p>
-    );
-  }
+  const [p1, p2] = products;
 
-  const p1 = products[0];
-  const p2 = products[1];
+  const winner =
+    getScore(p1) > getScore(p2) ? p1.title : p2.title;
 
-  const title =
-    `${p1.title} vs ${p2.title}`;
-
-  const description =
-    `Compare ${p1.title} and ${p2.title} to find the best Amazon deal.`;
-
-  const url =
-    `https://koloonline.online/compare/${slug}`;
-
-  /* ================= SCHEMA ================= */
-
-  const schema = {
-    "@context":
-      "https://schema.org",
-
-    "@type":
-      "Article",
-
-    headline: title,
-
-    description,
-
-    mainEntityOfPage: url,
-  };
+  const url = `https://koloonline.online/compare/${slug}`;
 
   return (
-
-    <div
-      style={{
-        padding: 20,
-        fontFamily: "Arial",
-        background: "#f5f5f5",
-      }}
-    >
-
-      {/* ================= SEO ================= */}
+    <div style={{ fontFamily: "Arial", padding: 20 }}>
 
       <Head>
-
-        <title>
-          {title} | Comparison
-        </title>
-
-        <meta
-          name="description"
-          content={description}
-        />
-
-        <meta
-          name="robots"
-          content="index, follow"
-        />
-
-        <link
-          rel="canonical"
-          href={url}
-        />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html:
-              JSON.stringify(schema),
-          }}
-        />
-
+        <title>{p1.title} vs {p2.title}</title>
+        <meta name="description" content={`Compare ${p1.title} and ${p2.title}`} />
+        <link rel="canonical" href={url} />
       </Head>
 
-      {/* ================= TITLE ================= */}
+      <h1>🔥 Comparison</h1>
+      <h2>🏆 AI Winner: {winner}</h2>
 
-      <h1>
-        🔥 {title}
-      </h1>
+      {/* TABLE */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr 1fr",
+        gap: 10,
+        marginTop: 20
+      }}>
 
-      <p>
-        Compare features, pricing,
-        and smart buying value.
-      </p>
+        <div></div>
+        <div><b>{p1.title}</b></div>
+        <div><b>{p2.title}</b></div>
 
-      {/* ================= GRID ================= */}
+        <div>Price</div>
+        <div>${p1.price}</div>
+        <div>${p2.price}</div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "1fr 1fr",
+        <div>Rating</div>
+        <div>{p1.rating}</div>
+        <div>{p2.rating}</div>
 
-          gap: 20,
+      </div>
 
-          marginTop: 30,
-        }}
-      >
-
-        {[p1, p2].map((p) => (
-
-          <div
-            key={p.id}
-
-            style={{
-              background: "white",
-              padding: 20,
-              borderRadius: 10,
-            }}
-          >
-
-            <img
-              src={p.image}
-              style={{
-                width: "100%",
-                maxHeight: 300,
-                objectFit: "contain",
-              }}
-            />
-
-            <h2>
-              {p.title}
-            </h2>
-
-            <h3
-              style={{
-                color: "red",
-              }}
-            >
-              ${p.price}
-            </h3>
-
-            <p>
-              ⭐ Rating:
-              {p.rating || 4.5}
-            </p>
-
-            <a
-              href={p.link}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <button
-                style={{
-                  padding: 12,
-                  background:
-                    "#ff9900",
-
-                  border: "none",
-
-                  color: "white",
-
-                  cursor: "pointer",
-
-                  width: "100%",
-                }}
-              >
-                Buy on Amazon
-              </button>
-            </a>
-
-          </div>
-
-        ))}
-
+      <div style={{ marginTop: 20 }}>
+        <a href={p1.link} target="_blank">Buy {p1.title}</a><br />
+        <a href={p2.link} target="_blank">Buy {p2.title}</a>
       </div>
 
     </div>
   );
-}
+    }
