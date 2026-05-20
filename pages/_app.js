@@ -2,12 +2,11 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 /* ================= SAFE IDLE HELPER ================= */
 const safeIdle = (cb) =>
-  typeof window !== "undefined" &&
-  "requestIdleCallback" in window
+  typeof window !== "undefined" && "requestIdleCallback" in window
     ? requestIdleCallback(cb)
     : setTimeout(cb, 1);
 
@@ -55,16 +54,16 @@ function useRevenueOS() {
 
     const handler = () => fireSignal();
 
-    ["scroll", "click", "touchstart"].forEach((e) =>
-      window.addEventListener(e, handler, {
+    ["scroll", "click", "touchstart"].forEach((event) => {
+      window.addEventListener(event, handler, {
         passive: true,
-      })
-    );
+      });
+    });
 
     return () => {
-      ["scroll", "click", "touchstart"].forEach((e) =>
-        window.removeEventListener(e, handler)
-      );
+      ["scroll", "click", "touchstart"].forEach((event) => {
+        window.removeEventListener(event, handler);
+      });
     };
   }, []);
 
@@ -87,15 +86,12 @@ function useRevenueOS() {
 }
 
 /* ================= GLOBAL APP ================= */
-export default function App({
-  Component,
-  pageProps,
-}) {
+export default function App({ Component, pageProps }) {
   useRevenueOS();
 
   return (
     <>
-      {/* ================= SEO CORE ================= */}
+      {/* ================= SEO ================= */}
       <Head>
         <meta charSet="UTF-8" />
 
@@ -106,23 +102,12 @@ export default function App({
 
         <meta
           name="description"
-          content="Koloonline Amazon Affiliate Store - AI Revenue Engine"
+          content="Koloonline Amazon Affiliate Store"
         />
 
-        <meta
-          name="robots"
-          content="index, follow"
-        />
+        <meta name="robots" content="index, follow" />
 
-        <link
-          rel="canonical"
-          href="https://www.koloonline.online"
-        />
-
-        <link
-          rel="icon"
-          href="/favicon.ico"
-        />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
 
       {/* ================= GA4 ================= */}
@@ -131,14 +116,11 @@ export default function App({
         strategy="afterInteractive"
       />
 
-      <Script
-        id="ga4"
-        strategy="afterInteractive"
-      >
+      <Script id="ga4" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
 
-          function gtag() {
+          function gtag(){
             dataLayer.push(arguments);
           }
 
@@ -153,10 +135,7 @@ export default function App({
       </Script>
 
       {/* ================= FACEBOOK PIXEL ================= */}
-      <Script
-        id="fb"
-        strategy="lazyOnload"
-      >
+      <Script id="facebook-pixel" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
           {
@@ -164,8 +143,8 @@ export default function App({
 
             n=f.fbq=function(){
               n.callMethod
-              ? n.callMethod.apply(n,arguments)
-              : n.queue.push(arguments)
+                ? n.callMethod.apply(n,arguments)
+                : n.queue.push(arguments)
             };
 
             if(!f._fbq)f._fbq=n;
@@ -204,8 +183,8 @@ export default function App({
       {/* ================= SPEED INSIGHTS ================= */}
       <SpeedInsights />
 
-      {/* ================= APP ================= */}
+      {/* ================= PAGE ================= */}
       <Component {...pageProps} />
     </>
   );
-}
+    }
