@@ -2,12 +2,11 @@ import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SpeedInsights } from "@vercel/speed-insights";
 
 /* ================= SAFE IDLE HELPER ================= */
 const safeIdle = (cb) =>
-  typeof window !== "undefined" &&
-  "requestIdleCallback" in window
+  typeof window !== "undefined" && "requestIdleCallback" in window
     ? requestIdleCallback(cb)
     : setTimeout(cb, 1);
 
@@ -23,7 +22,6 @@ function useRevenueOS() {
 
   useEffect(() => {
     if (initialized.current) return;
-
     initialized.current = true;
 
     const path = window.location.pathname;
@@ -83,13 +81,13 @@ function useRevenueOS() {
   }, [router.events]);
 }
 
-/* ================= APP ================= */
+/* ================= GLOBAL APP ================= */
 export default function App({ Component, pageProps }) {
   useRevenueOS();
 
   return (
     <>
-      {/* ================= SEO ================= */}
+      {/* ================= SEO CORE ================= */}
       <Head>
         <meta charSet="UTF-8" />
 
@@ -98,20 +96,19 @@ export default function App({ Component, pageProps }) {
           content="width=device-width, initial-scale=1"
         />
 
+        <meta name="robots" content="index, follow" />
+
         <meta
           name="description"
           content="Koloonline Amazon Affiliate Store - AI Revenue Engine"
         />
 
-        <meta
-          name="robots"
-          content="index, follow"
+        <link
+          rel="canonical"
+          href="https://www.koloonline.online"
         />
 
-        <link
-          rel="icon"
-          href="/favicon.ico"
-        />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
 
       {/* ================= GA4 ================= */}
@@ -120,10 +117,7 @@ export default function App({ Component, pageProps }) {
         strategy="afterInteractive"
       />
 
-      <Script
-        id="ga4"
-        strategy="afterInteractive"
-      >
+      <Script id="ga4" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
 
@@ -142,10 +136,7 @@ export default function App({ Component, pageProps }) {
       </Script>
 
       {/* ================= FACEBOOK PIXEL ================= */}
-      <Script
-        id="fb-pixel"
-        strategy="lazyOnload"
-      >
+      <Script id="fb" strategy="lazyOnload">
         {`
           !function(f,b,e,v,n,t,s)
           {
