@@ -1,99 +1,32 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  doc,
-  getDoc
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../config/firebase";
 
-/* ================= FIREBASE INIT ================= */
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-};
+function score(p) {
+  return (p.rating || 4) * 2 + (p.views || 0) * 0.01;
+}
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
-
-const db = getFirestore(app);
-
-/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= SAFE ASIN ================= */
-    const asin = String(
-      req.query.asin || ""
-    ).trim();
+    const snap = await getDocs(collection(db, "products"));
 
-    /* ================= VALIDATION ================= */
-    if (!asin) {
-      return res.status(400).json({
-        success: false,
-        error: "asin is required",
-      });
-    }
+    const products = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
 
-    /* ================= DOC REF ================= */
-    const ref = doc(
-      db,
-      "product_relations",
-      String(asin)
-    );
+    const ranked = products
+      .map((p) => ({
+        ...p,
+        score: score(p),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
 
-    const snap = await getDoc(ref);
-
-    /* ================= NO DATA ================= */
-    if (!snap.exists()) {
-      return res.status(200).json({
-        success: true,
-        asin,
-        alsoViewed: [],
-        boughtTogether: [],
-        recommended: [],
-        message:
-          "No relations found (AI will generate soon)",
-      });
-    }
-
-    /* ================= SAFE DATA ================= */
-    const data = snap.data() || {};
-
-    /* ================= RESPONSE ================= */
-    return res.status(200).json({
-      success: true,
-      asin,
-
-      alsoViewed: Array.isArray(
-        data.alsoViewed
-      )
-        ? data.alsoViewed
-        : [],
-
-      boughtTogether: Array.isArray(
-        data.boughtTogether
-      )
-        ? data.boughtTogether
-        : [],
-
-      recommended: Array.isArray(
-        data.recommended
-      )
-        ? data.recommended
-        : [],
+    res.status(200).json({
+      topPicks: ranked,
     });
 
-  } catch (err) {
-    console.error(
-      "GET RECOMMENDATIONS ERROR:",
-      err
-    );
-
-    return res.status(500).json({
-      success: false,
-      error: String(
-        err?.message || "Unknown error"
-      ),
-    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 }
