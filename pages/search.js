@@ -1,11 +1,16 @@
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
-export default function Home() {
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Koloonline";
+
+/* ================= PAGE ================= */
+export default function SearchPage() {
   const router = useRouter();
 
   const [products, setProducts] = useState([]);
@@ -13,28 +18,39 @@ export default function Home() {
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+
   const [suggestions, setSuggestions] = useState([]);
 
-  /* ================= FETCH PRODUCTS ================= */
+  /* ================= FETCH ================= */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const snap = await getDocs(collection(db, "products"));
+        const snap = await getDocs(
+          collection(db, "products")
+        );
 
         const data = snap.docs.map((doc) => {
           const d = doc.data();
 
+          /* ================= AI SCORE ================= */
+          const aiScore =
+            (d.views || 0) * 1 +
+            (d.clicks || 0) * 3 +
+            (d.orders || 0) * 8 +
+            (d.viralBoost ? 40 : 0);
+
           return {
             id: doc.id,
             asin: d.asin || doc.id,
+            aiScore,
             ...d,
           };
         });
 
         setProducts(data);
+
       } catch (err) {
         console.error(err);
-        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -43,7 +59,7 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  /* ================= SEARCH SUGGESTIONS ================= */
+  /* ================= SUGGESTIONS ================= */
   useEffect(() => {
     if (!search) {
       setSuggestions([]);
@@ -52,215 +68,494 @@ export default function Home() {
 
     const results = products
       .filter((p) =>
-        p.title?.toLowerCase().includes(search.toLowerCase())
+        p.title
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
       )
-      .slice(0, 5);
+      .sort((a, b) => b.aiScore - a.aiScore)
+      .slice(0, 6);
 
     setSuggestions(results);
+
   }, [search, products]);
 
+  /* ================= CATEGORIES ================= */
+  const categories = useMemo(() => {
+    return [
+      "all",
+      ...new Set(
+        products
+          .map((p) => p.category)
+          .filter(Boolean)
+      ),
+    ];
+  }, [products]);
+
   /* ================= FILTER ================= */
-  const filtered = products.filter((p) => {
-    const title = p.title?.toLowerCase() || "";
-    const cat = p.category?.toLowerCase() || "";
+  const filtered = useMemo(() => {
+    return products
+      .filter((p) => {
+        const title =
+          p.title?.toLowerCase() || "";
 
-    const searchMatch = title.includes(search.toLowerCase());
+        const cat =
+          p.category?.toLowerCase() || "";
 
-    const categoryMatch =
-      category === "all"
-        ? true
-        : cat === category.toLowerCase();
+        const searchMatch =
+          title.includes(
+            search.toLowerCase()
+          );
 
-    return searchMatch && categoryMatch;
-  });
+        const categoryMatch =
+          category === "all"
+            ? true
+            : cat ===
+              category.toLowerCase();
+
+        return (
+          searchMatch &&
+          categoryMatch
+        );
+      })
+
+      /* ================= AI SORT ================= */
+      .sort(
+        (a, b) =>
+          b.aiScore - a.aiScore
+      );
+
+  }, [products, search, category]);
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
+    <div
+      style={{
+        background: "#f4f6f9",
+        minHeight: "100vh",
+        fontFamily: "Arial",
+      }}
+    >
 
+      {/* ================= SEO ================= */}
       <Head>
-        <title>Koloonline Amazon Store</title>
+
+        <title>
+          Search Amazon Products |
+          Koloonline
+        </title>
 
         <meta
           name="description"
-          content="Best Amazon Affiliate Store"
+          content="Search trending Amazon products, viral gadgets, smart home products, and AI-ranked deals."
         />
+
+        <meta
+          name="robots"
+          content="index,follow"
+        />
+
+        <meta
+          property="og:title"
+          content="Search Amazon Products"
+        />
+
+        <meta
+          property="og:description"
+          content="Find the best Amazon deals and trending products."
+        />
+
+        <meta
+          property="og:type"
+          content="website"
+        />
+
+        <meta
+          property="og:url"
+          content="https://koloonline.online/search"
+        />
+
       </Head>
 
-      {/* HEADER */}
+      {/* ================= HEADER ================= */}
       <header
         style={{
-          background: "#131921",
+          background:
+            "linear-gradient(45deg,#111827,#1f2937)",
+          padding: 20,
           color: "white",
-          padding: 15,
-          display: "flex",
-          alignItems: "center",
-          gap: 15,
-          position: "relative",
-          flexWrap: "wrap"
+          position: "sticky",
+          top: 0,
+          zIndex: 999,
         }}
       >
 
-        <img
-          src="https://i.postimg.cc/9fVfC1Y4/1000276862.png"
-          style={{ height: 45 }}
-        />
+        <div
+          style={{
+            maxWidth: 1400,
+            margin: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: 15,
+            flexWrap: "wrap",
+          }}
+        >
 
-        {/* SEARCH */}
-        <div style={{ flex: 1, position: "relative" }}>
-
-          <input
-            type="text"
-            placeholder="Search Amazon products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+          {/* LOGO */}
+          <Link
+            href="/"
             style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 5,
-              border: "none"
+              textDecoration: "none",
+              color: "white",
             }}
-          />
-
-          {/* SUGGESTIONS */}
-          {suggestions.length > 0 && (
-            <div
+          >
+            <h1
               style={{
-                position: "absolute",
-                top: 45,
-                left: 0,
-                right: 0,
-                background: "white",
-                color: "black",
-                borderRadius: 8,
-                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                zIndex: 999
+                margin: 0,
+                fontSize: 30,
               }}
             >
-              {suggestions.map((s) => (
-                <div
-                  key={s.id}
-                  onClick={() => {
-                    setSearch("");
+              🟠 Koloonline
+            </h1>
+          </Link>
 
-                    router.push(`/product/${s.asin}`);
-                  }}
-                  style={{
-                    padding: 10,
-                    borderBottom: "1px solid #eee",
-                    cursor: "pointer"
-                  }}
-                >
-                  {s.title}
-                </div>
-              ))}
-            </div>
-          )}
+          {/* SEARCH */}
+          <div
+            style={{
+              flex: 1,
+              position: "relative",
+              minWidth: 250,
+            }}
+          >
+
+            <input
+              type="text"
+              placeholder="Search Amazon products..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              style={{
+                width: "100%",
+                padding: 16,
+                borderRadius: 12,
+                border: "none",
+                fontSize: 16,
+                outline: "none",
+              }}
+            />
+
+            {/* SUGGESTIONS */}
+            {suggestions.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 58,
+                  left: 0,
+                  right: 0,
+                  background: "white",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  zIndex: 999,
+                  boxShadow:
+                    "0 10px 30px rgba(0,0,0,0.15)",
+                }}
+              >
+
+                {suggestions.map((s) => (
+
+                  <div
+                    key={s.id}
+
+                    onClick={() => {
+                      setSearch("");
+
+                      router.push(
+                        `/product/${s.asin}`
+                      );
+                    }}
+
+                    style={{
+                      padding: 14,
+                      borderBottom:
+                        "1px solid #eee",
+                      cursor: "pointer",
+                      color: "#111",
+                    }}
+                  >
+                    {s.title}
+                  </div>
+
+                ))}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* CATEGORY */}
+          <select
+            value={category}
+            onChange={(e) =>
+              setCategory(e.target.value)
+            }
+            style={{
+              padding: 14,
+              borderRadius: 12,
+              border: "none",
+              fontWeight: "bold",
+            }}
+          >
+
+            {categories.map((cat) => (
+              <option
+                key={cat}
+                value={cat}
+              >
+                {cat}
+              </option>
+            ))}
+
+          </select>
+
+          {/* AMAZON HAUL */}
+          <Link href="/amazon-haul">
+
+            <button
+              style={{
+                padding: "14px 20px",
+                background:
+                  "linear-gradient(45deg,#ff6600,#ff9900)",
+                border: "none",
+                borderRadius: 12,
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              🔥 Amazon Haul
+            </button>
+
+          </Link>
+
+        </div>
+      </header>
+
+      {/* ================= CONTENT ================= */}
+      <div
+        style={{
+          maxWidth: 1400,
+          margin: "auto",
+          padding: 20,
+        }}
+      >
+
+        {/* ================= TITLE ================= */}
+        <div
+          style={{
+            marginBottom: 30,
+          }}
+        >
+
+          <h2
+            style={{
+              fontSize: 38,
+              marginBottom: 10,
+            }}
+          >
+            🔍 Smart Product Search
+          </h2>
+
+          <p
+            style={{
+              color: "#666",
+            }}
+          >
+            AI-powered Amazon product discovery engine.
+          </p>
 
         </div>
 
-        {/* CATEGORY */}
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          style={{
-            padding: 10,
-            borderRadius: 5,
-            border: "none"
-          }}
-        >
-          <option value="all">All</option>
-          <option value="electronics">Electronics</option>
-          <option value="fashion">Fashion</option>
-          <option value="home">Home</option>
-        </select>
-
-        {/* 🔥 AMAZON HAUL BUTTON */}
-        <Link href="/amazon-haul">
-          <button
-            style={{
-              padding: "10px 15px",
-              background: "#ff6600",
-              border: "none",
-              borderRadius: 5,
-              color: "white",
-              fontWeight: "bold",
-              cursor: "pointer"
-            }}
-          >
-            🔥 Amazon Haul
-          </button>
-        </Link>
-
-      </header>
-
-      {/* CONTENT */}
-      <div style={{ padding: 20 }}>
-
+        {/* ================= LOADING ================= */}
         {loading ? (
           <p>Loading products...</p>
         ) : filtered.length === 0 ? (
-          <p>No products found</p>
+          <div
+            style={{
+              background: "white",
+              padding: 40,
+              borderRadius: 20,
+              textAlign: "center",
+            }}
+          >
+            No products found.
+          </div>
         ) : (
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-              gap: 15
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(250px,1fr))",
+              gap: 24,
             }}
           >
+
             {filtered.map((p) => (
-              <div
+
+              <Link
                 key={p.id}
+                href={`/product/${p.asin}`}
                 style={{
-                  background: "white",
-                  padding: 12,
-                  borderRadius: 10
+                  textDecoration: "none",
+                  color: "black",
                 }}
               >
 
-                <img
-                  src={p.image}
+                <div
                   style={{
-                    width: "100%",
-                    height: 180,
-                    objectFit: "cover"
-                  }}
-                />
-
-                <h3>{p.title}</h3>
-
-                <p>${p.price}</p>
-
-                <Link href={`/product/${p.asin}`}>
-                  <button
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      background: "#ff9900",
-                      border: "none",
-                      marginTop: 8
-                    }}
-                  >
-                    View Product
-                  </button>
-                </Link>
-
-                <button
-                  onClick={() => window.open(p.link, "_blank")}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    background: "#25D366",
-                    border: "none",
-                    marginTop: 8,
-                    color: "white"
+                    background: "white",
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    boxShadow:
+                      "0 8px 30px rgba(0,0,0,0.06)",
+                    transition: "0.3s",
+                    height: "100%",
                   }}
                 >
-                  🛒 Buy on Amazon
-                </button>
 
-              </div>
+                  {/* IMAGE */}
+                  <div
+                    style={{
+                      background: "#fafafa",
+                      padding: 20,
+                    }}
+                  >
+
+                    <Image
+                      src={
+                        p.image ||
+                        fallbackImage
+                      }
+
+                      alt={p.title}
+
+                      width={300}
+                      height={300}
+
+                      style={{
+                        width: "100%",
+                        height: 220,
+                        objectFit: "contain",
+                      }}
+                    />
+
+                  </div>
+
+                  {/* CONTENT */}
+                  <div
+                    style={{
+                      padding: 18,
+                    }}
+                  >
+
+                    {/* CATEGORY */}
+                    <span
+                      style={{
+                        background:
+                          "#eef3ff",
+                        color: "#2563eb",
+                        padding:
+                          "5px 12px",
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {p.category ||
+                        "Trending"}
+                    </span>
+
+                    {/* TITLE */}
+                    <h3
+                      style={{
+                        marginTop: 14,
+                        lineHeight: 1.6,
+                        minHeight: 70,
+                        fontSize: 16,
+                      }}
+                    >
+                      {p.title}
+                    </h3>
+
+                    {/* PRICE */}
+                    <div
+                      style={{
+                        marginTop: 15,
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        alignItems:
+                          "center",
+                      }}
+                    >
+
+                      <div
+                        style={{
+                          color: "#B12704",
+                          fontSize: 26,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        $
+                        {Number(
+                          p.price || 0
+                        )}
+                      </div>
+
+                      {p.viralBoost && (
+                        <span
+                          style={{
+                            background:
+                              "#dc2626",
+                            color: "white",
+                            padding:
+                              "5px 10px",
+                            borderRadius: 10,
+                            fontSize: 11,
+                            fontWeight:
+                              "bold",
+                          }}
+                        >
+                          🔥 Viral
+                        </span>
+                      )}
+
+                    </div>
+
+                    {/* BUTTON */}
+                    <button
+                      style={{
+                        width: "100%",
+                        marginTop: 20,
+                        padding: 14,
+                        border: "none",
+                        borderRadius: 12,
+                        background:
+                          "linear-gradient(45deg,#ff9900,#ffb84d)",
+                        color: "white",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        fontSize: 15,
+                      }}
+                    >
+                      View Product
+                    </button>
+
+                  </div>
+                </div>
+
+              </Link>
+
             ))}
+
           </div>
         )}
 
