@@ -2,7 +2,9 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase";
+
+/* ================= FIXED IMPORT ================= */
+import { db } from "../config/firebase";
 
 /* ================= CATEGORY PAGE ================= */
 
@@ -24,21 +26,30 @@ export default function CategoryPage() {
     if (!category) return;
 
     const load = async () => {
-      const snap = await getDocs(collection(db, "products"));
+      try {
+        const snap = await getDocs(
+          collection(db, "products")
+        );
 
-      const all = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
+        const all = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
 
-      const filtered = all.filter((p) =>
-        p.category
-          ?.toLowerCase()
-          .includes(String(category).toLowerCase())
-      );
+        const filtered = all.filter((p) =>
+          p.category
+            ?.toLowerCase()
+            .includes(
+              String(category).toLowerCase()
+            )
+        );
 
-      setProducts(filtered);
-      setLoading(false);
+        setProducts(filtered);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     load();
@@ -53,17 +64,21 @@ export default function CategoryPage() {
           (p.price || 0) <= maxPrice
       )
       .sort((a, b) => {
-        if (sort === "price_low")
+        if (sort === "price_low") {
           return (a.price || 0) - (b.price || 0);
+        }
 
-        if (sort === "price_high")
+        if (sort === "price_high") {
           return (b.price || 0) - (a.price || 0);
+        }
 
-        if (sort === "rating")
+        if (sort === "rating") {
           return (b.rating || 0) - (a.rating || 0);
+        }
 
-        if (sort === "views")
+        if (sort === "views") {
           return (b.views || 0) - (a.views || 0);
+        }
 
         return (
           (b.trendScore || 0) -
@@ -77,13 +92,23 @@ export default function CategoryPage() {
     visibleCount
   );
 
-  if (loading)
-    return <p style={{ padding: 20 }}>Loading...</p>;
+  if (loading) {
+    return (
+      <p style={{ padding: 20 }}>
+        Loading...
+      </p>
+    );
+  }
 
   const aiDesc = `Best ${category} products selected by AI based on trends, ratings and user engagement.`;
 
   return (
-    <div style={{ fontFamily: "Arial", padding: 20 }}>
+    <div
+      style={{
+        fontFamily: "Arial",
+        padding: 20,
+      }}
+    >
       {/* ================= SEO ================= */}
       <Head>
         <title>
@@ -97,7 +122,9 @@ export default function CategoryPage() {
       </Head>
 
       {/* ================= HEADER ================= */}
-      <h1>🔥 {category} Products</h1>
+      <h1>
+        🔥 {category} Products
+      </h1>
 
       <p style={{ color: "#555" }}>
         {aiDesc}
@@ -115,15 +142,19 @@ export default function CategoryPage() {
           <option value="trend">
             Trending
           </option>
+
           <option value="rating">
             Top Rated
           </option>
+
           <option value="price_low">
             Lowest Price
           </option>
+
           <option value="price_high">
             Highest Price
           </option>
+
           <option value="views">
             Most Viewed
           </option>
@@ -136,7 +167,9 @@ export default function CategoryPage() {
             type="number"
             value={minPrice}
             onChange={(e) =>
-              setMinPrice(Number(e.target.value))
+              setMinPrice(
+                Number(e.target.value)
+              )
             }
           />
 
@@ -145,7 +178,9 @@ export default function CategoryPage() {
             type="number"
             value={maxPrice}
             onChange={(e) =>
-              setMaxPrice(Number(e.target.value))
+              setMaxPrice(
+                Number(e.target.value)
+              )
             }
             style={{ marginLeft: 10 }}
           />
@@ -172,6 +207,8 @@ export default function CategoryPage() {
               background: "white",
               padding: 15,
               borderRadius: 10,
+              boxShadow:
+                "0 2px 8px rgba(0,0,0,0.08)",
             }}
           >
             {/* VIRAL */}
@@ -191,36 +228,49 @@ export default function CategoryPage() {
 
             <img
               src={p.image}
+              alt={p.title}
               style={{
                 width: "100%",
                 height: 150,
                 objectFit: "contain",
+                marginTop: 10,
               }}
             />
 
             <h3>{p.title}</h3>
 
             <p>${p.price}</p>
-            <p>⭐ {p.rating || 4.5}</p>
+
+            <p>
+              ⭐ {p.rating || 4.5}
+            </p>
           </a>
         ))}
       </div>
 
       {/* ================= LOAD MORE ================= */}
-      <button
-        onClick={() =>
-          setVisibleCount((p) => p + 12)
-        }
-        style={{
-          marginTop: 20,
-          width: "100%",
-          padding: 12,
-          background: "#111",
-          color: "white",
-        }}
-      >
-        Load More
-      </button>
+      {visibleProducts.length <
+        sorted.length && (
+        <button
+          onClick={() =>
+            setVisibleCount(
+              (p) => p + 12
+            )
+          }
+          style={{
+            marginTop: 20,
+            width: "100%",
+            padding: 12,
+            background: "#111",
+            color: "white",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+          }}
+        >
+          Load More
+        </button>
+      )}
     </div>
   );
-            }
+}
