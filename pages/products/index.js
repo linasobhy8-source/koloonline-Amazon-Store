@@ -10,7 +10,8 @@ import {
   limit,
 } from "firebase/firestore";
 
-import { db } from "../config/firebase";
+/* ✅ FIXED IMPORT */
+import { db } from "../../config/firebase";
 
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
@@ -48,7 +49,6 @@ function Stars({ rating = 4.5 }) {
 export default function ProductsPage({
   products,
 }) {
-
   const [search, setSearch] =
     useState("");
 
@@ -58,6 +58,7 @@ export default function ProductsPage({
   /* ================= CATEGORIES ================= */
   const categories = [
     "all",
+
     ...new Set(
       products.map(
         (p) =>
@@ -69,10 +70,8 @@ export default function ProductsPage({
   /* ================= FILTER ================= */
   const filteredProducts =
     useMemo(() => {
-
       return products
         .filter((p) => {
-
           const searchMatch =
             p.title
               ?.toLowerCase()
@@ -92,14 +91,19 @@ export default function ProductsPage({
           );
         })
 
-        .sort(
-          (a, b) =>
-            (b.views || 0) +
-            (b.clicks || 0) * 2 -
-            ((a.views || 0) +
-              (a.clicks || 0) * 2)
-        );
+        .sort((a, b) => {
+          const aScore =
+            (a.views || 0) +
+            (a.clicks || 0) * 2 +
+            (a.orders || 0) * 5;
 
+          const bScore =
+            (b.views || 0) +
+            (b.clicks || 0) * 2 +
+            (b.orders || 0) * 5;
+
+          return bScore - aScore;
+        });
     }, [
       products,
       search,
@@ -114,10 +118,8 @@ export default function ProductsPage({
         fontFamily: "Arial",
       }}
     >
-
       {/* ================= SEO ================= */}
       <Head>
-
         <title>
           Best Amazon Products 2026 |
           Koloonline
@@ -147,7 +149,6 @@ export default function ProductsPage({
           property="og:url"
           content="https://koloonline.online/products"
         />
-
       </Head>
 
       {/* ================= HEADER ================= */}
@@ -155,12 +156,14 @@ export default function ProductsPage({
         style={{
           background:
             "linear-gradient(45deg,#111827,#1f2937)",
+
           padding: "50px 20px",
+
           color: "white",
+
           textAlign: "center",
         }}
       >
-
         <h1
           style={{
             fontSize: 42,
@@ -183,7 +186,6 @@ export default function ProductsPage({
           viral products, and smart
           shopping recommendations.
         </p>
-
       </div>
 
       {/* ================= CONTAINER ================= */}
@@ -194,7 +196,6 @@ export default function ProductsPage({
           padding: 20,
         }}
       >
-
         {/* ================= FILTER BAR ================= */}
         <div
           style={{
@@ -206,7 +207,6 @@ export default function ProductsPage({
               "0 5px 20px rgba(0,0,0,0.06)",
           }}
         >
-
           {/* SEARCH */}
           <input
             type="text"
@@ -236,9 +236,7 @@ export default function ProductsPage({
               flexWrap: "wrap",
             }}
           >
-
             {categories.map((cat) => (
-
               <button
                 key={cat}
                 onClick={() =>
@@ -247,8 +245,11 @@ export default function ProductsPage({
                 style={{
                   padding:
                     "10px 18px",
+
                   borderRadius: 30,
+
                   border: "none",
+
                   cursor: "pointer",
 
                   background:
@@ -267,9 +268,7 @@ export default function ProductsPage({
               >
                 {cat}
               </button>
-
             ))}
-
           </div>
         </div>
 
@@ -284,10 +283,8 @@ export default function ProductsPage({
             gap: 25,
           }}
         >
-
           {filteredProducts.map(
             (product) => {
-
               const rating =
                 Number(
                   product.rating ||
@@ -299,9 +296,7 @@ export default function ProductsPage({
                   key={
                     product.asin
                   }
-
                   href={`/product/${product.asin}`}
-
                   style={{
                     textDecoration:
                       "none",
@@ -309,7 +304,6 @@ export default function ProductsPage({
                     color: "black",
                   }}
                 >
-
                   <div
                     style={{
                       background:
@@ -323,13 +317,9 @@ export default function ProductsPage({
                       boxShadow:
                         "0 8px 30px rgba(0,0,0,0.06)",
 
-                      transition:
-                        "0.3s",
-
                       height: "100%",
                     }}
                   >
-
                     {/* IMAGE */}
                     <div
                       style={{
@@ -342,7 +332,6 @@ export default function ProductsPage({
                           "center",
                       }}
                     >
-
                       <Image
                         src={
                           product.image ||
@@ -350,11 +339,14 @@ export default function ProductsPage({
                         }
 
                         alt={
-                          product.title
+                          product.title ||
+                          "Product"
                         }
 
                         width={300}
                         height={300}
+
+                        unoptimized
 
                         style={{
                           width: "100%",
@@ -365,7 +357,6 @@ export default function ProductsPage({
                             "contain",
                         }}
                       />
-
                     </div>
 
                     {/* CONTENT */}
@@ -374,7 +365,6 @@ export default function ProductsPage({
                         padding: 18,
                       }}
                     >
-
                       {/* CATEGORY */}
                       <span
                         style={{
@@ -439,7 +429,6 @@ export default function ProductsPage({
                             "space-between",
                         }}
                       >
-
                         <div
                           style={{
                             color:
@@ -483,7 +472,6 @@ export default function ProductsPage({
                             🔥 Viral
                           </span>
                         )}
-
                       </div>
 
                       {/* BUTTON */}
@@ -519,14 +507,12 @@ export default function ProductsPage({
                       >
                         View Product
                       </button>
-
                     </div>
                   </div>
                 </Link>
               );
             }
           )}
-
         </div>
 
         {/* ================= EMPTY ================= */}
@@ -542,7 +528,6 @@ export default function ProductsPage({
             No products found.
           </div>
         )}
-
       </div>
     </div>
   );
@@ -550,28 +535,40 @@ export default function ProductsPage({
 
 /* ================= DATA ================= */
 export async function getStaticProps() {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(
+          db,
+          "products"
+        ),
+        limit(120)
+      )
+    );
 
-  const snap = await getDocs(
-    query(
-      collection(
-        db,
-        "products"
-      ),
-      limit(120)
-    )
-  );
+    return {
+      props: {
+        products:
+          snap.docs.map((d) => ({
+            asin: d.id,
+            ...d.data(),
+          })),
+      },
 
-  return {
-    props: {
+      revalidate: 60,
+    };
+  } catch (err) {
+    console.error(
+      "PRODUCTS PAGE ERROR:",
+      err
+    );
 
-      products:
-        snap.docs.map((d) => ({
-          asin: d.id,
-          ...d.data(),
-        })),
+    return {
+      props: {
+        products: [],
+      },
 
-    },
-
-    revalidate: 60,
-  };
+      revalidate: 60,
+    };
+  }
         }
