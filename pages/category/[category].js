@@ -40,7 +40,7 @@ export default function CategoryPage() {
 
     fetchProducts();
 
-  }, [category]);
+  }, [category, sort]);
 
   async function fetchProducts() {
 
@@ -59,6 +59,7 @@ export default function CategoryPage() {
       const all =
         snap.docs.map((d) => ({
           id: d.id,
+          asin: d.id,
           ...d.data(),
         }));
 
@@ -67,13 +68,15 @@ export default function CategoryPage() {
       let filtered = all
 
         /* ================= FILTER ================= */
+
         .filter((p) =>
           (p.category || "")
             .toLowerCase()
             .includes(normalizedCategory)
         )
 
-        /* ================= AI TREND ENGINE ================= */
+        /* ================= AI SCORE ================= */
+
         .map((p) => {
 
           const trendScore =
@@ -97,29 +100,33 @@ export default function CategoryPage() {
         })
 
         /* ================= SORT ================= */
+
         .sort((a, b) => {
 
-          if (sort === "price_low")
+          if (sort === "price_low") {
             return (
-              (a.price || 0) -
-              (b.price || 0)
+              Number(a.price || 0) -
+              Number(b.price || 0)
             );
+          }
 
-          if (sort === "price_high")
+          if (sort === "price_high") {
             return (
-              (b.price || 0) -
-              (a.price || 0)
+              Number(b.price || 0) -
+              Number(a.price || 0)
             );
+          }
 
-          if (sort === "rating")
+          if (sort === "rating") {
             return (
-              (b.rating || 0) -
-              (a.rating || 0)
+              Number(b.rating || 0) -
+              Number(a.rating || 0)
             );
+          }
 
           return (
-            b.trendScore -
-            a.trendScore
+            Number(b.trendScore || 0) -
+            Number(a.trendScore || 0)
           );
         });
 
@@ -215,8 +222,6 @@ export default function CategoryPage() {
           href={url}
         />
 
-        {/* OG */}
-
         <meta
           property="og:title"
           content={title}
@@ -271,6 +276,7 @@ export default function CategoryPage() {
             style={{
               fontSize: 38,
               marginBottom: 10,
+              textTransform: "capitalize",
             }}
           >
             📦 {category}
@@ -372,6 +378,7 @@ export default function CategoryPage() {
                     fontSize: 13,
 
                     cursor: "pointer",
+                    display: "inline-block",
                   }}
                 >
                   {c}
@@ -420,7 +427,7 @@ export default function CategoryPage() {
 
               key={p.id}
 
-              href={`/product/${p.asin || p.id}`}
+              href={`/product/${p.asin}`}
 
               style={{
                 textDecoration: "none",
@@ -445,8 +452,6 @@ export default function CategoryPage() {
                 }}
               >
 
-                {/* IMAGE */}
-
                 <div
                   style={{
                     padding: 20,
@@ -460,7 +465,7 @@ export default function CategoryPage() {
                       "https://via.placeholder.com/400"
                     }
 
-                    alt={p.title}
+                    alt={p.title || "product"}
 
                     width={300}
 
@@ -474,8 +479,6 @@ export default function CategoryPage() {
                   />
 
                 </div>
-
-                {/* CONTENT */}
 
                 <div
                   style={{
@@ -511,8 +514,6 @@ export default function CategoryPage() {
                   >
                     ${p.price || 0}
                   </h2>
-
-                  {/* VIRAL */}
 
                   {p.viralBoost && (
 
