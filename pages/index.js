@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import {
   collection,
@@ -11,12 +11,42 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../config/firebase";
-import { calculateTrendScore } from "../lib/trendScore";
 
-import {
-  generateWebsiteSchema,
-  generateItemListSchema,
-} from "../lib/seo/homeSchema";
+/* ================= SAFE TREND SCORE ================= */
+function calculateTrendScore(product) {
+  return (
+    (product.views || 0) * 1 +
+    (product.clicks || 0) * 3 +
+    (product.orders || 0) * 8 +
+    (product.rating || 4.5) * 20 +
+    (product.viralBoost ? 80 : 0)
+  );
+}
+
+/* ================= SEO SCHEMA ================= */
+function generateWebsiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Koloonline",
+    url: "https://koloonline.online",
+    description:
+      "AI-powered Amazon affiliate platform for trending products and smart shopping deals.",
+  };
+}
+
+function generateItemListSchema(products) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: products.map((p, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://koloonline.online/product/${p.asin || p.id}`,
+      name: p.title,
+    })),
+  };
+}
 
 /* ================= HERO ================= */
 function Hero() {
@@ -28,7 +58,7 @@ function Hero() {
         color: "white",
         padding: "80px 20px",
         borderRadius: 24,
-        marginBottom: 30,
+        marginBottom: 40,
       }}
     >
       <div
@@ -56,7 +86,7 @@ function Hero() {
 
           <h1
             style={{
-              fontSize: 54,
+              fontSize: 52,
               lineHeight: 1.1,
               marginTop: 25,
               marginBottom: 20,
@@ -67,15 +97,15 @@ function Hero() {
 
           <p
             style={{
-              fontSize: 20,
+              fontSize: 19,
               color: "#cbd5e1",
               lineHeight: 1.8,
               maxWidth: 650,
             }}
           >
             AI-powered Amazon discovery platform helping
-            shoppers find viral gadgets, trending tech,
-            smart home products, and the best online deals.
+            shoppers find trending gadgets, smart home
+            products, viral items, and the best online deals.
           </p>
 
           <div
@@ -121,7 +151,6 @@ function Hero() {
             </Link>
           </div>
 
-          {/* TRUST */}
           <div
             style={{
               display: "flex",
@@ -133,8 +162,8 @@ function Hero() {
             }}
           >
             <span>✅ Updated Daily</span>
-            <span>✅ AI Ranked Products</span>
-            <span>✅ Trending Deals</span>
+            <span>✅ AI Ranked</span>
+            <span>✅ Viral Products</span>
             <span>✅ Smart Recommendations</span>
           </div>
         </div>
@@ -149,7 +178,7 @@ function Hero() {
         >
           <img
             src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop"
-            alt="Trending products"
+            alt="Trending Amazon Products"
             style={{
               width: "100%",
               maxWidth: 500,
@@ -171,6 +200,7 @@ function ProductCard({ product }) {
       href={`/product/${product.asin || product.id}`}
       style={{
         textDecoration: "none",
+        color: "inherit",
       }}
     >
       <div
@@ -178,11 +208,10 @@ function ProductCard({ product }) {
           background: "white",
           borderRadius: 22,
           overflow: "hidden",
-          transition: "0.3s",
-          cursor: "pointer",
           border: "1px solid #e5e7eb",
           boxShadow:
             "0 4px 20px rgba(0,0,0,0.06)",
+          transition: "0.3s",
           height: "100%",
         }}
       >
@@ -219,9 +248,10 @@ function ProductCard({ product }) {
               product.image ||
               "https://via.placeholder.com/500"
             }
-            alt={product.title}
+            alt={product.title || "Product"}
             width={400}
             height={400}
+            unoptimized
             style={{
               width: "100%",
               height: 240,
@@ -319,27 +349,34 @@ function ProductCard({ product }) {
   );
 }
 
-/* ================= MAIN ================= */
+/* ================= MAIN PAGE ================= */
 export default function Home({ products }) {
   const [search, setSearch] = useState("");
 
-  const filtered = products
-    .filter((p) =>
-      p.title
-        ?.toLowerCase()
-        .includes(search.toLowerCase())
-    )
-    .map((p) => ({
-      ...p,
-      trendScore: calculateTrendScore(p),
-    }))
-    .sort((a, b) => b.trendScore - a.trendScore);
+  const filteredProducts = useMemo(() => {
+    return products
+      .filter((p) =>
+        p.title
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
+      )
+      .map((p) => ({
+        ...p,
+        trendScore: calculateTrendScore(p),
+      }))
+      .sort((a, b) => b.trendScore - a.trendScore);
+  }, [products, search]);
 
-  const trendingProducts = filtered.slice(0, 12);
+  const trendingProducts =
+    filteredProducts.slice(0, 12);
 
-  const websiteSchema = generateWebsiteSchema();
+  const websiteSchema =
+    generateWebsiteSchema();
+
   const itemListSchema =
-    generateItemListSchema(trendingProducts);
+    generateItemListSchema(
+      trendingProducts
+    );
 
   return (
     <div
@@ -371,6 +408,12 @@ export default function Home({ products }) {
           content="index,follow,max-image-preview:large"
         />
 
+        <link
+          rel="canonical"
+          href="https://koloonline.online"
+        />
+
+        {/* OPEN GRAPH */}
         <meta
           property="og:title"
           content="Koloonline Smart Shopping Platform"
@@ -382,8 +425,8 @@ export default function Home({ products }) {
         />
 
         <meta
-          property="og:image"
-          content="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop"
+          property="og:type"
+          content="website"
         />
 
         <meta
@@ -391,17 +434,27 @@ export default function Home({ products }) {
           content="https://koloonline.online"
         />
 
+        <meta
+          property="og:image"
+          content="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop"
+        />
+
+        {/* SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteSchema),
+            __html: JSON.stringify(
+              websiteSchema
+            ),
           }}
         />
 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(itemListSchema),
+            __html: JSON.stringify(
+              itemListSchema
+            ),
           }}
         />
       </Head>
@@ -428,7 +481,6 @@ export default function Home({ products }) {
             flexWrap: "wrap",
           }}
         >
-          {/* LOGO */}
           <Link
             href="/"
             style={{
@@ -486,14 +538,18 @@ export default function Home({ products }) {
               Categories
             </Link>
 
-            <Link href="/blog">Blog</Link>
+            <Link href="/blog">
+              Blog
+            </Link>
 
-            <Link href="/about">About</Link>
+            <Link href="/about">
+              About
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* ================= CONTAINER ================= */}
+      {/* ================= MAIN ================= */}
       <main
         style={{
           maxWidth: 1300,
@@ -501,17 +557,19 @@ export default function Home({ products }) {
           padding: 20,
         }}
       >
-        {/* HERO */}
         <Hero />
 
-        {/* ================= SECTION TITLE ================= */}
+        {/* ================= TITLE ================= */}
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             alignItems: "center",
             marginBottom: 25,
             marginTop: 20,
+            flexWrap: "wrap",
+            gap: 20,
           }}
         >
           <div>
@@ -530,8 +588,8 @@ export default function Home({ products }) {
                 color: "#6b7280",
               }}
             >
-              AI-ranked viral Amazon finds updated
-              daily.
+              AI-ranked viral Amazon finds
+              updated daily.
             </p>
           </div>
 
@@ -716,20 +774,38 @@ export default function Home({ products }) {
   );
 }
 
-/* ================= DATA ================= */
+/* ================= STATIC DATA ================= */
 export async function getStaticProps() {
-  const snap = await getDocs(
-    query(collection(db, "products"), limit(60))
-  );
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, "products"),
+        limit(60)
+      )
+    );
 
-  return {
-    props: {
-      products: snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })),
-    },
+    const products = snap.docs.map((doc) => ({
+      id: doc.id,
+      asin: doc.id,
+      ...doc.data(),
+    }));
 
-    revalidate: 60,
-  };
-              }
+    return {
+      props: {
+        products,
+      },
+
+      revalidate: 60,
+    };
+  } catch (err) {
+    console.error("HOME ERROR:", err);
+
+    return {
+      props: {
+        products: [],
+      },
+
+      revalidate: 60,
+    };
+  }
+}
