@@ -19,6 +19,12 @@ function cleanUrl(url) {
   return url?.replace(/\/+$/, "")?.trim();
 }
 
+/* ================= SAFE VALUE GUARD ================= */
+function safeId(value, fallback) {
+  if (!value || typeof value !== "string") return fallback || null;
+  return value.trim();
+}
+
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
@@ -37,50 +43,62 @@ export default async function handler(req, res) {
       `${baseUrl}/aliexpress`,
     ];
 
-    /* ================= PRODUCTS ================= */
+    /* ================= PRODUCTS (SAFE) ================= */
     const productsSnap = await getDocs(collection(db, "products"));
 
     const productUrls = productsSnap.docs
-      .slice(0, 200)
-      .map((doc) => `${baseUrl}/product/${doc.id}`);
+      .map((doc) => {
+        const id = safeId(doc.id);
 
-    /* ================= BLOGS ================= */
+        if (!id) return null;
+
+        return `${baseUrl}/product/${id}`;
+      })
+      .filter(Boolean)
+      .slice(0, 200);
+
+    /* ================= BLOGS (SAFE) ================= */
     const blogSnap = await getDocs(collection(db, "blog"));
 
     const blogUrls = blogSnap.docs
-      .slice(0, 100)
       .map((doc) => {
         const d = doc.data();
-        const slug = d.slug || doc.id;
-        return `${baseUrl}/blog/${slug}`;
-      });
 
-    /* ================= CATEGORIES ================= */
+        const slug = safeId(d.slug, doc.id);
+
+        if (!slug) return null;
+
+        return `${baseUrl}/blog/${slug}`;
+      })
+      .filter(Boolean)
+      .slice(0, 100);
+
+    /* ================= CATEGORIES (SAFE) ================= */
     const categoriesSnap = await getDocs(collection(db, "products"));
 
     const categoryUrls = [
       ...new Set(
         categoriesSnap.docs.map((doc) => {
           const d = doc.data();
-          return d.category
-            ? `${baseUrl}/category/${d.category.toLowerCase()}`
-            : null;
+
+          const cat = d?.category;
+
+          if (!cat || typeof cat !== "string") return null;
+
+          return `${baseUrl}/category/${cat.toLowerCase()}`;
         })
       ),
     ].filter(Boolean);
 
     /* ================= MERGE URLS ================= */
-    urls = [
-      ...new Set([
-        ...urls,
-        ...productUrls,
-        ...blogUrls,
-        ...categoryUrls,
-      ]),
-    ].map(cleanUrl);
+    let urlsFinal = [
+      ...new Set([...urls, ...productUrls, ...blogUrls, ...categoryUrls]),
+    ]
+      .map(cleanUrl)
+      .filter(Boolean);
 
-    /* ================= HIGH PRIORITY ================= */
-    const highPriorityUrls = urls.filter(
+    /* ================= HIGH PRIORITY FILTER ================= */
+    const highPriorityUrls = urlsFinal.filter(
       (u) =>
         u.includes("/product/") ||
         u.includes("/blog/") ||
@@ -102,6 +120,13 @@ export default async function handler(req, res) {
 
     for (const chunk of chunks) {
       try {
+        if (!key) {
+          results.push({
+            error: "Missing INDEXNOW_KEY",
+          });
+          break;
+        }
+
         const response = await fetch(
           "https://api.indexnow.org/indexnow",
           {
@@ -117,10 +142,12 @@ export default async function handler(req, res) {
           }
         );
 
+        const text = await response.text();
+
         results.push({
           count: chunk.length,
           status: response.status,
-          result: await response.text(),
+          result: text,
         });
       } catch (err) {
         results.push({
@@ -134,12 +161,16 @@ export default async function handler(req, res) {
       await fetch(
         `https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml`
       );
-    } catch {}
+    } catch (e) {
+      results.push({
+        googlePingError: e.message,
+      });
+    }
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      totalUrls: urls.length,
+      totalUrls: urlsFinal.length,
       indexedUrls: highPriorityUrls.length,
       chunks: chunks.length,
       results,
