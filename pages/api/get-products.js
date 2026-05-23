@@ -5,11 +5,10 @@ import {
   getDocs,
   query,
   orderBy,
-  limit,
-  where
+  limit
 } from "firebase/firestore";
 
-/* ================= FIREBASE INIT (SAFE) ================= */
+/* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -22,75 +21,93 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
-/* ================= MEMORY CACHE (FAST BOOST) ================= */
-let cache = null;
-let cacheTime = 0;
+/* ================= AI SCORE ENGINE ================= */
+function calculateWinnerScore(p) {
+  let score = 0;
 
-const CACHE_TTL = 1000 * 60 * 3; // 3 minutes
+  /* 🔥 Engagement */
+  score += (p.views || 0) * 1;
+  score += (p.clicks || 0) * 3;
+  score += (p.orders || 0) * 10;
 
-function isCacheValid() {
-  return cache && Date.now() - cacheTime < CACHE_TTL;
+  /* 🔥 Conversion Boost */
+  if (p.clicks > 0) {
+    const ctr = (p.orders || 0) / p.clicks;
+    score += ctr * 100;
+  }
+
+  /* 🔥 Trust Boost */
+  score += (p.rating || 4.2) * 10;
+
+  /* 🔥 Viral Boost */
+  if (p.viralBoost) score += 80;
+
+  /* 🔥 Category Boost */
+  const hotCategories = [
+    "electronics",
+    "smart watch",
+    "headphones",
+    "gaming",
+    "fitness"
+  ];
+
+  if (hotCategories.includes((p.category || "").toLowerCase())) {
+    score += 20;
+  }
+
+  /* 🔥 Price Sweet Spot (middle range wins more) */
+  if (p.price >= 10 && p.price <= 80) {
+    score += 15;
+  }
+
+  return score;
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    const { category, max = 30 } = req.query;
+    const { max = 50 } = req.query;
 
-    /* ================= RETURN CACHE ================= */
-    if (isCacheValid() && !category) {
-      return res.status(200).json({
-        success: true,
-        source: "cache",
-        products: cache,
-      });
-    }
-
-    let q;
-
-    /* ================= FAST QUERY ================= */
-    if (category) {
-      q = query(
-        collection(db, "products"),
-        where("category", "==", category),
-        orderBy("createdAt", "desc"),
-        limit(Number(max))
-      );
-    } else {
-      q = query(
+    /* ================= FETCH PRODUCTS ================= */
+    const snap = await getDocs(
+      query(
         collection(db, "products"),
         orderBy("createdAt", "desc"),
         limit(Number(max))
-      );
-    }
+      )
+    );
 
-    const snapshot = await getDocs(q);
-
-    const products = snapshot.docs.map((doc) => ({
+    let products = snap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
 
-    /* ================= UPDATE CACHE ================= */
-    if (!category) {
-      cache = products;
-      cacheTime = Date.now();
-    }
+    /* ================= AI SCORING ================= */
+    products = products.map((p) => ({
+      ...p,
+      aiScore: calculateWinnerScore(p),
+    }));
+
+    /* ================= FILTER WINNERS ONLY ================= */
+    const winners = products
+      .filter((p) => p.aiScore >= 60) // 🔥 فلترة قوية
+      .sort((a, b) => b.aiScore - a.aiScore)
+      .slice(0, 12); // 🔥 أفضل 12 فقط
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      source: category ? "firebase-filtered" : "firebase",
-      count: products.length,
-      products,
+      totalScanned: products.length,
+      winnersCount: winners.length,
+      products: winners,
     });
 
   } catch (error) {
-    console.error("GET PRODUCTS ERROR:", error);
+    console.error("AI WINNER ENGINE ERROR:", error);
 
     return res.status(500).json({
       success: false,
       error: error.message,
     });
   }
-        }
+}
