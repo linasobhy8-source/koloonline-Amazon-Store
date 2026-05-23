@@ -21,7 +21,10 @@ export default function SearchPage() {
 
   const [suggestions, setSuggestions] = useState([]);
 
-  /* ================= FETCH ================= */
+  /* ================= BLOGGER POSTS ================= */
+  const [blogPosts, setBlogPosts] = useState([]);
+
+  /* ================= FETCH PRODUCTS ================= */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -57,6 +60,28 @@ export default function SearchPage() {
     };
 
     fetchProducts();
+  }, []);
+
+  /* ================= FETCH BLOGGER POSTS ================= */
+  useEffect(() => {
+    const fetchBlogPosts = async () => {
+      try {
+        const res = await fetch(
+          "https://api.rss2json.com/v1/api.json?rss_url=https://linasobhy.blogspot.com/feeds/posts/default?alt=rss"
+        );
+
+        const data = await res.json();
+
+        if (data.items) {
+          setBlogPosts(data.items.slice(0, 4));
+        }
+
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchBlogPosts();
   }, []);
 
   /* ================= SUGGESTIONS ================= */
@@ -171,6 +196,14 @@ export default function SearchPage() {
         <meta
           property="og:url"
           content="https://koloonline.online/search"
+        />
+
+        {/* ================= BLOGGER RSS ================= */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Lina Sobhy Blog"
+          href="https://linasobhy.blogspot.com/feeds/posts/default"
         />
 
       </Head>
@@ -336,6 +369,31 @@ export default function SearchPage() {
 
           </Link>
 
+          {/* BLOG BUTTON */}
+          <a
+            href="https://linasobhy.blogspot.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              textDecoration: "none",
+            }}
+          >
+            <button
+              style={{
+                padding: "14px 20px",
+                background:
+                  "linear-gradient(45deg,#2563eb,#3b82f6)",
+                border: "none",
+                borderRadius: 12,
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              ✍️ Blogger
+            </button>
+          </a>
+
         </div>
       </header>
 
@@ -373,6 +431,117 @@ export default function SearchPage() {
           </p>
 
         </div>
+
+        {/* ================= BLOGGER POSTS ================= */}
+        {blogPosts.length > 0 && (
+          <section
+            style={{
+              marginBottom: 40,
+            }}
+          >
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <h2>
+                ✍️ Latest From Blogger
+              </h2>
+
+              <a
+                href="https://linasobhy.blogspot.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#2563eb",
+                  fontWeight: "bold",
+                  textDecoration: "none",
+                }}
+              >
+                View All →
+              </a>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit,minmax(260px,1fr))",
+                gap: 20,
+              }}
+            >
+
+              {blogPosts.map((post, index) => (
+
+                <a
+                  key={index}
+                  href={post.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    textDecoration: "none",
+                    color: "black",
+                  }}
+                >
+
+                  <div
+                    style={{
+                      background: "white",
+                      borderRadius: 20,
+                      padding: 20,
+                      boxShadow:
+                        "0 8px 30px rgba(0,0,0,0.06)",
+                      height: "100%",
+                    }}
+                  >
+
+                    <h3
+                      style={{
+                        lineHeight: 1.6,
+                        marginBottom: 15,
+                      }}
+                    >
+                      {post.title}
+                    </h3>
+
+                    <p
+                      style={{
+                        color: "#666",
+                        fontSize: 14,
+                        lineHeight: 1.7,
+                      }}
+                    >
+                      {post.description
+                        ?.replace(/<[^>]+>/g, "")
+                        .slice(0, 120)}
+                      ...
+                    </p>
+
+                    <div
+                      style={{
+                        marginTop: 20,
+                        color: "#2563eb",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Read Article →
+                    </div>
+
+                  </div>
+
+                </a>
+
+              ))}
+
+            </div>
+
+          </section>
+        )}
 
         {/* ================= LOADING ================= */}
         {loading ? (
@@ -562,4 +731,4 @@ export default function SearchPage() {
       </div>
     </div>
   );
-              }
+            }
