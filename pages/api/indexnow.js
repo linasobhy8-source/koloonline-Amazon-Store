@@ -32,16 +32,19 @@ export default async function handler(req, res) {
       `${baseUrl}/products`,
       `${baseUrl}/categories`,
       `${baseUrl}/search`,
+      `${baseUrl}/amazon-haul`,
+      `${baseUrl}/fiverr`,
+      `${baseUrl}/aliexpress`,
     ];
 
-    /* ================= PRODUCTS (LIMIT FOR PERFORMANCE) ================= */
+    /* ================= PRODUCTS ================= */
     const productsSnap = await getDocs(collection(db, "products"));
 
     const productUrls = productsSnap.docs
       .slice(0, 200)
       .map((doc) => `${baseUrl}/product/${doc.id}`);
 
-    /* ================= BLOGS (SLUG SAFE) ================= */
+    /* ================= BLOGS ================= */
     const blogSnap = await getDocs(collection(db, "blog"));
 
     const blogUrls = blogSnap.docs
@@ -66,7 +69,7 @@ export default async function handler(req, res) {
       ),
     ].filter(Boolean);
 
-    /* ================= MERGE ALL URLS ================= */
+    /* ================= MERGE URLS ================= */
     urls = [
       ...new Set([
         ...urls,
@@ -76,14 +79,17 @@ export default async function handler(req, res) {
       ]),
     ].map(cleanUrl);
 
-    /* ================= HIGH PRIORITY ONLY ================= */
-    const highPriorityUrls = urls.filter((u) =>
-      u.includes("/product/") ||
-      u.includes("/blog/") ||
-      u === baseUrl
+    /* ================= HIGH PRIORITY ================= */
+    const highPriorityUrls = urls.filter(
+      (u) =>
+        u.includes("/product/") ||
+        u.includes("/blog/") ||
+        u === baseUrl ||
+        u.includes("/fiverr") ||
+        u.includes("/aliexpress")
     );
 
-    /* ================= CHUNKING (INDEXNOW LIMIT SAFE) ================= */
+    /* ================= CHUNKING ================= */
     const chunks = [];
     const chunkSize = 50;
 
@@ -91,7 +97,7 @@ export default async function handler(req, res) {
       chunks.push(highPriorityUrls.slice(i, i + chunkSize));
     }
 
-    /* ================= SEND TO INDEXNOW ================= */
+    /* ================= INDEXNOW PUSH ================= */
     const results = [];
 
     for (const chunk of chunks) {
@@ -113,6 +119,7 @@ export default async function handler(req, res) {
 
         results.push({
           count: chunk.length,
+          status: response.status,
           result: await response.text(),
         });
       } catch (err) {
@@ -122,7 +129,7 @@ export default async function handler(req, res) {
       }
     }
 
-    /* ================= GOOGLE PING (FIXED SITEMAP) ================= */
+    /* ================= GOOGLE PING ================= */
     try {
       await fetch(
         `https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml`
@@ -146,4 +153,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-      }
+}
