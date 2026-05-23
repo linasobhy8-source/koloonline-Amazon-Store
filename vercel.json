@@ -1,28 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/keyword-hunter",
-      "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/auto-publish",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/auto-blog-generator",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/indexnow",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/sitemap",
-      "schedule": "0 5 * * *"
-    },
-    {
       "path": "/api/master-pipeline",
-      "schedule": "0 6 * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
