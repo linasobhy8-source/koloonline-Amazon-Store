@@ -1,5 +1,4 @@
 import { initializeApp, getApps } from "firebase/app";
-
 import {
   getFirestore,
   collection,
@@ -8,17 +7,9 @@ import {
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
-  apiKey:
-    process.env
-      .NEXT_PUBLIC_FIREBASE_API_KEY,
-
-  authDomain:
-    process.env
-      .NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-
-  projectId:
-    process.env
-      .NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
 const app = !getApps().length
@@ -30,59 +21,33 @@ const db = getFirestore(app);
 /* ================= SAFE DATE ================= */
 function safeDate(date) {
   try {
-    if (!date)
-      return new Date().toISOString();
-
-    if (typeof date === "number") {
-      return new Date(date).toISOString();
-    }
-
-    if (date?.toDate) {
-      return date.toDate().toISOString();
-    }
-
+    if (!date) return new Date().toISOString();
+    if (typeof date === "number") return new Date(date).toISOString();
+    if (date?.toDate) return date.toDate().toISOString();
     return new Date(date).toISOString();
-
   } catch {
     return new Date().toISOString();
   }
 }
 
 /* ================= SITEMAP ================= */
-export async function getServerSideProps({
-  res,
-}) {
+export async function getServerSideProps({ res }) {
+  const baseUrl = "https://koloonline.online";
 
-  const baseUrl =
-    "https://koloonline.online";
+  /* ================= FETCH DATA ================= */
+  const productSnap = await getDocs(collection(db, "products"));
+  const blogSnap = await getDocs(collection(db, "blog"));
 
-  /* ================= FETCH ================= */
-  const productSnap =
-    await getDocs(
-      collection(db, "products")
-    );
+  const products = productSnap.docs.map((d) => d.id);
 
-  const blogSnap =
-    await getDocs(
-      collection(db, "blog")
-    );
+  const blogs = blogSnap.docs.map((d) => ({
+    id: d.id,
+    updatedAt: safeDate(
+      d.data().updatedAt || d.data().createdAt
+    ),
+  }));
 
-  /* ================= PRODUCTS ================= */
-  const products =
-    productSnap.docs.map((d) => d.id);
-
-  /* ================= BLOG POSTS ================= */
-  const blogs =
-    blogSnap.docs.map((d) => ({
-      id: d.id,
-
-      updatedAt: safeDate(
-        d.data().updatedAt ||
-        d.data().createdAt
-      ),
-    }));
-
-  /* ================= URLS ================= */
+  /* ================= URL BUILDER ================= */
   let urls = "";
 
   /* ================= MAIN PAGES ================= */
@@ -117,6 +82,18 @@ export async function getServerSideProps({
   <priority>0.8</priority>
 </url>
 
+<!-- ================= AFFILIATE PAGES ================= -->
+
+<url>
+  <loc>${baseUrl}/fiverr</loc>
+  <priority>0.8</priority>
+</url>
+
+<url>
+  <loc>${baseUrl}/aliexpress</loc>
+  <priority>0.8</priority>
+</url>
+
 <!-- ================= BLOGGER ================= -->
 
 <url>
@@ -126,12 +103,12 @@ export async function getServerSideProps({
 
 <url>
   <loc>https://linasobhy.blogspot.com/p/about.html</loc>
-  <priority>0.5</priority>
+  <priority>0.6</priority>
 </url>
 
 <url>
   <loc>https://linasobhy.blogspot.com/p/contact.html</loc>
-  <priority>0.5</priority>
+  <priority>0.6</priority>
 </url>
 
 <url>
@@ -140,21 +117,18 @@ export async function getServerSideProps({
 </url>
 `;
 
-  /* ================= PRODUCT URLS ================= */
+  /* ================= PRODUCTS ================= */
   products.forEach((id) => {
-
     urls += `
 <url>
   <loc>${baseUrl}/product/${id}</loc>
   <priority>0.8</priority>
 </url>
 `;
-
   });
 
-  /* ================= BLOG URLS ================= */
+  /* ================= BLOG POSTS ================= */
   blogs.forEach((b) => {
-
     urls += `
 <url>
   <loc>${baseUrl}/blog/${b.id}</loc>
@@ -162,36 +136,24 @@ export async function getServerSideProps({
   <priority>0.8</priority>
 </url>
 `;
-
   });
 
-  /* ================= XML ================= */
+  /* ================= FINAL XML ================= */
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-
-<urlset
-xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 ${urls}
 
 </urlset>`;
 
-  /* ================= RESPONSE ================= */
-  res.setHeader(
-    "Content-Type",
-    "text/xml"
-  );
-
+  res.setHeader("Content-Type", "text/xml");
   res.write(sitemap);
-
   res.end();
 
-  return {
-    props: {},
-  };
+  return { props: {} };
 }
 
 /* ================= PAGE ================= */
 export default function Sitemap() {
   return null;
-    }
+      }
