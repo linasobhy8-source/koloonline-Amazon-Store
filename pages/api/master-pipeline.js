@@ -1,7 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
-import indexNow from "./indexnow";
-import pingGoogle from "./ping-google";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -16,19 +14,21 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
-/* ================= SAFE EXECUTION WRAPPER ================= */
+/* ================= SAFE RUN ================= */
 async function safeRun(label, fn, retries = 2) {
-  let lastError = null;
+  let lastError;
 
   for (let i = 0; i <= retries; i++) {
     try {
       const result = await fn();
-      return { success: true, label, result, attempts: i + 1 };
+      return {
+        success: true,
+        label,
+        attempts: i + 1,
+        result,
+      };
     } catch (err) {
       lastError = err;
-
-      console.error(`❌ ${label} failed attempt ${i + 1}`, err.message);
-
       if (i === retries) {
         return {
           success: false,
@@ -47,14 +47,46 @@ async function safeRun(label, fn, retries = 2) {
   };
 }
 
+/* ================= INDEXNOW DIRECT ================= */
+async function runIndexNow(urls) {
+  const key = process.env.INDEXNOW_KEY;
+  const host = "koloonline.online";
+
+  const res = await fetch("https://api.indexnow.org/indexnow", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      host,
+      key,
+      urlList: urls.slice(0, 100),
+    }),
+  });
+
+  return {
+    status: res.status,
+    body: await res.text(),
+  };
+}
+
+/* ================= GOOGLE PING ================= */
+async function runGooglePing() {
+  const url = "https://koloonline.online/sitemap.xml";
+
+  await fetch(
+    `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`
+  );
+
+  return { pinged: true };
+}
+
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const baseUrl = "https://koloonline.online";
 
-    const logs = [];
-
-    /* ================= 1. FETCH DATA ================= */
+    /* ================= FETCH ================= */
     const productsSnap = await getDocs(collection(db, "products"));
     const blogSnap = await getDocs(collection(db, "blog"));
 
@@ -62,65 +94,50 @@ export default async function handler(req, res) {
     const blogs = blogSnap.docs.map((d) => d.id);
 
     const urls = [
-      `${baseUrl}`,
+      baseUrl,
       `${baseUrl}/blog`,
       `${baseUrl}/products`,
-      `${baseUrl}/search`,
       `${baseUrl}/categories`,
+      `${baseUrl}/search`,
       ...products.map((id) => `${baseUrl}/product/${id}`),
       ...blogs.map((id) => `${baseUrl}/blog/${id}`),
     ];
 
-    /* ================= 2. INDEXNOW (SELF HEALING) ================= */
-    const indexNowResult = await safeRun("IndexNow", async () => {
-      return await indexNow(req, res);
-    });
+    const logs = [];
+
+    /* ================= INDEXNOW ================= */
+    const indexNowResult = await safeRun("IndexNow", () =>
+      runIndexNow(urls)
+    );
 
     logs.push(indexNowResult);
 
-    /* ================= 3. GOOGLE PING (SELF HEALING) ================= */
-    const googleResult = await safeRun("GooglePing", async () => {
-      return await pingGoogle(req, res);
-    });
+    /* ================= GOOGLE PING ================= */
+    const googleResult = await safeRun("GooglePing", () =>
+      runGooglePing()
+    );
 
     logs.push(googleResult);
 
-    /* ================= 4. VALIDATION CHECK ================= */
-    const missingUrls = urls.filter((u) => !u || u.includes("undefined"));
+    /* ================= AUTO VALIDATION ================= */
+    const invalidUrls = urls.filter(
+      (u) => !u || u.includes("undefined")
+    );
 
-    if (missingUrls.length > 0) {
+    if (invalidUrls.length) {
       logs.push({
-        warning: "Missing URLs detected",
-        count: missingUrls.length,
+        warning: "Invalid URLs detected",
+        count: invalidUrls.length,
       });
     }
 
-    /* ================= 5. AUTO RECOVERY ================= */
-    if (!indexNowResult.success) {
-      logs.push({
-        recovery: "Retrying IndexNow once more...",
-      });
-
-      await safeRun("IndexNow-Recovery", async () => {
-        return await indexNow(req, res);
-      });
-    }
-
-    if (!googleResult.success) {
-      logs.push({
-        recovery: "Retrying Google Ping...",
-      });
-
-      await safeRun("GooglePing-Recovery", async () => {
-        return await pingGoogle(req, res);
-      });
-    }
-
-    /* ================= 6. FINAL RESPONSE ================= */
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      message: "Self-Healing Master Pipeline executed",
+      message: "Auto SEO System executed successfully",
       totalUrls: urls.length,
+      indexNow: indexNowResult,
+      googlePing: googleResult,
       logs,
     });
 
@@ -130,4 +147,4 @@ export default async function handler(req, res) {
       error: error.message,
     });
   }
-}
+    }
