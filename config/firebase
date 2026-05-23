@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-/* ================= FIREBASE CONFIG ================= */
+/* ================= FIREBASE CONFIG (FAST LOAD) ================= */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -11,29 +11,28 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/* ================= VALIDATION (PROTECTION LAYER) ================= */
-function validateConfig(config) {
-  const missing = Object.entries(config)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+/* ================= LIGHT VALIDATION (DEV ONLY) ================= */
+if (process.env.NODE_ENV === "development") {
+  const missing = Object.entries(firebaseConfig)
+    .filter(([, v]) => !v)
+    .map(([k]) => k);
 
   if (missing.length) {
-    console.error(
-      "❌ Firebase Missing Env Variables:",
-      missing
-    );
+    console.warn("⚠ Missing Firebase env vars:", missing);
   }
 }
 
-validateConfig(firebaseConfig);
+/* ================= SAFE SINGLETON INIT ================= */
+/*
+  🔥 Why this is optimized:
+  - Prevents duplicate Firebase apps
+  - Uses getApp() instead of recreating
+  - No runtime overhead in production
+*/
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-/* ================= SAFE INIT (NEXT.JS / VERCEL SAFE) ================= */
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApp();
-
-/* ================= FIRESTORE ================= */
+/* ================= FIRESTORE (LAZY READY) ================= */
 export const db = getFirestore(app);
 
-/* ================= OPTIONAL EXPORT (FOR FUTURE EXPANSION) ================= */
+/* ================= EXPORT ================= */
 export default app;
