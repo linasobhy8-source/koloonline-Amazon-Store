@@ -1,243 +1,133 @@
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
+import indexNow from "./indexnow";
+import pingGoogle from "./ping-google";
+
+/* ================= FIREBASE ================= */
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+};
+
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
+const db = getFirestore(app);
+
+/* ================= SAFE EXECUTION WRAPPER ================= */
+async function safeRun(label, fn, retries = 2) {
+  let lastError = null;
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const result = await fn();
+      return { success: true, label, result, attempts: i + 1 };
+    } catch (err) {
+      lastError = err;
+
+      console.error(`❌ ${label} failed attempt ${i + 1}`, err.message);
+
+      if (i === retries) {
+        return {
+          success: false,
+          label,
+          error: err.message,
+          attempts: i + 1,
+        };
+      }
+    }
+  }
+
+  return {
+    success: false,
+    label,
+    error: lastError?.message || "Unknown error",
+  };
+}
+
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
-
   try {
+    const baseUrl = "https://koloonline.online";
 
-    const { type, id, url } =
-      req.body || {};
+    const logs = [];
 
-    if (!type || !id) {
+    /* ================= 1. FETCH DATA ================= */
+    const productsSnap = await getDocs(collection(db, "products"));
+    const blogSnap = await getDocs(collection(db, "blog"));
 
-      return res.status(400).json({
-        success: false,
+    const products = productsSnap.docs.map((d) => d.id);
+    const blogs = blogSnap.docs.map((d) => d.id);
 
-        error:
-          "Missing type or id",
+    const urls = [
+      `${baseUrl}`,
+      `${baseUrl}/blog`,
+      `${baseUrl}/products`,
+      `${baseUrl}/search`,
+      `${baseUrl}/categories`,
+      ...products.map((id) => `${baseUrl}/product/${id}`),
+      ...blogs.map((id) => `${baseUrl}/blog/${id}`),
+    ];
+
+    /* ================= 2. INDEXNOW (SELF HEALING) ================= */
+    const indexNowResult = await safeRun("IndexNow", async () => {
+      return await indexNow(req, res);
+    });
+
+    logs.push(indexNowResult);
+
+    /* ================= 3. GOOGLE PING (SELF HEALING) ================= */
+    const googleResult = await safeRun("GooglePing", async () => {
+      return await pingGoogle(req, res);
+    });
+
+    logs.push(googleResult);
+
+    /* ================= 4. VALIDATION CHECK ================= */
+    const missingUrls = urls.filter((u) => !u || u.includes("undefined"));
+
+    if (missingUrls.length > 0) {
+      logs.push({
+        warning: "Missing URLs detected",
+        count: missingUrls.length,
       });
     }
 
-    const baseUrl =
-      "https://koloonline.online";
+    /* ================= 5. AUTO RECOVERY ================= */
+    if (!indexNowResult.success) {
+      logs.push({
+        recovery: "Retrying IndexNow once more...",
+      });
 
-    const targetUrl =
-      url ||
-      `${baseUrl}/${type}/${id}`;
-
-    console.log(
-      "🚀 Pipeline Started:",
-      targetUrl
-    );
-
-    /* ================= 1️⃣ AUTO INDEX ================= */
-
-    try {
-
-      await fetch(
-        `${baseUrl}/api/indexnow`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            url: targetUrl,
-          }),
-        }
-      );
-
-    } catch (e) {
-
-      console.log(
-        "Index Error:",
-        e.message
-      );
+      await safeRun("IndexNow-Recovery", async () => {
+        return await indexNow(req, res);
+      });
     }
 
-    /* ================= 2️⃣ UPDATE SITEMAP ================= */
+    if (!googleResult.success) {
+      logs.push({
+        recovery: "Retrying Google Ping...",
+      });
 
-    try {
-
-      await fetch(
-        `${baseUrl}/api/sitemap`,
-        {
-          method: "POST",
-        }
-      );
-
-    } catch (e) {
-
-      console.log(
-        "Sitemap Error:",
-        e.message
-      );
+      await safeRun("GooglePing-Recovery", async () => {
+        return await pingGoogle(req, res);
+      });
     }
 
-    /* ================= 3️⃣ GOOGLE PING ================= */
-
-    try {
-
-      await fetch(
-        `${baseUrl}/api/ping-google`,
-        {
-          method: "POST",
-        }
-      );
-
-    } catch (e) {
-
-      console.log(
-        "Google Ping Error:",
-        e.message
-      );
-    }
-
-    /* ================= 4️⃣ SOCIAL HOOK ================= */
-
-    try {
-
-      await fetch(
-        `${baseUrl}/api/social-hook`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            url: targetUrl,
-            type,
-          }),
-        }
-      );
-
-    } catch {
-      // silent fail
-    }
-
-    /* ================= 5️⃣ LOGGING ================= */
-
-    try {
-
-      await fetch(
-        `${baseUrl}/api/cron-logs`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            type:
-              "master_pipeline",
-
-            status:
-              "success",
-
-            target:
-              targetUrl,
-
-            source:
-              `${type}/${id}`,
-
-            createdAt:
-              new Date().toISOString(),
-          }),
-        }
-      );
-
-    } catch (e) {
-
-      console.log(
-        "Log Error:",
-        e.message
-      );
-    }
-
-    /* ================= 6️⃣ SEO BOOST SIGNAL ================= */
-
-    try {
-
-      if (type === "blog") {
-
-        await fetch(
-          `${baseUrl}/api/seo/boost-blog`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              id,
-              url: targetUrl,
-            }),
-          }
-        );
-      }
-
-      if (type === "product") {
-
-        await fetch(
-          `${baseUrl}/api/seo/boost-product`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              id,
-              url: targetUrl,
-            }),
-          }
-        );
-      }
-
-    } catch (e) {
-
-      console.log(
-        "SEO Boost Error:",
-        e.message
-      );
-    }
-
-    /* ================= FINAL RESPONSE ================= */
-
-    console.log(
-      "✅ PIPELINE DONE:",
-      targetUrl
-    );
-
+    /* ================= 6. FINAL RESPONSE ================= */
     return res.status(200).json({
       success: true,
-
-      message:
-        "Pipeline executed successfully",
-
-      url: targetUrl,
+      message: "Self-Healing Master Pipeline executed",
+      totalUrls: urls.length,
+      logs,
     });
 
-  } catch (e) {
-
-    console.error(
-      "❌ MASTER PIPELINE ERROR:",
-      e
-    );
-
+  } catch (error) {
     return res.status(500).json({
       success: false,
-
-      error: e.message,
+      error: error.message,
     });
   }
 }
