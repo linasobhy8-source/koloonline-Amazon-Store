@@ -15,4 +15,5 @@ const app = !getApps().length
   : getApps()[0];
 
 export const db = getFirestore(app);
-export default app;config/firebase.js
+
+export default app;
