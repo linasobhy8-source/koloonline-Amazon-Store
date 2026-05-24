@@ -1,16 +1,52 @@
+/** @type {import('next').NextConfig} */
+
 const nextConfig = {
-  /* ================= IMAGES ================= */
-  images: {
-    domains: [
-      "m.media-amazon.com",
-      "images-na.ssl-images-amazon.com",
+  reactStrictMode: true,
+
+  poweredByHeader: false,
+
+  compress: true,
+
+  trailingSlash: false,
+
+  swcMinify: true,
+
+  productionBrowserSourceMaps: false,
+
+  /* ================= PERFORMANCE ================= */
+  experimental: {
+    optimizePackageImports: [
+      "firebase",
     ],
   },
 
-  trailingSlash: false,
-  reactStrictMode: true,
-  poweredByHeader: false,
-  compress: true,
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production",
+  },
+
+  /* ================= IMAGES ================= */
+  images: {
+    unoptimized: false,
+
+    formats: ["image/avif", "image/webp"],
+
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+
+    domains: [
+      "m.media-amazon.com",
+      "images-na.ssl-images-amazon.com",
+      "images.unsplash.com",
+      "via.placeholder.com",
+    ],
+
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
+  },
 
   /* ================= REWRITES ================= */
   async rewrites() {
@@ -19,44 +55,56 @@ const nextConfig = {
         source: "/sitemap.xml",
         destination: "/api/sitemap",
       },
+
+      {
+        source: "/robots.txt",
+        destination: "/api/robots",
+      },
     ];
   },
 
-  /* ================= REDIRECTS (SEO CLEANUP) ================= */
+  /* ================= REDIRECTS ================= */
   async redirects() {
     return [
-      // ❌ broken blog template
+      /* ===== BAD BLOG URL ===== */
       {
         source: "/blog/%7Bslug%7D",
         destination: "/blog",
         permanent: true,
       },
 
-      // ❌ empty product route
+      /* ===== EMPTY PRODUCT ===== */
       {
         source: "/product",
         destination: "/products",
         permanent: true,
       },
 
-      // ❌ old store page
+      /* ===== OLD STORE ===== */
       {
         source: "/store",
         destination: "/",
         permanent: true,
       },
 
-      // ❌ fake search URL (important for Google cleanup)
+      /* ===== BAD SEARCH ===== */
       {
         source: "/search",
         destination: "/",
         permanent: true,
       },
 
-      // ❌ fiverr page (not existing)
+      /* ===== OLD FIVERR ===== */
       {
         source: "/fiverr-services",
-        destination: "/",
+        destination: "/fiverr",
+        permanent: true,
+      },
+
+      /* ===== OLD BLOG ===== */
+      {
+        source: "/posts/:slug*",
+        destination: "/blog/:slug*",
         permanent: true,
       },
     ];
@@ -65,36 +113,7 @@ const nextConfig = {
   /* ================= HEADERS ================= */
   async headers() {
     return [
+      /* ===== STATIC CACHE ===== */
       {
-        source: "/sitemap.xml",
-        headers: [
-          {
-            key: "Cache-Control",
-            value:
-              "public, max-age=3600, stale-while-revalidate=86400",
-          },
-        ],
-      },
-
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-        ],
-      },
-    ];
-  },
-};
-
-module.exports = nextConfig;
+        source:
+          "/:all*(svg|jpg|jpeg|png|webp|avif|gif
