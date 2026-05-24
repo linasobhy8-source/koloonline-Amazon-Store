@@ -2,22 +2,16 @@
 
 const nextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "m.media-amazon.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images-na.ssl-images-amazon.com",
-      },
+    domains: [
+      "m.media-amazon.com",
+      "images-na.ssl-images-amazon.com",
     ],
   },
 
+  trailingSlash: false,
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
-  trailingSlash: false,
 
   async rewrites() {
     return [
@@ -31,7 +25,7 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: "/blog/%7Bslug%7D",
+        source: "/blog/:slug",
         destination: "/blog",
         permanent: true,
       },
@@ -65,12 +59,10 @@ const nextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value:
-              "public, max-age=3600, stale-while-revalidate=86400",
+            value: "public, max-age=3600, stale-while-revalidate=86400",
           },
         ],
       },
-
       {
         source: "/(.*)",
         headers: [
