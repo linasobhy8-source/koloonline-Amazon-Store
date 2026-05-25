@@ -5,26 +5,30 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
-  updateDoc,
-  doc,
 } from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
-/* ================= TREND → NICHE ENGINE ================= */
+/* ================= SAFE SWITCH ================= */
+
+const AI_MODE = process.env.AI_MODE === "true";
+
+/* ================= NICHE ENGINE ================= */
+
 function extractNiche(keyword) {
-  const k = keyword.toLowerCase();
+  const k = (keyword || "").toLowerCase();
 
   if (k.includes("headphones") || k.includes("earbuds"))
     return "audio-tech";
@@ -42,9 +46,10 @@ function extractNiche(keyword) {
 }
 
 /* ================= PROFIT SCORE ================= */
+
 function profitScore(k) {
   let score = 0;
-  const t = k.toLowerCase();
+  const t = (k || "").toLowerCase();
 
   if (t.includes("best")) score += 20;
   if (t.includes("buy")) score += 25;
@@ -56,25 +61,40 @@ function profitScore(k) {
   return score;
 }
 
-/* ================= MAIN ENGINE ================= */
+/* ================= HANDLER ================= */
+
 export default async function handler(req, res) {
   try {
     console.log("🚀 V4 SELF GROWTH ENGINE STARTED");
 
-    /* ================= 1. LOAD KEYWORDS ================= */
-    const snap = await getDocs(collection(db, "keywords"));
+    /* ================= SAFE MODE CHECK ================= */
+    if (!AI_MODE) {
+      return res.status(200).json({
+        success: false,
+        message: "AI MODE DISABLED",
+      });
+    }
+
+    /* ================= LOAD KEYWORDS ================= */
+
+    const snap = await getDocs(
+      collection(db, "keywords")
+    );
 
     const keywords = snap.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     }));
 
-    /* ================= 2. BUILD NICHE CLUSTERS ================= */
+    /* ================= BUILD CLUSTERS ================= */
+
     const clusters = {};
 
     for (const k of keywords) {
       const niche = extractNiche(k.keyword);
-      const score = profitScore(k.keyword) + (k.score || 0);
+
+      const score =
+        profitScore(k.keyword) + (k.score || 0);
 
       if (!clusters[niche]) {
         clusters[niche] = [];
@@ -86,60 +106,81 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ================= 3. PICK WINNING NICHE ================= */
+    /* ================= RANK NICHES ================= */
+
     const rankedNiches = Object.keys(clusters)
       .map((niche) => {
+        const items = clusters[niche];
+
         const avgScore =
-          clusters[niche].reduce((a, b) => a + b.finalScore, 0) /
-          clusters[niche].length;
+          items.reduce(
+            (a, b) => a + (b.finalScore || 0),
+            0
+          ) / items.length;
 
         return {
           niche,
           avgScore,
-          items: clusters[niche],
+          items,
         };
       })
-      .sort((a, b) => b.avgScore - a.avgScore);
+      .sort(
+        (a, b) => b.avgScore - a.avgScore
+      );
 
     const topNiche = rankedNiches[0];
 
     if (!topNiche) {
-      return res.json({
+      return res.status(200).json({
         success: false,
         message: "No niches found",
       });
     }
 
-    console.log("🔥 Selected Niche:", topNiche.niche);
+    console.log(
+      "🔥 Selected Niche:",
+      topNiche.niche
+    );
 
-    /* ================= 4. PICK TOP CONTENT ================= */
+    /* ================= TOP KEYWORDS ================= */
+
     const topKeywords = topNiche.items
-      .sort((a, b) => b.finalScore - a.finalScore)
+      .sort(
+        (a, b) =>
+          b.finalScore - a.finalScore
+      )
       .slice(0, 3);
 
     const results = [];
 
-    /* ================= 5. AUTO CONTENT LOOP ================= */
+    /* ================= AUTO GENERATION LOOP ================= */
+
     for (const item of topKeywords) {
       try {
         await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/auto-blog-generator-v2`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
             body: JSON.stringify({
               keyword: item.keyword,
             }),
           }
         );
 
-        await addDoc(collection(db, "cron_logs"), {
-          type: "v4_generated",
-          niche: topNiche.niche,
-          keyword: item.keyword,
-          score: item.finalScore,
-          createdAt: serverTimestamp(),
-        });
+        await addDoc(
+          collection(db, "cron_logs"),
+          {
+            type: "v4_generated",
+            niche: topNiche.niche,
+            keyword: item.keyword,
+            score: item.finalScore,
+            createdAt: serverTimestamp(),
+          }
+        );
 
         results.push({
           keyword: item.keyword,
@@ -147,12 +188,15 @@ export default async function handler(req, res) {
         });
 
       } catch (e) {
-        await addDoc(collection(db, "cron_logs"), {
-          type: "v4_error",
-          keyword: item.keyword,
-          error: e.message,
-          createdAt: serverTimestamp(),
-        });
+        await addDoc(
+          collection(db, "cron_logs"),
+          {
+            type: "v4_error",
+            keyword: item.keyword,
+            error: e.message,
+            createdAt: serverTimestamp(),
+          }
+        );
 
         results.push({
           keyword: item.keyword,
@@ -161,13 +205,19 @@ export default async function handler(req, res) {
       }
     }
 
-    /* ================= 6. FEEDBACK LOOP ================= */
-    await addDoc(collection(db, "cron_logs"), {
-      type: "v4_niche_selected",
-      niche: topNiche.niche,
-      avgScore: topNiche.avgScore,
-      createdAt: serverTimestamp(),
-    });
+    /* ================= FEEDBACK LOOP ================= */
+
+    await addDoc(
+      collection(db, "cron_logs"),
+      {
+        type: "v4_niche_selected",
+        niche: topNiche.niche,
+        avgScore: topNiche.avgScore,
+        createdAt: serverTimestamp(),
+      }
+    );
+
+    /* ================= RESPONSE ================= */
 
     return res.status(200).json({
       success: true,
@@ -184,4 +234,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-}
+    }
