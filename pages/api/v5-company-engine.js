@@ -1,3 +1,6 @@
+import { aiGuard } from "../lib/ai-control";
+aiGuard();
+
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -24,20 +27,11 @@ const db = getFirestore(app);
 function detectNiche(keyword) {
   const k = keyword.toLowerCase();
 
-  if (k.includes("headphones") || k.includes("earbuds"))
-    return "audio-tech";
-
-  if (k.includes("fitness") || k.includes("smart watch"))
-    return "fitness-tech";
-
-  if (k.includes("laptop") || k.includes("gaming"))
-    return "pc-tech";
-
-  if (k.includes("amazon") || k.includes("deal"))
-    return "amazon-shopping";
-
-  if (k.includes("phone"))
-    return "mobile-tech";
+  if (k.includes("headphones") || k.includes("earbuds")) return "audio-tech";
+  if (k.includes("fitness") || k.includes("smart watch")) return "fitness-tech";
+  if (k.includes("laptop") || k.includes("gaming")) return "pc-tech";
+  if (k.includes("amazon") || k.includes("deal")) return "amazon-shopping";
+  if (k.includes("phone")) return "mobile-tech";
 
   return "general-tech";
 }
@@ -60,9 +54,16 @@ function scoreKeyword(k) {
 /* ================= MAIN ENGINE ================= */
 export default async function handler(req, res) {
   try {
+    /* ================= AI GUARD SWITCH ================= */
+    if (process.env.AI_MODE !== "true") {
+      return res.status(200).json({
+        success: false,
+        message: "AI MODE is OFF",
+      });
+    }
+
     console.log("🏭 V5 AUTONOMOUS COMPANY STARTED");
 
-    /* ================= 1. LOAD KEYWORDS ================= */
     const snap = await getDocs(collection(db, "keywords"));
 
     const keywords = snap.docs.map((d) => ({
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    /* ================= 2. BUILD MARKET MAP ================= */
+    /* ================= MARKET MAP ================= */
     const market = {};
 
     for (const k of keywords) {
@@ -82,7 +83,6 @@ export default async function handler(req, res) {
           niche,
           keywords: [],
           totalScore: 0,
-          siteHealth: 100,
         };
       }
 
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
       market[niche].totalScore += score;
     }
 
-    /* ================= 3. RANK NICHE SITES ================= */
+    /* ================= RANK ================= */
     const sites = Object.values(market)
       .map((s) => ({
         ...s,
@@ -102,15 +102,13 @@ export default async function handler(req, res) {
       }))
       .sort((a, b) => b.avgScore - a.avgScore);
 
-    const topSites = sites.slice(0, 3); // 🔥 3 مواقع فقط
+    const topSites = sites.slice(0, 3);
 
     const results = [];
 
-    /* ================= 4. AUTO SITE OPERATION ================= */
+    /* ================= EXECUTION ================= */
     for (const site of topSites) {
       try {
-        console.log("🚀 Operating site:", site.niche);
-
         const topKeywords = site.keywords
           .sort((a, b) => b.score - a.score)
           .slice(0, 2);
@@ -121,19 +119,14 @@ export default async function handler(req, res) {
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                keyword: kw.keyword,
-              }),
+              body: JSON.stringify({ keyword: kw.keyword }),
             }
           );
         }
 
-        /* ================= LOG SUCCESS ================= */
         await addDoc(collection(db, "cron_logs"), {
           type: "v5_site_operated",
           niche: site.niche,
-          avgScore: site.avgScore,
-          keywords: site.keywords.length,
           createdAt: serverTimestamp(),
         });
 
@@ -157,14 +150,6 @@ export default async function handler(req, res) {
       }
     }
 
-    /* ================= 5. COMPANY DECISION LOG ================= */
-    await addDoc(collection(db, "cron_logs"), {
-      type: "v5_company_cycle",
-      activeSites: topSites.map((s) => s.niche),
-      totalSites: sites.length,
-      createdAt: serverTimestamp(),
-    });
-
     return res.status(200).json({
       success: true,
       activeSites: topSites.map((s) => s.niche),
@@ -172,11 +157,9 @@ export default async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error("❌ V5 ERROR:", e);
-
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-      }
+        }
