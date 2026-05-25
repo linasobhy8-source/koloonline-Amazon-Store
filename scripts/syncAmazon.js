@@ -1,58 +1,247 @@
-import { db } from "../firebase-config";
-import { collection, doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../config/firebase";
 
-const SERPAPI_KEY = process.env.SERPAPI_KEY;
+import {
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+} from "firebase/firestore";
 
-async function fetchAmazonProducts() {
-  const res = await fetch(
-    `https://serpapi.com/search.json?engine=amazon&q=smart watch&api_key=${SERPAPI_KEY}`
-  );
+const SERPAPI_KEY =
+  process.env.SERPAPI_KEY;
 
-  const data = await res.json();
-  return data.organic_results || [];
+/* ================= KEYWORDS ================= */
+
+const keywords = [
+  "smart watch",
+  "wireless earbuds",
+  "gaming headset",
+  "iphone accessories",
+  "gaming mouse",
+  "portable speaker",
+  "rgb keyboard",
+  "laptop stand",
+];
+
+/* ================= FETCH AMAZON ================= */
+
+async function fetchAmazonProducts(
+  keyword
+) {
+  try {
+    const res = await fetch(
+      `https://serpapi.com/search.json?engine=amazon&q=${encodeURIComponent(
+        keyword
+      )}&api_key=${SERPAPI_KEY}`
+    );
+
+    const data = await res.json();
+
+    return (
+      data.organic_results || []
+    );
+
+  } catch (err) {
+
+    console.error(
+      `❌ Fetch Error (${keyword}):`,
+      err
+    );
+
+    return [];
+  }
+}
+
+/* ================= CATEGORY ================= */
+
+function detectCategory(keyword) {
+
+  const k =
+    keyword.toLowerCase();
+
+  if (
+    k.includes("watch")
+  )
+    return "smartwatch";
+
+  if (
+    k.includes("earbuds") ||
+    k.includes("headset") ||
+    k.includes("speaker")
+  )
+    return "audio";
+
+  if (
+    k.includes("keyboard") ||
+    k.includes("mouse")
+  )
+    return "gaming";
+
+  if (
+    k.includes("iphone")
+  )
+    return "mobile";
+
+  if (
+    k.includes("laptop")
+  )
+    return "computer";
+
+  return "electronics";
 }
 
 /* ================= CLEAN SYNC ================= */
+
 async function syncToFirestore() {
+
   try {
-    const products = await fetchAmazonProducts();
 
-    for (const p of products) {
-      if (!p.asin) continue;
+    console.log(
+      "🚀 Amazon Sync Started..."
+    );
 
-      const ref = doc(db, "products", p.asin);
+    for (const keyword of keywords) {
 
-      /* ================= CHECK DUPLICATE ================= */
-      const existing = await getDoc(ref);
+      console.log(
+        `🔍 Fetching: ${keyword}`
+      );
 
-      const newData = {
-        asin: p.asin,
-        title: (p.title || "No Title").trim(),
-        image: p.thumbnail || "",
-        price: p.price || 0,
-        link: p.link || "",
-        category: "electronics",
+      const products =
+        await fetchAmazonProducts(
+          keyword
+        );
 
-        clicks: existing.exists() ? existing.data().clicks || 0 : 0,
-        orders: existing.exists() ? existing.data().orders || 0 : 0,
+      for (const p of products) {
 
-        updatedAt: Date.now(),
-      };
+        if (!p.asin) continue;
 
-      /* ================= WRITE ONLY IF NEW OR CHANGED ================= */
-      if (!existing.exists()) {
-        await setDoc(ref, newData);
-        console.log("🆕 New product added:", p.asin);
-      } else {
-        await setDoc(ref, newData, { merge: true });
-        console.log("♻️ Updated product:", p.asin);
+        try {
+
+          const ref = doc(
+            db,
+            "products",
+            p.asin
+          );
+
+          /* ================= CHECK EXISTING ================= */
+
+          const existing =
+            await getDoc(ref);
+
+          const oldData =
+            existing.exists()
+              ? existing.data()
+              : {};
+
+          const newData = {
+
+            asin: p.asin,
+
+            title:
+              (
+                p.title ||
+                "No Title"
+              ).trim(),
+
+            image:
+              p.thumbnail || "",
+
+            price:
+              Number(
+                p.price
+              ) || 0,
+
+            link:
+              p.link || "",
+
+            category:
+              detectCategory(
+                keyword
+              ),
+
+            rating:
+              Number(
+                p.rating
+              ) || 4.5,
+
+            views:
+              oldData.views || 0,
+
+            clicks:
+              oldData.clicks || 0,
+
+            orders:
+              oldData.orders || 0,
+
+            whatsapp:
+              oldData.whatsapp || 0,
+
+            score:
+              oldData.score || 0,
+
+            viralBoost:
+              oldData.viralBoost ||
+              false,
+
+            keyword,
+
+            updatedAt:
+              Date.now(),
+          };
+
+          /* ================= WRITE ================= */
+
+          if (
+            !existing.exists()
+          ) {
+
+            await setDoc(
+              ref,
+              newData
+            );
+
+            console.log(
+              `🆕 Added: ${p.asin}`
+            );
+
+          } else {
+
+            await setDoc(
+              ref,
+              newData,
+              {
+                merge: true,
+              }
+            );
+
+            console.log(
+              `♻️ Updated: ${p.asin}`
+            );
+          }
+
+        } catch (err) {
+
+          console.error(
+            `❌ Product Error (${p.asin}):`,
+            err
+          );
+        }
       }
     }
 
-    console.log("🔥 Auto Sync Done Successfully");
+    console.log(
+      "🔥 Auto Sync Completed Successfully"
+    );
+
   } catch (err) {
-    console.error("Sync Error:", err);
+
+    console.error(
+      "❌ Sync Error:",
+      err
+    );
   }
 }
+
+/* ================= RUN ================= */
 
 syncToFirestore();
