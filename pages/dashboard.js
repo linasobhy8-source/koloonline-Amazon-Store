@@ -4,6 +4,7 @@ import {
   getDoc,
   collection,
   getDocs,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 
@@ -13,6 +14,17 @@ export default function Dashboard() {
   const [blogsData, setBlogsData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /* ================= AI CONTROL STATE ================= */
+  const [aiMode, setAiMode] = useState(true);
+  const [engines, setEngines] = useState({
+    brain: true,
+    v3: true,
+    v4: true,
+    v5: true,
+    predictive: true,
+    flywheel: true,
+  });
+
   const isInitial = useRef(true);
 
   useEffect(() => {
@@ -20,19 +32,63 @@ export default function Dashboard() {
 
     const interval = setInterval(() => {
       loadAnalytics(true);
-    }, 60000); // optimized refresh
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);
 
-  /* ================= AI ENGINE ================= */
+  /* ================= LOAD CONTROL STATE ================= */
+  async function loadControl() {
+    try {
+      const controlSnap = await getDoc(doc(db, "system", "ai-control"));
+
+      if (controlSnap.exists()) {
+        const control = controlSnap.data();
+
+        setAiMode(control.aiMode ?? true);
+        setEngines(control.engines ?? engines);
+      }
+    } catch (e) {
+      console.error("Control Load Error:", e);
+    }
+  }
+
+  /* ================= TOGGLE MASTER AI ================= */
+  async function toggleAIMode() {
+    const newMode = !aiMode;
+
+    setAiMode(newMode);
+
+    await setDoc(doc(db, "system", "ai-control"), {
+      aiMode: newMode,
+      engines,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  /* ================= TOGGLE ENGINE ================= */
+  async function toggleEngine(name) {
+    const updated = {
+      ...engines,
+      [name]: !engines[name],
+    };
+
+    setEngines(updated);
+
+    await setDoc(doc(db, "system", "ai-control"), {
+      aiMode,
+      engines: updated,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  /* ================= AI SCORE ================= */
   function calculateAIScore(p) {
     const clicks = p.clicks || 0;
     const orders = p.orders || 0;
     const views = p.views || 0;
 
     const conversion = clicks ? orders / clicks : 0;
-
     const velocity = (clicks + orders) / 10;
 
     const engagement =
@@ -47,9 +103,13 @@ export default function Dashboard() {
     return engagement + viralBoost;
   }
 
+  /* ================= LOAD ANALYTICS ================= */
   async function loadAnalytics(isRefresh = false) {
     try {
       if (!isRefresh) setLoading(true);
+
+      /* ================= LOAD CONTROL ================= */
+      await loadControl();
 
       /* ================= ANALYTICS ================= */
       const statsSnap = await getDoc(doc(db, "analytics", "overview"));
@@ -72,7 +132,7 @@ export default function Dashboard() {
           ...p,
           aiScore,
           conversion: clicks ? ((orders / clicks) * 100).toFixed(1) : 0,
-          isHot: aiScore > 80, // 🔥 upgraded threshold
+          isHot: aiScore > 80,
           isViral: p.viralBoost || aiScore > 120,
         };
       });
@@ -123,7 +183,7 @@ export default function Dashboard() {
     }
   }
 
-  /* ================= LOADING ================= */
+  /* ================= UI ================= */
   if (loading || !data) {
     return <div style={styles.loading}>Loading AI Dashboard...</div>;
   }
@@ -131,11 +191,40 @@ export default function Dashboard() {
   return (
     <div style={styles.page}>
 
+      {/* ================= HEADER ================= */}
       <div style={styles.header}>
         🧠 AI Analytics Dashboard
         <span style={styles.subHeader}>
           Autonomous Growth Intelligence v2
         </span>
+      </div>
+
+      {/* ================= AI CONTROL PANEL ================= */}
+      <div style={styles.controlPanel}>
+        <h3>🧠 AI Control Panel</h3>
+
+        <button onClick={toggleAIMode} style={styles.masterBtn}>
+          {aiMode ? "🔴 STOP ALL AI" : "🟢 START ALL AI"}
+        </button>
+
+        <div style={styles.engineGrid}>
+          {Object.keys(engines).map((key) => (
+            <button
+              key={key}
+              onClick={() => toggleEngine(key)}
+              style={{
+                ...styles.engineBtn,
+                background: engines[key] ? "#28a745" : "#dc3545",
+              }}
+            >
+              {key.toUpperCase()} {engines[key] ? "ON" : "OFF"}
+            </button>
+          ))}
+        </div>
+
+        <p style={{ fontSize: 12, opacity: 0.7 }}>
+          System Status: {aiMode ? "ACTIVE" : "PAUSED"}
+        </p>
       </div>
 
       {/* ================= CARDS ================= */}
@@ -156,13 +245,6 @@ export default function Dashboard() {
           <p>📰 Latest: {blogsData.latest?.title || "No blogs"}</p>
         </div>
       )}
-
-      {/* ================= INSIGHTS ================= */}
-      <div style={styles.insights}>
-        <h3>🔥 Conversion Insights</h3>
-        <p>📊 CTR: {data.ctr}%</p>
-        <p>🏆 Best: <b>{data.bestProduct?.id || "N/A"}</b></p>
-      </div>
 
       {/* ================= BEST PRODUCT ================= */}
       {data.bestProduct && (
@@ -287,5 +369,39 @@ const styles = {
   loading: {
     padding: 40,
     textAlign: "center",
+  },
+
+  /* ================= CONTROL PANEL ================= */
+  controlPanel: {
+    margin: "20px",
+    padding: 15,
+    background: "#111827",
+    color: "white",
+    borderRadius: 10,
+  },
+  masterBtn: {
+    padding: 10,
+    width: "100%",
+    marginTop: 10,
+    marginBottom: 10,
+    background: "#ff3b30",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+  engineGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))",
+    gap: 10,
+  },
+  engineBtn: {
+    padding: 8,
+    border: "none",
+    borderRadius: 6,
+    color: "white",
+    cursor: "pointer",
+    fontSize: 12,
   },
 };
