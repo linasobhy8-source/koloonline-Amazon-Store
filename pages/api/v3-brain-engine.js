@@ -8,22 +8,28 @@ import {
 } from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
-/* ================= TREND SIMULATION ENGINE ================= */
+/* ================= AI GUARD (OPTIONAL CONTROL) ================= */
+
+const AI_MODE = process.env.AI_MODE === "true";
+
+/* ================= TREND SCORE ENGINE ================= */
+
 function getTrendScore(keyword) {
   let score = 0;
-  const k = keyword.toLowerCase();
+  const k = (keyword || "").toLowerCase();
 
   if (k.includes("best")) score += 20;
   if (k.includes("cheap")) score += 15;
@@ -37,20 +43,33 @@ function getTrendScore(keyword) {
   return score;
 }
 
-/* ================= MAIN ENGINE ================= */
+/* ================= HANDLER ================= */
+
 export default async function handler(req, res) {
   try {
     console.log("🧠 V3 BRAIN ENGINE STARTED");
 
-    /* ================= 1. LOAD KEYWORDS ================= */
-    const snap = await getDocs(collection(db, "keywords"));
+    /* ================= SAFE STOP SWITCH ================= */
+    if (!AI_MODE) {
+      return res.status(200).json({
+        success: false,
+        message: "AI MODE DISABLED",
+      });
+    }
+
+    /* ================= LOAD KEYWORDS ================= */
+
+    const snap = await getDocs(
+      collection(db, "keywords")
+    );
 
     const keywords = snap.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     }));
 
-    /* ================= 2. SCORE & PICK WINNERS ================= */
+    /* ================= SCORE ================= */
+
     const scored = keywords.map((k) => {
       const trend = getTrendScore(k.keyword);
       const finalScore = (k.score || 0) + trend;
@@ -61,12 +80,14 @@ export default async function handler(req, res) {
       };
     });
 
+    /* ================= TOP 3 ================= */
+
     const top = scored
       .sort((a, b) => b.finalScore - a.finalScore)
-      .slice(0, 3); // 🔥 أهم 3 فقط
+      .slice(0, 3);
 
-    if (top.length === 0) {
-      return res.json({
+    if (!top.length) {
+      return res.status(200).json({
         success: false,
         message: "No strong keywords found",
       });
@@ -74,29 +95,34 @@ export default async function handler(req, res) {
 
     const results = [];
 
-    /* ================= 3. AUTO EXECUTION LOOP ================= */
+    /* ================= EXECUTION LOOP ================= */
+
     for (const item of top) {
       try {
         console.log("🚀 Processing:", item.keyword);
 
-        /* 1. Generate Article */
+        /* ================= 1. BLOG GENERATION ================= */
         await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/auto-blog-generator-v2`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
               keyword: item.keyword,
             }),
           }
         );
 
-        /* 2. Indexing */
+        /* ================= 2. INDEXING PIPELINE ================= */
         await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/master-pipeline`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
               type: "keyword",
               id: item.id,
@@ -104,7 +130,7 @@ export default async function handler(req, res) {
           }
         );
 
-        /* 3. Mark as processed */
+        /* ================= 3. LOG SUCCESS ================= */
         await addDoc(collection(db, "cron_logs"), {
           type: "v3_processed",
           keyword: item.keyword,
@@ -119,6 +145,8 @@ export default async function handler(req, res) {
         });
 
       } catch (e) {
+        /* ================= LOG ERROR ================= */
+
         await addDoc(collection(db, "cron_logs"), {
           type: "v3_error",
           keyword: item.keyword,
@@ -133,11 +161,13 @@ export default async function handler(req, res) {
       }
     }
 
-    /* ================= FINAL RESPONSE ================= */
+    /* ================= RESPONSE ================= */
+
     return res.status(200).json({
       success: true,
       processed: top.length,
       results,
+      timestamp: Date.now(),
     });
 
   } catch (e) {
@@ -148,4 +178,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-    }
+}
