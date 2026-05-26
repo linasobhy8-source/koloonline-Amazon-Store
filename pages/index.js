@@ -5,6 +5,14 @@ import { useState, useMemo } from "react";
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../config/firebase";
 
+/* ================= SAFE FUNCTION ================= */
+function safeText(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return "";
+}
+
 /* ================= TREND SCORE ================= */
 function calculateTrendScore(p) {
   return (
@@ -40,7 +48,7 @@ function Hero() {
 
 /* ================= PRODUCT CARD ================= */
 function ProductCard({ product }) {
-  const safeTitle = typeof product.title === "string" ? product.title : "";
+  const title = safeText(product.title);
 
   return (
     <Link href={`/product/${product.id}`}>
@@ -49,12 +57,12 @@ function ProductCard({ product }) {
           src={product.image || "https://via.placeholder.com/300"}
           width={250}
           height={250}
-          alt={safeTitle}
+          alt={title}
           loading="lazy"
         />
 
         <h3 style={{ fontSize: 14 }}>
-          {safeTitle.slice(0, 60)}
+          {title.slice(0, 60)}
         </h3>
 
         <p style={{ color: "#b12704" }}>
@@ -72,7 +80,7 @@ export default function Home({ products = [] }) {
   const trendingProducts = useMemo(() => {
     const filtered = search
       ? products.filter((p) =>
-          (p.title || "")
+          safeText(p.title)
             .toLowerCase()
             .includes(search.toLowerCase())
         )
@@ -162,9 +170,11 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   } catch (e) {
+    console.error("Home Error:", e);
+
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-            }
+      }
