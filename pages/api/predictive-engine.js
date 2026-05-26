@@ -1,9 +1,9 @@
-import { aiGate } from "../lib/ai-control";
+import { aiGuard } from "@/lib/ai-control";
 
 export default async function handler(req, res) {
   try {
     // 🔴 GLOBAL STOP FOR ALL AI SYSTEMS
-    if (!aiGate()) {
+    if (!aiGuard()) {
       return res.status(200).json({
         success: false,
         message: "AI SYSTEM DISABLED",
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
     const { keywords = [] } = req.body || {};
 
-    const predictions = keywords.map(k => {
+    const predictions = keywords.map((k) => {
       const score =
         k.includes("2026") ? 90 :
         k.includes("best") ? 80 :
