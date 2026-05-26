@@ -5,20 +5,23 @@ import { useState, useMemo } from "react";
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../config/firebase";
 
-/* ================= SAFE FUNCTION ================= */
-function safeText(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  return "";
+/* ================= SAFE ================= */
+function safeString(v) {
+  return typeof v === "string" || typeof v === "number"
+    ? String(v)
+    : "";
+}
+
+function safeNumber(v) {
+  return typeof v === "number" ? v : 0;
 }
 
 /* ================= TREND SCORE ================= */
 function calculateTrendScore(p) {
   return (
-    (p.views || 0) +
-    (p.clicks || 0) * 2 +
-    (p.orders || 0) * 5 +
+    safeNumber(p.views) +
+    safeNumber(p.clicks) * 2 +
+    safeNumber(p.orders) * 5 +
     (p.viralBoost ? 50 : 0)
   );
 }
@@ -26,17 +29,18 @@ function calculateTrendScore(p) {
 /* ================= HERO ================= */
 function Hero() {
   return (
-    <section
-      style={{
-        background: "linear-gradient(135deg,#0f172a,#111827,#1e293b)",
-        color: "white",
-        padding: 60,
-        borderRadius: 20,
-        marginBottom: 20,
-      }}
-    >
+    <section style={{
+      background: "linear-gradient(135deg,#0f172a,#111827,#1e293b)",
+      color: "white",
+      padding: 60,
+      borderRadius: 20,
+      marginBottom: 20
+    }}>
       <h1>🔥 Discover Viral Amazon Deals</h1>
-      <p style={{ color: "#cbd5e1" }}>AI-powered trending products</p>
+
+      <p style={{ color: "#cbd5e1" }}>
+        AI-powered trending products
+      </p>
 
       <div style={{ display: "flex", gap: 10 }}>
         <Link href="/products">🛒 Products</Link>
@@ -46,18 +50,24 @@ function Hero() {
   );
 }
 
-/* ================= PRODUCT CARD ================= */
+/* ================= CARD ================= */
 function ProductCard({ product }) {
-  const title = safeText(product.title);
+  const title = safeString(product?.title);
+  const image =
+    typeof product?.image === "string"
+      ? product.image
+      : "https://via.placeholder.com/300";
+
+  const price = safeNumber(product?.price);
 
   return (
-    <Link href={`/product/${product.id}`}>
+    <Link href={`/product/${product?.id || ""}`}>
       <div style={{ background: "white", padding: 15, borderRadius: 16 }}>
         <Image
-          src={product.image || "https://via.placeholder.com/300"}
+          src={image}
           width={250}
           height={250}
-          alt={title}
+          alt={title || "product"}
           loading="lazy"
         />
 
@@ -66,7 +76,7 @@ function ProductCard({ product }) {
         </h3>
 
         <p style={{ color: "#b12704" }}>
-          ${product.price || 0}
+          ${price}
         </p>
       </div>
     </Link>
@@ -79,8 +89,8 @@ export default function Home({ products = [] }) {
 
   const trendingProducts = useMemo(() => {
     const filtered = search
-      ? products.filter((p) =>
-          safeText(p.title)
+      ? products.filter(p =>
+          safeString(p?.title)
             .toLowerCase()
             .includes(search.toLowerCase())
         )
@@ -88,7 +98,7 @@ export default function Home({ products = [] }) {
 
     return filtered
       .slice(0, 30)
-      .map((p) => ({
+      .map(p => ({
         ...p,
         trendScore: calculateTrendScore(p),
       }))
@@ -100,16 +110,10 @@ export default function Home({ products = [] }) {
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
       <Head>
         <title>Koloonline</title>
+        <meta name="description" content="Best Amazon Deals 2026" />
       </Head>
 
-      <header
-        style={{
-          background: "white",
-          padding: 10,
-          display: "flex",
-          gap: 10,
-        }}
-      >
+      <header style={{ background: "white", padding: 10, display: "flex", gap: 10 }}>
         <Link href="/">🟠 Koloonline</Link>
 
         <input
@@ -125,42 +129,38 @@ export default function Home({ products = [] }) {
 
         <h2>🔥 Trending</h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-            gap: 10,
-          }}
-        >
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+          gap: 10
+        }}>
           {trendingProducts.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
       </main>
 
-      <footer
-        style={{
-          marginTop: 40,
-          background: "#111827",
-          color: "white",
-          padding: 20,
-          textAlign: "center",
-        }}
-      >
+      <footer style={{
+        marginTop: 40,
+        background: "#111827",
+        color: "white",
+        padding: 20,
+        textAlign: "center"
+      }}>
         © 2026 Koloonline
       </footer>
     </div>
   );
 }
 
-/* ================= DATA FETCH ================= */
+/* ================= DATA ================= */
 export async function getStaticProps() {
   try {
     const snap = await getDocs(
       query(collection(db, "products"), limit(30))
     );
 
-    const products = snap.docs.map((doc) => ({
+    const products = snap.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
@@ -177,4 +177,4 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   }
-      }
+}
