@@ -1,4 +1,4 @@
-import { aiGuard } from "../lib/ai-control";
+import { aiGuard } from "../../lib/ai-control";
 
 /* ================= GLOBAL AI GUARD ================= */
 aiGuard();
@@ -48,6 +48,7 @@ function conversionRate(p) {
 
 function freshnessBoost(p) {
   const now = Date.now();
+
   const updated = p.updatedAt
     ? new Date(p.updatedAt).getTime()
     : now;
@@ -62,12 +63,14 @@ function freshnessBoost(p) {
 
 function evolveProduct(p) {
   const engagement = engagementScore(p);
+
   const ctr =
-    num(p.clicks) > 0
+    num(p.views) > 0
       ? num(p.clicks) / num(p.views)
       : 0;
 
   const cvr = conversionRate(p);
+
   const fresh = freshnessBoost(p);
 
   let score =
@@ -78,18 +81,24 @@ function evolveProduct(p) {
 
   /* ================= MUTATIONS ================= */
 
-  if (p.viralBoost) score *= 1.25;
+  if (p.viralBoost) {
+    score *= 1.25;
+  }
 
-  if (num(p.price) > 100) score += 20;
+  if (num(p.price) > 100) {
+    score += 20;
+  }
 
-  if (engagement < 10) score *= 0.7;
+  if (engagement < 10) {
+    score *= 0.7;
+  }
 
   return {
     ...p,
-    evolvedScore: score,
-    ctr,
-    cvr,
-    freshness: fresh,
+    evolvedScore: Number(score.toFixed(2)),
+    ctr: Number((ctr * 100).toFixed(2)),
+    cvr: Number((cvr * 100).toFixed(2)),
+    freshness: Number(fresh.toFixed(2)),
   };
 }
 
@@ -100,13 +109,19 @@ export default async function handler(
   res
 ) {
   try {
+
     /* ================= SAFE TOGGLE ================= */
+
     if (process.env.AI_MODE !== "true") {
+
       return res.status(200).json({
         success: false,
         message: "AI MODE DISABLED",
       });
+
     }
+
+    /* ================= LOAD PRODUCTS ================= */
 
     const snap = await getDocs(
       collection(db, "products")
@@ -118,38 +133,57 @@ export default async function handler(
     }));
 
     /* ================= VALIDATION ================= */
+
     products = products.filter(
-      (p) => p.id && p.title
+      (p) => p?.id && p?.title
     );
 
     /* ================= EVOLVE ================= */
-    const evolved = products.map(evolveProduct);
+
+    const evolved = products.map(
+      evolveProduct
+    );
 
     /* ================= SORT ================= */
+
     evolved.sort(
       (a, b) =>
         b.evolvedScore - a.evolvedScore
     );
 
-    const topEvolved = evolved.slice(0, 20);
+    const topEvolved =
+      evolved.slice(0, 20);
 
     /* ================= WRITE BACK ================= */
 
     for (const p of topEvolved) {
-      const ref = doc(
-        db,
-        "products",
-        p.id
-      );
 
-      await updateDoc(ref, {
-        evolvedScore: p.evolvedScore,
-        ctr: p.ctr,
-        cvr: p.cvr,
-        freshness: p.freshness,
-        lastEvolvedAt:
-          new Date().toISOString(),
-      });
+      try {
+
+        const ref = doc(
+          db,
+          "products",
+          p.id
+        );
+
+        await updateDoc(ref, {
+          evolvedScore: p.evolvedScore,
+          ctr: p.ctr,
+          cvr: p.cvr,
+          freshness: p.freshness,
+          lastEvolvedAt:
+            new Date().toISOString(),
+        });
+
+      } catch (err) {
+
+        console.error(
+          "Update Error:",
+          p.id,
+          err.message
+        );
+
+      }
     }
 
     /* ================= RESPONSE ================= */
@@ -163,9 +197,16 @@ export default async function handler(
     });
 
   } catch (e) {
+
+    console.error(
+      "SELF EVOLVE ERROR:",
+      e
+    );
+
     return res.status(500).json({
       success: false,
       error: e.message,
     });
+
   }
-}
+    }
