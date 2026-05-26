@@ -1,4 +1,4 @@
-import { aiGuard } from "../lib/ai-control";
+import { aiGuard } from "../../lib/ai-control";
 
 /* ================= GLOBAL AI SWITCH ================= */
 aiGuard();
@@ -27,8 +27,8 @@ const db = getFirestore(app);
 /* ================= BRAIN DECISION ENGINE ================= */
 
 function decideSystemState(products, blogs) {
-  const productCount = products.length;
-  const blogCount = blogs.length;
+  const productCount = products?.length || 0;
+  const blogCount = blogs?.length || 0;
 
   // ================= SAFE RULES =================
   if (productCount < 10) return "BOOST_PRODUCTS";
@@ -42,28 +42,25 @@ function decideSystemState(products, blogs) {
 
 export default async function handler(req, res) {
   try {
+    /* ================= SAFETY SWITCH ================= */
+    if (process.env.AI_MODE !== "true") {
+      return res.status(200).json({
+        success: false,
+        message: "AI MODE is OFF",
+      });
+    }
+
     /* ================= FETCH DATA ================= */
-    const productSnap = await getDocs(
-      collection(db, "products")
-    );
 
-    const blogSnap = await getDocs(
-      collection(db, "blog")
-    );
+    const productSnap = await getDocs(collection(db, "products"));
+    const blogSnap = await getDocs(collection(db, "blog"));
 
-    const products = productSnap.docs.map(
-      (d) => d.data()
-    );
-
-    const blogs = blogSnap.docs.map(
-      (d) => d.data()
-    );
+    const products = productSnap.docs.map((d) => d.data());
+    const blogs = blogSnap.docs.map((d) => d.data());
 
     /* ================= DECISION ================= */
-    const state = decideSystemState(
-      products,
-      blogs
-    );
+
+    const state = decideSystemState(products, blogs);
 
     /* ================= ACTION ENGINE ================= */
 
@@ -78,15 +75,11 @@ export default async function handler(req, res) {
         break;
 
       case "BOOST_CONTENT":
-        actions = [
-          "auto-blog-generator-v2",
-        ];
+        actions = ["auto-blog-generator-v2"];
         break;
 
       case "OPTIMIZE_REVENUE":
-        actions = [
-          "ai-learning-loop-v1",
-        ];
+        actions = ["ai-learning-loop-v1"];
         break;
 
       default:
