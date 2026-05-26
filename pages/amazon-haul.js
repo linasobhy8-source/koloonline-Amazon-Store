@@ -1,250 +1,51 @@
 import Head from "next/head";
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../config/firebase";
 
-export default function AmazonHaul() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
 
-  const blogPosts = [
-    { title: "10 Best Smart Watches on Amazon in 2026", link: "/blog/best-smart-watches" },
-    { title: "Best Wireless Headphones in 2026", link: "/blog/best-headphones-2026" },
-    { title: "Top Power Banks for Travel & Gaming", link: "/blog/best-power-banks-2026" },
-    { title: "Best Amazon Finds Under $25", link: "/blog/amazon-finds-under-25" },
-    { title: "Trending TikTok Amazon Gadgets", link: "/blog/tiktok-amazon-gadgets" },
-    { title: "Best Gaming Accessories on Amazon", link: "/blog/best-gaming-accessories" },
-    { title: "Top Smart Home Devices in 2026", link: "/blog/smart-home-devices-2026" },
-    { title: "Best Budget Tech Products This Year", link: "/blog/budget-tech-products" },
-    { title: "Best Viral Products on Amazon Right Now", link: "/blog/viral-products-amazon" },
-    { title: "Best USB-C Accessories for iPhone & Android", link: "/blog/usb-c-accessories" },
-  ];
+const safeText = (v) => (typeof v === "string" ? v : "");
+const safeImage = (v) =>
+  typeof v === "string"
+    ? v
+    : v?.url || v?.image || fallbackImage;
 
-  useEffect(() => {
-    const fetchTrending = async () => {
-      try {
-        const snap = await getDocs(collection(db, "products"));
-
-        let data = snap.docs.map((doc) => {
-          const d = doc.data();
-
-          return {
-            id: doc.id,
-            title: d.title || "",
-            image: d.image || "",
-            price: d.price || 0,
-            category: d.category || "General",
-            link: d.link || "#",
-            score: d.score || 0,
-            views: d.views || 0,
-            clicks: d.clicks || 0,
-            updatedAt: d.updatedAt || Date.now(),
-            viralBoost: d.viralBoost || false,
-          };
-        });
-
-        data = data
-          .map((p) => {
-            const now = Date.now();
-            const createdAt = p.updatedAt || now;
-
-            const hoursOld = (now - createdAt) / (1000 * 60 * 60);
-
-            const viralBoost =
-              hoursOld <= 24 ? Math.max(0, 50 - hoursOld * 2) : 0;
-
-            const baseScore = p.score * 3 + p.clicks * 2 + p.views;
-
-            return {
-              ...p,
-              trendScore: baseScore + viralBoost,
-              viralBoost: viralBoost > 0 || p.viralBoost === true,
-            };
-          })
-          .sort((a, b) => b.trendScore - a.trendScore)
-          .slice(0, 20);
-
-        setProducts(data);
-      } catch (err) {
-        console.error("Firebase error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrending();
-  }, []);
-
+export default function AmazonHaul({ products = [] }) {
   return (
-    <>
+    <div>
       <Head>
-        <title>Amazon Haul Deals | Viral Products</title>
-        <meta name="description" content="Trending Amazon Haul products and viral deals" />
-        <link rel="canonical" href="https://koloonline.online/amazon-haul" />
+        <title>Amazon Haul</title>
       </Head>
 
-      <main style={styles.main}>
-        <section style={styles.hero}>
-          <h1 style={styles.title}>🔥 Amazon Trending Haul</h1>
-          <p style={styles.subtitle}>Real-time viral & trending Amazon products</p>
-          <p style={styles.updated}>Updated hourly with trending Amazon deals</p>
-        </section>
+      <h1>🔥 Amazon Haul Deals</h1>
 
-        <section style={styles.tagsContainer}>
-          <span style={styles.tag}>🔥 Viral</span>
-          <span style={styles.tag}>💸 Under $25</span>
-          <span style={styles.tag}>📱 Tech</span>
-          <span style={styles.tag}>🏠 Home</span>
-          <span style={styles.tag}>🎮 Gaming</span>
-        </section>
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 20 }}>
+        {products.map((product) => {
+          const title = safeText(product.title);
 
-        <section style={styles.blogSection}>
-          <h2 style={styles.blogTitle}>📝 Trending Buying Guides</h2>
-          <div style={styles.blogGrid}>
-            {blogPosts.map((post, i) => (
-              <a key={i} href={post.link} style={styles.blogCard}>
-                {post.title}
-              </a>
-            ))}
-          </div>
-        </section>
+          return (
+            <div key={product.id} style={{ background: "#fff", padding: 15, borderRadius: 10 }}>
+              
+              {/* SAFE IMAGE */}
+              <img
+                src={safeImage(product.image)}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  objectFit: "cover",
+                }}
+                alt={title}
+              />
 
-        {loading ? (
-          <p style={{ textAlign: "center" }}>Loading...</p>
-        ) : (
-          <section style={styles.grid}>
-            {products.map((product) => (
-              <div key={product.id} style={styles.card}>
-                <img src={product.image} style={styles.image} alt={product.title} />
+              <div>
+                <h3>{title}</h3>
 
-                <div style={styles.content}>
-                  {product.viralBoost && (
-                    <span style={styles.viral}>🔥 NEW VIRAL</span>
-                  )}
-
-                  <span style={styles.category}>{product.category}</span>
-
-                  <h2 style={styles.productTitle}>{product.title}</h2>
-
-                  <p style={styles.price}>${product.price}</p>
-
-                  <a href={product.link} target="_blank" rel="noreferrer" style={styles.button}>
-                    🔥 View Amazon Deal
-                  </a>
-                </div>
+                {product.viralBoost && (
+                  <span style={{ color: "red" }}>🔥 Viral</span>
+                )}
               </div>
-            ))}
-          </section>
-        )}
-      </main>
-    </>
+            </div>
+          );
+        })}
+      </section>
+    </div>
   );
 }
-
-/* ================= STYLES (FIXED - MISSING PART) ================= */
-const styles = {
-  main: {
-    fontFamily: "Arial",
-    background: "#f4f6f9",
-    minHeight: "100vh",
-  },
-  hero: {
-    textAlign: "center",
-    padding: 30,
-    background: "#111827",
-    color: "white",
-  },
-  title: { fontSize: 28, margin: 0 },
-  subtitle: { opacity: 0.8 },
-  updated: { fontSize: 12, opacity: 0.6 },
-
-  tagsContainer: {
-    display: "flex",
-    justifyContent: "center",
-    gap: 10,
-    padding: 15,
-    flexWrap: "wrap",
-  },
-
-  tag: {
-    background: "#fff",
-    padding: "6px 12px",
-    borderRadius: 20,
-    fontSize: 12,
-  },
-
-  blogSection: {
-    padding: 20,
-  },
-
-  blogTitle: {
-    marginBottom: 10,
-  },
-
-  blogGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-    gap: 10,
-  },
-
-  blogCard: {
-    background: "#fff",
-    padding: 10,
-    borderRadius: 8,
-    textDecoration: "none",
-    color: "#000",
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-    gap: 15,
-    padding: 20,
-  },
-
-  card: {
-    background: "#fff",
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-
-  image: {
-    width: "100%",
-    height: 160,
-    objectFit: "cover",
-  },
-
-  content: {
-    padding: 10,
-  },
-
-  viral: {
-    fontSize: 12,
-    color: "red",
-    fontWeight: "bold",
-  },
-
-  category: {
-    fontSize: 11,
-    opacity: 0.6,
-  },
-
-  productTitle: {
-    fontSize: 14,
-  },
-
-  price: {
-    fontWeight: "bold",
-  },
-
-  button: {
-    display: "block",
-    textAlign: "center",
-    background: "#ff9900",
-    color: "#000",
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 10,
-    textDecoration: "none",
-  },
-};
