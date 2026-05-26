@@ -1,7 +1,6 @@
 import Head from "next/head";
-import Link from "next/link";
 
-/* ================= FIVERR PAGE SAFE BUILD ================= */
+/* ================= FIVERR PAGE SAFE ================= */
 
 const fiverrLink =
   "https://go.fiverr.com/visit/?bta=1148086&brand=fiverrmarketplace";
@@ -52,6 +51,7 @@ export default function FiverrPage() {
       <Head>
         <title>Best Fiverr Services 2026 | Koloonline</title>
         <meta name="description" content="Top Fiverr freelance services." />
+        <meta name="robots" content="index,follow" />
       </Head>
 
       {/* HERO */}
@@ -110,7 +110,11 @@ export default function FiverrPage() {
               <img
                 src={s.image}
                 alt={s.title}
-                style={{ width: "100%", height: 200, objectFit: "cover" }}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  objectFit: "cover",
+                }}
               />
 
               <div style={{ padding: 20 }}>
@@ -139,4 +143,4 @@ export default function FiverrPage() {
       </section>
     </div>
   );
-}
+            }
