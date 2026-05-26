@@ -128,7 +128,12 @@ export default function AmazonHaul() {
 
                   <p style={styles.price}>${product.price}</p>
 
-                  <a href={product.link} target="_blank" rel="noreferrer" style={styles.button}>
+                  <a
+                    href={product.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={styles.button}
+                  >
                     🔥 View Amazon Deal
                   </a>
                 </div>
@@ -139,4 +144,110 @@ export default function AmazonHaul() {
       </main>
     </>
   );
-    }
+}
+
+/* ================= STYLES ================= */
+const styles = {
+  main: {
+    fontFamily: "Arial",
+    background: "#f5f6f8",
+    minHeight: "100vh",
+  },
+  hero: {
+    textAlign: "center",
+    padding: "40px 20px",
+    background: "#111827",
+    color: "white",
+  },
+  title: {
+    fontSize: 32,
+    marginBottom: 10,
+  },
+  subtitle: {
+    opacity: 0.8,
+  },
+  updated: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  tagsContainer: {
+    display: "flex",
+    gap: 10,
+    justifyContent: "center",
+    padding: 15,
+    flexWrap: "wrap",
+  },
+  tag: {
+    background: "#fff",
+    padding: "6px 12px",
+    borderRadius: 20,
+    fontSize: 12,
+  },
+  blogSection: {
+    padding: 20,
+  },
+  blogTitle: {
+    marginBottom: 10,
+  },
+  blogGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 10,
+  },
+  blogCard: {
+    background: "white",
+    padding: 10,
+    borderRadius: 8,
+    textDecoration: "none",
+    color: "#111",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 15,
+    padding: 20,
+  },
+  card: {
+    background: "white",
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+  },
+  image: {
+    width: "100%",
+    height: 180,
+    objectFit: "cover",
+  },
+  content: {
+    padding: 10,
+  },
+  category: {
+    fontSize: 12,
+    color: "#666",
+  },
+  productTitle: {
+    fontSize: 16,
+    margin: "5px 0",
+  },
+  price: {
+    fontWeight: "bold",
+  },
+  button: {
+    display: "inline-block",
+    marginTop: 10,
+    padding: "8px 12px",
+    background: "#ff9900",
+    color: "#fff",
+    borderRadius: 6,
+    textDecoration: "none",
+  },
+  viral: {
+    display: "inline-block",
+    fontSize: 12,
+    background: "red",
+    color: "white",
+    padding: "2px 6px",
+    borderRadius: 4,
+    marginBottom: 5,
+  },
+};
