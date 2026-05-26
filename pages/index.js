@@ -44,13 +44,7 @@ function ProductCard({ product }) {
 
   return (
     <Link href={`/product/${product.id}`}>
-      <div
-        style={{
-          background: "white",
-          padding: 15,
-          borderRadius: 16,
-        }}
-      >
+      <div style={{ background: "white", padding: 15, borderRadius: 16 }}>
         <Image
           src={product.image || "https://via.placeholder.com/300"}
           width={250}
@@ -100,7 +94,6 @@ export default function Home({ products = [] }) {
         <title>Koloonline</title>
       </Head>
 
-      {/* HEADER */}
       <header
         style={{
           background: "white",
@@ -119,7 +112,6 @@ export default function Home({ products = [] }) {
         />
       </header>
 
-      {/* MAIN */}
       <main style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
         <Hero />
 
@@ -138,7 +130,6 @@ export default function Home({ products = [] }) {
         </div>
       </main>
 
-      {/* FOOTER */}
       <footer
         style={{
           marginTop: 40,
