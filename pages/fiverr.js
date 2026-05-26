@@ -15,7 +15,6 @@ const services = [
     desc:
       "Hire professional AI writers for blogs, SEO articles, product descriptions and social media content.",
   },
-
   {
     title: "Logo Design",
     image:
@@ -23,7 +22,6 @@ const services = [
     desc:
       "Get modern logo design services for brands, startups and online stores.",
   },
-
   {
     title: "Video Editing",
     image:
@@ -31,7 +29,6 @@ const services = [
     desc:
       "Professional TikTok, YouTube and Instagram video editing services.",
   },
-
   {
     title: "SEO Optimization",
     image:
@@ -39,7 +36,6 @@ const services = [
     desc:
       "Boost your Google rankings with expert SEO services and backlinks.",
   },
-
   {
     title: "Website Development",
     image:
@@ -47,7 +43,6 @@ const services = [
     desc:
       "Hire developers for Next.js, React, Shopify and WordPress websites.",
   },
-
   {
     title: "Social Media Marketing",
     image:
@@ -66,86 +61,28 @@ export default function FiverrPage() {
         minHeight: "100vh",
       }}
     >
-      {/* ================= SEO ================= */}
       <Head>
-        <title>
-          Best Fiverr Services 2026 |
-          Koloonline
-        </title>
-
+        <title>Best Fiverr Services 2026 | Koloonline</title>
         <meta
           name="description"
           content="Discover the best Fiverr freelance services for AI, SEO, logo design, video editing, web development and digital marketing."
-        />
-
-        <meta
-          name="robots"
-          content="index,follow"
-        />
-
-        <meta
-          property="og:title"
-          content="Best Fiverr Services"
-        />
-
-        <meta
-          property="og:description"
-          content="Top Fiverr freelance services and digital experts."
-        />
-
-        <meta
-          property="og:image"
-          content="https://koloonline.online/logo.png"
-        />
-
-        <meta
-          property="og:type"
-          content="website"
-        />
-
-        <meta
-          property="og:url"
-          content="https://koloonline.online/fiverr"
-        />
-
-        <link
-          rel="canonical"
-          href="https://koloonline.online/fiverr"
         />
       </Head>
 
       {/* ================= HERO ================= */}
       <section
         style={{
-          background:
-            "linear-gradient(135deg,#111827,#1f2937)",
+          background: "linear-gradient(135deg,#111827,#1f2937)",
           color: "white",
           padding: "80px 20px",
           textAlign: "center",
         }}
       >
-        <h1
-          style={{
-            fontSize: 52,
-            marginBottom: 20,
-          }}
-        >
-          🚀 Best Fiverr Services
-        </h1>
+        <h1 style={{ fontSize: 52 }}>🚀 Best Fiverr Services</h1>
 
-        <p
-          style={{
-            maxWidth: 850,
-            margin: "auto",
-            lineHeight: 1.8,
-            fontSize: 20,
-            color: "#d1d5db",
-          }}
-        >
-          Discover top-rated freelancers
-          for AI tools, SEO, logo design,
-          website development, video
-          editing and digital marketing.
+        <p style={{ maxWidth: 850, margin: "auto", fontSize: 20, color: "#d1d5db" }}>
+          Discover top-rated freelancers for AI tools, SEO, logo design, website development,
+          video editing and digital marketing.
         </p>
 
         <a
@@ -159,9 +96,7 @@ export default function FiverrPage() {
             color: "white",
             padding: "18px 34px",
             borderRadius: 14,
-            textDecoration: "none",
             fontWeight: "bold",
-            fontSize: 18,
           }}
         >
           Explore Fiverr →
@@ -169,28 +104,15 @@ export default function FiverrPage() {
       </section>
 
       {/* ================= SERVICES ================= */}
-      <section
-        style={{
-          maxWidth: 1400,
-          margin: "auto",
-          padding: "60px 20px",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 38,
-            marginBottom: 40,
-            textAlign: "center",
-          }}
-        >
+      <section style={{ maxWidth: 1400, margin: "auto", padding: 60 }}>
+        <h2 style={{ textAlign: "center", fontSize: 38, marginBottom: 40 }}>
           🔥 Popular Fiverr Categories
         </h2>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(300px,1fr))",
+            gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
             gap: 30,
           }}
         >
@@ -201,50 +123,23 @@ export default function FiverrPage() {
                 background: "white",
                 borderRadius: 24,
                 overflow: "hidden",
-                boxShadow:
-                  "0 10px 30px rgba(0,0,0,0.08)",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
               }}
             >
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: 220,
-                }}
-              >
+              <div style={{ position: "relative", width: "100%", height: 220 }}>
                 <Image
                   src={service.image}
                   alt={service.title}
                   fill
-                  style={{
-                    objectFit: "cover",
-                  }}
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  unoptimized
+                  style={{ objectFit: "cover" }}
                 />
               </div>
 
-              <div
-                style={{
-                  padding: 24,
-                }}
-              >
-                <h3
-                  style={{
-                    fontSize: 24,
-                    marginBottom: 14,
-                  }}
-                >
-                  {service.title}
-                </h3>
-
-                <p
-                  style={{
-                    color: "#555",
-                    lineHeight: 1.8,
-                    minHeight: 90,
-                  }}
-                >
-                  {service.desc}
-                </p>
+              <div style={{ padding: 24 }}>
+                <h3 style={{ fontSize: 22 }}>{service.title}</h3>
+                <p style={{ color: "#555", lineHeight: 1.7 }}>{service.desc}</p>
 
                 <a
                   href={fiverrLink}
@@ -255,11 +150,8 @@ export default function FiverrPage() {
                     marginTop: 20,
                     background: "#1dbf73",
                     color: "white",
-                    padding:
-                      "14px 24px",
+                    padding: "14px 22px",
                     borderRadius: 12,
-                    textDecoration:
-                      "none",
                     fontWeight: "bold",
                   }}
                 >
@@ -271,168 +163,18 @@ export default function FiverrPage() {
         </div>
       </section>
 
-      {/* ================= BENEFITS ================= */}
-      <section
-        style={{
-          background: "white",
-          padding: "70px 20px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1200,
-            margin: "auto",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 38,
-              textAlign: "center",
-              marginBottom: 50,
-            }}
-          >
-            💡 Why Fiverr?
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(250px,1fr))",
-              gap: 25,
-            }}
-          >
-            {[
-              "Affordable freelance services",
-              "Professional global talent",
-              "Fast delivery options",
-              "Secure payments",
-              "SEO and AI experts",
-              "Perfect for online business owners",
-            ].map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  background:
-                    "#f5f7fb",
-                  padding: 30,
-                  borderRadius: 20,
-                  fontWeight: "bold",
-                  textAlign: "center",
-                  fontSize: 18,
-                }}
-              >
-                ✅ {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ================= BLOG LINKS ================= */}
-      <section
-        style={{
-          maxWidth: 1200,
-          margin: "auto",
-          padding: "60px 20px",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 36,
-            marginBottom: 30,
-          }}
-        >
-          📚 Explore More
-        </h2>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(260px,1fr))",
-            gap: 20,
-          }}
-        >
-          <Link
-            href="/amazon-haul"
-            style={{
-              background: "white",
-              padding: 25,
-              borderRadius: 20,
-              textDecoration: "none",
-              color: "black",
-              boxShadow:
-                "0 10px 30px rgba(0,0,0,0.06)",
-            }}
-          >
-            🔥 Amazon Haul Deals
-          </Link>
-
-          <Link
-            href="/search"
-            style={{
-              background: "white",
-              padding: 25,
-              borderRadius: 20,
-              textDecoration: "none",
-              color: "black",
-              boxShadow:
-                "0 10px 30px rgba(0,0,0,0.06)",
-            }}
-          >
-            🔍 Smart Product Search
-          </Link>
-
-          <a
-            href="https://linasobhy.blogspot.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              background: "white",
-              padding: 25,
-              borderRadius: 20,
-              textDecoration: "none",
-              color: "black",
-              boxShadow:
-                "0 10px 30px rgba(0,0,0,0.06)",
-            }}
-          >
-            ✍️ Lina Sobhy Blog
-          </a>
-        </div>
-      </section>
-
       {/* ================= CTA ================= */}
       <section
         style={{
-          background:
-            "linear-gradient(135deg,#1dbf73,#0f9d58)",
-          padding: "80px 20px",
+          background: "linear-gradient(135deg,#1dbf73,#0f9d58)",
+          padding: 80,
           textAlign: "center",
           color: "white",
         }}
       >
-        <h2
-          style={{
-            fontSize: 44,
-            marginBottom: 20,
-          }}
-        >
-          Start Hiring Today
-        </h2>
-
-        <p
-          style={{
-            maxWidth: 700,
-            margin: "auto",
-            lineHeight: 1.8,
-            fontSize: 20,
-          }}
-        >
-          Access thousands of skilled
-          freelancers and grow your
-          business faster.
+        <h2 style={{ fontSize: 40 }}>Start Hiring Today</h2>
+        <p style={{ maxWidth: 700, margin: "auto" }}>
+          Access thousands of skilled freelancers and grow your business faster.
         </p>
 
         <a
@@ -441,14 +183,12 @@ export default function FiverrPage() {
           rel="noopener noreferrer sponsored"
           style={{
             display: "inline-block",
-            marginTop: 35,
+            marginTop: 30,
             background: "white",
             color: "#111827",
             padding: "18px 34px",
             borderRadius: 14,
-            textDecoration: "none",
             fontWeight: "bold",
-            fontSize: 18,
           }}
         >
           Go To Fiverr →
@@ -456,4 +196,4 @@ export default function FiverrPage() {
       </section>
     </div>
   );
-}
+      }
