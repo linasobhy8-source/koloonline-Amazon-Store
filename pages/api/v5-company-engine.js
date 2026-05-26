@@ -1,4 +1,4 @@
-import { aiGuard } from "../lib/ai-control";
+import { aiGuard } from "../../lib/ai-control";
 aiGuard();
 
 import { initializeApp, getApps } from "firebase/app";
@@ -25,7 +25,7 @@ const db = getFirestore(app);
 
 /* ================= MARKET SCANNER ================= */
 function detectNiche(keyword) {
-  const k = keyword.toLowerCase();
+  const k = (keyword || "").toLowerCase();
 
   if (k.includes("headphones") || k.includes("earbuds")) return "audio-tech";
   if (k.includes("fitness") || k.includes("smart watch")) return "fitness-tech";
@@ -38,9 +38,9 @@ function detectNiche(keyword) {
 
 /* ================= PROFIT SCORE ================= */
 function scoreKeyword(k) {
-  let s = 0;
-  const t = k.toLowerCase();
+  const t = (k || "").toLowerCase();
 
+  let s = 0;
   if (t.includes("best")) s += 20;
   if (t.includes("buy")) s += 25;
   if (t.includes("cheap")) s += 15;
@@ -54,7 +54,7 @@ function scoreKeyword(k) {
 /* ================= MAIN ENGINE ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= AI GUARD SWITCH ================= */
+    /* ================= AI MODE SWITCH ================= */
     if (process.env.AI_MODE !== "true") {
       return res.status(200).json({
         success: false,
@@ -162,4 +162,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-        }
+}
