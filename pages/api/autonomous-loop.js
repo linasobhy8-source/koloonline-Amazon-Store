@@ -1,9 +1,10 @@
-import { aiGate } from "../lib/ai-control";
+import { aiGuard } from "@/lib/ai-control";
 
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { initializeApp, getApps } from "firebase/app";
 
 /* ================= FIREBASE ================= */
+
 const app = !getApps().length
   ? initializeApp({
       apiKey: process.env.FIREBASE_API_KEY,
@@ -15,10 +16,11 @@ const app = !getApps().length
 const db = getFirestore(app);
 
 /* ================= MAIN ENGINE ================= */
+
 export default async function handler(req, res) {
   try {
     // 🔴 GLOBAL AI KILL SWITCH
-    if (!aiGate()) {
+    if (!aiGuard()) {
       return res.status(200).json({
         success: false,
         message: "AI SYSTEM DISABLED",
@@ -28,12 +30,12 @@ export default async function handler(req, res) {
 
     const blogSnap = await getDocs(collection(db, "blog"));
 
-    const posts = blogSnap.docs.map(d => ({
+    const posts = blogSnap.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     }));
 
-    const updates = posts.map(p => ({
+    const updates = posts.map((p) => ({
       id: p.id,
       needsBoost: (p.views || 0) < 50,
     }));
@@ -49,4 +51,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-      }
+}
