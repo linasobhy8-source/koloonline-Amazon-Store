@@ -1,9 +1,10 @@
-import { aiGate } from "../lib/ai-control";
+import { aiGuard } from "@/lib/ai-control";
 
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { initializeApp, getApps } from "firebase/app";
 
 /* ================= FIREBASE ================= */
+
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -17,6 +18,7 @@ const app = !getApps().length
 const db = getFirestore(app);
 
 /* ================= FLYWHEEL CORE ================= */
+
 function engagementScore(p) {
   return (
     (p.views || 0) * 1 +
@@ -26,10 +28,11 @@ function engagementScore(p) {
 }
 
 /* ================= MAIN ENGINE ================= */
+
 export default async function handler(req, res) {
   try {
     // 🔴 GLOBAL AI STOP SWITCH
-    if (!aiGate()) {
+    if (!aiGuard()) {
       return res.status(200).json({
         success: false,
         message: "AI SYSTEM DISABLED",
