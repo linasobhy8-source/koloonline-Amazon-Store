@@ -1,10 +1,10 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
 /* ================= FALLBACK ================= */
@@ -13,7 +13,7 @@ const fallbackImage =
 
 /* ================= STARS ================= */
 function Stars({ rating = 4.5 }) {
-  const full = Math.floor(rating);
+  const full = Math.floor(Number(rating || 0));
 
   return (
     <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
@@ -29,16 +29,20 @@ function Stars({ rating = 4.5 }) {
 
 /* ================= AI DESCRIPTION ================= */
 function generateAIDescription(product) {
-  return `${product.title} is one of the trending Amazon products in 2026, optimized for performance, quality, and value. This product is currently gaining high engagement and conversion based on user behavior data on Koloonline.`;
+  const title = typeof product?.title === "string"
+    ? product.title
+    : "Amazon Product";
+
+  return `${title} is trending on Koloonline in 2026 with high engagement and strong conversion signals.`;
 }
 
 /* ================= WHATSAPP ================= */
 function sendWhatsApp(product) {
   const msg = `🔥 Deal Alert:
 
-${product.title}
-💰 Price: $${product.price}
-🔗 ${product.link}`;
+${product?.title || ""}
+💰 Price: $${product?.price || 0}
+🔗 ${product?.link || ""}`;
 
   window.open(
     `https://wa.me/201234567890?text=${encodeURIComponent(msg)}`,
@@ -53,17 +57,31 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD SINGLE PRODUCT ONLY (FIX IMPORTANT) ================= */
+  /* ================= SAFE LOAD ================= */
   useEffect(() => {
     if (!router.isReady || !asin) return;
 
     const load = async () => {
       try {
-        const snap = await getDoc(doc(db, "products", String(asin)));
+        const snap = await getDocs(
+          query(
+            collection(db, "products"),
+            where("asin", "==", asin),
+            limit(1)
+          )
+        );
 
-        if (snap.exists()) {
-          setProduct({ asin, ...snap.data() });
+        if (!snap.empty) {
+          const docData = snap.docs[0];
+
+          setProduct({
+            id: docData.id,
+            ...docData.data(),
+          });
         }
+
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -72,20 +90,26 @@ export default function ProductPage() {
     load();
   }, [router.isReady, asin]);
 
-  /* ================= SEO ================= */
-  const url = `https://koloonline.online/product/${asin}`;
+  /* ================= STATES ================= */
+  if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
+  if (!product) return <div style={{ padding: 40 }}>Product Not Found</div>;
 
-  if (loading)
-    return <div style={{ padding: 40 }}>Loading...</div>;
+  const title =
+    typeof product.title === "string"
+      ? product.title
+      : "Amazon Product";
 
-  if (!product)
-    return <div style={{ padding: 40 }}>Product Not Found</div>;
-
-  const title = product.title || "Amazon Product";
   const price = Number(product.price || 0);
   const rating = Number(product.rating || 4.5);
 
   const description = generateAIDescription(product);
+
+  const image =
+    typeof product.image === "string"
+      ? product.image
+      : fallbackImage;
+
+  const url = `https://koloonline.online/product/${asin}`;
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
@@ -93,22 +117,14 @@ export default function ProductPage() {
       {/* ================= SEO ================= */}
       <Head>
         <title>{title} | Koloonline Deal</title>
-
         <meta name="description" content={description} />
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href={url} />
-
-        {/* OG */}
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={product.image} />
-        <meta property="og:type" content="product" />
       </Head>
 
       {/* ================= CONTAINER ================= */}
       <div style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
 
-        {/* ================= PRODUCT CARD ================= */}
         <div style={{
           background: "white",
           padding: 25,
@@ -121,7 +137,7 @@ export default function ProductPage() {
           {/* IMAGE */}
           <div style={{ flex: 1 }}>
             <Image
-              src={product.image || fallbackImage}
+              src={image}
               width={500}
               height={500}
               alt={title}
@@ -144,13 +160,6 @@ export default function ProductPage() {
               {description}
             </p>
 
-            {/* TRUST */}
-            <div style={{ marginTop: 20 }}>
-              <p>✅ Fast Delivery</p>
-              <p>🔥 Trending Product</p>
-              <p>💰 Best Amazon Price</p>
-            </div>
-
             {/* CTA */}
             <button
               onClick={() => {
@@ -159,7 +168,7 @@ export default function ProductPage() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     type: "affiliate_click",
-                    asin: product.asin,
+                    asin,
                   }),
                 });
 
@@ -198,7 +207,7 @@ export default function ProductPage() {
           </div>
         </div>
 
-        {/* ================= INTERNAL SEO LINKS ================= */}
+        {/* LINKS */}
         <div style={{ marginTop: 40 }}>
           <h2>🔥 Related Guides</h2>
 
