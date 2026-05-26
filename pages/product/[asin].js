@@ -4,12 +4,27 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  limit,
+} from "firebase/firestore";
+
 import { db } from "../../config/firebase";
 
 /* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/600x600?text=Koloonline";
+
+/* ================= SAFE HELPERS ================= */
+function safeText(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return "";
+}
 
 /* ================= STARS ================= */
 function Stars({ rating = 4.5 }) {
@@ -29,9 +44,7 @@ function Stars({ rating = 4.5 }) {
 
 /* ================= AI DESCRIPTION ================= */
 function generateAIDescription(product) {
-  const title = typeof product?.title === "string"
-    ? product.title
-    : "Amazon Product";
+  const title = safeText(product?.title) || "Amazon Product";
 
   return `${title} is trending on Koloonline in 2026 with high engagement and strong conversion signals.`;
 }
@@ -40,7 +53,7 @@ function generateAIDescription(product) {
 function sendWhatsApp(product) {
   const msg = `🔥 Deal Alert:
 
-${product?.title || ""}
+${safeText(product?.title)}
 💰 Price: $${product?.price || 0}
 🔗 ${product?.link || ""}`;
 
@@ -50,6 +63,7 @@ ${product?.title || ""}
   );
 }
 
+/* ================= PAGE ================= */
 export default function ProductPage() {
   const router = useRouter();
   const { asin } = router.query;
@@ -79,9 +93,8 @@ export default function ProductPage() {
             ...docData.data(),
           });
         }
-
       } catch (err) {
-        console.error(err);
+        console.error("Product Load Error:", err);
       } finally {
         setLoading(false);
       }
@@ -90,18 +103,19 @@ export default function ProductPage() {
     load();
   }, [router.isReady, asin]);
 
-  /* ================= STATES ================= */
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
-  if (!product) return <div style={{ padding: 40 }}>Product Not Found</div>;
+  /* ================= GUARDS (IMPORTANT FIX) ================= */
+  if (loading) {
+    return <div style={{ padding: 40 }}>Loading...</div>;
+  }
 
-  const title =
-    typeof product.title === "string"
-      ? product.title
-      : "Amazon Product";
+  if (!product) {
+    return <div style={{ padding: 40 }}>Product Not Found</div>;
+  }
 
+  /* ================= SAFE DATA ================= */
+  const title = safeText(product.title) || "Amazon Product";
   const price = Number(product.price || 0);
   const rating = Number(product.rating || 4.5);
-
   const description = generateAIDescription(product);
 
   const image =
@@ -117,9 +131,15 @@ export default function ProductPage() {
       {/* ================= SEO ================= */}
       <Head>
         <title>{title} | Koloonline Deal</title>
+
         <meta name="description" content={description} />
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href={url} />
+
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={image || fallbackImage} />
+        <meta property="og:type" content="product" />
       </Head>
 
       {/* ================= CONTAINER ================= */}
@@ -148,7 +168,9 @@ export default function ProductPage() {
           {/* INFO */}
           <div style={{ flex: 1 }}>
 
-            <h1 style={{ fontSize: 32 }}>{title}</h1>
+            <h1 style={{ fontSize: 32 }}>
+              {title}
+            </h1>
 
             <Stars rating={rating} />
 
@@ -160,7 +182,14 @@ export default function ProductPage() {
               {description}
             </p>
 
-            {/* CTA */}
+            {/* TRUST */}
+            <div style={{ marginTop: 20 }}>
+              <p>✅ Fast Delivery</p>
+              <p>🔥 Trending Product</p>
+              <p>💰 Best Amazon Price</p>
+            </div>
+
+            {/* BUY BUTTON */}
             <button
               onClick={() => {
                 fetch("/api/track-event", {
@@ -188,6 +217,7 @@ export default function ProductPage() {
               🛒 Buy Now on Amazon
             </button>
 
+            {/* WHATSAPP */}
             <button
               onClick={() => sendWhatsApp(product)}
               style={{
@@ -219,4 +249,4 @@ export default function ProductPage() {
       </div>
     </div>
   );
-        }
+}
