@@ -11,18 +11,26 @@ import Footer from "../components/layout/Footer";
 import "../styles/globals.css";
 
 /* ================= SAFE IDLE ================= */
-const safeIdle = (cb) =>
-  typeof window !== "undefined" &&
-  "requestIdleCallback" in window
-    ? requestIdleCallback(cb)
-    : setTimeout(cb, 1);
+
+const safeIdle = (callback) => {
+  if (
+    typeof window !== "undefined" &&
+    "requestIdleCallback" in window
+  ) {
+    return window.requestIdleCallback(callback);
+  }
+
+  return setTimeout(callback, 1);
+};
 
 /* ================= GLOBAL REVENUE STATE ================= */
+
 const revenueState = {
   trafficIntent: "unknown",
 };
 
 /* ================= AI REVENUE ENGINE ================= */
+
 function useRevenueOS() {
   const initialized = useRef(false);
 
@@ -34,7 +42,10 @@ function useRevenueOS() {
     initialized.current = true;
 
     const detectIntent = () => {
-      const path = window.location.pathname;
+      if (typeof window === "undefined") return;
+
+      const path =
+        window.location.pathname || "";
 
       revenueState.trafficIntent =
         path.includes("/product/")
@@ -66,6 +77,7 @@ function useRevenueOS() {
 }
 
 /* ================= APP ================= */
+
 export default function App({
   Component,
   pageProps,
@@ -83,7 +95,12 @@ export default function App({
   return (
     <>
       {/* ================= GLOBAL SEO ================= */}
+
       <Head>
+        <meta
+          charSet="UTF-8"
+        />
+
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1"
@@ -99,6 +116,11 @@ export default function App({
           content="index,follow,max-image-preview:large"
         />
 
+        <meta
+          name="robots"
+          content="index,follow"
+        />
+
         <link
           rel="icon"
           href="/favicon.ico"
@@ -106,16 +128,20 @@ export default function App({
       </Head>
 
       {/* ================= GOOGLE ANALYTICS ================= */}
+
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR`}
+        src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
         strategy="afterInteractive"
       />
 
-      <Script id="google-analytics">
+      <Script
+        id="google-analytics"
+        strategy="afterInteractive"
+      >
         {`
           window.dataLayer = window.dataLayer || [];
 
-          function gtag(){
+          function gtag() {
             dataLayer.push(arguments);
           }
 
@@ -126,15 +152,19 @@ export default function App({
       </Script>
 
       {/* ================= NAVBAR ================= */}
+
       <Navbar />
 
       {/* ================= PAGE ================= */}
+
       <Component {...pageProps} />
 
       {/* ================= FOOTER ================= */}
+
       <Footer />
 
       {/* ================= VERCEL ANALYTICS ================= */}
+
       <SpeedInsights />
     </>
   );
