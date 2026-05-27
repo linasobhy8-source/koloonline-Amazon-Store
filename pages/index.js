@@ -138,4 +138,190 @@ function ProductCard({ product }) {
 
         <h3
           style={{
-            font
+            fontSize: 14,
+            marginTop: 10,
+          }}
+        >
+          {title.slice(0, 60)}
+        </h3>
+
+        <p
+          style={{
+            color: "#b12704",
+          }}
+        >
+          ${price}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+/* ================= PAGE ================= */
+
+export default function Home({
+  products = [],
+}) {
+  const [search, setSearch] =
+    useState("");
+
+  const trendingProducts =
+    useMemo(() => {
+      const filtered = search
+        ? products.filter((p) =>
+            safeString(p?.title)
+              .toLowerCase()
+              .includes(
+                search.toLowerCase()
+              )
+          )
+        : products;
+
+      return filtered
+        .slice(0, 30)
+        .map((p) => ({
+          ...p,
+          trendScore:
+            calculateTrendScore(p),
+        }))
+        .sort(
+          (a, b) =>
+            b.trendScore -
+            a.trendScore
+        )
+        .slice(0, 12);
+    }, [products, search]);
+
+  return (
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <Head>
+        <title>Koloonline</title>
+
+        <meta
+          name="description"
+          content="Best Amazon Deals"
+        />
+      </Head>
+
+      <header
+        style={{
+          background: "white",
+          padding: 10,
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+        }}
+      >
+        <Link
+          href="/"
+          style={{
+            textDecoration: "none",
+            color: "black",
+            fontWeight: "bold",
+          }}
+        >
+          <span>🟠 Koloonline</span>
+        </Link>
+
+        <input
+          placeholder="Search..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+          style={{
+            padding: 8,
+            borderRadius: 8,
+          }}
+        />
+      </header>
+
+      <main
+        style={{
+          maxWidth: 1200,
+          margin: "auto",
+          padding: 20,
+        }}
+      >
+        <Hero />
+
+        <h2>🔥 Trending</h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(180px,1fr))",
+            gap: 10,
+          }}
+        >
+          {trendingProducts.map((p) => (
+            <ProductCard
+              key={safeString(p?.id)}
+              product={p}
+            />
+          ))}
+        </div>
+      </main>
+
+      <footer
+        style={{
+          marginTop: 40,
+          background: "#111827",
+          color: "white",
+          padding: 20,
+          textAlign: "center",
+        }}
+      >
+        © 2026 Koloonline
+      </footer>
+    </div>
+  );
+}
+
+/* ================= DATA ================= */
+
+export async function getStaticProps() {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, "products"),
+        limit(30)
+      )
+    );
+
+    const products = snap.docs.map(
+      (doc) => ({
+        id: safeString(doc.id),
+        ...doc.data(),
+      })
+    );
+
+    return {
+      props: {
+        products,
+      },
+
+      revalidate: 300,
+    };
+  } catch (error) {
+    console.error(
+      "INDEX ERROR:",
+      error
+    );
+
+    return {
+      props: {
+        products: [],
+      },
+
+      revalidate: 300,
+    };
+  }
+                        }
