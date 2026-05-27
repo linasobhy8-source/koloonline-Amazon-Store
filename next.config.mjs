@@ -5,6 +5,8 @@ const nextConfig = {
     domains: [
       "m.media-amazon.com",
       "images-na.ssl-images-amazon.com",
+      "via.placeholder.com",
+      "firebasestorage.googleapis.com",
     ],
   },
 
@@ -29,21 +31,25 @@ const nextConfig = {
         destination: "/blog",
         permanent: true,
       },
+
       {
-        source: "/product",
-        destination: "/products",
+        source: "/product/:path*",
+        destination: "/products/:path*",
         permanent: true,
       },
+
       {
         source: "/store",
         destination: "/",
         permanent: true,
       },
+
       {
         source: "/search",
         destination: "/",
         permanent: true,
       },
+
       {
         source: "/fiverr-services",
         destination: "/",
@@ -84,4 +90,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
