@@ -1,7 +1,5 @@
 import Head from "next/head";
 import Script from "next/script";
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/router";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -10,96 +8,14 @@ import Footer from "../components/layout/Footer";
 
 import "../styles/globals.css";
 
-/* ================= SAFE IDLE ================= */
-
-const safeIdle = (callback) => {
-  if (
-    typeof window !== "undefined" &&
-    "requestIdleCallback" in window
-  ) {
-    return window.requestIdleCallback(callback);
-  }
-
-  return setTimeout(callback, 1);
-};
-
-/* ================= GLOBAL REVENUE STATE ================= */
-
-const revenueState = {
-  trafficIntent: "unknown",
-};
-
-/* ================= AI REVENUE ENGINE ================= */
-
-function useRevenueOS() {
-  const initialized = useRef(false);
-
-  const router = useRouter();
-
-  useEffect(() => {
-    if (initialized.current) return;
-
-    initialized.current = true;
-
-    const detectIntent = () => {
-      if (typeof window === "undefined") return;
-
-      const path =
-        window.location.pathname || "";
-
-      revenueState.trafficIntent =
-        path.includes("/product/")
-          ? "high_intent"
-          : path.includes("/blog/")
-          ? "medium_intent"
-          : "low_intent";
-
-      console.log(
-        "AI Revenue Intent:",
-        revenueState.trafficIntent
-      );
-    };
-
-    detectIntent();
-
-    router.events.on(
-      "routeChangeComplete",
-      detectIntent
-    );
-
-    return () => {
-      router.events.off(
-        "routeChangeComplete",
-        detectIntent
-      );
-    };
-  }, [router]);
-}
-
-/* ================= APP ================= */
-
 export default function App({
   Component,
   pageProps,
 }) {
-  useRevenueOS();
-
-  useEffect(() => {
-    safeIdle(() => {
-      console.log(
-        "Koloonline AI Shopping OS Loaded"
-      );
-    });
-  }, []);
-
   return (
     <>
-      {/* ================= GLOBAL SEO ================= */}
-
       <Head>
-        <meta
-          charSet="UTF-8"
-        />
+        <meta charSet="UTF-8" />
 
         <meta
           name="viewport"
@@ -127,16 +43,16 @@ export default function App({
         />
       </Head>
 
-      {/* ================= GOOGLE ANALYTICS ================= */}
+      {/* Google Analytics */}
 
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
 
       <Script
         id="google-analytics"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       >
         {`
           window.dataLayer = window.dataLayer || [];
@@ -147,25 +63,19 @@ export default function App({
 
           gtag('js', new Date());
 
-          gtag('config', 'G-YS8L61XLPR');
+          gtag('config', 'G-YS8L61XLPR', {
+            page_path: window.location.pathname,
+          });
         `}
       </Script>
 
-      {/* ================= NAVBAR ================= */}
-
       <Navbar />
-
-      {/* ================= PAGE ================= */}
 
       <Component {...pageProps} />
 
-      {/* ================= FOOTER ================= */}
-
       <Footer />
-
-      {/* ================= VERCEL ANALYTICS ================= */}
 
       <SpeedInsights />
     </>
   );
-            }
+}
