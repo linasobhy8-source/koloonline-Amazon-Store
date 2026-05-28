@@ -1,6 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
-import { getCache, setCache } from "../../lib/cache";
+import { getFirestore, collection, getDocs, query, limit } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -8,34 +7,47 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = getApps().length
-  ? getApps()[0]
-  : initializeApp(firebaseConfig);
-
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+/* ================= SIMPLE CACHE ================= */
+let cache = null;
+let lastFetch = 0;
+const CACHE_TIME = 1000 * 60 * 10; // 10 min
 
 export default async function handler(req, res) {
   try {
-    const cached = getCache("trending");
-    if (cached) {
-      return res.status(200).json(cached);
+    const now = Date.now();
+
+    if (cache && now - lastFetch < CACHE_TIME) {
+      return res.status(200).json({
+        success: true,
+        cached: true,
+        data: cache,
+      });
     }
 
-    const snap = await getDocs(collection(db, "products"));
+    const snap = await getDocs(
+      query(collection(db, "products"), limit(20))
+    );
 
-    const products = snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    const data = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
     }));
 
-    const trending = products
-      .sort((a, b) => (b.views || 0) - (a.views || 0))
-      .slice(0, 10);
+    cache = data;
+    lastFetch = now;
 
-    setCache("trending", trending, 120000);
-
-    return res.status(200).json(trending);
+    return res.status(200).json({
+      success: true,
+      cached: false,
+      data,
+    });
   } catch (e) {
-    return res.status(500).json([]);
+    return res.status(500).json({
+      success: false,
+      error: e.message,
+    });
   }
 }
