@@ -2,23 +2,17 @@
   "name": "koloonline-amazon-store",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-
   "description": "Amazon Affiliate Store built with Next.js + Firebase + AI Engine",
-
   "author": "Lina Sobhy",
-
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
-
   "engines": {
     "node": "20.x"
   },
-
   "dependencies": {
     "@vercel/speed-insights": "^1.0.12",
     "firebase": "^10.12.0",
