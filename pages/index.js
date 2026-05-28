@@ -1,24 +1,33 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
+import { collection, getDocs, query, limit } from "firebase/firestore";
+import { db } from "../config/firebase";
 
-/* ================= SAFE ================= */
+/* ================= SAFE HELPERS ================= */
 
 const FALLBACK_IMAGE =
   "https://via.placeholder.com/300x300?text=Koloonline";
 
-function safeString(value, fallback = "") {
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  return fallback;
+const safeString = (v, f = "") =>
+  typeof v === "string" ? v : v ? String(v) : f;
+
+const safeNumber = (v, f = 0) =>
+  typeof v === "number" ? v : f;
+
+/* ================= TREND SCORE (OPTIMIZED) ================= */
+
+function score(p) {
+  return (
+    (p?.views || 0) +
+    (p?.clicks || 0) * 2 +
+    (p?.orders || 0) * 5 +
+    (p?.viralBoost ? 50 : 0)
+  );
 }
 
-function safeNumber(value, fallback = 0) {
-  return typeof value === "number" ? value : fallback;
-}
-
-/* ================= HERO ================= */
+/* ================= HERO (LIGHTWEIGHT) ================= */
 
 function Hero() {
   return (
@@ -26,36 +35,41 @@ function Hero() {
       style={{
         background:
           "linear-gradient(135deg,#0f172a,#111827,#1e293b)",
-        color: "white",
-        padding: 28,
-        borderRadius: 16,
-        marginBottom: 20,
-        contain: "layout paint",
+        color: "#fff",
+        padding: "20px",
+        borderRadius: 12,
+        marginBottom: 16,
       }}
     >
-      <h1 style={{ fontSize: 20 }}>
+      <h1 style={{ fontSize: 20, margin: 0 }}>
         🔥 Viral Amazon Deals
       </h1>
 
-      <p style={{ color: "#cbd5e1", fontSize: 13 }}>
-        Fast trending products powered by AI
+      <p style={{ fontSize: 13, color: "#cbd5e1" }}>
+        AI Trending Products
       </p>
 
-      <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-        <Link href="/products">🛒 Products</Link>
-        <Link href="/blog">📚 Blog</Link>
+      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <Link href="/products" style={{ color: "#fff" }}>
+          🛒 Products
+        </Link>
+
+        <Link href="/blog" style={{ color: "#fff" }}>
+          📚 Blog
+        </Link>
       </div>
     </section>
   );
 }
 
-/* ================= PRODUCT CARD (OPTIMIZED CLS + INP) ================= */
+/* ================= PRODUCT CARD (NO CLS FIXED) ================= */
 
 function ProductCard({ product }) {
   const title = safeString(product?.title, "Product");
-  const image = product?.image?.startsWith("http")
-    ? product.image
-    : FALLBACK_IMAGE;
+  const image =
+    typeof product?.image === "string" && product.image.startsWith("http")
+      ? product.image
+      : FALLBACK_IMAGE;
 
   const price = safeNumber(product?.price);
   const id = safeString(product?.id);
@@ -63,28 +77,24 @@ function ProductCard({ product }) {
   return (
     <Link
       href={`/product/${id}`}
-      style={{
-        textDecoration: "none",
-        color: "inherit",
-        willChange: "transform",
-      }}
+      style={{ textDecoration: "none", color: "inherit" }}
     >
       <div
         style={{
-          background: "white",
+          background: "#fff",
           borderRadius: 12,
-          padding: 10,
-          contain: "content",
+          padding: 8,
+          willChange: "transform",
         }}
       >
-        {/* IMAGE FIX CLS 100% */}
+        {/* FIX: stable layout (CLS = 0) */}
         <div
           style={{
+            position: "relative",
             width: "100%",
             aspectRatio: "1 / 1",
-            position: "relative",
-            overflow: "hidden",
             borderRadius: 10,
+            overflow: "hidden",
           }}
         >
           <Image
@@ -92,24 +102,23 @@ function ProductCard({ product }) {
             alt={title}
             fill
             sizes="(max-width: 768px) 50vw, 200px"
-            style={{
-              objectFit: "cover",
-            }}
+            style={{ objectFit: "cover" }}
             loading="lazy"
+            unoptimized
           />
         </div>
 
         <h3
           style={{
             fontSize: 12,
-            marginTop: 8,
+            marginTop: 6,
             minHeight: 32,
           }}
         >
-          {title.length > 55 ? title.slice(0, 55) + "..." : title}
+          {title.length > 60 ? title.slice(0, 60) + "..." : title}
         </h3>
 
-        <p style={{ color: "#b12704", fontWeight: "bold" }}>
+        <p style={{ color: "#b12704", fontWeight: "bold", margin: 0 }}>
           ${price}
         </p>
       </div>
@@ -122,33 +131,25 @@ function ProductCard({ product }) {
 export default function Home({ products = [] }) {
   const [search, setSearch] = useState("");
 
-  /* ================= FAST FILTER (NO HEAVY OPS) ================= */
+  /* 🔥 LIGHT FILTER (FAST FOR MOBILE) */
   const trendingProducts = useMemo(() => {
     let list = products;
 
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((p) =>
+      list = products.filter((p) =>
         (p?.title || "").toLowerCase().includes(q)
       );
     }
 
-    // ❌ removed expensive sorting completely
-    return list.slice(0, 12);
+    return list
+      .slice(0, 15) // reduce CPU
+      .sort((a, b) => score(b) - score(a))
+      .slice(0, 12);
   }, [products, search]);
 
-  const onSearch = useCallback((e) => {
-    setSearch(e.target.value);
-  }, []);
-
   return (
-    <div
-      style={{
-        fontFamily: "Arial",
-        background: "#f5f5f5",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
       <Head>
         <title>Koloonline</title>
         <meta name="description" content="Best Amazon Deals" />
@@ -157,7 +158,7 @@ export default function Home({ products = [] }) {
       {/* HEADER */}
       <header
         style={{
-          background: "white",
+          background: "#fff",
           padding: 10,
           display: "flex",
           gap: 10,
@@ -173,34 +174,27 @@ export default function Home({ products = [] }) {
         <input
           placeholder="Search..."
           value={search}
-          onChange={onSearch}
+          onChange={(e) => setSearch(e.target.value)}
           style={{
+            flex: 1,
             padding: 8,
             borderRadius: 8,
-            width: "100%",
             border: "1px solid #ddd",
           }}
         />
       </header>
 
       {/* MAIN */}
-      <main
-        style={{
-          maxWidth: 1100,
-          margin: "auto",
-          padding: 15,
-        }}
-      >
+      <main style={{ maxWidth: 1100, margin: "auto", padding: 12 }}>
         <Hero />
 
-        <h2 style={{ fontSize: 18 }}>🔥 Trending</h2>
+        <h2 style={{ fontSize: 16 }}>🔥 Trending</h2>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(140px,1fr))",
-            gap: 10,
+            gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+            gap: 8,
           }}
         >
           {trendingProducts.map((p) => (
@@ -212,11 +206,12 @@ export default function Home({ products = [] }) {
       {/* FOOTER */}
       <footer
         style={{
-          marginTop: 40,
+          marginTop: 30,
           background: "#111827",
           color: "white",
-          padding: 20,
+          padding: 15,
           textAlign: "center",
+          fontSize: 12,
         }}
       >
         © 2026 Koloonline
@@ -225,7 +220,7 @@ export default function Home({ products = [] }) {
   );
 }
 
-/* ================= DATA (OPTIMIZED ISR) ================= */
+/* ================= DATA (OPTIMIZED FIRESTORE) ================= */
 
 export async function getStaticProps() {
   try {
@@ -233,16 +228,27 @@ export async function getStaticProps() {
       query(collection(db, "products"), limit(20))
     );
 
-    const products = snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const products = snap.docs.map((doc) => {
+      const d = doc.data();
+      return {
+        id: doc.id,
+        title: d?.title || "",
+        image: d?.image || FALLBACK_IMAGE,
+        price: d?.price || 0,
+        views: d?.views || 0,
+        clicks: d?.clicks || 0,
+        orders: d?.orders || 0,
+        viralBoost: d?.viralBoost || false,
+      };
+    });
 
     return {
       props: { products },
-      revalidate: 600, // 🔥 زودنا cache لتحسين RES
+      revalidate: 600, // 🔥 faster caching = better RES
     };
-  } catch (error) {
+  } catch (e) {
+    console.error(e);
+
     return {
       props: { products: [] },
       revalidate: 600,
