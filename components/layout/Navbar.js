@@ -1,25 +1,32 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 
-export default function Navbar({ products = [] }) {
-  const [search, setSearch] = useState("");
+export default function Navbar({
+  products = [],
+}) {
+  const [search, setSearch] =
+    useState("");
 
-  /* ================= SMART FILTER ================= */
   const filtered = useMemo(() => {
-    if (!search) return [];
+    const term =
+      search.trim().toLowerCase();
+
+    if (!term) return [];
 
     return products
       .filter((p) =>
-        (p.title || "")
+        String(
+          p?.title || ""
+        )
           .toLowerCase()
-          .includes(search.toLowerCase())
+          .includes(term)
       )
       .sort(
         (a, b) =>
-          (b.views || 0) +
-          (b.clicks || 0) * 2 -
-          ((a.views || 0) +
-            (a.clicks || 0) * 2)
+          ((b?.views || 0) +
+            (b?.clicks || 0) * 2) -
+          ((a?.views || 0) +
+            (a?.clicks || 0) * 2)
       )
       .slice(0, 6);
   }, [search, products]);
@@ -27,73 +34,134 @@ export default function Navbar({ products = [] }) {
   return (
     <nav
       style={{
-        padding: 15,
-        background: "white",
-        borderBottom: "1px solid #eee",
         position: "sticky",
         top: 0,
-        zIndex: 999,
+        zIndex: 1000,
+        background: "#ffffffee",
+        backdropFilter: "blur(8px)",
+        borderBottom:
+          "1px solid #e5e7eb",
       }}
     >
       <div
         style={{
           maxWidth: 1200,
-          margin: "auto",
+          margin: "0 auto",
+          padding: "12px 16px",
           display: "flex",
-          gap: 20,
           alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
         {/* LOGO */}
-        <Link href="/">
-          <h2 style={{ margin: 0 }}>🟠 Koloonline</h2>
+
+        <Link
+          href="/"
+          style={{
+            textDecoration: "none",
+            color: "#111827",
+            fontWeight: 700,
+            fontSize: 20,
+            whiteSpace: "nowrap",
+          }}
+        >
+          🟠 Koloonline
         </Link>
 
         {/* SEARCH */}
+
         <input
-          placeholder="Search trending products..."
+          type="search"
+          placeholder="Search products..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
           style={{
             flex: 1,
-            padding: 10,
-            border: "1px solid #ddd",
+            minWidth: 180,
+            padding: "10px 12px",
+            border:
+              "1px solid #d1d5db",
             borderRadius: 10,
+            outline: "none",
           }}
         />
 
-        {/* LINKS */}
-        <Link href="/products">Products</Link>
-        <Link href="/blog">Blog</Link>
+        {/* NAV LINKS */}
+
+        <Link
+          href="/products"
+          style={{
+            textDecoration: "none",
+            color: "#111827",
+            fontWeight: 500,
+          }}
+        >
+          Products
+        </Link>
+
+        <Link
+          href="/blog"
+          style={{
+            textDecoration: "none",
+            color: "#111827",
+            fontWeight: 500,
+          }}
+        >
+          Blog
+        </Link>
       </div>
 
-      {/* LIVE SEARCH DROPDOWN */}
+      {/* SEARCH RESULTS */}
+
       {filtered.length > 0 && (
         <div
           style={{
             maxWidth: 1200,
-            margin: "auto",
-            background: "#fff",
-            padding: 10,
-            borderRadius: 10,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            margin: "0 auto",
+            padding: "0 16px 12px",
           }}
         >
-          {filtered.map((p) => (
-            <Link
-              key={p.asin}
-              href={`/product/${p.asin}`}
-              style={{
-                display: "block",
-                padding: 8,
-                borderBottom: "1px solid #eee",
-                textDecoration: "none",
-                color: "#111",
-              }}
-            >
-              {p.title}
-            </Link>
-          ))}
+          <div
+            style={{
+              background: "#fff",
+              border:
+                "1px solid #e5e7eb",
+              borderRadius: 12,
+              overflow: "hidden",
+              boxShadow:
+                "0 4px 20px rgba(0,0,0,.08)",
+            }}
+          >
+            {filtered.map((p) => (
+              <Link
+                key={
+                  p?.asin ||
+                  p?.id ||
+                  Math.random()
+                }
+                href={`/product/${
+                  p?.asin || p?.id
+                }`}
+                style={{
+                  display: "block",
+                  padding: 12,
+                  textDecoration:
+                    "none",
+                  color: "#111827",
+                  borderBottom:
+                    "1px solid #f3f4f6",
+                }}
+              >
+                {String(
+                  p?.title ||
+                    "Product"
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </nav>
