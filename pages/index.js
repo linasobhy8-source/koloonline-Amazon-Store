@@ -5,55 +5,53 @@ import { useState, useMemo } from "react";
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../config/firebase";
 
-/* ================= SAFE HELPERS ================= */
+/* ================= PERFORMANCE CONSTANTS ================= */
 
 const FALLBACK_IMAGE =
   "https://via.placeholder.com/300x300?text=Koloonline";
 
-const safeString = (v, f = "") =>
-  typeof v === "string" ? v : v ? String(v) : f;
+/* ================= LIGHT HELPERS ================= */
 
-const safeNumber = (v, f = 0) =>
-  typeof v === "number" ? v : f;
+const getStr = (v) => (v ? String(v) : "");
+const getNum = (v) => (typeof v === "number" ? v : 0);
 
-/* ================= TREND SCORE (OPTIMIZED) ================= */
+/* ================= FAST TREND SCORE ================= */
 
-function score(p) {
+function trendScore(p) {
   return (
-    (p?.views || 0) +
-    (p?.clicks || 0) * 2 +
-    (p?.orders || 0) * 5 +
-    (p?.viralBoost ? 50 : 0)
+    getNum(p.views) +
+    getNum(p.clicks) * 2 +
+    getNum(p.orders) * 5 +
+    (p.viralBoost ? 50 : 0)
   );
 }
 
-/* ================= HERO (LIGHTWEIGHT) ================= */
+/* ================= HERO (STATIC + LIGHT) ================= */
 
 function Hero() {
   return (
     <section
       style={{
-        background:
-          "linear-gradient(135deg,#0f172a,#111827,#1e293b)",
+        background: "linear-gradient(135deg,#0f172a,#111827,#1e293b)",
         color: "#fff",
-        padding: "20px",
+        padding: 16,
         borderRadius: 12,
-        marginBottom: 16,
+        marginBottom: 12,
+        willChange: "transform",
       }}
     >
-      <h1 style={{ fontSize: 20, margin: 0 }}>
-        🔥 Viral Amazon Deals
+      <h1 style={{ fontSize: 18, margin: 0 }}>
+        🔥 Trending Amazon Deals
       </h1>
 
-      <p style={{ fontSize: 13, color: "#cbd5e1" }}>
-        AI Trending Products
+      <p style={{ fontSize: 12, color: "#cbd5e1" }}>
+        AI-powered real-time ranking
       </p>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
         <Link href="/products" style={{ color: "#fff" }}>
           🛒 Products
         </Link>
-
         <Link href="/blog" style={{ color: "#fff" }}>
           📚 Blog
         </Link>
@@ -62,17 +60,16 @@ function Hero() {
   );
 }
 
-/* ================= PRODUCT CARD (NO CLS FIXED) ================= */
+/* ================= PRODUCT CARD (ULTRA LIGHT) ================= */
 
-function ProductCard({ product }) {
-  const title = safeString(product?.title, "Product");
-  const image =
-    typeof product?.image === "string" && product.image.startsWith("http")
-      ? product.image
-      : FALLBACK_IMAGE;
+function ProductCard({ p }) {
+  const title = getStr(p.title) || "Product";
+  const id = getStr(p.id);
+  const image = p.image?.startsWith("http")
+    ? p.image
+    : FALLBACK_IMAGE;
 
-  const price = safeNumber(product?.price);
-  const id = safeString(product?.id);
+  const price = getNum(p.price);
 
   return (
     <Link
@@ -82,18 +79,18 @@ function ProductCard({ product }) {
       <div
         style={{
           background: "#fff",
-          borderRadius: 12,
+          borderRadius: 10,
           padding: 8,
-          willChange: "transform",
+          contain: "content",
         }}
       >
-        {/* FIX: stable layout (CLS = 0) */}
+        {/* IMAGE OPTIMIZED (NO CLS) */}
         <div
           style={{
             position: "relative",
             width: "100%",
             aspectRatio: "1 / 1",
-            borderRadius: 10,
+            borderRadius: 8,
             overflow: "hidden",
           }}
         >
@@ -104,18 +101,19 @@ function ProductCard({ product }) {
             sizes="(max-width: 768px) 50vw, 200px"
             style={{ objectFit: "cover" }}
             loading="lazy"
-            unoptimized
+            placeholder="blur"
+            blurDataURL={FALLBACK_IMAGE}
           />
         </div>
 
         <h3
           style={{
             fontSize: 12,
-            marginTop: 6,
+            margin: "6px 0 0 0",
             minHeight: 32,
           }}
         >
-          {title.length > 60 ? title.slice(0, 60) + "..." : title}
+          {title.length > 55 ? title.slice(0, 55) + "..." : title}
         </h3>
 
         <p style={{ color: "#b12704", fontWeight: "bold", margin: 0 }}>
@@ -126,36 +124,38 @@ function ProductCard({ product }) {
   );
 }
 
-/* ================= PAGE ================= */
+/* ================= MAIN PAGE ================= */
 
 export default function Home({ products = [] }) {
   const [search, setSearch] = useState("");
 
-  /* 🔥 LIGHT FILTER (FAST FOR MOBILE) */
-  const trendingProducts = useMemo(() => {
+  /* ⚡ FULL OPTIMIZED FILTER + SORT */
+  const trending = useMemo(() => {
     let list = products;
 
-    if (search) {
+    if (search.trim()) {
       const q = search.toLowerCase();
-      list = products.filter((p) =>
-        (p?.title || "").toLowerCase().includes(q)
+      list = list.filter((p) =>
+        (p.title || "").toLowerCase().includes(q)
       );
     }
 
+    // limit early = important for performance
+    list = list.slice(0, 15);
+
     return list
-      .slice(0, 15) // reduce CPU
-      .sort((a, b) => score(b) - score(a))
+      .sort((a, b) => trendScore(b) - trendScore(a))
       .slice(0, 12);
   }, [products, search]);
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
+    <div style={{ background: "#f5f5f5", fontFamily: "Arial" }}>
       <Head>
         <title>Koloonline</title>
-        <meta name="description" content="Best Amazon Deals" />
+        <meta name="description" content="Best Amazon Deals AI" />
       </Head>
 
-      {/* HEADER */}
+      {/* HEADER (LIGHT + STICKY) */}
       <header
         style={{
           background: "#fff",
@@ -164,7 +164,7 @@ export default function Home({ products = [] }) {
           gap: 10,
           position: "sticky",
           top: 0,
-          zIndex: 1000,
+          zIndex: 999,
         }}
       >
         <Link href="/" style={{ fontWeight: "bold" }}>
@@ -172,9 +172,9 @@ export default function Home({ products = [] }) {
         </Link>
 
         <input
-          placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search..."
           style={{
             flex: 1,
             padding: 8,
@@ -188,29 +188,30 @@ export default function Home({ products = [] }) {
       <main style={{ maxWidth: 1100, margin: "auto", padding: 12 }}>
         <Hero />
 
-        <h2 style={{ fontSize: 16 }}>🔥 Trending</h2>
+        <h2 style={{ fontSize: 15 }}>🔥 Trending Now</h2>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(140px,1fr))",
             gap: 8,
           }}
         >
-          {trendingProducts.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {trending.map((p) => (
+            <ProductCard key={p.id} p={p} />
           ))}
         </div>
       </main>
 
-      {/* FOOTER */}
+      {/* FOOTER (LIGHT) */}
       <footer
         style={{
-          marginTop: 30,
+          marginTop: 25,
           background: "#111827",
-          color: "white",
-          padding: 15,
+          color: "#fff",
           textAlign: "center",
+          padding: 12,
           fontSize: 12,
         }}
       >
@@ -220,7 +221,7 @@ export default function Home({ products = [] }) {
   );
 }
 
-/* ================= DATA (OPTIMIZED FIRESTORE) ================= */
+/* ================= FAST STATIC FETCH ================= */
 
 export async function getStaticProps() {
   try {
@@ -228,30 +229,29 @@ export async function getStaticProps() {
       query(collection(db, "products"), limit(20))
     );
 
-    const products = snap.docs.map((doc) => {
-      const d = doc.data();
+    const products = snap.docs.map((d) => {
+      const data = d.data();
+
       return {
-        id: doc.id,
-        title: d?.title || "",
-        image: d?.image || FALLBACK_IMAGE,
-        price: d?.price || 0,
-        views: d?.views || 0,
-        clicks: d?.clicks || 0,
-        orders: d?.orders || 0,
-        viralBoost: d?.viralBoost || false,
+        id: d.id,
+        title: data?.title || "",
+        image: data?.image || FALLBACK_IMAGE,
+        price: data?.price || 0,
+        views: data?.views || 0,
+        clicks: data?.clicks || 0,
+        orders: data?.orders || 0,
+        viralBoost: data?.viralBoost || false,
       };
     });
 
     return {
       props: { products },
-      revalidate: 600, // 🔥 faster caching = better RES
+      revalidate: 900, // ⬅️ caching قوي = performance أعلى
     };
   } catch (e) {
-    console.error(e);
-
     return {
       props: { products: [] },
-      revalidate: 600,
+      revalidate: 900,
     };
   }
-}
+      }
