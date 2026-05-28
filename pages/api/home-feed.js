@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs, limit, query } from "firebase/firestore";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getCache, setCache } from "../../lib/cache";
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -7,28 +8,32 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
 
 export default async function handler(req, res) {
   try {
-    const q = query(collection(db, "products"), limit(20));
-    const snap = await getDocs(q);
+    const cached = getCache("home-feed");
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
+    const snap = await getDocs(collection(db, "products"));
 
     const products = snap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
 
-    return res.status(200).json({
-      success: true,
-      data: products,
-      cached: true,
-    });
+    const feed = products.slice(0, 20);
+
+    setCache("home-feed", feed, 120000);
+
+    return res.status(200).json(feed);
   } catch (e) {
-    return res.status(500).json({
-      success: false,
-      error: e.message,
-    });
+    return res.status(500).json([]);
   }
 }
