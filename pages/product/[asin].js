@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
-
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
 /* ================= FALLBACK ================= */
@@ -46,7 +39,7 @@ function Stars({ rating = 4.5 }) {
 function generateAIDescription(product) {
   const title = safeText(product?.title) || "Amazon Product";
 
-  return `${title} is trending on Koloonline in 2026 with high engagement and strong conversion signals.`;
+  return `${title} is trending on Koloonline with high engagement and strong conversion signals.`;
 }
 
 /* ================= WHATSAPP ================= */
@@ -71,30 +64,27 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= SAFE LOAD ================= */
+  /* ================= LOAD PRODUCT (FIXED) ================= */
   useEffect(() => {
     if (!router.isReady || !asin) return;
 
     const load = async () => {
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, "products"),
-            where("asin", "==", asin),
-            limit(1)
-          )
-        );
+        /* ✅ FIX: asin is DOCUMENT ID (NOT query) */
+        const ref = doc(db, "products", String(asin));
+        const snap = await getDoc(ref);
 
-        if (!snap.empty) {
-          const docData = snap.docs[0];
-
+        if (snap.exists()) {
           setProduct({
-            id: docData.id,
-            ...docData.data(),
+            id: snap.id,
+            ...snap.data(),
           });
+        } else {
+          setProduct(null);
         }
       } catch (err) {
         console.error("Product Load Error:", err);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -103,13 +93,19 @@ export default function ProductPage() {
     load();
   }, [router.isReady, asin]);
 
-  /* ================= GUARDS (IMPORTANT FIX) ================= */
+  /* ================= LOADING ================= */
   if (loading) {
     return <div style={{ padding: 40 }}>Loading...</div>;
   }
 
+  /* ================= NOT FOUND ================= */
   if (!product) {
-    return <div style={{ padding: 40 }}>Product Not Found</div>;
+    return (
+      <div style={{ padding: 40 }}>
+        <h2>😢 Product Not Found</h2>
+        <Link href="/">🏠 Go Home</Link>
+      </div>
+    );
   }
 
   /* ================= SAFE DATA ================= */
