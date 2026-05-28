@@ -2,19 +2,19 @@ export default async function handler(req, res) {
   try {
     const { action } = req.query;
 
-    if (action === "profit") {
-      return res.json({ success: true, result: "profit data" });
+    if (action === "indexnow") {
+      return res.json({ success: true, message: "IndexNow triggered" });
     }
 
-    if (action === "predict") {
-      return res.json({ success: true, result: "predict data" });
+    if (action === "sitemap") {
+      return res.json({ success: true, message: "Sitemap ready" });
     }
 
-    if (action === "ranking") {
-      return res.json({ success: true, result: "ranking data" });
+    if (action === "seo") {
+      return res.json({ success: true, message: "SEO updated" });
     }
 
-    return res.json({ success: true, message: "AI API working" });
+    return res.json({ success: true, message: "System running" });
 
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
