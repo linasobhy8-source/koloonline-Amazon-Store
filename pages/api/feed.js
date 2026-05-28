@@ -1,90 +1,87 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs, query, limit, orderBy } from "firebase/firestore";
+import { getFirestore, collection, getDocs, query, limit } from "firebase/firestore";
 
-/* ================= FIREBASE INIT ================= */
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
 /* ================= SIMPLE MEMORY CACHE ================= */
-let cache = null;
-let cacheTime = 0;
+let cached = null;
+let cachedTime = 0;
 
-const CACHE_DURATION = 1000 * 60 * 10; // 10 min
+/* ================= OPTIMIZED FEED ENGINE ================= */
 
-function isValidCache() {
-  return cache && Date.now() - cacheTime < CACHE_DURATION;
+function optimize(products = []) {
+  return products
+    .slice(0, 30)
+    .map((p) => ({
+      id: p.id,
+      title: p.title || "",
+      image: p.image || "",
+      price: p.price || 0,
+      views: p.views || 0,
+      clicks: p.clicks || 0,
+      orders: p.orders || 0,
+      viralBoost: p.viralBoost || false,
+    }))
+    .sort((a, b) => {
+      const score = (p) =>
+        (p.views || 0) +
+        (p.clicks || 0) * 2 +
+        (p.orders || 0) * 5 +
+        (p.viralBoost ? 50 : 0);
+
+      return score(b) - score(a);
+    })
+    .slice(0, 12);
 }
 
-/* ================= SCORE ENGINE ================= */
-function score(p = {}) {
-  return (
-    (p.views || 0) +
-    (p.clicks || 0) * 2 +
-    (p.orders || 0) * 5 +
-    (p.viralBoost ? 50 : 0)
-  );
-}
+/* ================= API ================= */
 
-/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ===== CACHE HIT ===== */
-    if (isValidCache()) {
+    const now = Date.now();
+
+    /* 🔥 CACHE 5 MIN */
+    if (cached && now - cachedTime < 300000) {
       return res.status(200).json({
         success: true,
         cached: true,
-        data: cache,
+        products: cached,
       });
     }
 
-    /* ===== FIREBASE FETCH (LIMITED) ===== */
     const snap = await getDocs(
-      query(collection(db, "products"), limit(25))
+      query(collection(db, "products"), limit(50))
     );
 
-    let products = snap.docs.map((doc) => {
-      const d = doc.data();
-      return {
-        id: doc.id,
-        title: d.title || "",
-        image: d.image || "",
-        price: d.price || 0,
-        views: d.views || 0,
-        clicks: d.clicks || 0,
-        orders: d.orders || 0,
-        viralBoost: d.viralBoost || false,
-      };
-    });
+    const products = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
 
-    /* ===== SORT BY TREND ===== */
-    products.sort((a, b) => score(b) - score(a));
+    const optimized = optimize(products);
 
-    /* ===== FINAL OUTPUT ===== */
-    const response = {
-      trending: products.slice(0, 12),
-      homeFeed: products.slice(0, 8),
-      products: products.slice(0, 20),
-    };
-
-    /* ===== UPDATE CACHE ===== */
-    cache = response;
-    cacheTime = Date.now();
+    cached = optimized;
+    cachedTime = now;
 
     return res.status(200).json({
       success: true,
       cached: false,
-      data: response,
+      products: optimized,
     });
-  } catch (error) {
+  } catch (e) {
     return res.status(500).json({
       success: false,
-      error: error.message,
+      error: e.message,
     });
   }
-}
+        }
