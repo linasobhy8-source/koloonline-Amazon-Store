@@ -1,9 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo } from "react";
-import { collection, getDocs, query, limit } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { useState, useMemo, useEffect } from "react";
 
 /* ================= PERFORMANCE CONSTANTS ================= */
 
@@ -26,7 +24,7 @@ function trendScore(p) {
   );
 }
 
-/* ================= HERO (STATIC + LIGHT) ================= */
+/* ================= HERO ================= */
 
 function Hero() {
   return (
@@ -60,7 +58,7 @@ function Hero() {
   );
 }
 
-/* ================= PRODUCT CARD (ULTRA LIGHT) ================= */
+/* ================= PRODUCT CARD ================= */
 
 function ProductCard({ p }) {
   const title = getStr(p.title) || "Product";
@@ -84,7 +82,6 @@ function ProductCard({ p }) {
           contain: "content",
         }}
       >
-        {/* IMAGE OPTIMIZED (NO CLS) */}
         <div
           style={{
             position: "relative",
@@ -106,13 +103,7 @@ function ProductCard({ p }) {
           />
         </div>
 
-        <h3
-          style={{
-            fontSize: 12,
-            margin: "6px 0 0 0",
-            minHeight: 32,
-          }}
-        >
+        <h3 style={{ fontSize: 12, margin: "6px 0 0 0", minHeight: 32 }}>
           {title.length > 55 ? title.slice(0, 55) + "..." : title}
         </h3>
 
@@ -128,10 +119,29 @@ function ProductCard({ p }) {
 
 export default function Home({ products = [] }) {
   const [search, setSearch] = useState("");
+  const [liveProducts, setLiveProducts] = useState(products);
 
-  /* ⚡ FULL OPTIMIZED FILTER + SORT */
+  /* ================= LOAD FROM API ================= */
+  useEffect(() => {
+    async function loadTrending() {
+      try {
+        const res = await fetch("/api/trending");
+        const data = await res.json();
+
+        if (data?.success && Array.isArray(data.trending)) {
+          setLiveProducts(data.trending);
+        }
+      } catch (err) {
+        console.error("Trending API Error:", err);
+      }
+    }
+
+    loadTrending();
+  }, []);
+
+  /* ================= FILTER + SORT ================= */
   const trending = useMemo(() => {
-    let list = products;
+    let list = liveProducts;
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -140,13 +150,12 @@ export default function Home({ products = [] }) {
       );
     }
 
-    // limit early = important for performance
     list = list.slice(0, 15);
 
     return list
       .sort((a, b) => trendScore(b) - trendScore(a))
       .slice(0, 12);
-  }, [products, search]);
+  }, [liveProducts, search]);
 
   return (
     <div style={{ background: "#f5f5f5", fontFamily: "Arial" }}>
@@ -155,7 +164,7 @@ export default function Home({ products = [] }) {
         <meta name="description" content="Best Amazon Deals AI" />
       </Head>
 
-      {/* HEADER (LIGHT + STICKY) */}
+      {/* HEADER */}
       <header
         style={{
           background: "#fff",
@@ -204,7 +213,7 @@ export default function Home({ products = [] }) {
         </div>
       </main>
 
-      {/* FOOTER (LIGHT) */}
+      {/* FOOTER */}
       <footer
         style={{
           marginTop: 25,
@@ -221,37 +230,13 @@ export default function Home({ products = [] }) {
   );
 }
 
-/* ================= FAST STATIC FETCH ================= */
+/* ================= STATIC PROPS (FALLBACK ONLY) ================= */
 
 export async function getStaticProps() {
-  try {
-    const snap = await getDocs(
-      query(collection(db, "products"), limit(20))
-    );
-
-    const products = snap.docs.map((d) => {
-      const data = d.data();
-
-      return {
-        id: d.id,
-        title: data?.title || "",
-        image: data?.image || FALLBACK_IMAGE,
-        price: data?.price || 0,
-        views: data?.views || 0,
-        clicks: data?.clicks || 0,
-        orders: data?.orders || 0,
-        viralBoost: data?.viralBoost || false,
-      };
-    });
-
-    return {
-      props: { products },
-      revalidate: 900, // ⬅️ caching قوي = performance أعلى
-    };
-  } catch (e) {
-    return {
-      props: { products: [] },
-      revalidate: 900,
-    };
-  }
-      }
+  return {
+    props: {
+      products: [],
+    },
+    revalidate: 900,
+  };
+            }
