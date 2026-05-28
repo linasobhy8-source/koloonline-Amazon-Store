@@ -1,19 +1,18 @@
 import autoGenerate from "./auto-create-page";
 import syncProducts from "./sync-products";
-import trending from "./trending";
+import feed from "./feed";
 import indexNow from "./indexnow";
 import autoPublish from "./auto-publish";
 
-/* ================= SAFE EXECUTION WRAPPER ================= */
+/* ================= SAFE WRAPPER ================= */
 
-async function runSafe(fn, name) {
+async function runSafe(fn, name, req, res) {
   try {
     if (typeof fn !== "function") {
-      console.warn(`⚠ ${name} is not a function`);
       return { name, status: "skipped" };
     }
 
-    const result = await fn();
+    const result = await fn(req, res);
 
     return {
       name,
@@ -34,11 +33,11 @@ async function runSafe(fn, name) {
 export default async function handler(req, res) {
   try {
     const results = await Promise.allSettled([
-      runSafe(autoGenerate, "autoGenerate"),
-      runSafe(syncProducts, "syncProducts"),
-      runSafe(trending, "trending"),
-      runSafe(indexNow, "indexNow"),
-      runSafe(autoPublish, "autoPublish"),
+      runSafe(autoGenerate, "autoGenerate", req, res),
+      runSafe(syncProducts, "syncProducts", req, res),
+      runSafe(feed, "feed", req, res),
+      runSafe(indexNow, "indexNow", req, res),
+      runSafe(autoPublish, "autoPublish", req, res),
     ]);
 
     const formatted = results.map((r) =>
