@@ -11,22 +11,37 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
-/* ================= IN-MEMORY CACHE ================= */
+/* ================= CACHE ================= */
 let CACHE = {
-  trending: null,
-  timestamp: 0,
+  feed: null,
+  ts: 0,
 };
 
-const CACHE_TIME = 60 * 1000; // 60 ثانية (مهم جدًا)
+const CACHE_TIME = 60 * 1000;
 
-/* ================= SCORE ================= */
-function score(p) {
+/* ================= AI SCORE ================= */
+function aiScore(p) {
+  const views = p.views || 0;
+  const clicks = p.clicks || 0;
+  const orders = p.orders || 0;
+
+  const ctr = views ? clicks / views : 0;
+  const conv = clicks ? orders / clicks : 0;
+
+  const freshness = p.createdAt
+    ? Math.max(0, 1 - (Date.now() - p.createdAt) / 86400000)
+    : 0.5;
+
+  const viral = p.viralBoost ? 2 : 1;
+
   return (
-    (p.views || 0) +
-    (p.clicks || 0) * 2 +
-    (p.orders || 0) * 5 +
-    (p.viralBoost ? 100 : 0)
-  );
+    views * 0.2 +
+    clicks * 1.5 +
+    orders * 5 +
+    ctr * 100 +
+    conv * 150 +
+    freshness * 50
+  ) * viral;
 }
 
 /* ================= HANDLER ================= */
@@ -34,22 +49,28 @@ export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    /* ================= TRENDING (WITH CACHE) ================= */
-    if (action === "trending") {
-      const now = Date.now();
+    /* ================= AI FEED (TIKTOK) ================= */
+    if (action === "feed") {
+      const page = parseInt(req.query.page || "1");
+      const pageSize = 15;
 
-      /* ⚡ CACHE HIT */
-      if (CACHE.trending && now - CACHE.timestamp < CACHE_TIME) {
+      /* CACHE HIT */
+      if (CACHE.feed && Date.now() - CACHE.ts < CACHE_TIME) {
+        const start = (page - 1) * pageSize;
+        const data = CACHE.feed.slice(start, start + pageSize);
+
         return res.status(200).json({
           success: true,
-          cached: true,
-          data: CACHE.trending,
+          source: "cache",
+          page,
+          hasMore: start + pageSize < CACHE.feed.length,
+          data,
         });
       }
 
-      /* ⚡ CACHE MISS → FIREBASE */
+      /* FIREBASE FETCH */
       const snap = await getDocs(
-        query(collection(db, "products"), limit(30))
+        query(collection(db, "products"), limit(100))
       );
 
       let products = snap.docs.map((d) => ({
@@ -57,19 +78,26 @@ export default async function handler(req, res) {
         ...d.data(),
       }));
 
-      /* 🔥 SORT AI-LIKE */
+      /* AI SORT */
       products = products
-        .sort((a, b) => score(b) - score(a))
-        .slice(0, 15);
+        .map((p) => ({ ...p, _score: aiScore(p) }))
+        .sort((a, b) => b._score - a._score);
 
-      /* 💾 SAVE CACHE */
-      CACHE.trending = products;
-      CACHE.timestamp = now;
+      /* CACHE SAVE */
+      CACHE = {
+        feed: products,
+        ts: Date.now(),
+      };
+
+      const start = (page - 1) * pageSize;
+      const data = products.slice(start, start + pageSize);
 
       return res.status(200).json({
         success: true,
-        cached: false,
-        data: products,
+        source: "live",
+        page,
+        hasMore: start + pageSize < products.length,
+        data,
       });
     }
 
@@ -77,22 +105,12 @@ export default async function handler(req, res) {
     if (action === "seo") {
       return res.status(200).json({
         success: true,
-        data: {
-          title: "Koloonline SEO Engine",
-          status: "active",
-        },
+        data: { status: "active" },
       });
     }
 
-    return res.status(400).json({
-      success: false,
-      message: "Invalid action",
-    });
-
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    return res.status(400).json({ success: false, message: "Invalid action" });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
   }
-}
+        }
