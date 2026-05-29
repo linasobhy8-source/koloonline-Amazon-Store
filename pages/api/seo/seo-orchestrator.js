@@ -1,111 +1,154 @@
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({
-        success: false,
-        error: "Method not allowed",
-      });
-    }
-
-    const { type, id, url } = req.body || {};
-
-    if (!type || !id) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing type or id",
-      });
-    }
-
     const baseUrl = "https://koloonline.online";
-    const targetUrl = url || `${baseUrl}/${type}/${id}`;
 
-    console.log("🧠 SEO ORCHESTRATOR START:", targetUrl);
+    console.log("🤖 SEO ORCHESTRATOR STARTED");
 
-    /* ================= 1️⃣ SEO CORE BRAIN ================= */
-    let brainResult = null;
+    /* ================= TIMEOUT FETCH WRAPPER ================= */
+    const fetchWithTimeout = async (url, options = {}, timeout = 8000) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+
+      try {
+        const res = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+        });
+        clearTimeout(id);
+        return res;
+      } catch (e) {
+        clearTimeout(id);
+        throw e;
+      }
+    };
+
+    /* ================= 1️⃣ GET CONTENT SIGNALS ================= */
+    let products = [];
+    let blogs = [];
+
     try {
-      const resBrain = await fetch(`${baseUrl}/api/seo/v6-seo-brain`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, url: targetUrl }),
-      });
+      const [prodRes, blogRes] = await Promise.all([
+        fetchWithTimeout(`${baseUrl}/api/get-recommendations?type=products`),
+        fetchWithTimeout(`${baseUrl}/api/get-recommendations?type=blog`),
+      ]);
 
-      brainResult = await resBrain.json();
+      const prodData = await prodRes.json().catch(() => ({}));
+      const blogData = await blogRes.json().catch(() => ({}));
+
+      products = prodData?.items || [];
+      blogs = blogData?.items || [];
     } catch (e) {
-      console.log("Brain Error:", e.message);
+      console.log("⚠️ Content fetch error:", e.message);
     }
 
-    /* ================= 2️⃣ TRAFFIC ENGINE ================= */
-    try {
-      await fetch(`${baseUrl}/api/seo/traffic-os`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, url: targetUrl, brain: brainResult }),
-      });
-    } catch (e) {
-      console.log("Traffic OS Error:", e.message);
+    /* ================= 2️⃣ SMART SCORING ENGINE ================= */
+    function scoreItem(item, type) {
+      if (!item) return 0;
+
+      let score = 40;
+
+      // Core signals
+      if (item.title) score += 10;
+      if (item.image) score += 10;
+      if (item.slug) score += 5;
+
+      // Engagement signals
+      if (item.views > 50) score += 10;
+      if (item.clicks > 20) score += 10;
+      if (item.conversions > 5) score += 15;
+
+      // Freshness boost
+      const updated = new Date(item.updatedAt || item.createdAt);
+      const diffDays = (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (diffDays < 3) score += 10;
+      else if (diffDays < 7) score += 5;
+
+      // Type boost
+      if (type === "product") score += 5;
+      if (type === "blog") score += 3;
+
+      return Math.min(100, score);
     }
 
-    /* ================= 3️⃣ PREDICTIVE ENGINE ================= */
+    /* ================= 3️⃣ RANKING SYSTEM ================= */
+    const rankedProducts = products
+      .map((p) => ({
+        ...p,
+        score: scoreItem(p, "product"),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    const rankedBlogs = blogs
+      .map((b) => ({
+        ...b,
+        score: scoreItem(b, "blog"),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    console.log("🔥 TOP PRODUCTS:", rankedProducts.map((p) => p.id));
+    console.log("📚 TOP BLOGS:", rankedBlogs.map((b) => b.id));
+
+    /* ================= 4️⃣ SEO ORCHESTRATOR CALL ================= */
+    const runOrchestrator = async (type, id) => {
+      try {
+        await fetchWithTimeout(`${baseUrl}/api/seo/seo-orchestrator-run`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type, id }),
+        });
+      } catch (e) {
+        console.log("⚠️ Orchestrator error:", e.message);
+      }
+    };
+
+    /* ================= 5️⃣ EXECUTION (SAFE BATCHING) ================= */
+
+    const processBatch = async (items, type) => {
+      for (const item of items) {
+        await runOrchestrator(type, item.id);
+      }
+    };
+
+    await processBatch(rankedProducts, "product");
+    await processBatch(rankedBlogs, "blog");
+
+    /* ================= 6️⃣ FINAL HEALTH LOG ================= */
     try {
-      await fetch(`${baseUrl}/api/seo/predictive-engine`, {
+      await fetchWithTimeout(`${baseUrl}/api/cron-logs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, url: targetUrl }),
+        body: JSON.stringify({
+          type: "seo_orchestrator",
+          status: "success",
+          products: rankedProducts.length,
+          blogs: rankedBlogs.length,
+          timestamp: new Date().toISOString(),
+        }),
       });
     } catch (e) {
-      console.log("Predictive Error:", e.message);
+      console.log("Log error:", e.message);
     }
 
-    /* ================= 4️⃣ MONETIZATION ENGINE ================= */
-    try {
-      await fetch(`${baseUrl}/api/seo/revenue-os`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, url: targetUrl }),
-      });
-    } catch (e) {
-      console.log("Revenue OS Error:", e.message);
-    }
-
-    /* ================= 5️⃣ ADS BOOST ================= */
-    try {
-      await fetch(`${baseUrl}/api/seo/boost-ads`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, url: targetUrl }),
-      });
-    } catch (e) {
-      console.log("Ads Boost Error:", e.message);
-    }
-
-    /* ================= 6️⃣ SELF EVOLUTION ================= */
-    try {
-      await fetch(`${baseUrl}/api/seo/self-evolving-ai`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, id, url: targetUrl }),
-      });
-    } catch (e) {
-      console.log("Self Evolution Error:", e.message);
-    }
-
-    /* ================= FINAL RESPONSE ================= */
-    console.log("✅ SEO ORCHESTRATION COMPLETE:", targetUrl);
+    console.log("✅ SEO ORCHESTRATOR COMPLETED");
 
     return res.status(200).json({
       success: true,
-      message: "SEO Orchestration completed",
-      url: targetUrl,
-      brain: brainResult || null,
+      message: "SEO Orchestrator executed successfully",
+      processed: {
+        products: rankedProducts.length,
+        blogs: rankedBlogs.length,
+      },
     });
 
   } catch (e) {
-    console.error("❌ ORCHESTRATOR ERROR:", e);
+    console.error("❌ SEO ORCHESTRATOR FAILED:", e);
 
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-}
+  }
