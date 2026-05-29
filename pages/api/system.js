@@ -1,5 +1,5 @@
-import { getFirestore, collection, getDocs, limit, query } from "firebase/firestore";
 import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, getDocs, query, limit } from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -11,76 +11,88 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
-/* ================= HELPERS ================= */
-function safe(v, fallback = null) {
-  return v !== undefined ? v : fallback;
+/* ================= IN-MEMORY CACHE ================= */
+let CACHE = {
+  trending: null,
+  timestamp: 0,
+};
+
+const CACHE_TIME = 60 * 1000; // 60 ثانية (مهم جدًا)
+
+/* ================= SCORE ================= */
+function score(p) {
+  return (
+    (p.views || 0) +
+    (p.clicks || 0) * 2 +
+    (p.orders || 0) * 5 +
+    (p.viralBoost ? 100 : 0)
+  );
 }
 
-/* ================= MAIN HANDLER ================= */
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
+  const { action } = req.query;
+
   try {
-    const { action } = req.query;
-
-    /* ================= HEALTH CHECK ================= */
-    if (action === "health") {
-      return res.status(200).json({
-        success: true,
-        status: "OK",
-        time: Date.now(),
-      });
-    }
-
-    /* ================= TRENDING ================= */
+    /* ================= TRENDING (WITH CACHE) ================= */
     if (action === "trending") {
+      const now = Date.now();
+
+      /* ⚡ CACHE HIT */
+      if (CACHE.trending && now - CACHE.timestamp < CACHE_TIME) {
+        return res.status(200).json({
+          success: true,
+          cached: true,
+          data: CACHE.trending,
+        });
+      }
+
+      /* ⚡ CACHE MISS → FIREBASE */
       const snap = await getDocs(
-        query(collection(db, "products"), limit(20))
+        query(collection(db, "products"), limit(30))
       );
 
-      const products = snap.docs.map((d) => {
-        const data = d.data();
+      let products = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
 
-        return {
-          id: d.id,
-          title: safe(data.title, ""),
-          price: safe(data.price, 0),
-          image: safe(data.image, ""),
-          views: safe(data.views, 0),
-          clicks: safe(data.clicks, 0),
-          orders: safe(data.orders, 0),
-          viralBoost: safe(data.viralBoost, false),
-        };
-      });
+      /* 🔥 SORT AI-LIKE */
+      products = products
+        .sort((a, b) => score(b) - score(a))
+        .slice(0, 15);
+
+      /* 💾 SAVE CACHE */
+      CACHE.trending = products;
+      CACHE.timestamp = now;
 
       return res.status(200).json({
         success: true,
-        count: products.length,
+        cached: false,
         data: products,
       });
     }
 
-    /* ================= SEO SYSTEM ================= */
+    /* ================= SEO ================= */
     if (action === "seo") {
       return res.status(200).json({
         success: true,
         data: {
           title: "Koloonline SEO Engine",
           status: "active",
-          indexedPages: 29,
-          mode: "production",
         },
       });
     }
 
-    /* ================= DEFAULT ================= */
     return res.status(400).json({
       success: false,
-      message: "Invalid action. Use: trending | seo | health",
+      message: "Invalid action",
     });
 
-  } catch (error) {
+  } catch (err) {
     return res.status(500).json({
       success: false,
-      error: error.message,
+      error: err.message,
     });
   }
 }
