@@ -3,17 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo, useEffect } from "react";
 
-/* ================= PERFORMANCE CONSTANTS ================= */
+/* ================= CONSTANTS ================= */
 
 const FALLBACK_IMAGE =
   "https://via.placeholder.com/300x300?text=Koloonline";
 
-/* ================= LIGHT HELPERS ================= */
+/* ================= HELPERS ================= */
 
 const getStr = (v) => (v ? String(v) : "");
 const getNum = (v) => (typeof v === "number" ? v : 0);
 
-/* ================= FAST TREND SCORE ================= */
+/* ================= TREND SCORE ================= */
 
 function trendScore(p) {
   return (
@@ -35,7 +35,6 @@ function Hero() {
         padding: 16,
         borderRadius: 12,
         marginBottom: 12,
-        willChange: "transform",
       }}
     >
       <h1 style={{ fontSize: 18, margin: 0 }}>
@@ -43,7 +42,7 @@ function Hero() {
       </h1>
 
       <p style={{ fontSize: 12, color: "#cbd5e1" }}>
-        AI-powered real-time ranking
+        AI-powered real-time ranking engine
       </p>
 
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
@@ -63,23 +62,21 @@ function Hero() {
 function ProductCard({ p }) {
   const title = getStr(p.title) || "Product";
   const id = getStr(p.id);
-  const image = p.image?.startsWith("http")
-    ? p.image
-    : FALLBACK_IMAGE;
+
+  const image =
+    typeof p.image === "string" && p.image.startsWith("http")
+      ? p.image
+      : FALLBACK_IMAGE;
 
   const price = getNum(p.price);
 
   return (
-    <Link
-      href={`/product/${id}`}
-      style={{ textDecoration: "none", color: "inherit" }}
-    >
+    <Link href={`/product/${id}`} style={{ textDecoration: "none" }}>
       <div
         style={{
           background: "#fff",
           borderRadius: 10,
           padding: 8,
-          contain: "content",
         }}
       >
         <div
@@ -103,7 +100,7 @@ function ProductCard({ p }) {
           />
         </div>
 
-        <h3 style={{ fontSize: 12, margin: "6px 0 0 0", minHeight: 32 }}>
+        <h3 style={{ fontSize: 12, margin: "6px 0 0 0" }}>
           {title.length > 55 ? title.slice(0, 55) + "..." : title}
         </h3>
 
@@ -117,22 +114,28 @@ function ProductCard({ p }) {
 
 /* ================= MAIN PAGE ================= */
 
-export default function Home({ products = [] }) {
+export default function Home() {
   const [search, setSearch] = useState("");
-  const [liveProducts, setLiveProducts] = useState(products);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD FROM API ================= */
+  /* ================= FETCH FROM SYSTEM API ================= */
   useEffect(() => {
     async function loadTrending() {
       try {
-        const res = await fetch("/api/trending");
+        const res = await fetch("/api/system?action=trending");
         const data = await res.json();
 
-        if (data?.success && Array.isArray(data.trending)) {
-          setLiveProducts(data.trending);
+        if (data?.success && Array.isArray(data.data)) {
+          setProducts(data.data);
+        } else {
+          setProducts([]);
         }
       } catch (err) {
-        console.error("Trending API Error:", err);
+        console.error("API Error:", err);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -141,7 +144,7 @@ export default function Home({ products = [] }) {
 
   /* ================= FILTER + SORT ================= */
   const trending = useMemo(() => {
-    let list = liveProducts;
+    let list = products;
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -155,13 +158,13 @@ export default function Home({ products = [] }) {
     return list
       .sort((a, b) => trendScore(b) - trendScore(a))
       .slice(0, 12);
-  }, [liveProducts, search]);
+  }, [products, search]);
 
   return (
     <div style={{ background: "#f5f5f5", fontFamily: "Arial" }}>
       <Head>
         <title>Koloonline</title>
-        <meta name="description" content="Best Amazon Deals AI" />
+        <meta name="description" content="AI Amazon Deals Engine" />
       </Head>
 
       {/* HEADER */}
@@ -199,18 +202,23 @@ export default function Home({ products = [] }) {
 
         <h2 style={{ fontSize: 15 }}>🔥 Trending Now</h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(140px,1fr))",
-            gap: 8,
-          }}
-        >
-          {trending.map((p) => (
-            <ProductCard key={p.id} p={p} />
-          ))}
-        </div>
+        {/* LOADING STATE */}
+        {loading ? (
+          <p>Loading trending products...</p>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(140px,1fr))",
+              gap: 8,
+            }}
+          >
+            {trending.map((p) => (
+              <ProductCard key={p.id} p={p} />
+            ))}
+          </div>
+        )}
       </main>
 
       {/* FOOTER */}
@@ -228,15 +236,4 @@ export default function Home({ products = [] }) {
       </footer>
     </div>
   );
-}
-
-/* ================= STATIC PROPS (FALLBACK ONLY) ================= */
-
-export async function getStaticProps() {
-  return {
-    props: {
-      products: [],
-    },
-    revalidate: 900,
-  };
-    }
+      }
