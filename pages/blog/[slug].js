@@ -1,25 +1,17 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useEffect } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
 
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-/* ================= ADSENSE BLOCK (SAFE + AUTO LOAD) ================= */
+/* ================= ADSENSE BLOCK ================= */
 function AdSenseBlock() {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
+  if (typeof window !== "undefined") {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (e) {}
-  }, []);
+  }
 
   return (
     <ins
@@ -55,22 +47,17 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
 
   const url = `https://koloonline.online/blog/${post.slug}`;
 
-  const readingTime = useMemo(
-    () => estimateReadingTime(post.content),
-    [post.content]
-  );
+  const readingTime = estimateReadingTime(post.content);
 
-  const publishedTime =
-    post.createdAt?.seconds
-      ? new Date(post.createdAt.seconds * 1000).toISOString()
-      : new Date().toISOString();
+  const publishedTime = post.createdAt?.seconds
+    ? new Date(post.createdAt.seconds * 1000).toISOString()
+    : new Date().toISOString();
 
-  const modifiedTime =
-    post.updatedAt?.seconds
-      ? new Date(post.updatedAt.seconds * 1000).toISOString()
-      : publishedTime;
+  const modifiedTime = post.updatedAt?.seconds
+    ? new Date(post.updatedAt.seconds * 1000).toISOString()
+    : publishedTime;
 
-  /* ================= SEO SCHEMA ================= */
+  /* ================= SCHEMA ================= */
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -93,7 +80,7 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
-      {/* ================= SEO BOOST ================= */}
+      {/* ================= SEO ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
 
@@ -108,14 +95,11 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
         <meta property="og:url" content={url} />
 
         <meta name="twitter:card" content="summary_large_image" />
-
         <link rel="canonical" href={url} />
 
-        {/* INDEXING BOOST */}
         <meta name="theme-color" content="#ff9900" />
         <meta name="author" content="Koloonline AI System" />
 
-        {/* SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -125,7 +109,7 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
       </Head>
 
       {/* ================= BREADCRUMB ================= */}
-      <div style={{ maxWidth: 1100, margin: "auto", padding: 15, fontSize: 14 }}>
+      <div style={{ maxWidth: 1100, margin: "auto", padding: 15 }}>
         <Link href="/">Home</Link> {" > "}
         <Link href="/blog">Blog</Link> {" > "}
         <span>{post.title}</span>
@@ -147,23 +131,33 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
         }}
       >
         {post.auto && (
-          <span style={{ background: "#0f9d58", color: "white", padding: 5, borderRadius: 8 }}>
+          <span
+            style={{
+              background: "#0f9d58",
+              color: "white",
+              padding: 5,
+              borderRadius: 8,
+            }}
+          >
             🔥 AI Generated Article
           </span>
         )}
 
-        <h1 style={{ fontSize: 34, marginTop: 20 }}>{post.title}</h1>
+        <h1 style={{ fontSize: 34 }}>{post.title}</h1>
 
         <p style={{ color: "gray" }}>
-          ⏱ {readingTime} min read • Published by Koloonline
+          ⏱ {readingTime} min read • Koloonline
         </p>
 
+        {/* IMAGE OPTIMIZED */}
         {post.image && (
-          <img
+          <Image
             src={post.image}
             alt={post.title}
-            loading="lazy"
-            style={{ width: "100%", borderRadius: 12, margin: "20px 0" }}
+            width={1200}
+            height={630}
+            priority
+            style={{ width: "100%", height: "auto", borderRadius: 12 }}
           />
         )}
 
@@ -172,7 +166,7 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
           style={{ fontSize: 18, lineHeight: 1.9 }}
         />
 
-        {/* ================= UX BOOST SECTION ================= */}
+        {/* ================= UX BOOST ================= */}
         <div
           style={{
             marginTop: 40,
@@ -183,7 +177,7 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
           }}
         >
           <h2>🧠 More Smart Shopping Guides</h2>
-          <p>Explore trending Amazon deals and AI-picked products</p>
+          <p>Explore trending Amazon deals</p>
 
           <Link href="/products">
             <button
@@ -221,9 +215,12 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
             {relatedProducts.map((p) => (
               <Link key={p.id} href={`/product/${p.id}`}>
                 <div style={{ background: "white", padding: 15, borderRadius: 10 }}>
-                  <img
+                  <Image
                     src={p.image}
-                    style={{ width: "100%", height: 180, objectFit: "cover" }}
+                    alt={p.title}
+                    width={300}
+                    height={300}
+                    style={{ width: "100%", height: "auto" }}
                   />
                   <h3>{p.title}</h3>
                   <p style={{ color: "#B12704" }}>${p.price}</p>
@@ -266,29 +263,43 @@ export default function BlogPost({ post, relatedPosts, relatedProducts }) {
   );
 }
 
-/* ================= DATA ================= */
-export async function getServerSideProps(context) {
-  const { slug } = context.params;
+/* ================= STATIC OPTIMIZATION ================= */
+export async function getStaticPaths() {
+  const snap = await getDocs(collection(db, "blog"));
 
+  const paths = snap.docs.map((doc) => ({
+    params: { slug: doc.data().slug },
+  }));
+
+  return {
+    paths,
+    fallback: "blocking",
+  };
+}
+
+export async function getStaticProps({ params }) {
   try {
-    const postsSnap = await getDocs(
-      query(collection(db, "blog"), where("slug", "==", slug), limit(1))
+    const snap = await getDocs(collection(db, "blog"));
+
+    const postDoc = snap.docs.find(
+      (d) => d.data().slug === params.slug
     );
 
-    if (postsSnap.empty) {
+    if (!postDoc) {
       return { props: { post: null, relatedPosts: [], relatedProducts: [] } };
     }
 
-    const post = { id: postsSnap.docs[0].id, ...postsSnap.docs[0].data() };
+    const post = {
+      id: postDoc.id,
+      ...postDoc.data(),
+    };
 
-    const relatedPostsSnap = await getDocs(query(collection(db, "blog"), limit(6)));
-
-    const relatedPosts = relatedPostsSnap.docs
+    const relatedPosts = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((p) => p.slug !== slug)
+      .filter((p) => p.slug !== params.slug)
       .slice(0, 4);
 
-    const productsSnap = await getDocs(query(collection(db, "products"), limit(8)));
+    const productsSnap = await getDocs(collection(db, "products"));
 
     const relatedProducts = productsSnap.docs.map((d) => ({
       id: d.id,
@@ -296,11 +307,17 @@ export async function getServerSideProps(context) {
     }));
 
     return {
-      props: { post, relatedPosts, relatedProducts },
+      props: {
+        post,
+        relatedPosts,
+        relatedProducts,
+      },
+      revalidate: 3600, // ISR = كل ساعة تحديث
     };
   } catch (e) {
     return {
       props: { post: null, relatedPosts: [], relatedProducts: [] },
+      revalidate: 60,
     };
   }
-    }
+      }
