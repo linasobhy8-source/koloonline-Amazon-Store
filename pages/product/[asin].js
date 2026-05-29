@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -11,12 +11,44 @@ import { db } from "../../config/firebase";
 const fallbackImage =
   "https://via.placeholder.com/600x600?text=Koloonline";
 
-/* ================= SAFE HELPERS ================= */
-function safeText(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  return "";
+/* ================= ADS ENGINE ================= */
+function getAdsSlots(type = "product") {
+  const map = {
+    product: ["under_title", "under_price", "mid_content"],
+  };
+
+  return map[type] || [];
+}
+
+function isAdsReady(product) {
+  if (!product) return false;
+
+  // approval boost logic (signals)
+  const hasTitle = !!product.title;
+  const hasImage = !!product.image;
+  const hasPrice = Number(product.price || 0) > 0;
+
+  return hasTitle && hasImage && hasPrice;
+}
+
+/* ================= ADS BLOCK ================= */
+function AdBox() {
+  useEffect(() => {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {}
+  }, []);
+
+  return (
+    <ins
+      className="adsbygoogle"
+      style={{ display: "block", textAlign: "center", margin: "10px 0" }}
+      data-ad-client="ca-pub-1294940976431468"
+      data-ad-slot="auto"
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    />
+  );
 }
 
 /* ================= STARS ================= */
@@ -35,18 +67,11 @@ function Stars({ rating = 4.5 }) {
   );
 }
 
-/* ================= AI DESCRIPTION ================= */
-function generateAIDescription(product) {
-  const title = safeText(product?.title) || "Amazon Product";
-
-  return `${title} is trending on Koloonline with high engagement and strong conversion signals.`;
-}
-
 /* ================= WHATSAPP ================= */
 function sendWhatsApp(product) {
   const msg = `🔥 Deal Alert:
 
-${safeText(product?.title)}
+${product?.title}
 💰 Price: $${product?.price || 0}
 🔗 ${product?.link || ""}`;
 
@@ -64,27 +89,20 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD PRODUCT (FIXED) ================= */
+  /* ================= LOAD PRODUCT ================= */
   useEffect(() => {
     if (!router.isReady || !asin) return;
 
     const load = async () => {
       try {
-        /* ✅ FIX: asin is DOCUMENT ID (NOT query) */
         const ref = doc(db, "products", String(asin));
         const snap = await getDoc(ref);
 
         if (snap.exists()) {
-          setProduct({
-            id: snap.id,
-            ...snap.data(),
-          });
+          setProduct({ id: snap.id, ...snap.data() });
         } else {
           setProduct(null);
         }
-      } catch (err) {
-        console.error("Product Load Error:", err);
-        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -93,31 +111,17 @@ export default function ProductPage() {
     load();
   }, [router.isReady, asin]);
 
-  /* ================= LOADING ================= */
-  if (loading) {
-    return <div style={{ padding: 40 }}>Loading...</div>;
-  }
+  if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
+  if (!product) return <div style={{ padding: 40 }}>Product Not Found</div>;
 
-  /* ================= NOT FOUND ================= */
-  if (!product) {
-    return (
-      <div style={{ padding: 40 }}>
-        <h2>😢 Product Not Found</h2>
-        <Link href="/">🏠 Go Home</Link>
-      </div>
-    );
-  }
+  /* ================= ADS LOGIC ================= */
+  const adsSlots = getAdsSlots("product");
+  const showAds = isAdsReady(product);
 
-  /* ================= SAFE DATA ================= */
-  const title = safeText(product.title) || "Amazon Product";
+  const title = product.title;
   const price = Number(product.price || 0);
   const rating = Number(product.rating || 4.5);
-  const description = generateAIDescription(product);
-
-  const image =
-    typeof product.image === "string"
-      ? product.image
-      : fallbackImage;
+  const image = product.image || fallbackImage;
 
   const url = `https://koloonline.online/product/${asin}`;
 
@@ -127,18 +131,10 @@ export default function ProductPage() {
       {/* ================= SEO ================= */}
       <Head>
         <title>{title} | Koloonline Deal</title>
-
-        <meta name="description" content={description} />
-        <meta name="robots" content="index,follow" />
+        <meta name="description" content={product.description || title} />
         <link rel="canonical" href={url} />
-
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={image || fallbackImage} />
-        <meta property="og:type" content="product" />
       </Head>
 
-      {/* ================= CONTAINER ================= */}
       <div style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
 
         <div style={{
@@ -152,51 +148,38 @@ export default function ProductPage() {
 
           {/* IMAGE */}
           <div style={{ flex: 1 }}>
-            <Image
-              src={image}
-              width={500}
-              height={500}
-              alt={title}
-              style={{ width: "100%", height: "auto" }}
-            />
+            <Image src={image} width={500} height={500} alt={title} />
           </div>
 
           {/* INFO */}
           <div style={{ flex: 1 }}>
 
-            <h1 style={{ fontSize: 32 }}>
-              {title}
-            </h1>
+            {/* ================= ADS UNDER TITLE ================= */}
+            <h1 style={{ fontSize: 32 }}>{title}</h1>
+
+            {showAds && adsSlots.includes("under_title") && (
+              <AdBox />
+            )}
 
             <Stars rating={rating} />
 
+            {/* ================= PRICE ================= */}
             <h2 style={{ color: "#B12704", fontSize: 36 }}>
               ${price}
             </h2>
 
-            <p style={{ marginTop: 15, color: "#444" }}>
-              {description}
-            </p>
+            {/* ================= ADS UNDER PRICE ================= */}
+            {showAds && adsSlots.includes("under_price") && (
+              <AdBox />
+            )}
 
-            {/* TRUST */}
-            <div style={{ marginTop: 20 }}>
-              <p>✅ Fast Delivery</p>
-              <p>🔥 Trending Product</p>
-              <p>💰 Best Amazon Price</p>
-            </div>
+            <p style={{ marginTop: 15 }}>
+              {product.description}
+            </p>
 
             {/* BUY BUTTON */}
             <button
               onClick={() => {
-                fetch("/api/track-event", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    type: "affiliate_click",
-                    asin,
-                  }),
-                });
-
                 window.open(product.link, "_blank");
               }}
               style={{
@@ -210,7 +193,7 @@ export default function ProductPage() {
                 cursor: "pointer",
               }}
             >
-              🛒 Buy Now on Amazon
+              🛒 Buy Now
             </button>
 
             {/* WHATSAPP */}
@@ -233,16 +216,21 @@ export default function ProductPage() {
           </div>
         </div>
 
+        {/* ================= MID ADS ================= */}
+        {showAds && adsSlots.includes("mid_content") && (
+          <div style={{ marginTop: 30 }}>
+            <AdBox />
+          </div>
+        )}
+
         {/* LINKS */}
         <div style={{ marginTop: 40 }}>
           <h2>🔥 Related Guides</h2>
-
           <Link href="/blog/best-smart-watches">Best Smart Watches</Link><br />
-          <Link href="/blog/viral-products-amazon">Viral Amazon Products</Link><br />
-          <Link href="/blog/best-headphones-2026">Best Headphones</Link>
+          <Link href="/blog/viral-products-amazon">Viral Products</Link><br />
         </div>
 
       </div>
     </div>
   );
-}
+        }
