@@ -11,17 +11,13 @@ const fallbackImage =
 
 /* ================= ADS ENGINE ================= */
 function getAdsSlots(type = "product") {
-  const map = {
+  return {
     product: ["under_title", "under_price", "mid_content"],
-  };
-
-  return map[type] || [];
+  }[type] || [];
 }
 
 function isAdsReady(product) {
-  if (!product) return false;
-
-  return !!product.title && !!product.image && Number(product.price || 0) > 0;
+  return !!(product?.title && product?.image && product?.price);
 }
 
 /* ================= ADS BOX ================= */
@@ -79,9 +75,8 @@ export default function ProductPage({ product }) {
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
-      {/* ================= SEO ================= */}
       <Head>
-        <title>{title} | Koloonline Deal</title>
+        <title>{title} | Koloonline</title>
         <meta name="description" content={product.description || title} />
         <link rel="canonical" href={url} />
       </Head>
@@ -123,3 +118,76 @@ export default function ProductPage({ product }) {
             </h2>
 
             {showAds && adsSlots.includes("under_price") && <AdBox />}
+
+            <p style={{ marginTop: 15 }}>{product.description}</p>
+
+            {/* BUY */}
+            <button
+              onClick={() => window.open(product.link, "_blank")}
+              style={{
+                width: "100%",
+                padding: 16,
+                background: "#ff9900",
+                color: "white",
+                border: "none",
+                marginTop: 20,
+                fontSize: 18,
+              }}
+            >
+              🛒 Buy Now
+            </button>
+          </div>
+        </div>
+
+        {/* MID ADS */}
+        {showAds && adsSlots.includes("mid_content") && (
+          <div style={{ marginTop: 30 }}>
+            <AdBox />
+          </div>
+        )}
+
+        {/* LINKS */}
+        <div style={{ marginTop: 40 }}>
+          <h2>🔥 Related Guides</h2>
+          <Link href="/blog/best-smart-watches">Best Smart Watches</Link>
+          <br />
+          <Link href="/blog/viral-products-amazon">Viral Products</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= STATIC ================= */
+export async function getStaticPaths() {
+  const snap = await getDocs(collection(db, "products"));
+
+  const paths = snap.docs.map((d) => ({
+    params: { asin: d.id },
+  }));
+
+  return {
+    paths,
+    fallback: "blocking",
+  };
+}
+
+export async function getStaticProps({ params }) {
+  const snap = await getDocs(collection(db, "products"));
+
+  const productDoc = snap.docs.find((d) => d.id === params.asin);
+
+  if (!productDoc) {
+    return { props: { product: null }, revalidate: 60 };
+  }
+
+  return {
+    props: {
+      product: {
+        id: productDoc.id,
+        ...productDoc.data(),
+      },
+    },
+    revalidate: 3600,
+  };
+}
