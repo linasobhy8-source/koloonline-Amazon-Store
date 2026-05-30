@@ -1,8 +1,13 @@
-import autoGenerate from "./auto-create-page";
-import syncProducts from "./sync-products";
-import feed from "./feed";
-import indexNow from "./indexnow";
-import autoPublish from "./auto-publish";
+/* ================= SAFE DYNAMIC LOADER ================= */
+
+async function safeImport(path) {
+  try {
+    const mod = await import(path);
+    return mod?.default || mod;
+  } catch (err) {
+    return null;
+  }
+}
 
 /* ================= SAFE WRAPPER ================= */
 
@@ -32,6 +37,21 @@ async function runSafe(fn, name, req, res) {
 
 export default async function handler(req, res) {
   try {
+    // 🔥 تحميل آمن بدل imports الثابتة
+    const [
+      autoGenerate,
+      syncProducts,
+      feed,
+      indexNow,
+      autoPublish,
+    ] = await Promise.all([
+      safeImport("./auto-create-page"),
+      safeImport("./sync-products"),
+      safeImport("./feed"),
+      safeImport("./indexnow"),
+      safeImport("./auto-publish"),
+    ]);
+
     const results = await Promise.allSettled([
       runSafe(autoGenerate, "autoGenerate", req, res),
       runSafe(syncProducts, "syncProducts", req, res),
@@ -48,14 +68,15 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 Master pipeline executed successfully",
+      message: "🔥 Master pipeline executed safely (no hard dependency crashes)",
       timestamp: Date.now(),
       results: formatted,
     });
+
   } catch (e) {
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-}
+                                  }
