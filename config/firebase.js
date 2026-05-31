@@ -11,7 +11,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/* ================= INIT SAFELY ================= */
+/* ================= SINGLETON ================= */
 const app = !getApps().length
   ? initializeApp(firebaseConfig)
   : getApps()[0];
