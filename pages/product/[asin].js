@@ -47,8 +47,41 @@ function Stars({ rating = 4.5 }) {
   return (
     <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
       <span style={{ color: "#FFA41C" }}>{"★".repeat(full)}</span>
-      <span style={{ fontSize: 14, color: "#666" }}>{rating}/5</span>
+      <span style={{ fontSize: 14, color: "#666" }}>
+        {rating}/5
+      </span>
     </div>
+  );
+}
+
+/* ================= WHATSAPP ================= */
+function sendWhatsApp(product) {
+  try {
+    fetch("/api/track-event", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "whatsapp_click",
+        asin: product.id,
+      }),
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const message = `🔥 Product Interest
+
+${product.title}
+
+Price: $${product.price}
+
+${product.link}`;
+
+  window.open(
+    `https://wa.me/201234567890?text=${encodeURIComponent(message)}`,
+    "_blank"
   );
 }
 
@@ -77,7 +110,10 @@ export default function ProductPage({ product }) {
     <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
       <Head>
         <title>{title} | Koloonline</title>
-        <meta name="description" content={product.description || title} />
+        <meta
+          name="description"
+          content={product.description || title}
+        />
         <link rel="canonical" href={url} />
       </Head>
 
@@ -105,25 +141,53 @@ export default function ProductPage({ product }) {
 
           {/* INFO */}
           <div style={{ flex: 1 }}>
-            {/* TITLE */}
             <h1 style={{ fontSize: 32 }}>{title}</h1>
 
-            {showAds && adsSlots.includes("under_title") && <AdBox />}
+            {showAds &&
+              adsSlots.includes("under_title") && <AdBox />}
 
             <Stars rating={rating} />
 
-            {/* PRICE */}
-            <h2 style={{ color: "#B12704", fontSize: 36 }}>
+            <h2
+              style={{
+                color: "#B12704",
+                fontSize: 36,
+              }}
+            >
               ${price}
             </h2>
 
-            {showAds && adsSlots.includes("under_price") && <AdBox />}
+            {showAds &&
+              adsSlots.includes("under_price") && <AdBox />}
 
-            <p style={{ marginTop: 15 }}>{product.description}</p>
+            <p style={{ marginTop: 15 }}>
+              {product.description}
+            </p>
 
             {/* BUY */}
             <button
-              onClick={() => window.open(product.link, "_blank")}
+              onClick={async () => {
+                try {
+                  await fetch("/api/track-event", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type":
+                        "application/json",
+                    },
+                    body: JSON.stringify({
+                      type: "affiliate_click",
+                      asin: product.id,
+                    }),
+                  });
+                } catch (e) {
+                  console.error(e);
+                }
+
+                window.open(
+                  product.link,
+                  "_blank"
+                );
+              }}
               style={{
                 width: "100%",
                 padding: 16,
@@ -132,26 +196,52 @@ export default function ProductPage({ product }) {
                 border: "none",
                 marginTop: 20,
                 fontSize: 18,
+                cursor: "pointer",
               }}
             >
               🛒 Buy Now
+            </button>
+
+            {/* WHATSAPP */}
+            <button
+              onClick={() => sendWhatsApp(product)}
+              style={{
+                width: "100%",
+                padding: 16,
+                background: "#25D366",
+                color: "white",
+                border: "none",
+                marginTop: 10,
+                fontSize: 18,
+                cursor: "pointer",
+              }}
+            >
+              💬 Order via WhatsApp
             </button>
           </div>
         </div>
 
         {/* MID ADS */}
-        {showAds && adsSlots.includes("mid_content") && (
-          <div style={{ marginTop: 30 }}>
-            <AdBox />
-          </div>
-        )}
+        {showAds &&
+          adsSlots.includes("mid_content") && (
+            <div style={{ marginTop: 30 }}>
+              <AdBox />
+            </div>
+          )}
 
         {/* LINKS */}
         <div style={{ marginTop: 40 }}>
           <h2>🔥 Related Guides</h2>
-          <Link href="/blog/best-smart-watches">Best Smart Watches</Link>
+
+          <Link href="/blog/best-smart-watches">
+            Best Smart Watches
+          </Link>
+
           <br />
-          <Link href="/blog/viral-products-amazon">Viral Products</Link>
+
+          <Link href="/blog/viral-products-amazon">
+            Viral Products
+          </Link>
         </div>
       </div>
     </div>
@@ -160,7 +250,9 @@ export default function ProductPage({ product }) {
 
 /* ================= STATIC ================= */
 export async function getStaticPaths() {
-  const snap = await getDocs(collection(db, "products"));
+  const snap = await getDocs(
+    collection(db, "products")
+  );
 
   const paths = snap.docs.map((d) => ({
     params: { asin: d.id },
@@ -173,12 +265,19 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  const snap = await getDocs(collection(db, "products"));
+  const snap = await getDocs(
+    collection(db, "products")
+  );
 
-  const productDoc = snap.docs.find((d) => d.id === params.asin);
+  const productDoc = snap.docs.find(
+    (d) => d.id === params.asin
+  );
 
   if (!productDoc) {
-    return { props: { product: null }, revalidate: 60 };
+    return {
+      props: { product: null },
+      revalidate: 60,
+    };
   }
 
   return {
@@ -190,4 +289,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-}
+        }
