@@ -7,7 +7,6 @@ import {
   limit,
 } from "firebase/firestore";
 
-/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -20,127 +19,73 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
-/* ================= SELF MEMORY CACHE ================= */
-let MEMORY = {
+/* ================= CACHE SYSTEM ================= */
+let CACHE = {
   feed: null,
   ts: 0,
-  patternBoost: {},
 };
 
-const CACHE_TIME = 60 * 1000;
+const CACHE_TIME = 60 * 1000; // 1 min
 
-/* ================= CORE SIGNALS ================= */
-function signals(p) {
+/* ================= REVENUE AI SCORE v3 ================= */
+function aiScore(p) {
   const views = p.views || 0;
   const clicks = p.clicks || 0;
   const orders = p.orders || 0;
 
-  const ctr = views ? clicks / views : 0;
-  const conv = clicks ? orders / clicks : 0;
+  const ctr = views > 0 ? clicks / views : 0;
+  const conv = clicks > 0 ? orders / clicks : 0;
 
-  const freshness = p.createdAt
-    ? Math.max(
-        0,
-        1 - (Date.now() - p.createdAt) / 86400000
-      )
+  const ageBoost = p.createdAt
+    ? Math.max(0, 1 - (Date.now() - p.createdAt) / 86400000)
     : 0.5;
 
-  return { views, clicks, orders, ctr, conv, freshness };
-}
+  const viral = p.viralBoost ? 2.2 : 1;
 
-/* ================= AI CORE SCORE ================= */
-function baseAI(p, s) {
+  // 🔥 Revenue-weighted scoring (optimized for money, not views)
   return (
-    s.views * 0.2 +
-    s.clicks * 1.8 +
-    s.orders * 6 +
-    s.ctr * 150 +
-    s.conv * 250 +
-    s.freshness * 70
-  );
+    views * 0.15 +
+    clicks * 2.2 +
+    orders * 6.5 +
+    ctr * 120 +
+    conv * 180 +
+    ageBoost * 60
+  ) * viral;
 }
 
-/* ================= VIRAL INTELLIGENCE ================= */
-function viralAI(p, s) {
-  const momentum =
-    s.clicks * 0.6 +
-    s.orders * 3 +
-    s.views * 0.15;
+/* ================= SMART FEED ENGINE ================= */
+function buildFeed(products, page = 1, pageSize = 15) {
+  const start = (page - 1) * pageSize;
 
-  const trend =
-    p.viralBoost ? 2.5 : p.trending ? 1.8 : 1;
-
-  return momentum * trend;
+  return {
+    data: products.slice(start, start + pageSize),
+    hasMore: start + pageSize < products.length,
+  };
 }
 
-/* ================= PROFIT ENGINE ================= */
-function profitAI(p, s) {
-  const price = Number(p.price || 0);
-  const margin = price * 0.05;
-
-  return margin * (s.orders + 1);
-}
-
-/* ================= SELF LEARNING BOOST ================= */
-function memoryBoost(p) {
-  return MEMORY.patternBoost[p.id] || 1;
-}
-
-/* ================= FINAL BRAIN ================= */
-function finalAI(p) {
-  const s = signals(p);
-
-  const base = baseAI(p, s);
-  const viral = viralAI(p, s);
-  const profit = profitAI(p, s);
-
-  const memory = memoryBoost(p);
-
-  return (
-    (base * 1.3 + viral * 1.7 + profit * 2.2) *
-    memory *
-    (p.viralBoost ? 1.5 : 1)
-  );
-}
-
-/* ================= MEMORY UPDATE ================= */
-function updateMemory(products) {
-  products.slice(0, 10).forEach((p, i) => {
-    const boost = 1 + (10 - i) * 0.05;
-    MEMORY.patternBoost[p.id] = boost;
-  });
-}
-
-/* ================= HANDLER ================= */
+/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
+    /* ================= AI FEED ================= */
     if (action === "feed") {
       const page = Number(req.query.page || 1);
       const pageSize = 15;
 
-      /* CACHE HIT */
-      if (
-        MEMORY.feed &&
-        Date.now() - MEMORY.ts < CACHE_TIME
-      ) {
-        const start = (page - 1) * pageSize;
+      // 🔥 CACHE HIT
+      if (CACHE.feed && Date.now() - CACHE.ts < CACHE_TIME) {
+        const result = buildFeed(CACHE.feed, page, pageSize);
 
-        return res.json({
+        return res.status(200).json({
           success: true,
-          source: "v3-cache-ai",
+          source: "cache",
           page,
-          hasMore:
-            start + pageSize < MEMORY.feed.length,
-          data: MEMORY.feed.slice(
-            start,
-            start + pageSize
-          ),
+          ...result,
         });
       }
 
-      /* FETCH */
+      // 🔥 FETCH DATA
       const snap = await getDocs(
         query(collection(db, "products"), limit(200))
       );
@@ -150,50 +95,56 @@ export default async function handler(req, res) {
         ...d.data(),
       }));
 
-      /* ================= AI BRAIN ================= */
-      products = products.map((p) => {
-        const score = finalAI(p);
-
-        return {
+      // 🔥 AI SORT (Revenue-first)
+      products = products
+        .map((p) => ({
           ...p,
-          score,
-          viralScore: viralAI(p, signals(p)),
-          profitScore: profitAI(p, signals(p)),
-          ctr: signals(p).ctr,
-          conv: signals(p).conv,
-        };
-      });
+          _score: aiScore(p),
+        }))
+        .sort((a, b) => b._score - a._score);
 
-      /* ================= SORT ================= */
-      products.sort((a, b) => b.score - a.score);
-
-      /* ================= MEMORY LEARN ================= */
-      updateMemory(products);
-
-      /* ================= SAVE MEMORY ================= */
-      MEMORY = {
+      // 🔥 CACHE STORE
+      CACHE = {
         feed: products,
         ts: Date.now(),
-        patternBoost: MEMORY.patternBoost,
       };
 
-      const start = (page - 1) * pageSize;
+      const result = buildFeed(products, page, pageSize);
 
-      return res.json({
+      return res.status(200).json({
         success: true,
-        source: "AUTONOMOUS-AGENT-V3",
+        source: "live",
         page,
-        hasMore:
-          start + pageSize < products.length,
-        intelligence: {
-          learning: true,
-          viralEngine: true,
-          profitEngine: true,
-        },
-        data: products.slice(start, pageSize),
+        ...result,
       });
     }
 
+    /* ================= REVENUE INSIGHTS ================= */
+    if (action === "insights") {
+      const snap = await getDocs(collection(db, "products"));
+
+      let products = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      const totalViews = products.reduce((a, p) => a + (p.views || 0), 0);
+      const totalClicks = products.reduce((a, p) => a + (p.clicks || 0), 0);
+      const totalOrders = products.reduce((a, p) => a + (p.orders || 0), 0);
+
+      return res.status(200).json({
+        success: true,
+        revenue: {
+          ctr: totalViews ? totalClicks / totalViews : 0,
+          conversion: totalClicks ? totalOrders / totalClicks : 0,
+          totalViews,
+          totalClicks,
+          totalOrders,
+        },
+      });
+    }
+
+    /* ================= DEFAULT ================= */
     return res.status(400).json({
       success: false,
       message: "Invalid action",
@@ -204,4 +155,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-     }
+        }
