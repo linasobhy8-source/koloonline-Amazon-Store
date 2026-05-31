@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
@@ -11,22 +11,22 @@ const fallbackImage =
   "https://via.placeholder.com/600x600?text=Koloonline";
 
 /* ================= ADS ENGINE ================= */
-function getAdsSlots(type = "product") {
-  return {
-    product: ["under_title", "under_price", "mid_content"],
-  }[type] || [];
-}
+const ADS_SLOTS = {
+  product: ["under_title", "under_price", "mid_content"],
+};
 
-function isAdsReady(product) {
-  return !!(product?.title && product?.image && product?.price);
+function getAdsSlots(type = "product") {
+  return ADS_SLOTS[type] || [];
 }
 
 /* ================= ADS BOX (OPTIMIZED) ================= */
 function AdBox() {
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {}
+    } catch (_) {}
   }, []);
 
   return (
@@ -35,7 +35,7 @@ function AdBox() {
       style={{
         display: "block",
         textAlign: "center",
-        margin: "10px 0",
+        margin: "12px 0",
         minHeight: "90px",
       }}
       data-ad-client="ca-pub-1294940976431468"
@@ -51,8 +51,10 @@ function Stars({ rating = 4.5 }) {
   const full = Math.floor(Number(rating || 0));
 
   return (
-    <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-      <span style={{ color: "#FFA41C" }}>{"★".repeat(full)}</span>
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <span style={{ color: "#FFA41C" }}>
+        {"★".repeat(full)}
+      </span>
       <span style={{ fontSize: 14, color: "#666" }}>
         {rating}/5
       </span>
@@ -60,18 +62,16 @@ function Stars({ rating = 4.5 }) {
   );
 }
 
-/* ================= WHATSAPP ================= */
+/* ================= WHATSAPP TRACK ================= */
 function sendWhatsApp(product) {
-  try {
-    fetch("/api/track-event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "whatsapp_click",
-        asin: product.id,
-      }),
-    });
-  } catch (e) {}
+  fetch("/api/track-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "whatsapp_click",
+      asin: product.id,
+    }),
+  }).catch(() => {});
 
   const message = `🔥 Product Interest
 
@@ -90,6 +90,9 @@ ${product.link}`;
 
 /* ================= PAGE ================= */
 export default function ProductPage({ product }) {
+  const adsSlots = useMemo(() => getAdsSlots("product"), []);
+  const showAds = !!product?.title && !!product?.price;
+
   if (!product) {
     return (
       <div style={{ padding: 40 }}>
@@ -99,9 +102,6 @@ export default function ProductPage({ product }) {
     );
   }
 
-  const adsSlots = getAdsSlots("product");
-  const showAds = isAdsReady(product);
-
   const title = product.title;
   const price = Number(product.price || 0);
   const rating = Number(product.rating || 4.5);
@@ -110,26 +110,12 @@ export default function ProductPage({ product }) {
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
-    <div
-      style={{
-        fontFamily: "Arial",
-        background: "#f4f6f9",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
       <Head>
         <title>{title} | Koloonline</title>
 
-        <meta
-          name="description"
-          content={product.description || title}
-        />
-
+        <meta name="description" content={product.description || title} />
         <meta property="og:title" content={title} />
-        <meta
-          property="og:description"
-          content={product.description || title}
-        />
         <meta property="og:image" content={image} />
         <meta property="og:url" content={url} />
         <meta property="og:type" content="product" />
@@ -141,7 +127,7 @@ export default function ProductPage({ product }) {
 
         <link rel="canonical" href={url} />
 
-        {/* SEO Schema */}
+        {/* SEO JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -149,15 +135,14 @@ export default function ProductPage({ product }) {
               "@context": "https://schema.org",
               "@type": "Product",
               name: title,
-              image: image,
+              image,
               description: product.description || title,
               sku: product.id,
               offers: {
                 "@type": "Offer",
                 priceCurrency: "USD",
-                price: price,
-                availability:
-                  "https://schema.org/InStock",
+                price,
+                availability: "https://schema.org/InStock",
                 url,
               },
               aggregateRating: {
@@ -170,10 +155,16 @@ export default function ProductPage({ product }) {
         />
       </Head>
 
-      <div style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "auto",
+          padding: 20,
+        }}
+      >
         <div
           style={{
-            background: "white",
+            background: "#fff",
             padding: 25,
             borderRadius: 20,
             display: "flex",
@@ -183,7 +174,7 @@ export default function ProductPage({ product }) {
           }}
         >
           {/* IMAGE */}
-          <div style={{ flex: 1, minHeight: 500 }}>
+          <div style={{ flex: 1 }}>
             <Image
               src={image}
               width={500}
@@ -204,26 +195,19 @@ export default function ProductPage({ product }) {
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 32 }}>{title}</h1>
 
-            {showAds &&
-              adsSlots.includes("under_title") && (
-                <AdBox />
-              )}
+            {showAds && adsSlots.includes("under_title") && (
+              <AdBox />
+            )}
 
             <Stars rating={rating} />
 
-            <h2
-              style={{
-                color: "#B12704",
-                fontSize: 36,
-              }}
-            >
+            <h2 style={{ color: "#B12704", fontSize: 36 }}>
               ${price}
             </h2>
 
-            {showAds &&
-              adsSlots.includes("under_price") && (
-                <AdBox />
-              )}
+            {showAds && adsSlots.includes("under_price") && (
+              <AdBox />
+            )}
 
             <p style={{ marginTop: 15 }}>
               {product.description}
@@ -231,32 +215,25 @@ export default function ProductPage({ product }) {
 
             {/* BUY */}
             <button
-              onClick={async () => {
-                try {
-                  await fetch("/api/track-event", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type":
-                        "application/json",
-                    },
-                    body: JSON.stringify({
-                      type: "affiliate_click",
-                      asin: product.id,
-                    }),
-                  });
-                } catch (e) {}
+              onClick={() => {
+                fetch("/api/track-event", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    type: "affiliate_click",
+                    asin: product.id,
+                  }),
+                }).catch(() => {});
 
-                window.open(
-                  product.link,
-                  "_blank",
-                  "noopener,noreferrer"
-                );
+                window.open(product.link, "_blank", "noopener,noreferrer");
               }}
               style={{
                 width: "100%",
                 padding: 16,
                 background: "#ff9900",
-                color: "white",
+                color: "#fff",
                 border: "none",
                 marginTop: 20,
                 fontSize: 18,
@@ -273,7 +250,7 @@ export default function ProductPage({ product }) {
                 width: "100%",
                 padding: 16,
                 background: "#25D366",
-                color: "white",
+                color: "#fff",
                 border: "none",
                 marginTop: 10,
                 fontSize: 18,
@@ -286,12 +263,11 @@ export default function ProductPage({ product }) {
         </div>
 
         {/* MID ADS */}
-        {showAds &&
-          adsSlots.includes("mid_content") && (
-            <div style={{ marginTop: 30 }}>
-              <AdBox />
-            </div>
-          )}
+        {showAds && adsSlots.includes("mid_content") && (
+          <div style={{ marginTop: 30 }}>
+            <AdBox />
+          </div>
+        )}
 
         {/* LINKS */}
         <div style={{ marginTop: 40 }}>
@@ -312,18 +288,14 @@ export default function ProductPage({ product }) {
   );
 }
 
-/* ================= STATIC ================= */
+/* ================= STATIC OPTIMIZED ================= */
 export async function getStaticPaths() {
   const snap = await getDocs(collection(db, "products"));
 
-  const paths = snap.docs
-    .slice(0, 1000)
-    .map((d) => ({
-      params: { asin: d.id },
-    }));
-
   return {
-    paths,
+    paths: snap.docs.slice(0, 300).map((d) => ({
+      params: { asin: d.id },
+    })),
     fallback: "blocking",
   };
 }
@@ -351,4 +323,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-        }
+    }
