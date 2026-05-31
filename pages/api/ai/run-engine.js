@@ -1,4 +1,4 @@
-import { autonomousRevenueEngine } from "@/lib/ai/autonomousRevenueEngine";
+import { autonomousRevenueEngine } from "lib/ai/autonomousRevenueEngine";
 
 export default async function handler(req, res) {
   try {
