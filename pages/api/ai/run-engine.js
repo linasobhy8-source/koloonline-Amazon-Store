@@ -1,4 +1,4 @@
-import { autonomousRevenueEngine } from "lib/ai/autonomousRevenueEngine";
+import { autonomousRevenueEngine } from "../../../lib/ai/autonomousRevenueEngine";
 
 export default async function handler(req, res) {
   try {
@@ -7,7 +7,10 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       result,
+      level: 20,
+      architecture: "stable-import-system",
     });
+
   } catch (e) {
     return res.status(500).json({
       success: false,
