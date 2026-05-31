@@ -20,15 +20,15 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    // ================= SAFE DEFAULT =================
+    // ================= SAFE DATA =================
     const safeProducts = Array.isArray(products) ? products : [];
 
     // ================= VALIDATION =================
     if (typeof buildSeoClusters !== "function") {
-      throw new Error("buildSeoClusters is not a valid function (check aiSeoCluster export)");
+      throw new Error("buildSeoClusters missing or not exported correctly");
     }
 
-    // ================= ENGINE EXECUTION =================
+    // ================= ENGINE =================
     const clusters = buildSeoClusters(safeProducts);
 
     const safeClusters = Array.isArray(clusters) ? clusters : [];
