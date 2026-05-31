@@ -73,7 +73,6 @@ export default function ProductPage({ product, allProducts }) {
   if (!product) return <div>Not Found</div>;
 
   const price = Number(product.price || 0);
-  const url = `https://koloonline.online/product/${product.id}`;
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
@@ -85,7 +84,12 @@ export default function ProductPage({ product, allProducts }) {
       <div style={{ maxWidth: 1100, margin: "auto", padding: 20 }}>
         {/* ================= MAIN PRODUCT ================= */}
         <div style={{ display: "flex", gap: 20, background: "white", padding: 20 }}>
-          <Image src={product.image || fallbackImage} width={400} height={400} />
+          <Image
+            src={product.image || fallbackImage}
+            width={400}
+            height={400}
+            alt={product.title}
+          />
 
           <div style={{ flex: 1 }}>
             <h1>{product.title}</h1>
@@ -94,7 +98,6 @@ export default function ProductPage({ product, allProducts }) {
 
             <h2 style={{ color: "#B12704" }}>${price}</h2>
 
-            {/* 🔥 AI URGENCY */}
             <p style={{ color: "red", fontWeight: "bold" }}>
               {engine?.urgency}
             </p>
@@ -107,6 +110,7 @@ export default function ProductPage({ product, allProducts }) {
                 background: "#ff9900",
                 border: 0,
                 marginTop: 10,
+                cursor: "pointer",
               }}
             >
               🛒 Buy Now
@@ -114,7 +118,7 @@ export default function ProductPage({ product, allProducts }) {
           </div>
         </div>
 
-        {/* ================= UPSELL ENGINE ================= */}
+        {/* ================= UPSSELL ================= */}
         <div style={{ marginTop: 30 }}>
           <h2>🔥 Better Deals (AI Picks)</h2>
 
@@ -129,7 +133,7 @@ export default function ProductPage({ product, allProducts }) {
           </div>
         </div>
 
-        {/* ================= CHEAPER ALTERNATIVES ================= */}
+        {/* ================= CHEAPER ================= */}
         <div style={{ marginTop: 30 }}>
           <h2>💰 Budget Options</h2>
 
@@ -144,43 +148,50 @@ export default function ProductPage({ product, allProducts }) {
           </div>
         </div>
 
-        {/* ================= ADS BOOST SECTION ================= */}
         <div style={{ marginTop: 40 }}>
           <AdBox />
-        </div>
-
-        {/* ================= SEO CONTENT ================= */}
-        <div style={{ marginTop: 40, background: "white", padding: 20 }}>
-          <h2>Why Buy This?</h2>
-          <p>
-            This product is trending and optimized for conversion.
-            Compare alternatives before buying.
-          </p>
         </div>
       </div>
     </div>
   );
 }
 
-/* ================= DATA ================= */
-export async function getStaticProps({ params }) {
+/* ================= STATIC PATHS (FIX IS HERE 🔥) ================= */
+export async function getStaticPaths() {
   const snap = await getDocs(collection(db, "products"));
 
-  const productDoc = snap.docs.find((d) => d.id === params.asin);
+  const paths = snap.docs.map((d) => ({
+    params: { asin: d.id },
+  }));
+
+  return {
+    paths,
+    fallback: "blocking",
+  };
+}
+
+/* ================= STATIC PROPS ================= */
+export async function getStaticProps({ params }) {
+  const snap = await getDocs(collection(db, "products"));
 
   const allProducts = snap.docs.map((d) => ({
     id: d.id,
     ...d.data(),
   }));
 
+  const productDoc = allProducts.find((p) => p.id === params.asin);
+
   if (!productDoc) {
-    return { props: { product: null, allProducts: [] } };
+    return {
+      notFound: true,
+    };
   }
 
   return {
     props: {
-      product: { id: productDoc.id, ...productDoc.data() },
+      product: productDoc,
       allProducts,
     },
+    revalidate: 3600,
   };
-          }
+        }
