@@ -1,16 +1,6 @@
-const nextConfig = {
+module.exports = {
   reactStrictMode: true,
-  compress: true,
-  poweredByHeader: false,
-
-  images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60,
-  },
-
   experimental: {
-    scrollRestoration: true,
+    esmExternals: "loose",
   },
 };
-
-module.exports = nextConfig;
