@@ -3,7 +3,7 @@ import { db } from "../../config/firebase";
 import { buildSeoClusters } from "../../../lib/seo/aiSeoCluster";
 
 export default async function handler(req, res) {
-  // Allow only GET
+  // ================= METHOD GUARD =================
   if (req.method !== "GET") {
     return res.status(405).json({
       success: false,
@@ -20,24 +20,31 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    // ================= VALIDATION =================
-    if (!Array.isArray(products)) {
-      throw new Error("Invalid products data");
+    // ================= SAFETY CHECK =================
+    if (!products) {
+      return res.status(200).json({
+        success: true,
+        clusters: [],
+        stats: {
+          totalClusters: 0,
+          totalProducts: 0,
+        },
+      });
     }
 
     if (typeof buildSeoClusters !== "function") {
-      throw new Error("SEO engine missing: buildSeoClusters not found");
+      throw new Error("buildSeoClusters not found in aiSeoCluster module");
     }
 
-    // ================= BUILD CLUSTERS =================
-    const clusters = buildSeoClusters(products);
+    // ================= ENGINE RUN =================
+    const clusters = buildSeoClusters(products || []);
 
     // ================= RESPONSE =================
     return res.status(200).json({
       success: true,
       clusters,
       stats: {
-        totalClusters: clusters?.length || 0,
+        totalClusters: Array.isArray(clusters) ? clusters.length : 0,
         totalProducts: products.length,
       },
       meta: {
@@ -52,7 +59,7 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       success: false,
-      error: e?.message || "Unknown error",
+      error: e?.message || "Internal Server Error",
     });
   }
 }
