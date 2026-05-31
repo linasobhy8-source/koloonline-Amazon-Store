@@ -1,9 +1,9 @@
 import Head from "next/head";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import Link from "next/link";
 
 /* ================= CARD ================= */
-function Card({ p }) {
+const Card = memo(function Card({ p }) {
   const title = p?.title || "Product";
   const price = p?.price || 0;
 
@@ -11,15 +11,28 @@ function Card({ p }) {
     <div
       style={{
         background: "#fff",
-        borderRadius: 10,
-        padding: 10,
-        marginBottom: 10,
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 12,
         boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        contain: "content",
       }}
     >
-      <h3 style={{ fontSize: 14 }}>{title}</h3>
+      <h3
+        style={{
+          fontSize: 14,
+          marginBottom: 8,
+        }}
+      >
+        {title}
+      </h3>
 
-      <p style={{ color: "#b12704", fontWeight: "bold" }}>
+      <p
+        style={{
+          color: "#b12704",
+          fontWeight: "bold",
+        }}
+      >
         ${price}
       </p>
 
@@ -40,7 +53,7 @@ function Card({ p }) {
       </Link>
     </div>
   );
-}
+});
 
 /* ================= PAGE ================= */
 export default function Home() {
@@ -50,76 +63,116 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   /* ================= LOAD FEED ================= */
-  const loadFeed = useCallback(async (p) => {
-    if (loading) return;
-    setLoading(true);
+  const loadFeed = useCallback(
+    async (currentPage) => {
+      if (loading) return;
 
-    try {
-      const res = await fetch(
-        `/api/system?action=feed&page=${p}`
-      );
+      setLoading(true);
 
-      const data = await res.json();
+      try {
+        const res = await fetch(
+          `/api/system?action=feed&page=${currentPage}`
+        );
 
-      if (data?.success) {
-        if (p === 1) {
-          setProducts(data.data || []);
-        } else {
-          setProducts((prev) => [
-            ...prev,
-            ...(data.data || []),
-          ]);
+        const data = await res.json();
+
+        if (data?.success) {
+          setProducts((prev) =>
+            currentPage === 1
+              ? data.data || []
+              : [...prev, ...(data.data || [])]
+          );
+
+          setHasMore(Boolean(data.hasMore));
         }
-
-        setHasMore(data.hasMore);
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error("Feed Error:", err);
-    }
 
-    setLoading(false);
-  }, [loading]);
+      setLoading(false);
+    },
+    [loading]
+  );
 
-  /* ================= INIT ================= */
+  /* ================= INITIAL LOAD ================= */
   useEffect(() => {
     loadFeed(1);
   }, [loadFeed]);
 
-  /* ================= INFINITE SCROLL ================= */
+  /* ================= INTERSECTION OBSERVER ================= */
   useEffect(() => {
-    function onScroll() {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 250
-      ) {
-        if (hasMore && !loading) {
-          const next = page + 1;
-          setPage(next);
-          loadFeed(next);
+    const target = document.getElementById("feed-loader");
+
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+
+        if (
+          first.isIntersecting &&
+          hasMore &&
+          !loading
+        ) {
+          const nextPage = page + 1;
+
+          setPage(nextPage);
+          loadFeed(nextPage);
         }
+      },
+      {
+        rootMargin: "300px",
       }
-    }
+    );
 
-    window.addEventListener("scroll", onScroll);
+    observer.observe(target);
 
-    return () =>
-      window.removeEventListener("scroll", onScroll);
+    return () => observer.disconnect();
   }, [page, hasMore, loading, loadFeed]);
 
   return (
-    <div style={{ background: "#f5f5f5", fontFamily: "Arial" }}>
+    <div
+      style={{
+        background: "#f5f5f5",
+        fontFamily: "Arial",
+        minHeight: "100vh",
+      }}
+    >
       <Head>
-        <title>Koloonline AI Feed</title>
+        <title>
+          Koloonline AI Feed | Viral Products
+        </title>
+
         <meta
           name="description"
-          content="TikTok style AI shopping feed"
+          content="Discover trending Amazon products with the Koloonline AI Feed."
+        />
+
+        <meta
+          property="og:title"
+          content="Koloonline AI Feed"
+        />
+
+        <meta
+          property="og:description"
+          content="Trending Amazon products updated automatically."
+        />
+
+        <meta
+          property="og:type"
+          content="website"
+        />
+
+        <link
+          rel="canonical"
+          href="https://koloonline.online"
         />
       </Head>
 
       {/* HEADER */}
       <div
         style={{
-          padding: 10,
+          padding: 12,
           background: "#111827",
           color: "#fff",
           position: "sticky",
@@ -127,25 +180,47 @@ export default function Home() {
           zIndex: 999,
         }}
       >
-        <h2 style={{ margin: 0 }}>🔥 TikTok AI Feed</h2>
+        <h2 style={{ margin: 0 }}>
+          🔥 TikTok AI Feed
+        </h2>
       </div>
 
       {/* FEED */}
-      <div style={{ padding: 10 }}>
+      <div
+        style={{
+          maxWidth: 900,
+          margin: "auto",
+          padding: 10,
+        }}
+      >
         {products.map((p) => (
           <Card key={p.id} p={p} />
         ))}
 
         {loading && (
-          <p style={{ textAlign: "center" }}>Loading...</p>
+          <p style={{ textAlign: "center" }}>
+            Loading...
+          </p>
         )}
 
+        <div
+          id="feed-loader"
+          style={{
+            height: 20,
+          }}
+        />
+
         {!hasMore && (
-          <p style={{ textAlign: "center" }}>
+          <p
+            style={{
+              textAlign: "center",
+              color: "#666",
+            }}
+          >
             No more products
           </p>
         )}
       </div>
     </div>
   );
-    }
+  }
