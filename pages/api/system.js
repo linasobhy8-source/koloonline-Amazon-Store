@@ -7,6 +7,7 @@ import {
   limit,
 } from "firebase/firestore";
 
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -24,7 +25,7 @@ let CACHE = { feed: null, ts: 0 };
 const CACHE_TIME = 60 * 1000;
 
 /* ================= CORE AI SCORE ================= */
-function aiScore(p) {
+function baseScore(p) {
   const views = p.views || 0;
   const clicks = p.clicks || 0;
   const orders = p.orders || 0;
@@ -42,50 +43,62 @@ function aiScore(p) {
   return (
     views * 0.2 +
     clicks * 1.5 +
-    orders * 5 +
+    orders * 6 +
     ctr * 120 +
-    conv * 180 +
-    freshness * 60 +
-    (p.viralBoost ? 120 : 0)
+    conv * 200 +
+    freshness * 60
   );
 }
 
-/* ================= 4️⃣ ADAPTIVE REVENUE LAYER ================= */
-function revenueScore(p) {
-  let boost = 1;
+/* ================= 1️⃣ VIRAL PREDICTION ================= */
+function viralPrediction(p) {
+  const momentum =
+    (p.clicks || 0) * 0.4 +
+    (p.orders || 0) * 2 +
+    (p.views || 0) * 0.1;
 
+  const boost = p.viralBoost ? 2 : 1;
+
+  return momentum * boost;
+}
+
+/* ================= 2️⃣ PROFIT PRIORITY ENGINE ================= */
+function profitScore(p) {
   const price = Number(p.price || 0);
   const orders = p.orders || 0;
 
-  // high revenue products
-  if (orders > 10) boost += 0.5;
+  const affiliateValue = price * 0.05;
 
-  // high price = higher affiliate value
-  if (price > 50) boost += 0.3;
-
-  // viral multiplier
-  if (p.viralBoost) boost += 1.2;
-
-  return (p._score || 0) * boost;
+  return affiliateValue * orders;
 }
 
-/* ================= 5️⃣ SELF-LEARNING FEEDBACK ================= */
-function selfLearningBoost(p, userSignal = {}) {
-  let boost = 1;
+/* ================= 3️⃣ TREND INJECTION ================= */
+function trendBoost(p) {
+  if (p.trending) return 2.5;
+  if (p.views > 1000 && p.clicks > 50) return 1.6;
+  if (p.viralBoost) return 1.8;
+  return 1;
+}
 
-  // click history boost
-  if (p.clicks > 20) boost += 0.2;
+/* ================= 4️⃣ COLD START BOOST ================= */
+function coldStart(p) {
+  if (!p.views || p.views < 10) return 2;
+  if (!p.clicks) return 1.5;
+  return 1;
+}
 
-  // conversion boost
-  if (p.orders > 5) boost += 0.4;
+/* ================= FINAL AI SCORE ================= */
+function finalScore(p) {
+  const base = baseScore(p);
+  const viral = viralPrediction(p);
+  const profit = profitScore(p);
 
-  // weak product penalty
-  if (p.clicks > 50 && p.orders === 0) boost -= 0.3;
-
-  // user interaction signal (future-ready)
-  if (userSignal?.liked?.includes(p.id)) boost += 0.5;
-
-  return boost;
+  return (
+    base * 1.2 +
+    viral * 1.5 +
+    profit * 2 +
+    (p.createdAt ? 0 : 20)
+  );
 }
 
 /* ================= MAIN HANDLER ================= */
@@ -98,7 +111,7 @@ export default async function handler(req, res) {
       const page = Number(req.query.page || 1);
       const pageSize = 15;
 
-      /* CACHE HIT */
+      /* CACHE */
       if (
         CACHE.feed &&
         Date.now() - CACHE.ts < CACHE_TIME
@@ -107,7 +120,7 @@ export default async function handler(req, res) {
 
         return res.json({
           success: true,
-          source: "cache",
+          source: "cache-ai",
           page,
           hasMore:
             start + pageSize < CACHE.feed.length,
@@ -120,7 +133,7 @@ export default async function handler(req, res) {
 
       /* FETCH */
       const snap = await getDocs(
-        query(collection(db, "products"), limit(120))
+        query(collection(db, "products"), limit(150))
       );
 
       let products = snap.docs.map((d) => ({
@@ -128,29 +141,30 @@ export default async function handler(req, res) {
         ...d.data(),
       }));
 
-      /* ================= AI SCORING ================= */
+      /* ================= AI ENGINE ================= */
       products = products.map((p) => {
-        const base = aiScore(p);
-        const adaptive = selfLearningBoost(p);
-        const finalScore = base * adaptive;
+        const score = finalScore(p);
 
         return {
           ...p,
-          _score: base,
-          revenueScore: revenueScore({
-            ...p,
-            _score: finalScore,
-          }),
-          finalScore,
+          _score: score,
+          viralIndex: viralPrediction(p),
+          profitIndex: profitScore(p),
+          boost: trendBoost(p),
+          coldBoost: coldStart(p),
+          finalScore:
+            score *
+            trendBoost(p) *
+            coldStart(p),
         };
       });
 
-      /* ================= 5️⃣ SELF-LEARNING SORT ================= */
-      products = products.sort(
+      /* ================= SORT ================= */
+      products.sort(
         (a, b) => b.finalScore - a.finalScore
       );
 
-      /* CACHE UPDATE */
+      /* ================= CACHE ================= */
       CACHE = {
         feed: products,
         ts: Date.now(),
@@ -160,22 +174,22 @@ export default async function handler(req, res) {
 
       return res.json({
         success: true,
-        source: "live-ai",
+        source: "AI-GROWTH-ENGINE",
         page,
         hasMore:
           start + pageSize < products.length,
-        data: products.slice(start, pageSize + start),
+        data: products.slice(start, start + pageSize),
       });
     }
 
-    /* ================= UNKNOWN ACTION ================= */
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid action" });
+    return res.status(400).json({
+      success: false,
+      message: "Invalid action",
+    });
   } catch (e) {
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-    }
+}
