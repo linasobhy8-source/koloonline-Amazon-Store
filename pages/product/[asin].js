@@ -19,11 +19,9 @@ function getAdsSlots(type = "product") {
   return ADS_SLOTS[type] || [];
 }
 
-/* ================= ADS BOX (OPTIMIZED) ================= */
+/* ================= ADS BOX ================= */
 function AdBox() {
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (_) {}
@@ -62,7 +60,26 @@ function Stars({ rating = 4.5 }) {
   );
 }
 
-/* ================= WHATSAPP TRACK ================= */
+/* ================= TRACK BUY ================= */
+async function handleBuy(product) {
+  try {
+    await fetch("/api/track-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "affiliate_click",
+        asin: product.id,
+        price: product.price,
+      }),
+    });
+  } catch (_) {}
+
+  setTimeout(() => {
+    window.open(product.link, "_blank", "noopener,noreferrer");
+  }, 120);
+}
+
+/* ================= WHATSAPP ================= */
 function sendWhatsApp(product) {
   fetch("/api/track-event", {
     method: "POST",
@@ -85,6 +102,70 @@ ${product.link}`;
     `https://wa.me/201234567890?text=${encodeURIComponent(message)}`,
     "_blank",
     "noopener,noreferrer"
+  );
+}
+
+/* ================= 🔥 NATIVE AD (HIGH CTR) ================= */
+function NativeAdCard() {
+  return (
+    <a
+      href="/products"
+      style={{
+        display: "block",
+        padding: 15,
+        margin: "15px 0",
+        background: "#fff3cd",
+        borderRadius: 12,
+        textDecoration: "none",
+        color: "#000",
+        fontWeight: "bold",
+      }}
+    >
+      🔥 Recommended Deal
+      <br />
+      <span style={{ fontWeight: 400 }}>
+        Check today’s trending Amazon discounts
+      </span>
+    </a>
+  );
+}
+
+/* ================= 🔥 STICKY BUY BAR ================= */
+function StickyBuyBar({ product }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: "#fff",
+        padding: 12,
+        boxShadow: "0 -2px 10px rgba(0,0,0,0.15)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        zIndex: 9999,
+      }}
+    >
+      <span style={{ fontWeight: "bold" }}>
+        ${product.price}
+      </span>
+
+      <button
+        onClick={() => handleBuy(product)}
+        style={{
+          background: "#ff9900",
+          padding: "10px 20px",
+          border: 0,
+          color: "#fff",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+      >
+        Buy Now
+      </button>
+    </div>
   );
 }
 
@@ -113,64 +194,19 @@ export default function ProductPage({ product }) {
     <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
       <Head>
         <title>{title} | Koloonline</title>
-
         <meta name="description" content={product.description || title} />
-        <meta property="og:title" content={title} />
-        <meta property="og:image" content={image} />
-        <meta property="og:url" content={url} />
-        <meta property="og:type" content="product" />
-
-        <meta
-          name="robots"
-          content="index,follow,max-image-preview:large"
-        />
-
         <link rel="canonical" href={url} />
-
-        {/* SEO JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Product",
-              name: title,
-              image,
-              description: product.description || title,
-              sku: product.id,
-              offers: {
-                "@type": "Offer",
-                priceCurrency: "USD",
-                price,
-                availability: "https://schema.org/InStock",
-                url,
-              },
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: rating,
-                reviewCount: 1,
-              },
-            }),
-          }}
-        />
       </Head>
 
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "auto",
-          padding: 20,
-        }}
-      >
+      <div style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
         <div
           style={{
-            background: "#fff",
+            background: "white",
             padding: 25,
             borderRadius: 20,
             display: "flex",
             flexWrap: "wrap",
             gap: 30,
-            minHeight: 500,
           }}
         >
           {/* IMAGE */}
@@ -181,13 +217,7 @@ export default function ProductPage({ product }) {
               height={500}
               alt={title}
               priority
-              quality={75}
-              sizes="(max-width:768px) 100vw, 500px"
-              style={{
-                width: "100%",
-                height: "auto",
-                objectFit: "contain",
-              }}
+              style={{ width: "100%", height: "auto" }}
             />
           </div>
 
@@ -215,20 +245,7 @@ export default function ProductPage({ product }) {
 
             {/* BUY */}
             <button
-              onClick={() => {
-                fetch("/api/track-event", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    type: "affiliate_click",
-                    asin: product.id,
-                  }),
-                }).catch(() => {});
-
-                window.open(product.link, "_blank", "noopener,noreferrer");
-              }}
+              onClick={() => handleBuy(product)}
               style={{
                 width: "100%",
                 padding: 16,
@@ -259,6 +276,9 @@ export default function ProductPage({ product }) {
             >
               💬 Order via WhatsApp
             </button>
+
+            {/* 🔥 NATIVE AD (HIGH CTR) */}
+            <NativeAdCard />
           </div>
         </div>
 
@@ -284,11 +304,14 @@ export default function ProductPage({ product }) {
           </Link>
         </div>
       </div>
+
+      {/* 🔥 STICKY BUY BAR */}
+      <StickyBuyBar product={product} />
     </div>
   );
 }
 
-/* ================= STATIC OPTIMIZED ================= */
+/* ================= STATIC ================= */
 export async function getStaticPaths() {
   const snap = await getDocs(collection(db, "products"));
 
@@ -323,4 +346,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-    }
+          }
