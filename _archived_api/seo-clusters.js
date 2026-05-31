@@ -20,32 +20,26 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    // ================= SAFETY CHECK =================
-    if (!products) {
-      return res.status(200).json({
-        success: true,
-        clusters: [],
-        stats: {
-          totalClusters: 0,
-          totalProducts: 0,
-        },
-      });
-    }
+    // ================= SAFE DEFAULT =================
+    const safeProducts = Array.isArray(products) ? products : [];
 
+    // ================= VALIDATION =================
     if (typeof buildSeoClusters !== "function") {
-      throw new Error("buildSeoClusters not found in aiSeoCluster module");
+      throw new Error("buildSeoClusters is not a valid function (check aiSeoCluster export)");
     }
 
-    // ================= ENGINE RUN =================
-    const clusters = buildSeoClusters(products || []);
+    // ================= ENGINE EXECUTION =================
+    const clusters = buildSeoClusters(safeProducts);
+
+    const safeClusters = Array.isArray(clusters) ? clusters : [];
 
     // ================= RESPONSE =================
     return res.status(200).json({
       success: true,
-      clusters,
+      clusters: safeClusters,
       stats: {
-        totalClusters: Array.isArray(clusters) ? clusters.length : 0,
-        totalProducts: products.length,
+        totalClusters: safeClusters.length,
+        totalProducts: safeProducts.length,
       },
       meta: {
         level: 20,
