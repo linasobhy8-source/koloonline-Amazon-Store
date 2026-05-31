@@ -1,9 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/config/*": ["config/*"],
-      "@/ai/*": ["lib/ai/*"]
-    }
+    "baseUrl": "."
   }
 }
