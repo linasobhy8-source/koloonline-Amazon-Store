@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
@@ -20,18 +21,23 @@ function isAdsReady(product) {
   return !!(product?.title && product?.image && product?.price);
 }
 
-/* ================= ADS BOX ================= */
+/* ================= ADS BOX (OPTIMIZED) ================= */
 function AdBox() {
-  if (typeof window !== "undefined") {
+  useEffect(() => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (e) {}
-  }
+  }, []);
 
   return (
     <ins
       className="adsbygoogle"
-      style={{ display: "block", textAlign: "center", margin: "10px 0" }}
+      style={{
+        display: "block",
+        textAlign: "center",
+        margin: "10px 0",
+        minHeight: "90px",
+      }}
       data-ad-client="ca-pub-1294940976431468"
       data-ad-slot="auto"
       data-ad-format="auto"
@@ -59,17 +65,13 @@ function sendWhatsApp(product) {
   try {
     fetch("/api/track-event", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "whatsapp_click",
         asin: product.id,
       }),
     });
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) {}
 
   const message = `🔥 Product Interest
 
@@ -81,7 +83,8 @@ ${product.link}`;
 
   window.open(
     `https://wa.me/201234567890?text=${encodeURIComponent(message)}`,
-    "_blank"
+    "_blank",
+    "noopener,noreferrer"
   );
 }
 
@@ -107,14 +110,64 @@ export default function ProductPage({ product }) {
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f4f6f9",
+        minHeight: "100vh",
+      }}
+    >
       <Head>
         <title>{title} | Koloonline</title>
+
         <meta
           name="description"
           content={product.description || title}
         />
+
+        <meta property="og:title" content={title} />
+        <meta
+          property="og:description"
+          content={product.description || title}
+        />
+        <meta property="og:image" content={image} />
+        <meta property="og:url" content={url} />
+        <meta property="og:type" content="product" />
+
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large"
+        />
+
         <link rel="canonical" href={url} />
+
+        {/* SEO Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Product",
+              name: title,
+              image: image,
+              description: product.description || title,
+              sku: product.id,
+              offers: {
+                "@type": "Offer",
+                priceCurrency: "USD",
+                price: price,
+                availability:
+                  "https://schema.org/InStock",
+                url,
+              },
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: rating,
+                reviewCount: 1,
+              },
+            }),
+          }}
+        />
       </Head>
 
       <div style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
@@ -126,16 +179,24 @@ export default function ProductPage({ product }) {
             display: "flex",
             flexWrap: "wrap",
             gap: 30,
+            minHeight: 500,
           }}
         >
           {/* IMAGE */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minHeight: 500 }}>
             <Image
               src={image}
               width={500}
               height={500}
               alt={title}
               priority
+              quality={75}
+              sizes="(max-width:768px) 100vw, 500px"
+              style={{
+                width: "100%",
+                height: "auto",
+                objectFit: "contain",
+              }}
             />
           </div>
 
@@ -144,7 +205,9 @@ export default function ProductPage({ product }) {
             <h1 style={{ fontSize: 32 }}>{title}</h1>
 
             {showAds &&
-              adsSlots.includes("under_title") && <AdBox />}
+              adsSlots.includes("under_title") && (
+                <AdBox />
+              )}
 
             <Stars rating={rating} />
 
@@ -158,7 +221,9 @@ export default function ProductPage({ product }) {
             </h2>
 
             {showAds &&
-              adsSlots.includes("under_price") && <AdBox />}
+              adsSlots.includes("under_price") && (
+                <AdBox />
+              )}
 
             <p style={{ marginTop: 15 }}>
               {product.description}
@@ -179,13 +244,12 @@ export default function ProductPage({ product }) {
                       asin: product.id,
                     }),
                   });
-                } catch (e) {
-                  console.error(e);
-                }
+                } catch (e) {}
 
                 window.open(
                   product.link,
-                  "_blank"
+                  "_blank",
+                  "noopener,noreferrer"
                 );
               }}
               style={{
@@ -250,13 +314,13 @@ export default function ProductPage({ product }) {
 
 /* ================= STATIC ================= */
 export async function getStaticPaths() {
-  const snap = await getDocs(
-    collection(db, "products")
-  );
+  const snap = await getDocs(collection(db, "products"));
 
-  const paths = snap.docs.map((d) => ({
-    params: { asin: d.id },
-  }));
+  const paths = snap.docs
+    .slice(0, 1000)
+    .map((d) => ({
+      params: { asin: d.id },
+    }));
 
   return {
     paths,
@@ -265,9 +329,7 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  const snap = await getDocs(
-    collection(db, "products")
-  );
+  const snap = await getDocs(collection(db, "products"));
 
   const productDoc = snap.docs.find(
     (d) => d.id === params.asin
