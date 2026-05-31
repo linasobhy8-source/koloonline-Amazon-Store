@@ -1,8 +1,7 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
-
+import { useMemo } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
@@ -10,340 +9,178 @@ import { db } from "../../config/firebase";
 const fallbackImage =
   "https://via.placeholder.com/600x600?text=Koloonline";
 
-/* ================= ADS ENGINE ================= */
-const ADS_SLOTS = {
-  product: ["under_title", "under_price", "mid_content"],
-};
+/* ================= AI REVENUE ENGINE ================= */
+function useRevenueEngine(product, allProducts = []) {
+  return useMemo(() => {
+    if (!product) return null;
 
-function getAdsSlots(type = "product") {
-  return ADS_SLOTS[type] || [];
+    const price = Number(product.price || 0);
+
+    const upsells = allProducts
+      .filter(
+        (p) =>
+          p.id !== product.id &&
+          Number(p.price || 0) > price &&
+          p.category === product.category
+      )
+      .slice(0, 3);
+
+    const cheaperAlternatives = allProducts
+      .filter(
+        (p) =>
+          p.id !== product.id &&
+          Number(p.price || 0) < price
+      )
+      .slice(0, 3);
+
+    return {
+      upsells,
+      cheaperAlternatives,
+      urgency:
+        product.viralBoost || product.clicks > 50
+          ? "🔥 Trending - Price may increase soon"
+          : "⚡ Limited time deal",
+    };
+  }, [product, allProducts]);
 }
 
-/* ================= ADS BOX ================= */
+/* ================= ADS ================= */
 function AdBox() {
-  useEffect(() => {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (_) {}
-  }, []);
-
   return (
     <ins
       className="adsbygoogle"
-      style={{
-        display: "block",
-        textAlign: "center",
-        margin: "12px 0",
-        minHeight: "90px",
-      }}
+      style={{ display: "block", margin: "12px 0" }}
       data-ad-client="ca-pub-1294940976431468"
       data-ad-slot="auto"
-      data-ad-format="auto"
-      data-full-width-responsive="true"
     />
   );
 }
 
 /* ================= STARS ================= */
 function Stars({ rating = 4.5 }) {
-  const full = Math.floor(Number(rating || 0));
-
+  const full = Math.floor(rating);
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <span style={{ color: "#FFA41C" }}>
-        {"★".repeat(full)}
-      </span>
-      <span style={{ fontSize: 14, color: "#666" }}>
-        {rating}/5
-      </span>
-    </div>
-  );
-}
-
-/* ================= TRACK BUY ================= */
-async function handleBuy(product) {
-  try {
-    await fetch("/api/track-event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "affiliate_click",
-        asin: product.id,
-        price: product.price,
-      }),
-    });
-  } catch (_) {}
-
-  setTimeout(() => {
-    window.open(product.link, "_blank", "noopener,noreferrer");
-  }, 120);
-}
-
-/* ================= WHATSAPP ================= */
-function sendWhatsApp(product) {
-  fetch("/api/track-event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "whatsapp_click",
-      asin: product.id,
-    }),
-  }).catch(() => {});
-
-  const message = `🔥 Product Interest
-
-${product.title}
-
-Price: $${product.price}
-
-${product.link}`;
-
-  window.open(
-    `https://wa.me/201234567890?text=${encodeURIComponent(message)}`,
-    "_blank",
-    "noopener,noreferrer"
-  );
-}
-
-/* ================= 🔥 NATIVE AD (HIGH CTR) ================= */
-function NativeAdCard() {
-  return (
-    <a
-      href="/products"
-      style={{
-        display: "block",
-        padding: 15,
-        margin: "15px 0",
-        background: "#fff3cd",
-        borderRadius: 12,
-        textDecoration: "none",
-        color: "#000",
-        fontWeight: "bold",
-      }}
-    >
-      🔥 Recommended Deal
-      <br />
-      <span style={{ fontWeight: 400 }}>
-        Check today’s trending Amazon discounts
-      </span>
-    </a>
-  );
-}
-
-/* ================= 🔥 STICKY BUY BAR ================= */
-function StickyBuyBar({ product }) {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: "#fff",
-        padding: 12,
-        boxShadow: "0 -2px 10px rgba(0,0,0,0.15)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        zIndex: 9999,
-      }}
-    >
-      <span style={{ fontWeight: "bold" }}>
-        ${product.price}
-      </span>
-
-      <button
-        onClick={() => handleBuy(product)}
-        style={{
-          background: "#ff9900",
-          padding: "10px 20px",
-          border: 0,
-          color: "#fff",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-      >
-        Buy Now
-      </button>
+    <div>
+      {"⭐".repeat(full)} {rating}/5
     </div>
   );
 }
 
 /* ================= PAGE ================= */
-export default function ProductPage({ product }) {
-  const adsSlots = useMemo(() => getAdsSlots("product"), []);
-  const showAds = !!product?.title && !!product?.price;
+export default function ProductPage({ product, allProducts }) {
+  const engine = useRevenueEngine(product, allProducts);
 
-  if (!product) {
-    return (
-      <div style={{ padding: 40 }}>
-        <h2>Product Not Found</h2>
-        <Link href="/">Home</Link>
-      </div>
-    );
-  }
+  if (!product) return <div>Not Found</div>;
 
-  const title = product.title;
   const price = Number(product.price || 0);
-  const rating = Number(product.rating || 4.5);
-  const image = product.image || fallbackImage;
-
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f4f6f9" }}>
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5" }}>
       <Head>
-        <title>{title} | Koloonline</title>
-        <meta name="description" content={product.description || title} />
-        <link rel="canonical" href={url} />
+        <title>{product.title} | Koloonline</title>
+        <meta name="description" content={product.title} />
       </Head>
 
-      <div style={{ maxWidth: 1200, margin: "auto", padding: 20 }}>
-        <div
-          style={{
-            background: "white",
-            padding: 25,
-            borderRadius: 20,
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 30,
-          }}
-        >
-          {/* IMAGE */}
+      <div style={{ maxWidth: 1100, margin: "auto", padding: 20 }}>
+        {/* ================= MAIN PRODUCT ================= */}
+        <div style={{ display: "flex", gap: 20, background: "white", padding: 20 }}>
+          <Image src={product.image || fallbackImage} width={400} height={400} />
+
           <div style={{ flex: 1 }}>
-            <Image
-              src={image}
-              width={500}
-              height={500}
-              alt={title}
-              priority
-              style={{ width: "100%", height: "auto" }}
-            />
-          </div>
+            <h1>{product.title}</h1>
 
-          {/* INFO */}
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 32 }}>{title}</h1>
+            <Stars rating={product.rating || 4.3} />
 
-            {showAds && adsSlots.includes("under_title") && (
-              <AdBox />
-            )}
+            <h2 style={{ color: "#B12704" }}>${price}</h2>
 
-            <Stars rating={rating} />
-
-            <h2 style={{ color: "#B12704", fontSize: 36 }}>
-              ${price}
-            </h2>
-
-            {showAds && adsSlots.includes("under_price") && (
-              <AdBox />
-            )}
-
-            <p style={{ marginTop: 15 }}>
-              {product.description}
+            {/* 🔥 AI URGENCY */}
+            <p style={{ color: "red", fontWeight: "bold" }}>
+              {engine?.urgency}
             </p>
 
-            {/* BUY */}
             <button
-              onClick={() => handleBuy(product)}
+              onClick={() => window.open(product.link, "_blank")}
               style={{
                 width: "100%",
-                padding: 16,
+                padding: 15,
                 background: "#ff9900",
-                color: "#fff",
-                border: "none",
-                marginTop: 20,
-                fontSize: 18,
-                cursor: "pointer",
+                border: 0,
+                marginTop: 10,
               }}
             >
               🛒 Buy Now
             </button>
-
-            {/* WHATSAPP */}
-            <button
-              onClick={() => sendWhatsApp(product)}
-              style={{
-                width: "100%",
-                padding: 16,
-                background: "#25D366",
-                color: "#fff",
-                border: "none",
-                marginTop: 10,
-                fontSize: 18,
-                cursor: "pointer",
-              }}
-            >
-              💬 Order via WhatsApp
-            </button>
-
-            {/* 🔥 NATIVE AD (HIGH CTR) */}
-            <NativeAdCard />
           </div>
         </div>
 
-        {/* MID ADS */}
-        {showAds && adsSlots.includes("mid_content") && (
-          <div style={{ marginTop: 30 }}>
-            <AdBox />
+        {/* ================= UPSELL ENGINE ================= */}
+        <div style={{ marginTop: 30 }}>
+          <h2>🔥 Better Deals (AI Picks)</h2>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {engine?.upsells?.map((p) => (
+              <div key={p.id} style={{ background: "white", padding: 10 }}>
+                <p>{p.title}</p>
+                <b>${p.price}</b>
+                <Link href={`/product/${p.id}`}>View</Link>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* LINKS */}
+        {/* ================= CHEAPER ALTERNATIVES ================= */}
+        <div style={{ marginTop: 30 }}>
+          <h2>💰 Budget Options</h2>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {engine?.cheaperAlternatives?.map((p) => (
+              <div key={p.id} style={{ background: "#fff", padding: 10 }}>
+                <p>{p.title}</p>
+                <b>${p.price}</b>
+                <Link href={`/product/${p.id}`}>Compare</Link>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ================= ADS BOOST SECTION ================= */}
         <div style={{ marginTop: 40 }}>
-          <h2>🔥 Related Guides</h2>
+          <AdBox />
+        </div>
 
-          <Link href="/blog/best-smart-watches">
-            Best Smart Watches
-          </Link>
-
-          <br />
-
-          <Link href="/blog/viral-products-amazon">
-            Viral Products
-          </Link>
+        {/* ================= SEO CONTENT ================= */}
+        <div style={{ marginTop: 40, background: "white", padding: 20 }}>
+          <h2>Why Buy This?</h2>
+          <p>
+            This product is trending and optimized for conversion.
+            Compare alternatives before buying.
+          </p>
         </div>
       </div>
-
-      {/* 🔥 STICKY BUY BAR */}
-      <StickyBuyBar product={product} />
     </div>
   );
 }
 
-/* ================= STATIC ================= */
-export async function getStaticPaths() {
-  const snap = await getDocs(collection(db, "products"));
-
-  return {
-    paths: snap.docs.slice(0, 300).map((d) => ({
-      params: { asin: d.id },
-    })),
-    fallback: "blocking",
-  };
-}
-
+/* ================= DATA ================= */
 export async function getStaticProps({ params }) {
   const snap = await getDocs(collection(db, "products"));
 
-  const productDoc = snap.docs.find(
-    (d) => d.id === params.asin
-  );
+  const productDoc = snap.docs.find((d) => d.id === params.asin);
+
+  const allProducts = snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
 
   if (!productDoc) {
-    return {
-      props: { product: null },
-      revalidate: 60,
-    };
+    return { props: { product: null, allProducts: [] } };
   }
 
   return {
     props: {
-      product: {
-        id: productDoc.id,
-        ...productDoc.data(),
-      },
+      product: { id: productDoc.id, ...productDoc.data() },
+      allProducts,
     },
-    revalidate: 3600,
   };
           }
