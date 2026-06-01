@@ -8,8 +8,6 @@ import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-/* ================= CATEGORY PAGE ================= */
-
 export default function CategoryPage() {
   const router = useRouter();
   const { category } = router.query;
@@ -18,6 +16,11 @@ export default function CategoryPage() {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState("trend");
+
+  /* ================= SAFE CATEGORY ================= */
+  const safeCategory = useMemo(() => {
+    return (category || "").toString().toLowerCase();
+  }, [category]);
 
   useEffect(() => {
     if (!category) return;
@@ -37,11 +40,11 @@ export default function CategoryPage() {
 
       setAllProducts(all);
 
-      const normalized = String(category).toLowerCase();
-
       let filtered = all
         .filter((p) =>
-          (p.category || "").toLowerCase().includes(normalized)
+          (p.category || "")
+            .toLowerCase()
+            .includes(safeCategory)
         )
         .map((p) => {
           const trendScore =
@@ -64,20 +67,26 @@ export default function CategoryPage() {
 
       setProducts(filtered);
     } catch (err) {
-      console.error(err);
+      console.error("Category error:", err);
       setProducts([]);
     } finally {
       setLoading(false);
     }
   }
 
+  /* ================= RELATED CATEGORIES ================= */
   const relatedCategories = useMemo(() => {
     return [...new Set(allProducts.map((p) => p.category).filter(Boolean))].slice(0, 8);
   }, [allProducts]);
 
-  const title = `${category || "Category"} Products | Koloonline`;
-  const description = `Discover trending ${category || ""} products and Amazon deals.`;
-  const url = `https://koloonline.online/category/${category}`;
+  /* ================= SEO ================= */
+  const title = `${safeCategory || "Category"} Products | Koloonline`;
+
+  const description =
+    `Discover trending ${safeCategory} products, viral Amazon deals, and smart shopping offers.`;
+
+  const url =
+    `https://koloonline.online/category/${safeCategory}`;
 
   const schema = {
     "@context": "https://schema.org",
@@ -94,22 +103,37 @@ export default function CategoryPage() {
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <meta name="robots" content="index,follow" />
+        <meta name="robots" content="index,follow,max-image-preview:large" />
         <link rel="canonical" href={url} />
+
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={url} />
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schema),
+          }}
         />
       </Head>
 
       {/* ================= HEADER ================= */}
-      <h1 style={{ fontSize: 36 }}>
-        📦 {category}
+      <h1 style={{ fontSize: 36, textTransform: "capitalize" }}>
+        📦 {safeCategory || "Category"}
       </h1>
 
+      <p style={{ color: "#666" }}>
+        Trending products & AI-ranked deals
+      </p>
+
       {/* ================= SORT ================= */}
-      <select value={sort} onChange={(e) => setSort(e.target.value)}>
+      <select
+        value={sort}
+        onChange={(e) => setSort(e.target.value)}
+        style={{ padding: 10, marginTop: 10 }}
+      >
         <option value="trend">Trending</option>
         <option value="rating">Top Rated</option>
         <option value="price_low">Lowest Price</option>
@@ -123,7 +147,15 @@ export default function CategoryPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           {relatedCategories.map((c) => (
             <Link key={c} href={`/category/${c}`}>
-              <span style={{ padding: 8, border: "1px solid #ddd", borderRadius: 20 }}>
+              <span
+                style={{
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 20,
+                  background: "white",
+                  display: "inline-block",
+                }}
+              >
                 {c}
               </span>
             </Link>
@@ -137,27 +169,41 @@ export default function CategoryPage() {
       ) : products.length === 0 ? (
         <p>No products found</p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20, marginTop: 20 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
+            gap: 20,
+            marginTop: 20,
+          }}
+        >
           {products.map((p) => (
             <Link key={p.id} href={`/product/${p.id}`}>
-
-              <div style={{ background: "#fff", padding: 10, borderRadius: 12 }}>
+              <div
+                style={{
+                  background: "#fff",
+                  padding: 12,
+                  borderRadius: 12,
+                  transition: "0.3s",
+                }}
+              >
                 <Image
                   src={p.image || "https://via.placeholder.com/400"}
                   width={300}
                   height={300}
-                  alt={p.title}
+                  alt={p.title || "product"}
                 />
 
-                <h3>{p.title}</h3>
+                <h3 style={{ fontSize: 16 }}>{p.title}</h3>
 
-                <p style={{ color: "#B12704" }}>${p.price}</p>
+                <p style={{ color: "#B12704", fontWeight: "bold" }}>
+                  ${p.price}
+                </p>
               </div>
-
             </Link>
           ))}
         </div>
       )}
     </div>
   );
-             }
+    }
