@@ -16,10 +16,15 @@ export default function Contact() {
 
         <meta
           name="description"
-          content="Contact the Koloonline team for support, partnership inquiries, feedback, or general questions."
+          content="Contact Koloonline for support, business inquiries, affiliate questions, partnerships, advertising opportunities, and website feedback."
         />
 
-        <meta name="robots" content="index, follow" />
+        <meta
+          name="keywords"
+          content="contact koloonline, support, affiliate support, amazon deals, partnerships, advertising"
+        />
+
+        <meta name="robots" content="index,follow" />
 
         <link
           rel="canonical"
@@ -31,36 +36,60 @@ export default function Contact() {
 
       <p>
         Thank you for visiting Koloonline. We welcome questions,
-        feedback, business inquiries, and partnership opportunities.
+        partnership opportunities, advertising inquiries, affiliate
+        requests, feedback, and general support requests.
       </p>
 
-      <h2>Customer Support</h2>
+      <h2>Email Support</h2>
 
       <p>
-        If you need assistance regarding our content, product
-        recommendations, affiliate disclosures, or general website
-        information, please contact us using the email below.
+        Email:
+        <strong> support@koloonline.online </strong>
       </p>
 
       <p>
-        <strong>Email:</strong> support@koloonline.online
+        Our support team typically responds within 24–48 business hours.
       </p>
 
-      <h2>Business & Partnerships</h2>
+      <h2>Business & Partnership Requests</h2>
 
       <p>
-        Brands, advertisers, and business partners may contact us
-        regarding collaboration opportunities, sponsored content,
-        affiliate partnerships, and advertising inquiries.
+        Companies, brands, advertisers, and affiliate networks may contact
+        us regarding collaboration opportunities, sponsored content,
+        partnerships, and advertising campaigns.
+      </p>
+
+      <h2>Content Corrections</h2>
+
+      <p>
+        If you believe any article contains outdated information, please
+        contact us and we will review the content promptly.
+      </p>
+
+      <h2>Website Feedback</h2>
+
+      <p>
+        We continuously improve Koloonline and appreciate suggestions that
+        help us provide better shopping guides, product recommendations,
+        and educational content.
       </p>
 
       <h2>Response Time</h2>
 
+      <ul>
+        <li>General inquiries: 24–48 hours</li>
+        <li>Business inquiries: 1–3 business days</li>
+        <li>Technical issues: As soon as possible</li>
+      </ul>
+
+      <h2>About Koloonline</h2>
+
       <p>
-        Our team typically responds within 24–48 business hours.
+        Koloonline is an independent content platform that publishes
+        shopping guides, product recommendations, reviews, educational
+        articles, and affiliate-based content designed to help users make
+        informed purchasing decisions.
       </p>
-
-      <h2>Feedback</h2>
-
-      <p>
-        We value feedback from our
+    </div>
+  );
+            }
