@@ -1,84 +1,81 @@
 import Head from "next/head";
-import { useEffect, useState, useCallback, memo } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../config/firebase";
 
-const Card = memo(({ p }) => (
-  <div
-    style={{
-      background: "#fff",
-      padding: 12,
-      marginBottom: 12,
-      borderRadius: 12,
-      contain: "content",
-    }}
-  >
-    <h3>{p.title}</h3>
-    <p style={{ color: "#b12704" }}>${p.price}</p>
-
-    <Link href={`/product/${p.id}`}>
-      <button style={{ width: "100%", padding: 10 }}>
-        View
-      </button>
-    </Link>
-  </div>
-));
-
-export default function Home() {
+export default function ProductsPage() {
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async (p) => {
-    if (loading) return;
-    setLoading(true);
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
 
-    const res = await fetch(`/api/system?action=feed&page=${p}`);
-    const data = await res.json();
+      const snap = await getDocs(collection(db, "products"));
 
-    if (data.success) {
-      setProducts((prev) =>
-        p === 1 ? data.data : [...prev, ...data.data]
-      );
-      setHasMore(data.hasMore);
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      setProducts(data);
+      setLoading(false);
     }
 
-    setLoading(false);
-  }, [loading]);
-
-  useEffect(() => {
-    load(1);
+    load();
   }, []);
 
-  useEffect(() => {
-    const el = document.getElementById("load");
-
-    const obs = new IntersectionObserver((e) => {
-      if (e[0].isIntersecting && hasMore && !loading) {
-        const next = page + 1;
-        setPage(next);
-        load(next);
-      }
-    });
-
-    if (el) obs.observe(el);
-
-    return () => obs.disconnect();
-  }, [page, hasMore, loading]);
-
   return (
-    <div>
+    <div style={{ fontFamily: "Arial", padding: 20 }}>
+      
+      {/* ================= SEO ================= */}
       <Head>
-        <title>Koloonline Feed</title>
+        <title>All Products | Koloonline Deals</title>
+        <meta
+          name="description"
+          content="Browse trending Amazon products, deals and offers updated daily."
+        />
+        <meta name="robots" content="index,follow" />
+        <link rel="canonical" href="https://koloonline.online/products" />
       </Head>
 
-      {products.map((p) => (
-        <Card key={p.id} p={p} />
-      ))}
-
-      <div id="load" style={{ height: 20 }} />
+      <h1>🔥 All Products</h1>
 
       {loading && <p>Loading...</p>}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gap: 15,
+        }}
+      >
+        {products.map((p) => (
+          <Link key={p.id} href={`/product/${p.id}`}>
+            <div
+              style={{
+                background: "#fff",
+                padding: 10,
+                borderRadius: 10,
+                cursor: "pointer",
+              }}
+            >
+              <Image
+                src={p.image}
+                width={300}
+                height={300}
+                alt={p.title}
+                style={{ width: "100%", height: "auto" }}
+              />
+
+              <h3>{p.title}</h3>
+              <p style={{ color: "#B12704" }}>${p.price}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
-}
+          }
