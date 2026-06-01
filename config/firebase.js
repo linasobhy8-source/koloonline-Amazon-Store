@@ -11,9 +11,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/* ================= SINGLETON ================= */
+/* ================= SAFE INIT ================= */
 const app = !getApps().length
   ? initializeApp(firebaseConfig)
   : getApps()[0];
 
+/* ================= DB EXPORT ================= */
 export const db = getFirestore(app);
