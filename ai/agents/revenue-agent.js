@@ -1,20 +1,17 @@
-export function revenueScore(p) {
-  const views = p.views || 0;
-  const clicks = p.clicks || 0;
-  const orders = p.orders || 0;
-  const price = p.price || 1;
+export function updateProductBrain(product, event) {
+  const base = product.aiWeight || 1;
 
-  const ctr = views ? clicks / views : 0;
-  const cvr = clicks ? orders / clicks : 0;
-  const revenue = orders * price;
+  switch (event) {
+    case "click":
+      return base + 0.05;
 
-  const viral = p.viralBoost ? 2 : 1;
+    case "buy":
+      return base + 0.5;
 
-  return (
-    revenue * 10 +
-    ctr * 200 +
-    cvr * 500 +
-    views * 0.1 +
-    viral * 100
-  );
+    case "ignore":
+      return base - 0.02;
+
+    default:
+      return base;
+  }
 }
