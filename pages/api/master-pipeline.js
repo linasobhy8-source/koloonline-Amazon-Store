@@ -1,4 +1,10 @@
 export default async function handler(req, res) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://koloonline.online";
+
+  /* ================= ADSENSE / SEO FRIENDLY DESCRIPTION ================= */
+  const seoDescription =
+    "Discover trending Amazon products, in-depth reviews, and smart shopping guides. Updated daily with high-quality deals and buying insights.";
+
   try {
     const { type, id, url } = req.body || {};
 
@@ -9,38 +15,31 @@ export default async function handler(req, res) {
       });
     }
 
-    const baseUrl = "https://koloonline.online";
     const targetUrl = url || `${baseUrl}/${type}/${id}`;
 
     console.log("🚀 Pipeline Started:", targetUrl);
 
-    /* ================= 1️⃣ AUTO INDEX ================= */
+    /* ================= 1️⃣ INDEXING ================= */
     try {
       await fetch(`${baseUrl}/api/indexnow`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: targetUrl }),
       });
     } catch (e) {
       console.log("Index Error:", e.message);
     }
 
-    /* ================= 2️⃣ UPDATE SITEMAP ================= */
+    /* ================= 2️⃣ SITEMAP ================= */
     try {
-      await fetch(`${baseUrl}/api/sitemap`, {
-        method: "POST",
-      });
+      await fetch(`${baseUrl}/api/sitemap`, { method: "POST" });
     } catch (e) {
       console.log("Sitemap Error:", e.message);
     }
 
-    /* ================= 3️⃣ GOOGLE + BING PING ================= */
+    /* ================= 3️⃣ GOOGLE PING ================= */
     try {
-      await fetch(`${baseUrl}/api/ping-google`, {
-        method: "POST",
-      });
+      await fetch(`${baseUrl}/api/ping-google`, { method: "POST" });
     } catch (e) {
       console.log("Google Ping Error:", e.message);
     }
@@ -49,9 +48,7 @@ export default async function handler(req, res) {
     try {
       await fetch(`${baseUrl}/api/social-hook`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: targetUrl,
           type,
@@ -65,9 +62,7 @@ export default async function handler(req, res) {
     try {
       await fetch(`${baseUrl}/api/cron-logs`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "master_pipeline",
           status: "success",
@@ -101,7 +96,7 @@ export default async function handler(req, res) {
       console.log("SEO Boost Error:", e.message);
     }
 
-    /* ================= 7️⃣ ADSENSE BOOST SIGNAL ================= */
+    /* ================= 7️⃣ ADS SIGNAL (SAFE) ================= */
     try {
       await fetch(`${baseUrl}/api/seo/boost-ads`, {
         method: "POST",
@@ -116,13 +111,17 @@ export default async function handler(req, res) {
       console.log("Ads Boost Error:", e.message);
     }
 
-    /* ================= FINAL RESPONSE ================= */
     console.log("✅ PIPELINE DONE:", targetUrl);
 
     return res.status(200).json({
       success: true,
       message: "Pipeline executed successfully",
       url: targetUrl,
+
+      /* ================= ADSENSE-FRIENDLY METADATA ================= */
+      seoDescription,
+      seoHint:
+        "High-quality content optimized for search intent, affiliate transparency, and user engagement.",
     });
 
   } catch (e) {
@@ -133,4 +132,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-}
+        }
