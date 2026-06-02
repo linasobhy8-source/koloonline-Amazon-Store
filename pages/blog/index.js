@@ -18,13 +18,13 @@ export default function Blog({ posts }) {
   return (
     <div style={{ padding: 20, fontFamily: "Arial", background: "#f5f5f5" }}>
       
-      {/* ================= SEO (ADSENSE FRIENDLY) ================= */}
+      {/* ================= SEO ================= */}
       <Head>
         <title>Amazon Deals Blog | Koloonline Reviews & Guides</title>
 
         <meta
           name="description"
-          content="Discover Amazon product reviews, buying guides, and trending deals. Real user insights, comparisons, and daily updated shopping tips on Koloonline blog."
+          content="Explore Amazon product reviews, buying guides, and trending deals with structured insights and comparison-based articles."
         />
 
         <meta
@@ -36,7 +36,7 @@ export default function Blog({ posts }) {
 
         <link rel="canonical" href="https://koloonline.online/blog" />
 
-        {/* ================= BLOG SCHEMA ================= */}
+        {/* ================= STRUCTURED DATA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -46,18 +46,18 @@ export default function Blog({ posts }) {
               name: "Koloonline Blog",
               url: "https://koloonline.online/blog",
               description:
-                "Amazon deals, product reviews and shopping guides",
+                "Amazon product reviews, buying guides, and deal insights",
             }),
           }}
         />
       </Head>
 
       {/* ================= HEADER ================= */}
-      <h1>🔥 Trending Amazon Reviews & Deals</h1>
+      <h1>🔥 Amazon Reviews & Buying Guides</h1>
 
       <p style={{ color: "#555", maxWidth: 800 }}>
-        Explore honest product insights, real user-style reviews, and updated
-        buying guides to help you choose the best Amazon deals in 2026.
+        Browse structured articles that summarize product features, general market
+        feedback, and comparison-based insights to help with purchasing decisions.
       </p>
 
       {/* ================= POSTS GRID ================= */}
@@ -106,7 +106,7 @@ export default function Blog({ posts }) {
                   marginTop: 8,
                 }}
               >
-                🔥 AUTO REVIEW
+                🔥 AUTO GENERATED
               </span>
             )}
 
@@ -118,10 +118,10 @@ export default function Blog({ posts }) {
             {/* ================= EXCERPT ================= */}
             <p style={{ fontSize: 13, color: "#666" }}>
               {post.excerpt?.slice(0, 140) ||
-                "This article includes product analysis, user-style reviews, and Amazon buying insights based on real market trends and comparisons."}
+                "This article provides structured product information, general user feedback patterns, and comparison-based insights for informational purposes."}
             </p>
 
-            {/* ================= REALISTIC REVIEWS SECTION ================= */}
+            {/* ================= NEUTRAL INSIGHTS (ADS SAFE) ================= */}
             <div
               style={{
                 marginTop: 10,
@@ -132,21 +132,19 @@ export default function Blog({ posts }) {
                 color: "#444",
               }}
             >
-              <b>🧠 User Insights:</b>
+              <b>📊 General Overview:</b>
 
               <p style={{ margin: "5px 0" }}>
-                ⭐ Many users say this type of product offers strong value for money
-                compared to higher-priced alternatives.
+                • This type of product is commonly evaluated based on value, features,
+                and ease of use across different user groups.
               </p>
 
               <p style={{ margin: "5px 0" }}>
-                ⭐ Buyers often highlight reliability and ease of use as the main
-                advantages.
+                • Feedback patterns often focus on performance consistency and pricing.
               </p>
 
               <p style={{ margin: "5px 0" }}>
-                ⭐ Some reviews mention small trade-offs, but overall satisfaction
-                remains high for the price range.
+                • Experiences may vary depending on usage and expectations.
               </p>
             </div>
 
@@ -192,7 +190,7 @@ export default function Blog({ posts }) {
                       cursor: "pointer",
                     }}
                   >
-                    🛒 Buy
+                    🛒 View Product
                   </button>
                 </Link>
               )}
@@ -215,7 +213,7 @@ export async function getServerSideProps() {
     ...d.data(),
   }));
 
-  /* ================= SEO RANKING ENGINE ================= */
+  /* ================= SAFE TRENDING SCORE ================= */
   posts = posts.map((p) => {
     const created = p.createdAt?.toDate?.() || new Date();
 
@@ -229,18 +227,18 @@ export async function getServerSideProps() {
       (p.likes || 0) * 3 +
       (p.clicks || 0) * 1.5;
 
-    const viralBoost = p.auto ? 20 : 0;
-    const contentBoost = (p.title?.length || 0) / 10;
-    const authorityBoost = p.featured ? 25 : 0;
+    const automationBoost = p.auto ? 15 : 0;
+    const contentFactor = (p.title?.length || 0) / 12;
+    const featuredBoost = p.featured ? 20 : 0;
 
     return {
       ...p,
       trendingScore:
         freshnessBoost +
         engagementBoost +
-        viralBoost +
-        contentBoost +
-        authorityBoost,
+        automationBoost +
+        contentFactor +
+        featuredBoost,
     };
   });
 
@@ -249,4 +247,4 @@ export async function getServerSideProps() {
   return {
     props: { posts },
   };
-            }
+}
