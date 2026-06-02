@@ -19,7 +19,7 @@ export default function ProductPage({ product, related }) {
 
   return (
     <div style={{ fontFamily: "Arial", background: "#f5f5f5", padding: 20 }}>
-      
+
       {/* ================= SEO ================= */}
       <Head>
         <title>{product.title} | Koloonline</title>
@@ -32,9 +32,9 @@ export default function ProductPage({ product, related }) {
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href={url} />
 
-        <meta property="og:title" content={product.title} />
-        <meta property="og:description" content={product.description} />
-        <meta property="og:image" content={product.image} />
+        <meta property="og:title" content={product.title || ""} />
+        <meta property="og:description" content={product.description || ""} />
+        <meta property="og:image" content={product.image || ""} />
         <meta property="og:url" content={url} />
 
         <meta name="twitter:card" content="summary_large_image" />
@@ -53,21 +53,25 @@ export default function ProductPage({ product, related }) {
         <h1>{product.title}</h1>
 
         <Image
-          src={product.image}
-          alt={product.title}
+          src={product.image || "https://via.placeholder.com/500"}
+          alt={product.title || "product"}
           width={500}
           height={500}
           style={{ width: "100%", height: "auto" }}
         />
 
         <h2 style={{ color: "#B12704" }}>
-          ${product.price}
+          ${product.price || 0}
         </h2>
 
-        <p>{product.description}</p>
+        <p>{product.description || ""}</p>
 
         <button
-          onClick={() => window.open(product.link, "_blank")}
+          onClick={() => {
+            if (product.link) {
+              window.open(product.link, "_blank");
+            }
+          }}
           style={{
             width: "100%",
             padding: 15,
@@ -102,17 +106,18 @@ export default function ProductPage({ product, related }) {
                     background: "#fff",
                     padding: 10,
                     borderRadius: 10,
+                    cursor: "pointer",
                   }}
                 >
                   <Image
-                    src={p.image}
+                    src={p.image || "https://via.placeholder.com/300"}
                     width={300}
                     height={300}
-                    alt={p.title}
+                    alt={p.title || "product"}
                     style={{ width: "100%" }}
                   />
                   <h3>{p.title}</h3>
-                  <p>${p.price}</p>
+                  <p>${p.price || 0}</p>
                 </div>
               </Link>
             ))}
@@ -147,7 +152,9 @@ export async function getStaticProps({ params }) {
   const product = products.find((p) => p.id === params.id);
 
   if (!product) {
-    return { notFound: true };
+    return {
+      notFound: true,
+    };
   }
 
   const related = products
@@ -161,4 +168,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-}
+          }
