@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { initializeApp, getApps } from "firebase/app";
 import {
   getFirestore,
@@ -22,10 +23,14 @@ const app = !getApps().length
 const db = getFirestore(app);
 
 /* ================= PERFORMANCE ENGINE ================= */
+/**
+ * تقييم أداء المنتجات بناءً على التفاعل الحقيقي
+ * CTR + CVR + Orders signals
+ */
 function performanceDelta(p) {
-  const views = p.views || 0;
-  const clicks = p.clicks || 0;
-  const orders = p.orders || 0;
+  const views = Number(p.views || 0);
+  const clicks = Number(p.clicks || 0);
+  const orders = Number(p.orders || 0);
 
   let delta = 0;
 
@@ -47,7 +52,7 @@ function performanceDelta(p) {
   return delta;
 }
 
-/* ================= HANDLER ================= */
+/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const snap = await getDocs(collection(db, "analytics_products"));
@@ -76,6 +81,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       updated,
+      engine: "performance-ai-v2",
     });
 
   } catch (e) {
