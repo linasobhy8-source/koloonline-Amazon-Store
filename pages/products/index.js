@@ -22,9 +22,7 @@ function Stars({ rating = 4.5 }) {
         marginTop: 8,
       }}
     >
-      <div style={{ color: "#FFA41C" }}>
-        {"★".repeat(full)}
-      </div>
+      <div style={{ color: "#FFA41C" }}>{"★".repeat(full)}</div>
 
       <span style={{ fontSize: 13, color: "#666" }}>
         {rating}/5
@@ -55,7 +53,9 @@ export default function ProductsPage({ products = [] }) {
       const searchMatch = title.includes(search.toLowerCase());
 
       const categoryMatch =
-        category === "all" ? true : (p.category || "general") === category;
+        category === "all"
+          ? true
+          : (p.category || "general") === category;
 
       return searchMatch && categoryMatch;
     });
@@ -63,10 +63,14 @@ export default function ProductsPage({ products = [] }) {
     return filtered
       .sort((a, b) => {
         const aScore =
-          (a.views || 0) + (a.clicks || 0) * 2 + (a.orders || 0) * 5;
+          (a.views || 0) +
+          (a.clicks || 0) * 2 +
+          (a.orders || 0) * 5;
 
         const bScore =
-          (b.views || 0) + (b.clicks || 0) * 2 + (b.orders || 0) * 5;
+          (b.views || 0) +
+          (b.clicks || 0) * 2 +
+          (b.orders || 0) * 5;
 
         return bScore - aScore;
       })
@@ -74,10 +78,19 @@ export default function ProductsPage({ products = [] }) {
   }, [products, search, category]);
 
   return (
-    <div style={{ background: "#f4f6f9", minHeight: "100vh", fontFamily: "Arial" }}>
+    <div
+      style={{
+        background: "#f4f6f9",
+        minHeight: "100vh",
+        fontFamily: "Arial",
+      }}
+    >
       <Head>
         <title>Best Amazon Products | Koloonline</title>
-        <meta name="description" content="Trending Amazon products and deals" />
+        <meta
+          name="description"
+          content="Trending Amazon products and deals"
+        />
         <meta name="robots" content="index,follow" />
       </Head>
 
@@ -118,7 +131,13 @@ export default function ProductsPage({ products = [] }) {
             }}
           />
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -128,7 +147,8 @@ export default function ProductsPage({ products = [] }) {
                   borderRadius: 20,
                   border: "none",
                   cursor: "pointer",
-                  background: category === cat ? "#111827" : "#eee",
+                  background:
+                    category === cat ? "#111827" : "#eee",
                   color: category === cat ? "white" : "black",
                 }}
               >
@@ -142,7 +162,8 @@ export default function ProductsPage({ products = [] }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(260px,1fr))",
             gap: 20,
           }}
         >
@@ -152,15 +173,19 @@ export default function ProductsPage({ products = [] }) {
             return (
               <Link
                 key={product.asin || product.id}
-                href={`/product/${product.asin}`}
-                style={{ textDecoration: "none", color: "inherit" }}
+                href={`/product/${product.asin || product.id}`}
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
               >
                 <div
                   style={{
                     background: "white",
                     borderRadius: 20,
                     overflow: "hidden",
-                    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+                    boxShadow:
+                      "0 8px 20px rgba(0,0,0,0.06)",
                   }}
                 >
                   <Image
@@ -168,11 +193,20 @@ export default function ProductsPage({ products = [] }) {
                     alt={product.title || "Product"}
                     width={300}
                     height={300}
-                    style={{ width: "100%", height: 240, objectFit: "contain" }}
+                    style={{
+                      width: "100%",
+                      height: 240,
+                      objectFit: "contain",
+                    }}
                   />
 
                   <div style={{ padding: 15 }}>
-                    <span style={{ fontSize: 12, color: "#2563eb" }}>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "#2563eb",
+                      }}
+                    >
                       {product.category || "Trending"}
                     </span>
 
@@ -217,6 +251,7 @@ export async function getStaticProps() {
     );
 
     const products = snap.docs.map((d) => ({
+      id: d.id,
       asin: d.id,
       ...d.data(),
     }));
@@ -233,4 +268,4 @@ export async function getStaticProps() {
       revalidate: 120,
     };
   }
-          }
+            }
