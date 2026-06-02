@@ -33,7 +33,10 @@ export default function BlogPost({ post, relatedPosts }) {
       {/* ================= SEO ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
-        <meta name="description" content={post.excerpt || post.title} />
+        <meta
+          name="description"
+          content={post.excerpt || post.title}
+        />
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href={url} />
 
@@ -62,7 +65,9 @@ export default function BlogPost({ post, relatedPosts }) {
       >
         <h1>{post.title}</h1>
 
-        <p style={{ color: "#666" }}>⏱ {readingTime} min read</p>
+        <p style={{ color: "#666" }}>
+          ⏱ Estimated reading time: {readingTime} min
+        </p>
 
         {post.image && (
           <Image
@@ -75,14 +80,14 @@ export default function BlogPost({ post, relatedPosts }) {
         )}
 
         <div
-          style={{ marginTop: 20 }}
+          style={{ marginTop: 20, lineHeight: 1.7 }}
           dangerouslySetInnerHTML={{ __html: post.content || "" }}
         />
       </article>
 
       {/* ================= RELATED POSTS ================= */}
       <section style={{ maxWidth: 900, margin: "30px auto" }}>
-        <h2>🔥 Related Posts</h2>
+        <h2>Related Articles</h2>
 
         {relatedPosts?.map((p) => (
           <Link key={p.id} href={`/blog/${p.slug}`}>
@@ -139,4 +144,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-        }
+                }
