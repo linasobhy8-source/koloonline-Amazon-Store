@@ -1,7 +1,7 @@
 import { autonomousRevenueEngine } from "../../../lib/ai/autonomousRevenueEngine";
 
 export default async function handler(req, res) {
-  // حماية من أي method غير متوقع
+  // ================= METHOD GUARD =================
   if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({
       success: false,
@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // ================= ENGINE RUN =================
     const result = await autonomousRevenueEngine();
 
     return res.status(200).json({
