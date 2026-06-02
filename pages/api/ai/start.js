@@ -1,24 +1,36 @@
 import { brainOS } from "../../../lib/ai/brainOS";
+import { db } from "../../../config/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-/* ================= AI START ENDPOINT ================= */
+/* ================= AI START ENDPOINT (BRAIN V2) ================= */
 export default async function handler(req, res) {
   try {
-    // منع التشغيل المتكرر
+    // منع التكرار
     if (global.__AI_RUNNING__) {
       return res.status(200).json({
         success: true,
-        message: "AI Brain already running",
+        status: "already_running",
       });
     }
 
     global.__AI_RUNNING__ = true;
 
-    // تشغيل الـ Brain في الخلفية
+    const startTime = Date.now();
+
+    // تشغيل brain
     brainOS();
+
+    // تسجيل تشغيل الـ brain
+    await addDoc(collection(db, "brain_logs"), {
+      event: "brain_started",
+      timestamp: startTime,
+      createdAt: serverTimestamp(),
+    });
 
     return res.status(200).json({
       success: true,
-      message: "🧠 AI Brain Started Successfully",
+      message: "🧠 BrainOS v2 Started",
+      version: "2.0",
     });
 
   } catch (e) {
@@ -27,4 +39,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-}
+      }
