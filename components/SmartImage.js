@@ -1,43 +1,39 @@
 import Image from "next/image";
 import { optimizeAmazonImage } from "../lib/amazonImage";
-import { useState } from "react";
 
 const fallback =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
 export default function SmartImage({ src, alt }) {
-  const [imgSrc, setImgSrc] = useState(
-    optimizeAmazonImage(src) || fallback
-  );
+  const finalSrc = optimizeAmazonImage(src);
 
   return (
-    <Image
-      src={imgSrc}
-      alt={alt || "product image"}
-      width={500}
-      height={500}
-
-      /* ================= PERFORMANCE ================= */
-      loading="lazy"
-      priority={false}
-
-      /* ================= QUALITY OPTIMIZATION ================= */
-      quality={85}
-
-      /* ================= AMAZON FIX ================= */
-      unoptimized={true}
-
-      /* ================= ERROR HANDLING ================= */
-      onError={() => setImgSrc(fallback)}
-
-      /* ================= CLEAN UI ================= */
-      style={{
-        width: "100%",
-        height: "auto",
-        objectFit: "contain",
-        background: "#ffffff",
-        borderRadius: "8px",
-      }}
-    />
+    <div style={{
+      width: "100%",
+      background: "#fff",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 10,
+      borderRadius: 10,
+      overflow: "hidden"
+    }}>
+      <Image
+        src={finalSrc || fallback}
+        alt={alt || "product image"}
+        width={500}
+        height={500}
+        loading="lazy"
+        priority={false}
+        quality={75}
+        placeholder="blur"
+        blurDataURL={fallback}
+        style={{
+          width: "100%",
+          height: "auto",
+          objectFit: "contain",
+        }}
+      />
+    </div>
   );
-        }
+}
