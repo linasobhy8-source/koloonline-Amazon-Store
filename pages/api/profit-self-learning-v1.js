@@ -21,6 +21,12 @@ const app = !getApps().length
 const db = getFirestore(app);
 
 /* ================= LEARNING ENGINE ================= */
+/**
+ * AdSense/SEO note:
+ * This logic helps prioritize high-performing products based on real engagement data.
+ * Clean structured data improves downstream content quality for ads and indexing.
+ */
+
 function adjustScore(product) {
   const views = product.views || 0;
   const clicks = product.clicks || 0;
@@ -64,10 +70,8 @@ export default async function handler(req, res) {
 
     for (const p of products) {
       const adjust = adjustScore(p);
-
       const newScore = (p.profitScore || 0) + adjust;
 
-      /* ================= UPDATE ================= */
       await updateDoc(doc(db, "analytics_products", p.id), {
         profitScore: newScore,
         learningAdjustment: adjust,
@@ -88,4 +92,4 @@ export default async function handler(req, res) {
       error: error.message,
     });
   }
-      }
+  }
