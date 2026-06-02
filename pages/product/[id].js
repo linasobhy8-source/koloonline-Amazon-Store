@@ -5,6 +5,10 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
 
+/* ================= FALLBACK IMAGE ================= */
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Koloonline";
+
 /* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
   if (!product) {
@@ -18,9 +22,17 @@ export default function ProductPage({ product, related }) {
 
   const url = `https://koloonline.online/product/${product.id}`;
 
-  return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5", padding: 20 }}>
+  const imageSrc =
+    optimizeAmazonImage(product.image) || fallbackImage;
 
+  return (
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        padding: 20,
+      }}
+    >
       {/* ================= SEO ================= */}
       <Head>
         <title>{product.title} | Koloonline</title>
@@ -34,8 +46,11 @@ export default function ProductPage({ product, related }) {
         <link rel="canonical" href={url} />
 
         <meta property="og:title" content={product.title || ""} />
-        <meta property="og:description" content={product.description || ""} />
-        <meta property="og:image" content={product.image || ""} />
+        <meta
+          property="og:description"
+          content={product.description || ""}
+        />
+        <meta property="og:image" content={imageSrc} />
         <meta property="og:url" content={url} />
 
         <meta name="twitter:card" content="summary_large_image" />
@@ -53,14 +68,16 @@ export default function ProductPage({ product, related }) {
       >
         <h1>{product.title}</h1>
 
-        {/* 🔥 OPTIMIZED AMAZON IMAGE */}
+        {/* ================= OPTIMIZED IMAGE ================= */}
         <Image
-          src={optimizeAmazonImage(product.image)}
-          alt={product.title || "product"}
+          src={imageSrc}
+          alt={product.title || "product image"}
           width={500}
           height={500}
-          priority={true}
-          loading="eager"
+          priority
+          quality={80}
+          placeholder="blur"
+          blurDataURL={fallbackImage}
           style={{
             width: "100%",
             height: "auto",
@@ -102,38 +119,48 @@ export default function ProductPage({ product, related }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(200px,1fr))",
               gap: 15,
             }}
           >
-            {related.map((p) => (
-              <Link key={p.id} href={`/product/${p.id}`}>
-                <div
-                  style={{
-                    background: "#fff",
-                    padding: 10,
-                    borderRadius: 10,
-                    cursor: "pointer",
-                  }}
-                >
-                  <Image
-                    src={optimizeAmazonImage(p.image)}
-                    width={300}
-                    height={300}
-                    alt={p.title || "product"}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      objectFit: "contain",
-                    }}
-                  />
+            {related.map((p) => {
+              const relatedImage =
+                optimizeAmazonImage(p.image) ||
+                fallbackImage;
 
-                  <h3>{p.title}</h3>
-                  <p>${p.price || 0}</p>
-                </div>
-              </Link>
-            ))}
+              return (
+                <Link key={p.id} href={`/product/${p.id}`}>
+                  <div
+                    style={{
+                      background: "#fff",
+                      padding: 10,
+                      borderRadius: 10,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Image
+                      src={relatedImage}
+                      width={300}
+                      height={300}
+                      alt={p.title || "product"}
+                      loading="lazy"
+                      quality={75}
+                      placeholder="blur"
+                      blurDataURL={fallbackImage}
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                        objectFit: "contain",
+                      }}
+                    />
+
+                    <h3>{p.title}</h3>
+                    <p>${p.price || 0}</p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
