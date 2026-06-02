@@ -4,25 +4,26 @@ export default async function handler(req, res) {
 
     console.log("🤖 SEO ORCHESTRATOR STARTED");
 
-    /* ================= TIMEOUT FETCH WRAPPER ================= */
+    /* ================= SAFE FETCH WRAPPER ================= */
     const fetchWithTimeout = async (url, options = {}, timeout = 8000) => {
       const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), timeout);
+      const timer = setTimeout(() => controller.abort(), timeout);
 
       try {
-        const res = await fetch(url, {
+        const response = await fetch(url, {
           ...options,
           signal: controller.signal,
         });
-        clearTimeout(id);
-        return res;
-      } catch (e) {
-        clearTimeout(id);
-        throw e;
+
+        clearTimeout(timer);
+        return response;
+      } catch (error) {
+        clearTimeout(timer);
+        throw error;
       }
     };
 
-    /* ================= 1️⃣ GET CONTENT SIGNALS ================= */
+    /* ================= LOAD CONTENT SIGNALS ================= */
     let products = [];
     let blogs = [];
 
@@ -37,17 +38,17 @@ export default async function handler(req, res) {
 
       products = prodData?.items || [];
       blogs = blogData?.items || [];
-    } catch (e) {
-      console.log("⚠️ Content fetch error:", e.message);
+    } catch (error) {
+      console.log("⚠️ Content fetch failed:", error.message);
     }
 
-    /* ================= 2️⃣ SMART SCORING ENGINE ================= */
-    function scoreItem(item, type) {
+    /* ================= SAFE SCORING ENGINE ================= */
+    const scoreItem = (item, type = "general") => {
       if (!item) return 0;
 
       let score = 40;
 
-      // Core signals
+      // Content quality signals
       if (item.title) score += 10;
       if (item.image) score += 10;
       if (item.slug) score += 5;
@@ -57,21 +58,22 @@ export default async function handler(req, res) {
       if (item.clicks > 20) score += 10;
       if (item.conversions > 5) score += 15;
 
-      // Freshness boost
-      const updated = new Date(item.updatedAt || item.createdAt);
-      const diffDays = (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24);
+      // Freshness factor
+      const updated = new Date(item.updatedAt || item.createdAt || Date.now());
+      const diffDays =
+        (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24);
 
       if (diffDays < 3) score += 10;
       else if (diffDays < 7) score += 5;
 
-      // Type boost
+      // Type weighting
       if (type === "product") score += 5;
       if (type === "blog") score += 3;
 
       return Math.min(100, score);
-    }
+    };
 
-    /* ================= 3️⃣ RANKING SYSTEM ================= */
+    /* ================= RANKING ================= */
     const rankedProducts = products
       .map((p) => ({
         ...p,
@@ -88,26 +90,36 @@ export default async function handler(req, res) {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
 
-    console.log("🔥 TOP PRODUCTS:", rankedProducts.map((p) => p.id));
-    console.log("📚 TOP BLOGS:", rankedBlogs.map((b) => b.id));
+    console.log(
+      "🔥 TOP PRODUCTS:",
+      rankedProducts.map((p) => p.id)
+    );
 
-    /* ================= 4️⃣ SEO ORCHESTRATOR CALL ================= */
+    console.log(
+      "📚 TOP BLOGS:",
+      rankedBlogs.map((b) => b.id)
+    );
+
+    /* ================= ORCHESTRATOR RUNNER ================= */
     const runOrchestrator = async (type, id) => {
       try {
-        await fetchWithTimeout(`${baseUrl}/api/seo/seo-orchestrator-run`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type, id }),
-        });
-      } catch (e) {
-        console.log("⚠️ Orchestrator error:", e.message);
+        await fetchWithTimeout(
+          `${baseUrl}/api/seo/seo-orchestrator-run`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type, id }),
+          }
+        );
+      } catch (error) {
+        console.log("⚠️ Orchestrator error:", error.message);
       }
     };
 
-    /* ================= 5️⃣ EXECUTION (SAFE BATCHING) ================= */
-
+    /* ================= SAFE BATCH PROCESSING ================= */
     const processBatch = async (items, type) => {
       for (const item of items) {
+        if (!item?.id) continue;
         await runOrchestrator(type, item.id);
       }
     };
@@ -115,7 +127,7 @@ export default async function handler(req, res) {
     await processBatch(rankedProducts, "product");
     await processBatch(rankedBlogs, "blog");
 
-    /* ================= 6️⃣ FINAL HEALTH LOG ================= */
+    /* ================= LOGGING ================= */
     try {
       await fetchWithTimeout(`${baseUrl}/api/cron-logs`, {
         method: "POST",
@@ -128,8 +140,8 @@ export default async function handler(req, res) {
           timestamp: new Date().toISOString(),
         }),
       });
-    } catch (e) {
-      console.log("Log error:", e.message);
+    } catch (error) {
+      console.log("⚠️ Log error:", error.message);
     }
 
     console.log("✅ SEO ORCHESTRATOR COMPLETED");
@@ -142,13 +154,12 @@ export default async function handler(req, res) {
         blogs: rankedBlogs.length,
       },
     });
-
-  } catch (e) {
-    console.error("❌ SEO ORCHESTRATOR FAILED:", e);
+  } catch (error) {
+    console.error("❌ SEO ORCHESTRATOR FAILED:", error);
 
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: error.message,
     });
   }
-  }
+      }
