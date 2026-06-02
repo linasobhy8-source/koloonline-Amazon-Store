@@ -1,58 +1,56 @@
-import { autonomousOS } from "./autonomousOS";
 import { runGrowthEngine } from "../engine/growthEngine";
 import { executeActions } from "./executeActions";
 
 /* ================= SAFE HELPERS ================= */
-const safe = (v, fallback = []) => (Array.isArray(v) ? v : fallback);
+const safeArray = (v) => (Array.isArray(v) ? v : []);
 
-/* ================= AI MEMORY (Simple Learning Layer) ================= */
+/* ================= SIMPLE LEARNING MEMORY ================= */
 let memory = {
   bestPerforming: [],
   worstPerforming: [],
   lastDecisions: null,
 };
 
-/* ================= SCORE LEARNER ================= */
-function learnFromResults(results) {
-  if (!results) return;
-
-  const all = [
-    ...(results.trendingProducts || []),
-    ...(results.topProducts || []),
-  ];
-
-  const scored = all.map((p) => ({
-    ...p,
-    finalScore:
-      (p.views || 0) * 1 +
+/* ================= PERFORMANCE ANALYSIS ================= */
+function analyzePerformance(items = []) {
+  const scored = items.map((p) => {
+    const score =
+      (p.views || 0) +
       (p.clicks || 0) * 2 +
-      (p.orders || 0) * 10,
-  }));
+      (p.orders || 0) * 10;
 
-  scored.sort((a, b) => b.finalScore - a.finalScore);
+    return {
+      ...p,
+      score,
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
 
   memory.bestPerforming = scored.slice(0, 10);
   memory.worstPerforming = scored.slice(-5);
+
+  return scored;
 }
 
-/* ================= AI DECISION ENGINE ================= */
-function aiDecisionLayer(data) {
+/* ================= DECISION ENGINE ================= */
+function decisionLayer(data = {}) {
   const {
-    trendingProducts,
-    topProducts,
-    viralProducts,
-    bestROI,
+    trendingProducts = [],
+    topProducts = [],
+    viralProducts = [],
+    bestROI = [],
   } = data;
 
   return {
     homepageStrategy: [
-      ...safe(trendingProducts).slice(0, 3),
-      ...safe(bestROI).slice(0, 2),
+      ...safeArray(trendingProducts).slice(0, 3),
+      ...safeArray(bestROI).slice(0, 2),
     ],
 
-    revenueStrategy: safe(topProducts).slice(0, 5),
+    revenueStrategy: safeArray(topProducts).slice(0, 5),
 
-    viralStrategy: safe(viralProducts).slice(0, 5),
+    viralStrategy: safeArray(viralProducts).slice(0, 5),
 
     seoFocus: memory.bestPerforming.slice(0, 5),
   };
@@ -61,31 +59,37 @@ function aiDecisionLayer(data) {
 /* ================= AI CEO CORE ================= */
 export async function aiCEO() {
   try {
-    /* ================= RUN CORE ENGINE ================= */
+    /* ================= RUN ENGINE ================= */
     const data = await runGrowthEngine();
 
-    /* ================= LEARN ================= */
-    learnFromResults(data);
+    /* ================= LEARN FROM DATA ================= */
+    const analyzed = {
+      ...data,
+      allProducts: analyzePerformance([
+        ...(data.trendingProducts || []),
+        ...(data.topProducts || []),
+      ]),
+    };
 
-    /* ================= DECIDE ================= */
-    const decisions = aiDecisionLayer(data);
+    /* ================= MAKE DECISIONS ================= */
+    const decisions = decisionLayer(analyzed);
 
-    /* ================= EXECUTE ================= */
+    /* ================= EXECUTE ACTIONS ================= */
     const actions = await executeActions({
       ...decisions,
-      aiMode: "CEO_FULL_CONTROL",
+      mode: "AI_CEO_CONTROLLED",
     });
 
-    /* ================= SELF CHECK ================= */
+    /* ================= SYSTEM STATUS ================= */
     const health = {
-      totalProducts: (data.trendingProducts || []).length,
+      totalTrending: (data.trendingProducts || []).length,
       memorySize: memory.bestPerforming.length,
       mode: "AI_CEO_ACTIVE",
     };
 
     return {
       success: true,
-      mode: "AI_CEO_v1",
+      version: "AI_CEO_v1",
 
       decisions,
       actions,
@@ -98,8 +102,8 @@ export async function aiCEO() {
   } catch (e) {
     return {
       success: false,
-      mode: "AI_CEO_v1",
+      version: "AI_CEO_v1",
       error: e.message,
     };
   }
-}
+    }
