@@ -1,22 +1,38 @@
 import sharp from "sharp";
 
-/* ================= SIMPLE MEMORY CACHE ================= */
-const cache = new Map();
+/* ================= GLOBAL CACHE ================= */
+const cache = global.__IMG_CACHE__ || new Map();
+global.__IMG_CACHE__ = cache;
+
+/* ================= AI SCORING ================= */
+function getImagePriority(url = "") {
+  let score = 1;
+
+  // Amazon images أهم
+  if (url.includes("m.media-amazon.com")) score += 3;
+
+  // product images
+  if (url.includes("images")) score += 1;
+
+  // fallback images أقل أهمية
+  if (url.includes("placeholder")) score -= 1;
+
+  return score;
+}
 
 export default async function handler(req, res) {
   try {
-    const { url, w = 500, q = 75 } = req.query;
+    const { url, w = 500, q = 75, priority = "normal" } = req.query;
 
-    /* ================= VALIDATION ================= */
     if (!url) {
       return res.status(400).json({ error: "Missing image url" });
     }
 
     /* ================= CACHE KEY ================= */
-    const cacheKey = `${url}-${w}-${q}`;
+    const key = `${url}-${w}-${q}`;
 
-    if (cache.has(cacheKey)) {
-      const cached = cache.get(cacheKey);
+    if (cache.has(key)) {
+      const cached = cache.get(key);
 
       res.setHeader("Content-Type", cached.type);
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -45,44 +61,43 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Image not found" });
     }
 
-    const inputBuffer = Buffer.from(await response.arrayBuffer());
+    const buffer = Buffer.from(await response.arrayBuffer());
 
-    /* ================= DEVICE OPTIMIZATION ================= */
-    const accept = req.headers["accept"] || "";
-    const useWebp = accept.includes("image/webp");
+    /* ================= AI PRIORITY BOOST ================= */
+    const aiScore = getImagePriority(url);
 
-    const width = parseInt(w);
+    const finalWidth =
+      priority === "high"
+        ? Math.min(Number(w) * 1.5, 1200)
+        : Number(w);
 
-    /* ================= IMAGE PROCESSING ================= */
-    const outputBuffer = await sharp(inputBuffer)
-      .resize(width) // responsive resize
-      .toFormat(useWebp ? "webp" : "jpeg", {
-        quality: parseInt(q),
+    const quality = aiScore > 3 ? 85 : Number(q);
+
+    /* ================= IMAGE OPTIMIZATION ================= */
+    const output = await sharp(buffer)
+      .resize(finalWidth)
+      .toFormat("webp", {
+        quality,
       })
       .toBuffer();
 
-    const contentType = useWebp ? "image/webp" : "image/jpeg";
-
-    /* ================= STORE IN CACHE ================= */
-    cache.set(cacheKey, {
-      buffer: outputBuffer,
-      type: contentType,
+    /* ================= CACHE STORE ================= */
+    cache.set(key, {
+      buffer: output,
+      type: "image/webp",
     });
 
-    /* ================= RESPONSE HEADERS ================= */
-    res.setHeader("Content-Type", contentType);
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=31536000, immutable"
-    );
+    /* ================= HEADERS ================= */
+    res.setHeader("Content-Type", "image/webp");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Vary", "Accept");
-    res.setHeader("X-CDN-Engine", "Koloonline-Pro-v3");
+    res.setHeader("X-AI-CDN", "Koloonline-v4");
 
-    return res.send(outputBuffer);
+    return res.send(output);
   } catch (e) {
     return res.status(500).json({
-      error: "CDN Engine Error",
+      error: "AI CDN error",
       message: e.message,
     });
   }
-}
+      }
