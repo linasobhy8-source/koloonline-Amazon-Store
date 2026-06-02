@@ -2,13 +2,13 @@ import { getTopQueries } from "../lib/seo/searchConsoleMock";
 import { enhancePost } from "../engine/contentEnhancer";
 import { createNewContent } from "../engine/contentGenerator";
 
-/* ================= NEURAL LOOP ================= */
+/* ================= NEURAL FEEDBACK LOOP ================= */
 export async function neuralFeedbackLoop() {
   try {
-    /* ================= 1. GET SEO DATA ================= */
+    /* ================= SEO DATA ================= */
     const queries = await getTopQueries();
 
-    /* ================= 2. FIND OPPORTUNITIES ================= */
+    /* ================= OPPORTUNITIES DETECTION ================= */
     const opportunities = queries
       .filter((q) => q.impressions > 100 && q.ctr < 0.1)
       .map((q) => ({
@@ -17,36 +17,38 @@ export async function neuralFeedbackLoop() {
       }))
       .sort((a, b) => b.score - a.score);
 
-    /* ================= 3. ENHANCE EXISTING CONTENT ================= */
+    /* ================= CONTENT IMPROVEMENT ================= */
     const updatedPosts = [];
 
-    for (let q of opportunities.slice(0, 3)) {
+    for (const q of opportunities.slice(0, 3)) {
       try {
         const result = await enhancePost(q.keyword);
         updatedPosts.push(result);
       } catch (err) {
-        console.error("Enhance error:", q.keyword, err.message);
+        console.error("Enhancement error:", q.keyword, err.message);
       }
     }
 
-    /* ================= 4. CREATE NEW CONTENT ================= */
+    /* ================= NEW CONTENT CREATION ================= */
     const newPosts = [];
 
-    for (let q of queries.slice(0, 3)) {
+    for (const q of queries.slice(0, 3)) {
       try {
         const post = await createNewContent(q.keyword);
         newPosts.push(post);
       } catch (err) {
-        console.error("Create error:", q.keyword, err.message);
+        console.error("Content creation error:", q.keyword, err.message);
       }
     }
 
-    /* ================= FINAL OUTPUT ================= */
+    /* ================= RESPONSE ================= */
     return {
       success: true,
+
       updatedPosts,
       newPosts,
       opportunities,
+
       stats: {
         totalQueries: queries.length,
         opportunitiesFound: opportunities.length,
@@ -61,4 +63,4 @@ export async function neuralFeedbackLoop() {
       error: e.message,
     };
   }
-      }
+}
