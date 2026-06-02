@@ -1,130 +1,125 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import Head from "next/head";
 
-/* ================= FIREBASE ================= */
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
+export default function SmartHomeDevices() {
+  return (
+    <>
+      <Head>
+        <title>Smart Home Devices 2026 | Best Smart Tech for Home</title>
+
+        {/* ================= ADSENSE SAFE DESCRIPTION ================= */}
+        <meta
+          name="description"
+          content="Discover the best smart home devices in 2026 including smart cameras, Alexa devices, and robot vacuums. Compare features, pros, and real user-style reviews before buying."
+        />
+
+        <meta
+          name="keywords"
+          content="smart home devices, smart cameras, alexa devices, robot vacuum, home automation 2026"
+        />
+
+        <link
+          rel="canonical"
+          href="https://koloonline.online/blog/smart-home-devices-2026"
+        />
+      </Head>
+
+      <main style={styles.main}>
+        <h1>🏠 Smart Home Devices 2026</h1>
+
+        {/* ================= INTRO (ADSENSE SAFE CONTENT) ================= */}
+        <p style={styles.text}>
+          Smart home technology is becoming more accessible in 2026. Devices
+          like cameras, voice assistants, and automated cleaning robots help
+          improve daily life by saving time and increasing security.
+        </p>
+
+        {/* ================= REVIEWS SECTION ================= */}
+        <section style={styles.box}>
+          <h2>⭐ User-Style Reviews & Insights</h2>
+
+          <div>
+            <h3>📷 Smart Cameras</h3>
+            <p>
+              ✔ Clear night vision  
+              ✔ Motion detection alerts  
+              ✔ Easy mobile control  
+              ⭐ Overall: Highly recommended for home security setups
+            </p>
+          </div>
+
+          <div>
+            <h3>🗣 Alexa Devices</h3>
+            <p>
+              ✔ Voice automation for home tasks  
+              ✔ Smart assistant integration  
+              ✔ Music + reminders + control  
+              ⭐ Best for smart home beginners
+            </p>
+          </div>
+
+          <div>
+            <h3>🤖 Robot Vacuum</h3>
+            <p>
+              ✔ Automatic cleaning schedules  
+              ✔ Works on carpets and tiles  
+              ✔ Saves daily cleaning time  
+              ⭐ Strong value for busy households
+            </p>
+          </div>
+        </section>
+
+        {/* ================= FEATURES ================= */}
+        <ul style={styles.list}>
+          <li>Smart Cameras with AI Detection</li>
+          <li>Alexa & Voice Assistant Devices</li>
+          <li>Automated Robot Vacuum Cleaners</li>
+        </ul>
+
+        {/* ================= CONTINUE LINKS ================= */}
+        <section style={styles.linksBox}>
+          <h3>🔥 Continue Reading</h3>
+
+          <a href="/blog/viral-products-amazon">🔥 Viral Products</a>
+          <br />
+          <a href="/blog/budget-tech-products">💻 Budget Tech</a>
+          <br />
+          <a href="/amazon-haul">🛒 Amazon Trending Haul</a>
+        </section>
+      </main>
+    </>
+  );
+}
+
+/* ================= CLEAN STYLES ================= */
+const styles = {
+  main: {
+    maxWidth: "900px",
+    margin: "0 auto",
+    padding: "40px 20px",
+    fontFamily: "Arial",
+    lineHeight: 1.8,
+  },
+
+  text: {
+    color: "#333",
+    marginBottom: 20,
+  },
+
+  box: {
+    background: "#f8f8f8",
+    padding: 20,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+
+  list: {
+    marginTop: 20,
+  },
+
+  linksBox: {
+    marginTop: 40,
+    padding: 20,
+    background: "#fff3e0",
+    borderRadius: 12,
+  },
 };
-
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
-
-const db = getFirestore(app);
-
-/* ================= PROFIT INTELLIGENCE CORE ================= */
-function profitBrain(product) {
-  let score = 0;
-
-  const views = product.views || 0;
-  const clicks = product.clicks || 0;
-  const orders = product.orders || 0;
-  const price = product.price || 0;
-
-  /* ================= ENGAGEMENT ================= */
-  score += views * 0.4;
-  score += clicks * 2.5;
-  score += orders * 10;
-
-  /* ================= CONVERSION ================= */
-  const ctr = views > 0 ? clicks / views : 0;
-  const cvr = clicks > 0 ? orders / clicks : 0;
-
-  score += ctr * 120;
-  score += cvr * 250;
-
-  /* ================= PRICE OPTIMIZATION ================= */
-  if (price >= 10 && price <= 60) score += 25;
-  else if (price > 60 && price <= 120) score += 10;
-  else score -= 15;
-
-  /* ================= VIRAL SIGNAL ================= */
-  if (product.viralBoost) score += 70;
-
-  /* ================= CATEGORY INTELLIGENCE ================= */
-  const winners = [
-    "electronics",
-    "smart watch",
-    "headphones",
-    "gaming",
-    "fitness",
-    "gadgets",
-    "home"
-  ];
-
-  if (winners.includes((product.category || "").toLowerCase())) {
-    score += 30;
-  }
-
-  return score;
-}
-
-/* ================= DECISION ENGINE ================= */
-function decision(score) {
-  if (score >= 130) return "🔥 AUTO-PUBLISH";
-  if (score >= 90) return "⚡ QUEUE";
-  if (score >= 60) return "🟡 REVIEW";
-  return "❌ DROP";
-}
-
-/* ================= HANDLER ================= */
-export default async function handler(req, res) {
-  try {
-    const snap = await getDocs(collection(db, "products"));
-
-    const products = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    }));
-
-    const results = [];
-
-    for (const p of products) {
-      const score = profitBrain(p);
-      const action = decision(score);
-
-      /* ================= SAVE INTELLIGENCE ================= */
-      await addDoc(collection(db, "analytics_products"), {
-        ...p,
-        profitScore: score,
-        decision: action,
-        analyzedAt: serverTimestamp(),
-      });
-
-      /* ================= AUTO FEED CONTROL ================= */
-      if (action === "🔥 AUTO-PUBLISH") {
-        await addDoc(collection(db, "home_feed"), {
-          ...p,
-          boost: true,
-          createdAt: serverTimestamp(),
-        });
-      }
-
-      results.push({
-        id: p.id,
-        score,
-        action,
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      total: products.length,
-      results,
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-  }
