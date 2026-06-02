@@ -1,1 +1,13 @@
+<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="500" height="500" fill="#f3f4f6"/>
 
+  <rect x="80" y="120" width="340" height="260" rx="20" fill="#e5e7eb"/>
+
+  <path d="M180 260 L240 200 L300 260 L360 200" stroke="#9ca3af" stroke-width="8" fill="none"/>
+
+  <circle cx="220" cy="220" r="20" fill="#9ca3af"/>
+
+  <text x="50%" y="430" text-anchor="middle" fill="#6b7280" font-size="22" font-family="Arial">
+    Koloonline Product Image
+  </text>
+</svg>
