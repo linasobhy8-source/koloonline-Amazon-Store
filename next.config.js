@@ -7,24 +7,46 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
-  /* ================= IMAGE OPTIMIZATION ================= */
+  /* ================= IMAGE OPTIMIZATION (AMAZON FIXED) ================= */
   images: {
     remotePatterns: [
-      // Amazon Images (الأهم)
+      /* ================= AMAZON OFFICIAL IMAGES ================= */
       {
         protocol: "https",
         hostname: "m.media-amazon.com",
       },
       {
         protocol: "https",
-        hostname: "*.amazon.com",
+        hostname: "images-na.ssl-images-amazon.com",
+      },
+
+      /* ================= AMAZON GLOBAL (SAFE FIX) ================= */
+      {
+        protocol: "https",
+        hostname: "**.amazon.com",
       },
       {
         protocol: "https",
-        hostname: "*.amazon.*",
+        hostname: "**.amazon.ae",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazon.co.uk",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazon.de",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazon.fr",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazon.in",
       },
 
-      // Firebase / Google images
+      /* ================= FIREBASE + CDN ================= */
       {
         protocol: "https",
         hostname: "**firebaseapp.com",
@@ -34,25 +56,25 @@ const nextConfig = {
         hostname: "**googleusercontent.com",
       },
 
-      // fallback images
+      /* ================= FALLBACK ================= */
       {
         protocol: "https",
         hostname: "via.placeholder.com",
       },
     ],
 
-    /* ================= MODERN FORMATS ================= */
+    /* ================= MODERN IMAGE FORMATS ================= */
     formats: ["image/avif", "image/webp"],
 
-    /* ================= CACHE SPEED ================= */
-    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days cache
+    /* ================= SPEED CACHE ================= */
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
 
-    /* ================= DEVICE OPTIMIZATION ================= */
-    deviceSizes: [320, 420, 768, 1024, 1200],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750],
+    /* ================= RESPONSIVE IMAGES ================= */
+    deviceSizes: [320, 420, 768, 1024, 1200, 1600],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828],
   },
 
-  /* ================= OPTIONAL HEADERS (SEO + ADSENSE SAFE) ================= */
+  /* ================= SECURITY + ADSENSE SAFE HEADERS ================= */
   async headers() {
     return [
       {
@@ -69,6 +91,12 @@ const nextConfig = {
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
+          },
+
+          /* ================= PERFORMANCE HINT ================= */
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
           },
         ],
       },
