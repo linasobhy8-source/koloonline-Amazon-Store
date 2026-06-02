@@ -1,6 +1,6 @@
 # 🛒 Koloonline Amazon Store
 
-Modern Amazon Affiliate Store built with **Next.js + Firebase**, optimized for SEO, speed, and conversions.
+A modern Amazon Affiliate store built with **Next.js + Firebase**, focused on SEO performance, fast loading, and structured product discovery.
 
 ---
 
@@ -20,60 +20,64 @@ Modern Amazon Affiliate Store built with **Next.js + Firebase**, optimized for S
 
 ## ⚙️ Tech Stack
 
-- Next.js (SSR + SEO Optimized)
-- Firebase Firestore (Products Database)
-- Vercel Hosting
+- Next.js (SSR + SEO optimized rendering)
+- Firebase Firestore (product data storage)
+- Vercel (serverless deployment)
 - Google Analytics 4 (GA4)
 - Google Tag Manager (GTM)
-- Amazon Affiliate System
+- Amazon Affiliate Program integration
 
 ---
 
 ## 📈 Key Features
 
-- Dynamic Product Pages `/product/[asin]`
-- Firebase-driven product system
+- Dynamic product pages using `/product/[asin]`
+- Firebase-based product catalog
 - Affiliate tracking system
-- Click tracking (GA4 + GTM)
-- WhatsApp conversion flow
-- Related products system
-- SEO optimized (OpenGraph + Schema)
-- Dynamic Sitemap (Firebase-based)
+- Click event tracking via GA4 & GTM
+- WhatsApp conversion flow integration
+- Related product recommendations
+- SEO-friendly metadata (OpenGraph + Schema.org)
+- Dynamic sitemap generation from database
 
 ---
 
-## 🚀 Business Goals
+## 🚀 Business Objectives
 
-- AI-powered product recommendations
-- Advanced analytics dashboard
-- Country-based tracking system
-- Funnel optimization for conversions
-- SaaS expansion ready
-- High SEO performance
+- Improve product discovery experience
+- Enhance SEO visibility and indexing performance
+- Build structured affiliate funnels
+- Enable analytics-driven optimization
+- Prepare for future SaaS expansion
 
 ---
 
-## 🔐 Architecture
+## 🔐 Architecture Overview
 
-- Fully frontend-based (Next.js)
-- Firebase as backend (No custom server needed)
-- Serverless deployment (Vercel)
-- Scalable to SaaS model
+- Frontend: Next.js (React-based framework)
+- Backend: Firebase Firestore (serverless database)
+- Hosting: Vercel (edge deployment)
+- External Services: Google Analytics & Amazon Affiliate System
 
 ---
 
 ## ⚡ SEO Strategy
 
-- Dynamic sitemap from Firebase
-- Clean product URLs
-- Structured metadata (OpenGraph + Schema)
-- Fast indexing via Google Search Console
+- Dynamic sitemap generation from product database
+- Clean and structured URL architecture
+- Metadata optimization for social sharing (OpenGraph)
+- Schema markup for better search engine understanding
+- Fast indexing support via Google Search Console
 
 ---
 
-## 🧠 Notes
+## 🧠 Data Flow
 
-All products are dynamically loaded from Firebase Firestore and automatically reflected in:
-- Website
-- Sitemap
-- SEO structure
+All products are stored in Firebase Firestore and automatically reflected across:
+
+- Website pages
+- Blog system
+- Sitemap generation
+- SEO metadata system
+
+This ensures consistent and synchronized product visibility across the platform.
