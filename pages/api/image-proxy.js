@@ -1,15 +1,17 @@
+import sharp from "sharp";
+
 export default async function handler(req, res) {
   try {
-    const { url } = req.query;
+    const { url, w = 500, q = 75 } = req.query;
 
     /* ================= VALIDATION ================= */
-    if (!url || typeof url !== "string") {
+    if (!url) {
       return res.status(400).json({
-        error: "Missing or invalid image url",
+        error: "Missing image url",
       });
     }
 
-    /* ================= SECURITY (ALLOWLIST) ================= */
+    /* ================= SECURITY ================= */
     const allowed = [
       "m.media-amazon.com",
       "images-na.ssl-images-amazon.com",
@@ -25,10 +27,6 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ================= DETECT WEBP SUPPORT ================= */
-    const accept = req.headers["accept"] || "";
-    const supportsWebp = accept.includes("image/webp");
-
     /* ================= FETCH IMAGE ================= */
     const response = await fetch(url);
 
@@ -38,36 +36,37 @@ export default async function handler(req, res) {
       });
     }
 
-    let buffer = await response.arrayBuffer();
-    let contentType =
-      response.headers.get("content-type") || "image/jpeg";
+    const buffer = Buffer.from(await response.arrayBuffer());
 
-    /* ================= SMART HEADER OPTIMIZATION ================= */
+    /* ================= DETECT FORMAT ================= */
+    const accept = req.headers["accept"] || "";
+    const useWebp = accept.includes("image/webp");
+
+    /* ================= IMAGE PROCESSING (SHARP) ================= */
+    let image = sharp(buffer)
+      .resize(Number(w)) // resize حسب الطلب
+      .toFormat(useWebp ? "webp" : "jpeg", {
+        quality: Number(q),
+      });
+
+    const outputBuffer = await image.toBuffer();
+
+    /* ================= HEADERS ================= */
     res.setHeader(
       "Cache-Control",
       "public, max-age=31536000, immutable"
     );
 
-    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Type", useWebp ? "image/webp" : "image/jpeg");
 
-    /* ================= WEBP OPTIMIZATION ================= */
-    if (supportsWebp && contentType.startsWith("image/")) {
-      contentType = "image/webp";
-      res.setHeader("Content-Type", "image/webp");
-
-      // ملاحظة: هنا ممكن تضيف sharp لتحويل فعلي (upgrade لاحق)
-    } else {
-      res.setHeader("Content-Type", contentType);
-    }
-
-    /* ================= SPEED HEADERS ================= */
-    res.setHeader("CDN-Cache-Control", "max-age=31536000");
     res.setHeader("Vary", "Accept");
 
-    return res.send(Buffer.from(buffer));
+    res.setHeader("X-Optimized-By", "Koloonline-CDN-Pro");
+
+    return res.send(outputBuffer);
   } catch (e) {
     return res.status(500).json({
-      error: "Smart CDN error",
+      error: "CDN PRO error",
       message: e.message,
     });
   }
