@@ -5,6 +5,21 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 
+/* ================= FALLBACK IMAGE ================= */
+const fallbackImage = "https://via.placeholder.com/300x300?text=Koloonline";
+
+/* ================= IMAGE OPTIMIZER (CDN READY HOOK) ================= */
+function optimizeImage(src) {
+  if (!src) return fallbackImage;
+
+  // Amazon fix (CDN friendly)
+  if (src.includes("amazon")) {
+    return src.replace("http://", "https://");
+  }
+
+  return src;
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +48,9 @@ export default function ProductsPage() {
   }, []);
 
   return (
-    <div style={{ fontFamily: "Arial", padding: 20 }}>
+    <div style={{ fontFamily: "Arial", padding: 20, background: "#fafafa" }}>
+      
+      {/* ================= SEO ================= */}
       <Head>
         <title>All Products | Koloonline Deals</title>
 
@@ -54,11 +71,13 @@ export default function ProductsPage() {
 
       {loading && <p>Loading...</p>}
 
+      {/* ================= GRID ================= */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
           gap: 15,
+          marginTop: 20,
         }}
       >
         {products.map((p) => (
@@ -74,28 +93,42 @@ export default function ProductsPage() {
               style={{
                 background: "#fff",
                 padding: 10,
-                borderRadius: 10,
+                borderRadius: 12,
                 cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                transition: "0.2s",
               }}
             >
-              <Image
-                src={p.image || "https://via.placeholder.com/300"}
-                width={300}
-                height={300}
-                alt={p.title || "Product"}
+              {/* ================= IMAGE OPTIMIZED ================= */}
+              <div
                 style={{
+                  position: "relative",
                   width: "100%",
-                  height: "auto",
-                }}
-              />
-
-              <h3>{p.title}</h3>
-
-              <p
-                style={{
-                  color: "#B12704",
+                  height: 220,
+                  background: "#fff",
                 }}
               >
+                <Image
+                  src={optimizeImage(p.image)}
+                  alt={p.title || "Product"}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 300px"
+                  style={{
+                    objectFit: "contain",
+                  }}
+                  loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={fallbackImage}
+                />
+              </div>
+
+              {/* ================= TITLE ================= */}
+              <h3 style={{ fontSize: 14, marginTop: 10 }}>
+                {p.title}
+              </h3>
+
+              {/* ================= PRICE ================= */}
+              <p style={{ color: "#B12704", fontWeight: "bold" }}>
                 ${p.price}
               </p>
             </div>
@@ -104,4 +137,4 @@ export default function ProductsPage() {
       </div>
     </div>
   );
-  }
+}
