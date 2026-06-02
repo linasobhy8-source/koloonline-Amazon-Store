@@ -3,13 +3,24 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  /* ================= PERFORMANCE ================= */
+  /* ================= PERFORMANCE BOOST ================= */
   compress: true,
   poweredByHeader: false,
 
+  /* ================= EXPERIMENTAL SPEED ================= */
+  swcMinify: true,
+
   /* ================= IMAGE OPTIMIZATION ================= */
   images: {
+    formats: ["image/avif", "image/webp"],
+
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
+
+    deviceSizes: [320, 420, 768, 1024, 1200, 1600],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828],
+
     remotePatterns: [
+      /* AMAZON OFFICIAL */
       {
         protocol: "https",
         hostname: "m.media-amazon.com",
@@ -19,55 +30,24 @@ const nextConfig = {
         hostname: "images-na.ssl-images-amazon.com",
       },
 
-      {
-        protocol: "https",
-        hostname: "**.amazon.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.ae",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.co.uk",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.de",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.fr",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.in",
-      },
+      /* AMAZON GLOBAL */
+      { protocol: "https", hostname: "**.amazon.com" },
+      { protocol: "https", hostname: "**.amazon.ae" },
+      { protocol: "https", hostname: "**.amazon.co.uk" },
+      { protocol: "https", hostname: "**.amazon.de" },
+      { protocol: "https", hostname: "**.amazon.fr" },
+      { protocol: "https", hostname: "**.amazon.in" },
 
-      {
-        protocol: "https",
-        hostname: "**firebaseapp.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**googleusercontent.com",
-      },
+      /* FIREBASE + CDN */
+      { protocol: "https", hostname: "**firebaseapp.com" },
+      { protocol: "https", hostname: "**googleusercontent.com" },
 
-      {
-        protocol: "https",
-        hostname: "via.placeholder.com",
-      },
+      /* FALLBACK */
+      { protocol: "https", hostname: "via.placeholder.com" },
     ],
-
-    formats: ["image/avif", "image/webp"],
-
-    minimumCacheTTL: 60 * 60 * 24 * 7,
-
-    deviceSizes: [320, 420, 768, 1024, 1200, 1600],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828],
   },
 
-  /* ================= HEADERS ================= */
+  /* ================= HEADERS (SEO + ADS SAFE) ================= */
   async headers() {
     return [
       {
