@@ -8,12 +8,10 @@ import Footer from "../components/layout/Footer";
 
 import "../styles/globals.css";
 
-export default function App({
-  Component,
-  pageProps,
-}) {
+export default function App({ Component, pageProps }) {
   return (
     <>
+      {/* ================= GLOBAL HEAD ================= */}
       <Head>
         <meta charSet="UTF-8" />
 
@@ -22,44 +20,29 @@ export default function App({
           content="width=device-width, initial-scale=1"
         />
 
-        <meta
-          name="theme-color"
-          content="#111827"
-        />
-
-        <meta
-          name="googlebot"
-          content="index,follow,max-image-preview:large"
-        />
+        <meta name="theme-color" content="#111827" />
 
         <meta
           name="robots"
-          content="index,follow"
+          content="index,follow,max-image-preview:large"
         />
 
-        <link
-          rel="icon"
-          href="/favicon.ico"
-        />
+        <link rel="icon" href="/favicon.ico" />
+
+        {/* SEO SAFE DEFAULTS */}
+        <meta name="googlebot" content="index,follow" />
       </Head>
 
-      {/* Google Analytics */}
-
+      {/* ================= GOOGLE ANALYTICS ================= */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
 
-      <Script
-        id="google-analytics"
-        strategy="lazyOnload"
-      >
+      <Script id="google-analytics" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
-
-          function gtag() {
-            dataLayer.push(arguments);
-          }
+          function gtag(){dataLayer.push(arguments);}
 
           gtag('js', new Date());
 
@@ -69,13 +52,17 @@ export default function App({
         `}
       </Script>
 
+      {/* ================= LAYOUT ================= */}
       <Navbar />
 
-      <Component {...pageProps} />
+      <main>
+        <Component {...pageProps} />
+      </main>
 
       <Footer />
 
+      {/* ================= PERFORMANCE ================= */}
       <SpeedInsights />
     </>
   );
-}
+            }
