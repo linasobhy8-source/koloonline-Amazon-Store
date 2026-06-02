@@ -9,8 +9,10 @@ export default function Disclaimer() {
         padding: 20,
         fontFamily: "Arial",
         lineHeight: 1.8,
+        background: "#fff",
       }}
     >
+      {/* ================= SEO ================= */}
       <Head>
         <title>Affiliate Disclaimer | Koloonline</title>
 
@@ -25,8 +27,13 @@ export default function Disclaimer() {
         />
 
         <meta name="robots" content="index,follow" />
+        <link
+          rel="canonical"
+          href="https://koloonline.online/disclaimer"
+        />
       </Head>
 
+      {/* ================= CONTENT ================= */}
       <h1>Affiliate Disclaimer</h1>
 
       <p>
@@ -53,4 +60,4 @@ export default function Disclaimer() {
       </p>
     </div>
   );
-            }
+        }
