@@ -1,25 +1,43 @@
 import Image from "next/image";
 import { optimizeAmazonImage } from "../lib/amazonImage";
+import { useState } from "react";
+
+const fallback =
+  "https://via.placeholder.com/500x500?text=Koloonline";
 
 export default function SmartImage({ src, alt }) {
-  const finalSrc = optimizeAmazonImage(src);
+  const [imgSrc, setImgSrc] = useState(
+    optimizeAmazonImage(src) || fallback
+  );
 
   return (
     <Image
-      src={finalSrc}
+      src={imgSrc}
       alt={alt || "product image"}
       width={500}
       height={500}
+
+      /* ================= PERFORMANCE ================= */
       loading="lazy"
-      quality={90}
-      placeholder="blur"
-      blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNSIgaGVpZ2h0PSI1Ii8+"
+      priority={false}
+
+      /* ================= QUALITY OPTIMIZATION ================= */
+      quality={85}
+
+      /* ================= AMAZON FIX ================= */
+      unoptimized={true}
+
+      /* ================= ERROR HANDLING ================= */
+      onError={() => setImgSrc(fallback)}
+
+      /* ================= CLEAN UI ================= */
       style={{
         width: "100%",
         height: "auto",
         objectFit: "contain",
-        background: "#fff",
+        background: "#ffffff",
+        borderRadius: "8px",
       }}
     />
   );
-}
+        }
