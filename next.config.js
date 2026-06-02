@@ -6,11 +6,12 @@ const nextConfig = {
   /* ================= PERFORMANCE ================= */
   compress: true,
   poweredByHeader: false,
+  swcMinify: true,
 
-  /* ================= IMAGE OPTIMIZATION (AMAZON FIXED) ================= */
+  /* ================= IMAGE OPTIMIZATION (AMAZON + GLOBAL FIXED) ================= */
   images: {
     remotePatterns: [
-      /* ================= AMAZON OFFICIAL IMAGES ================= */
+      /* ================= AMAZON OFFICIAL ================= */
       {
         protocol: "https",
         hostname: "m.media-amazon.com",
@@ -20,7 +21,7 @@ const nextConfig = {
         hostname: "images-na.ssl-images-amazon.com",
       },
 
-      /* ================= AMAZON GLOBAL (SAFE FIX) ================= */
+      /* ================= AMAZON GLOBAL DOMAINS ================= */
       {
         protocol: "https",
         hostname: "**.amazon.com",
@@ -46,7 +47,7 @@ const nextConfig = {
         hostname: "**.amazon.in",
       },
 
-      /* ================= FIREBASE + CDN ================= */
+      /* ================= FIREBASE / GOOGLE CDN ================= */
       {
         protocol: "https",
         hostname: "**firebaseapp.com",
@@ -56,52 +57,19 @@ const nextConfig = {
         hostname: "**googleusercontent.com",
       },
 
-      /* ================= FALLBACK ================= */
+      /* ================= FALLBACK IMAGES ================= */
       {
         protocol: "https",
         hostname: "via.placeholder.com",
       },
     ],
 
-    /* ================= MODERN IMAGE FORMATS ================= */
+    /* ================= MODERN FORMATS ================= */
     formats: ["image/avif", "image/webp"],
 
-    /* ================= SPEED CACHE ================= */
-    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
+    /* ================= SPEED CACHE (IMPORTANT BOOST) ================= */
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days cache (أسرع بكتير)
 
-    /* ================= RESPONSIVE IMAGES ================= */
+    /* ================= RESPONSIVE OPTIMIZATION ================= */
     deviceSizes: [320, 420, 768, 1024, 1200, 1600],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828],
-  },
-
-  /* ================= SECURITY + ADSENSE SAFE HEADERS ================= */
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-
-          /* ================= PERFORMANCE HINT ================= */
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-        ],
-      },
-    ];
-  },
-};
-
-module.exports = nextConfig;
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384,
