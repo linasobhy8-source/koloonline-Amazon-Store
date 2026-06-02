@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { optimizeAmazonImage } from "../../lib/amazonImage";
 
 /* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
@@ -52,12 +53,19 @@ export default function ProductPage({ product, related }) {
       >
         <h1>{product.title}</h1>
 
+        {/* 🔥 OPTIMIZED AMAZON IMAGE */}
         <Image
-          src={product.image || "https://via.placeholder.com/500"}
+          src={optimizeAmazonImage(product.image)}
           alt={product.title || "product"}
           width={500}
           height={500}
-          style={{ width: "100%", height: "auto" }}
+          priority={true}
+          loading="eager"
+          style={{
+            width: "100%",
+            height: "auto",
+            objectFit: "contain",
+          }}
         />
 
         <h2 style={{ color: "#B12704" }}>
@@ -94,8 +102,7 @@ export default function ProductPage({ product, related }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit,minmax(200px,1fr))",
+              gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
               gap: 15,
             }}
           >
@@ -110,12 +117,18 @@ export default function ProductPage({ product, related }) {
                   }}
                 >
                   <Image
-                    src={p.image || "https://via.placeholder.com/300"}
+                    src={optimizeAmazonImage(p.image)}
                     width={300}
                     height={300}
                     alt={p.title || "product"}
-                    style={{ width: "100%" }}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      objectFit: "contain",
+                    }}
                   />
+
                   <h3>{p.title}</h3>
                   <p>${p.price || 0}</p>
                 </div>
@@ -168,4 +181,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-          }
+}
