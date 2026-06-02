@@ -2,58 +2,58 @@
 
 ## 🔐 Supported Versions
 
-We only provide security updates for the latest production version of the project.
+We provide security updates only for the latest production version of the platform.
 
-| Version | Support |
-|--------|--------|
-| Production | ✅ Supported |
-| Older versions | ❌ Not supported |
+| Version        | Support Status |
+|----------------|---------------|
+| Production      | ✅ Supported   |
+| Older versions  | ❌ Not supported |
 
 ---
 
 ## 🚨 Reporting a Vulnerability
 
-If you discover a security vulnerability, please report it responsibly.
+If you identify a security vulnerability, we appreciate responsible disclosure.
 
-### 📧 Contact Methods:
-- Contact form: `/contact`
-- Email: Security@koloonline.online (if enabled)
+### 📩 Contact Channels:
+- Contact page: `/contact`
+- Email: Security@koloonline.online (if available)
 
 ---
 
 ## 📋 Required Information
 
-To help us investigate, please include:
+To help us investigate efficiently, please include:
 
 - Clear description of the issue
-- Steps to reproduce
-- Affected page (e.g. `/product`, `/cart`)
-- Screenshots or proof of concept
+- Steps to reproduce the vulnerability
+- Affected page or module (e.g. `/product`, `/cart`)
+- Screenshots or proof of concept (if available)
 
 ---
 
 ## ⏱️ Response Time
 
-We aim to respond within:
-**48 – 72 hours**
+We aim to review and respond within:
+**48 to 72 hours**
 
 ---
 
 ## 🔒 Security Scope
 
-This project is a **frontend-based affiliate platform**, including:
+This platform is an affiliate-based product discovery system, including:
 
-- Product display system
-- Affiliate tracking system
-- User interaction tracking (clicks/events)
-- Local storage (cart, preferences)
+- Product listing and browsing system
+- Affiliate link tracking system
+- User interaction tracking (clicks, events)
+- Local storage usage (cart preferences)
 
 ---
 
 ## 🧠 Important Notes
 
-- No sensitive user data (passwords or payments) is stored
-- Payments and purchases are handled externally via Amazon
+- No sensitive personal data (such as passwords or payment details) is stored
+- Purchases are completed externally through third-party platforms (e.g. Amazon)
 - Analytics is handled via:
   - Google Analytics (GA4)
   - Google Tag Manager (GTM)
@@ -62,15 +62,16 @@ This project is a **frontend-based affiliate platform**, including:
 
 ## ⚙️ Infrastructure Security
 
-The project relies on:
+The system operates using trusted third-party services:
 
-- Firebase Firestore (data source)
-- Vercel (hosting platform)
-- Google services (analytics & tracking)
+- Firebase Firestore (data storage)
+- Vercel (hosting infrastructure)
+- Google services (analytics and tracking)
 
 ---
 
-## 📌 Privacy
+## 📌 Privacy Statement
 
-We do not collect personal sensitive data.  
-Only anonymized analytics data is used to improve performance and user experience.
+We do not collect or store sensitive personal data.
+
+Only anonymized usage analytics are used to improve performance, usability, and content relevance.
