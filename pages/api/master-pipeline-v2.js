@@ -26,32 +26,35 @@ async function safeRun(label, fn) {
     const result = await fn();
     return { success: true, label, result };
   } catch (e) {
-    return { success: false, label, error: e.message };
+    return { success: false, label, error: e?.message };
   }
 }
 
-/* ================= AUTO PRODUCTS GENERATOR ================= */
+/* ================= PRODUCT ENGINE ================= */
 function generateProduct() {
   const products = [
     {
       title: "Smart Watch Ultra AI",
       price: 39.99,
       category: "electronics",
-      image: "https://m.media-amazon.com/images/I/71gJb7R6Q7L._AC_SL1500_.jpg",
+      image:
+        "https://m.media-amazon.com/images/I/71gJb7R6Q7L._AC_SL1500_.jpg",
       viralBoost: true,
     },
     {
       title: "Wireless Earbuds Pro",
       price: 24.99,
       category: "audio",
-      image: "https://m.media-amazon.com/images/I/61f1xD6g0LL._AC_SL1500_.jpg",
+      image:
+        "https://m.media-amazon.com/images/I/61f1xD6g0LL._AC_SL1500_.jpg",
       viralBoost: true,
     },
     {
       title: "Mini LED Projector HD",
       price: 59.99,
       category: "home",
-      image: "https://m.media-amazon.com/images/I/71Rr0Y2K3LL._AC_SL1500_.jpg",
+      image:
+        "https://m.media-amazon.com/images/I/71Rr0Y2K3LL._AC_SL1500_.jpg",
       viralBoost: false,
     },
   ];
@@ -59,15 +62,33 @@ function generateProduct() {
   return products[Math.floor(Math.random() * products.length)];
 }
 
-/* ================= AUTO BLOG GENERATOR ================= */
+/* ================= BLOG ENGINE (SEO + ADSENSE SAFE) ================= */
 function generateBlog(product) {
   return {
-    title: `Why ${product.title} is Trending in 2026`,
+    title: `Review: ${product.title} – Is It Worth Buying in 2026?`,
+    excerpt: `Detailed review of ${product.title}, features, pros, cons and real user opinions.`,
     content: `
-      The ${product.title} is one of the hottest products right now.
-      It offers great value in the ${product.category} category.
-      Price: $${product.price} makes it affordable for most users.
-      This product is currently trending due to high engagement.
+      <h2>Overview</h2>
+      <p>
+        ${product.title} is currently one of the trending products in the ${product.category} category.
+      </p>
+
+      <h2>Key Features</h2>
+      <ul>
+        <li>High quality build</li>
+        <li>Affordable price: $${product.price}</li>
+        <li>Good user feedback and performance</li>
+      </ul>
+
+      <h2>Pros & Cons</h2>
+      <p>
+        This product is popular due to its balance between price and performance.
+      </p>
+
+      <h2>Final Verdict</h2>
+      <p>
+        If you're looking for value in this category, ${product.title} is a strong option worth considering.
+      </p>
     `,
     slug: product.title.toLowerCase().replace(/\s+/g, "-"),
   };
@@ -77,7 +98,9 @@ function generateBlog(product) {
 async function runIndexNow(urls) {
   const key = process.env.INDEXNOW_KEY;
 
-  await fetch("https://api.indexnow.org/indexnow", {
+  if (!key) return { success: false, error: "Missing INDEXNOW_KEY" };
+
+  const res = await fetch("https://api.indexnow.org/indexnow", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -87,34 +110,39 @@ async function runIndexNow(urls) {
     }),
   });
 
-  return { sent: urls.length };
+  return { success: res.ok, sent: urls.length };
 }
 
 /* ================= GOOGLE PING ================= */
 async function pingGoogle() {
-  const url = "https://koloonline.online/sitemap.xml";
+  try {
+    const url = "https://koloonline.online/sitemap.xml";
 
-  await fetch(
-    `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`
-  );
+    await fetch(
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`
+    );
 
-  return { pinged: true };
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e?.message };
+  }
 }
 
 /* ================= MAIN PIPELINE ================= */
 export default async function handler(req, res) {
+  const startTime = Date.now();
+
   try {
     const baseUrl = "https://koloonline.online";
 
     const logs = [];
     const newUrls = [];
 
-    /* ================= FETCH EXISTING ================= */
+    /* ================= EXISTING DATA ================= */
     const productsSnap = await getDocs(collection(db, "products"));
-
     const existingCount = productsSnap.size;
 
-    /* ================= AUTO CREATE PRODUCTS ================= */
+    /* ================= CREATE PRODUCT ================= */
     const product = generateProduct();
 
     const productRef = await addDoc(collection(db, "products"), {
@@ -127,9 +155,12 @@ export default async function handler(req, res) {
 
     newUrls.push(`${baseUrl}/product/${productRef.id}`);
 
-    logs.push({ step: "product_created", product });
+    logs.push({
+      step: "product_created",
+      title: product.title,
+    });
 
-    /* ================= AUTO BLOG ================= */
+    /* ================= CREATE BLOG ================= */
     const blog = generateBlog(product);
 
     const blogRef = await addDoc(collection(db, "blog"), {
@@ -139,9 +170,12 @@ export default async function handler(req, res) {
 
     newUrls.push(`${baseUrl}/blog/${blogRef.id}`);
 
-    logs.push({ step: "blog_created", blog });
+    logs.push({
+      step: "blog_created",
+      title: blog.title,
+    });
 
-    /* ================= ALL URLS ================= */
+    /* ================= URL LIST ================= */
     const urls = [
       baseUrl,
       `${baseUrl}/products`,
@@ -161,6 +195,7 @@ export default async function handler(req, res) {
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
+      runtime: Date.now() - startTime,
       message: "🔥 Master Pipeline V2 executed",
       existingProducts: existingCount,
       newProduct: product,
@@ -172,7 +207,7 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: error.message,
+      error: error?.message || "Unknown error",
     });
   }
-                         }
+    }
