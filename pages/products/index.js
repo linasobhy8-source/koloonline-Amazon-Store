@@ -7,6 +7,7 @@ import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
 
+/* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
@@ -15,18 +16,9 @@ function Stars({ rating = 4.5 }) {
   const full = Math.floor(Number(rating) || 0);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-        marginTop: 8,
-      }}
-    >
+    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
       <div style={{ color: "#FFA41C" }}>{"★".repeat(full)}</div>
-      <span style={{ fontSize: 13, color: "#666" }}>
-        {rating}/5
-      </span>
+      <span style={{ fontSize: 13, color: "#666" }}>{rating}/5</span>
     </div>
   );
 }
@@ -36,6 +28,7 @@ export default function ProductsPage({ products = [] }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
 
+  /* ================= CATEGORIES ================= */
   const categories = useMemo(() => {
     const cats = products
       .map((p) => p.category || "general")
@@ -44,21 +37,21 @@ export default function ProductsPage({ products = [] }) {
     return ["all", ...Array.from(new Set(cats))];
   }, [products]);
 
+  /* ================= FILTER + SORT ================= */
   const filteredProducts = useMemo(() => {
-    const filtered = products.filter((p) => {
-      const title = (p.title || "").toLowerCase();
+    return products
+      .filter((p) => {
+        const title = (p.title || "").toLowerCase();
 
-      const searchMatch = title.includes(search.toLowerCase());
+        const searchMatch = title.includes(search.toLowerCase());
 
-      const categoryMatch =
-        category === "all"
-          ? true
-          : (p.category || "general") === category;
+        const categoryMatch =
+          category === "all"
+            ? true
+            : (p.category || "general") === category;
 
-      return searchMatch && categoryMatch;
-    });
-
-    return filtered
+        return searchMatch && categoryMatch;
+      })
       .sort((a, b) => {
         const aScore =
           (a.views || 0) +
@@ -77,27 +70,36 @@ export default function ProductsPage({ products = [] }) {
 
   return (
     <div style={{ background: "#f4f6f9", minHeight: "100vh", fontFamily: "Arial" }}>
+      {/* ================= SEO ================= */}
       <Head>
         <title>Best Amazon Products | Koloonline</title>
         <meta name="description" content="Trending Amazon products and deals" />
         <meta name="robots" content="index,follow" />
       </Head>
 
-      {/* HEADER */}
-      <div style={{
-        background: "linear-gradient(45deg,#111827,#1f2937)",
-        padding: "50px 20px",
-        color: "white",
-        textAlign: "center",
-      }}>
+      {/* ================= HEADER ================= */}
+      <div
+        style={{
+          background: "linear-gradient(45deg,#111827,#1f2937)",
+          padding: "50px 20px",
+          color: "white",
+          textAlign: "center",
+        }}
+      >
         <h1>🔥 Trending Products</h1>
       </div>
 
-      {/* CONTAINER */}
+      {/* ================= CONTAINER ================= */}
       <div style={{ maxWidth: 1400, margin: "auto", padding: 20 }}>
-
-        {/* FILTER */}
-        <div style={{ background: "white", padding: 20, borderRadius: 20, marginBottom: 30 }}>
+        {/* ================= FILTER ================= */}
+        <div
+          style={{
+            background: "white",
+            padding: 20,
+            borderRadius: 20,
+            marginBottom: 30,
+          }}
+        >
           <input
             type="text"
             placeholder="Search..."
@@ -132,14 +134,19 @@ export default function ProductsPage({ products = [] }) {
           </div>
         </div>
 
-        {/* PRODUCTS */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
-          gap: 20,
-        }}>
+        {/* ================= PRODUCTS GRID ================= */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+            gap: 20,
+          }}
+        >
           {filteredProducts.map((product) => {
             const rating = Number(product.rating || 4.5);
+
+            const imageSrc =
+              optimizeAmazonImage(product.image) || fallbackImage;
 
             return (
               <Link
@@ -147,20 +154,24 @@ export default function ProductsPage({ products = [] }) {
                 href={`/product/${product.asin || product.id}`}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
-                <div style={{
-                  background: "white",
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
-                }}>
-
-                  {/* 🔥 OPTIMIZED AMAZON IMAGE */}
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  {/* ================= OPTIMIZED IMAGE ================= */}
                   <Image
-                    src={optimizeAmazonImage(product.image || fallbackImage)}
+                    src={imageSrc}
                     alt={product.title || "Product"}
                     width={300}
                     height={300}
                     loading="lazy"
+                    placeholder="blur"
+                    blurDataURL={fallbackImage}
+                    quality={75}
                     style={{
                       width: "100%",
                       height: 240,
@@ -180,12 +191,14 @@ export default function ProductsPage({ products = [] }) {
 
                     <Stars rating={rating} />
 
-                    <div style={{
-                      marginTop: 10,
-                      fontWeight: "bold",
-                      color: "#B12704",
-                      fontSize: 20,
-                    }}>
+                    <div
+                      style={{
+                        marginTop: 10,
+                        fontWeight: "bold",
+                        color: "#B12704",
+                        fontSize: 20,
+                      }}
+                    >
                       ${Number(product.price || 0)}
                     </div>
                   </div>
@@ -195,6 +208,7 @@ export default function ProductsPage({ products = [] }) {
           })}
         </div>
 
+        {/* ================= EMPTY STATE ================= */}
         {filteredProducts.length === 0 && (
           <div style={{ textAlign: "center", padding: 40 }}>
             No products found
@@ -205,7 +219,7 @@ export default function ProductsPage({ products = [] }) {
   );
 }
 
-/* ================= DATA FETCH ================= */
+/* ================= STATIC DATA ================= */
 export async function getStaticProps() {
   try {
     const snap = await getDocs(
@@ -228,4 +242,4 @@ export async function getStaticProps() {
       revalidate: 120,
     };
   }
-          }
+        }
