@@ -6,11 +6,11 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-/* ================= FIREBASE ================= */
+/* ================= FIREBASE SAFE INIT ================= */
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
 const app = !getApps().length
@@ -19,29 +19,45 @@ const app = !getApps().length
 
 const db = getFirestore(app);
 
-/* ================= SAFE CALL ================= */
-async function run(path) {
+/* ================= SAFE FETCH (with timeout) ================= */
+async function run(path, timeout = 10000) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}${path}`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}${path}`,
+      { signal: controller.signal }
+    );
+
+    clearTimeout(timer);
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error: ${res.status}`);
+    }
+
     return await res.json();
   } catch (e) {
-    return { success: false, error: e.message };
+    return {
+      success: false,
+      error: e?.message || "Unknown error",
+    };
   }
 }
 
-/* ================= HANDLER ================= */
+/* ================= API HANDLER ================= */
 export default async function handler(req, res) {
-  try {
-    const startTime = Date.now();
+  const startTime = Date.now();
 
-    /* ================= RUN PIPELINE ================= */
+  try {
+    /* ================= CORE PIPELINE ================= */
     const flywheel = await run("/api/growth-flywheel-v1");
 
-    /* ================= LOG ================= */
+    /* ================= FIRESTORE LOG ================= */
     await addDoc(collection(db, "cron_logs"), {
-      type: "autonomous_runner",
-      status: flywheel.success ? "success" : "failed",
-      duration: Date.now() - startTime,
+      type: "autonomous_runner_v1",
+      status: flywheel?.success ? "success" : "failed",
+      runtime: Date.now() - startTime,
       timestamp: serverTimestamp(),
       details: flywheel,
     });
@@ -49,15 +65,17 @@ export default async function handler(req, res) {
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      message: "Autonomous system executed",
+      message: "Autonomous system executed successfully",
       runtime: Date.now() - startTime,
       flywheel,
     });
 
   } catch (error) {
+    console.error("AUTONOMOUS RUNNER ERROR:", error);
+
     return res.status(500).json({
       success: false,
-      error: error.message,
+      error: error?.message || "Internal Server Error",
     });
   }
 }
