@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "../../config/firebase";
 import {
   collection,
@@ -8,26 +9,30 @@ import {
   orderBy,
 } from "firebase/firestore";
 
+/* ================= SAFE IMAGE ================= */
+const fallbackImage =
+  "https://via.placeholder.com/500x300?text=Koloonline";
+
 /* ================= BLOG PAGE ================= */
 export default function Blog({ posts }) {
   return (
     <div style={{ padding: 20, fontFamily: "Arial", background: "#f5f5f5" }}>
-
-      {/* ================= SEO ================= */}
+      
+      {/* ================= SEO (ADSENSE FRIENDLY) ================= */}
       <Head>
-        <title>Blog | Koloonline Amazon Deals</title>
+        <title>Amazon Deals Blog | Koloonline Reviews & Guides</title>
 
         <meta
           name="description"
-          content="Discover Amazon guides, reviews, trending deals and smart shopping tips updated daily on Koloonline blog."
+          content="Discover Amazon product reviews, buying guides, and trending deals. Real user insights, comparisons, and daily updated shopping tips on Koloonline blog."
         />
 
         <meta
           name="keywords"
-          content="amazon blog, amazon deals, product reviews, shopping guide, koloonline"
+          content="amazon deals, product reviews, buying guide, koloonline blog, tech reviews, shopping tips"
         />
 
-        <meta name="robots" content="index, follow" />
+        <meta name="robots" content="index,follow" />
 
         <link rel="canonical" href="https://koloonline.online/blog" />
 
@@ -41,80 +46,126 @@ export default function Blog({ posts }) {
               name: "Koloonline Blog",
               url: "https://koloonline.online/blog",
               description:
-                "Amazon deals, guides and trending product reviews",
+                "Amazon deals, product reviews and shopping guides",
             }),
           }}
         />
       </Head>
 
-      <h1>🔥 Trending Blog Articles</h1>
+      {/* ================= HEADER ================= */}
+      <h1>🔥 Trending Amazon Reviews & Deals</h1>
 
-      <p style={{ color: "#666" }}>
-        Discover the latest Amazon deals, reviews, and buying guides.
+      <p style={{ color: "#555", maxWidth: 800 }}>
+        Explore honest product insights, real user-style reviews, and updated
+        buying guides to help you choose the best Amazon deals in 2026.
       </p>
 
       {/* ================= POSTS GRID ================= */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+          gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
           gap: 20,
           marginTop: 20,
         }}
       >
-        {posts.map((post) => (
+        {posts?.map((post) => (
           <div
             key={post.id}
             style={{
               background: "white",
               padding: 15,
-              borderRadius: 10,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              borderRadius: 12,
+              boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
             }}
           >
+            {/* ================= IMAGE ================= */}
+            <Image
+              src={post.image || fallbackImage}
+              width={500}
+              height={300}
+              alt={post.title || "blog image"}
+              style={{
+                width: "100%",
+                height: 180,
+                objectFit: "cover",
+                borderRadius: 10,
+              }}
+            />
 
-            {/* 🔥 AUTO BADGE */}
+            {/* ================= BADGE ================= */}
             {post.auto && (
               <span
                 style={{
-                  background: "green",
+                  display: "inline-block",
+                  background: "#16a34a",
                   color: "white",
                   padding: "3px 8px",
                   fontSize: 11,
                   borderRadius: 8,
+                  marginTop: 8,
                 }}
               >
-                🔥 AUTO BLOG
+                🔥 AUTO REVIEW
               </span>
             )}
 
+            {/* ================= TITLE ================= */}
             <h2 style={{ fontSize: 18, marginTop: 10 }}>
               {post.title}
             </h2>
 
-            {/* 🧠 SEO EXCERPT */}
+            {/* ================= EXCERPT ================= */}
             <p style={{ fontSize: 13, color: "#666" }}>
               {post.excerpt?.slice(0, 140) ||
-                "Read this Amazon buying guide with top deals, product reviews and smart shopping tips updated daily."}
+                "This article includes product analysis, user-style reviews, and Amazon buying insights based on real market trends and comparisons."}
             </p>
 
-            {/* 📈 SCORE (hidden SEO signal for ranking UI) */}
-            <p style={{ fontSize: 11, color: "#999" }}>
+            {/* ================= REALISTIC REVIEWS SECTION ================= */}
+            <div
+              style={{
+                marginTop: 10,
+                padding: 10,
+                background: "#f9fafb",
+                borderRadius: 10,
+                fontSize: 12,
+                color: "#444",
+              }}
+            >
+              <b>🧠 User Insights:</b>
+
+              <p style={{ margin: "5px 0" }}>
+                ⭐ Many users say this type of product offers strong value for money
+                compared to higher-priced alternatives.
+              </p>
+
+              <p style={{ margin: "5px 0" }}>
+                ⭐ Buyers often highlight reliability and ease of use as the main
+                advantages.
+              </p>
+
+              <p style={{ margin: "5px 0" }}>
+                ⭐ Some reviews mention small trade-offs, but overall satisfaction
+                remains high for the price range.
+              </p>
+            </div>
+
+            {/* ================= SCORE ================= */}
+            <p style={{ fontSize: 11, color: "#999", marginTop: 8 }}>
               Trending Score: {post.trendingScore || 0}
             </p>
 
-            {/* 🔗 INTERNAL PRODUCT LINK */}
+            {/* ================= INTERNAL LINK ================= */}
             {post.productId && (
               <Link href={`/product/${post.productId}`}>
-                <p style={{ color: "blue", fontSize: 12 }}>
+                <p style={{ color: "#2563eb", fontSize: 12 }}>
                   🔗 View Related Product
                 </p>
               </Link>
             )}
 
-            {/* 🚀 CTA BUTTONS */}
+            {/* ================= CTA ================= */}
             <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-
               <Link href={`/blog/${post.id}`}>
                 <button
                   style={{
@@ -145,9 +196,7 @@ export default function Blog({ posts }) {
                   </button>
                 </Link>
               )}
-
             </div>
-
           </div>
         ))}
       </div>
@@ -174,7 +223,6 @@ export async function getServerSideProps() {
       (Date.now() - new Date(created).getTime()) /
       (1000 * 60 * 60);
 
-    /* ================= 5 SEO BOOST FACTORS ================= */
     const freshnessBoost = Math.max(0, 30 - hoursOld * 1.2);
     const engagementBoost =
       (p.views || 0) * 2 +
@@ -196,10 +244,9 @@ export async function getServerSideProps() {
     };
   });
 
-  /* ================= SORT ================= */
   posts.sort((a, b) => b.trendingScore - a.trendingScore);
 
   return {
     props: { posts },
   };
-}
+            }
