@@ -16,10 +16,13 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
 
-/* ================= CLEAN HELPERS ================= */
+/* ================= HELPERS ================= */
 function cleanTitle(title) {
   return title
     ?.replace(/\s+/g, " ")
@@ -30,6 +33,7 @@ function cleanTitle(title) {
 
 function cleanPrice(price) {
   if (!price) return 0;
+
   const num = parseFloat(String(price).replace(/[^0-9.]/g, ""));
   return isNaN(num) ? 0 : num;
 }
@@ -52,8 +56,8 @@ async function logCron({ job, status, updated = 0, skipped = 0, message = "" }) 
       updated,
       skipped,
       message,
-      time: new Date().toISOString(),
       createdAt: serverTimestamp(),
+      time: new Date().toISOString(),
     });
   } catch (e) {
     console.error("Cron log failed:", e.message);
@@ -78,16 +82,12 @@ export default async function handler(req, res) {
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`SerpAPI error: ${response.status}`);
+      throw new Error(`SerpAPI request failed: ${response.status}`);
     }
 
     const data = await response.json();
 
-    const results = (
-      data?.organic_results ||
-      data?.shopping_results ||
-      []
-    ).slice(0, 20);
+    const results = (data?.organic_results || data?.shopping_results || []).slice(0, 20);
 
     let saved = 0;
     let skipped = 0;
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
       existingSnap.docs.map((d) => d.data().link)
     );
 
-    /* ================= PROCESS ================= */
+    /* ================= PROCESS PRODUCTS ================= */
     for (const item of results) {
       try {
         if (!item?.title || !item?.link) {
@@ -111,31 +111,27 @@ export default async function handler(req, res) {
         const price = cleanPrice(item.price || item.extracted_price);
         const image = getImage(item);
 
-        if (!title || price <= 0 || !image) {
+        if (!title || price <= 0) {
           skipped++;
           continue;
         }
 
-        /* ✅ حل مشكلة duplicate */
         if (existingLinks.has(item.link)) {
           skipped++;
           continue;
         }
 
-        /* ✅ Affiliate Fix (مهم جدًا) */
+        /* ================= AFFILIATE LINK ================= */
         const tag = process.env.AMAZON_US || "koloonlinesto-20";
         const cleanLink = item.link.split("?")[0];
         const affiliateLink = `${cleanLink}?tag=${tag}`;
 
-        /* ✅ AI Score */
-        const trendBoost =
-          item.bestseller || item.is_best_seller ? 5 : 0;
-
+        /* ================= SIMPLE QUALITY SCORE ================= */
         const score =
           (item.rating || 3) * 2 +
           Math.min(item.reviews || 0, 1000) / 500 +
           (price < 50 ? 3 : 1) +
-          trendBoost +
+          (item.bestseller ? 5 : 0) +
           Math.random();
 
         /* ================= SAVE PRODUCT ================= */
@@ -154,7 +150,7 @@ export default async function handler(req, res) {
           score,
         });
 
-        /* ================= GRAPH INIT ================= */
+        /* ================= ANALYTICS INIT ================= */
         await setDoc(
           doc(db, "analytics/product_relations", productRef.id),
           {
@@ -166,8 +162,8 @@ export default async function handler(req, res) {
         );
 
         saved++;
-      } catch (itemError) {
-        console.error("Item error:", itemError.message);
+      } catch (err) {
+        console.error("Item processing error:", err.message);
         skipped++;
       }
     }
@@ -183,7 +179,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "🔥 AI Sync Engine Working",
+      message: "Product sync completed successfully",
       keyword,
       saved,
       skipped,
@@ -204,4 +200,4 @@ export default async function handler(req, res) {
       error: err.message,
     });
   }
-  }
+            }
