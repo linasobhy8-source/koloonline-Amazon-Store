@@ -2,28 +2,38 @@ import { updateHomepageCache } from "../lib/cache/homeCache";
 import { pushToIndexing } from "../lib/seo/indexPush";
 
 /* ================= EXECUTION ENGINE ================= */
-export async function executeActions(decisions) {
+export async function executeActions(decisions = {}) {
   const actions = [];
 
   try {
-    if (decisions.homepage) {
+    /* ================= HOMEPAGE UPDATE ================= */
+    if (decisions.homepage && Array.isArray(decisions.homepage)) {
       await updateHomepageCache(decisions.homepage);
-      actions.push("homepage_updated");
+      actions.push("homepage_cache_updated");
     }
 
-    if (decisions.revenue) {
+    /* ================= REVENUE INDEXING ================= */
+    if (decisions.revenue && Array.isArray(decisions.revenue)) {
       await pushToIndexing(decisions.revenue);
-      actions.push("revenue_indexed");
+      actions.push("revenue_content_indexed");
     }
 
-    if (decisions.viral) {
+    /* ================= VIRAL CONTENT PUSH ================= */
+    if (decisions.viral && Array.isArray(decisions.viral)) {
       await pushToIndexing(decisions.viral);
-      actions.push("viral_pushed");
+      actions.push("viral_content_indexed");
     }
 
-    return actions;
+    return {
+      success: true,
+      actions,
+    };
 
   } catch (e) {
-    return ["execution_error"];
+    return {
+      success: false,
+      actions: ["execution_error"],
+      error: e.message,
+    };
   }
 }
