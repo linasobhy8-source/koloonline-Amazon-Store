@@ -1,19 +1,22 @@
-/* ================= AUTONOMOUS OS ================= */
-
 export async function autonomousOS() {
   try {
-    console.log("🚀 Autonomous OS Running...");
+    console.log("🚀 Autonomous OS executing...");
 
+    /* ================= SYSTEM STATUS ================= */
     const result = {
       success: true,
-      timestamp: Date.now(),
-      status: "running",
-      revenue: "optimized",
-      traffic: "active",
-      indexing: "connected",
+      timestamp: new Date().toISOString(),
+      status: "active",
+
+      system: {
+        revenueStatus: "optimized",
+        trafficStatus: "active",
+        indexingStatus: "connected",
+      },
     };
 
     return result;
+
   } catch (error) {
     console.error("Autonomous OS Error:", error);
 
@@ -25,5 +28,4 @@ export async function autonomousOS() {
 }
 
 /* ================= DEFAULT EXPORT ================= */
-
 export default autonomousOS;
