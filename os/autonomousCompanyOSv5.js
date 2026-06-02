@@ -8,22 +8,18 @@ import { executeActions } from "../engine/executeActions";
 /* ================= AUTONOMOUS COMPANY OS v5 ================= */
 export async function autonomousCompanyOSv5() {
   try {
-    /* ================= 1. MARKET SCAN ================= */
+    /* ================= MARKET DATA ================= */
     const market = await runGrowthEngine();
 
-    /* ================= 2. AI CEO DECISION ================= */
+    /* ================= CEO DECISION LAYER ================= */
     const ceoDecision = await aiCEO();
 
-    /* ================= 3. SELF EVOLUTION ================= */
+    /* ================= SYSTEM OPTIMIZATION LAYERS ================= */
     const evolution = await selfEvolvingCore();
-
-    /* ================= 4. SELF HEALING ================= */
     const healing = await selfHealingEngine();
-
-    /* ================= 5. NEURAL LEARNING ================= */
     const neural = await neuralFeedbackLoop();
 
-    /* ================= 6. STRATEGIC MERGE ================= */
+    /* ================= STRATEGY GENERATION ================= */
     const strategy = mergeStrategies({
       market,
       ceoDecision,
@@ -32,43 +28,49 @@ export async function autonomousCompanyOSv5() {
       neural,
     });
 
-    /* ================= 7. EXECUTION ENGINE ================= */
+    /* ================= EXECUTION ================= */
     const execution = await executeActions(strategy);
 
-    /* ================= 8. COMPANY STATE ================= */
+    /* ================= SYSTEM STATE ================= */
     return {
       success: true,
-      version: "v5-AUTONOMOUS-COMPANY-OS",
+      version: "v5-autonomous-os",
 
       state: {
-        marketSize: market?.total || 0,
-        topProducts: market?.topProducts?.length || 0,
-        trending: market?.trendingProducts?.length || 0,
-        viral: market?.viralProducts?.length || 0,
+        marketProducts: market?.topProducts?.length || 0,
+        trendingProducts: market?.trendingProducts?.length || 0,
+        viralProducts: market?.viralProducts?.length || 0,
+        totalMarketItems: market?.total || 0,
       },
 
-      ceo: ceoDecision?.strategy?.mode || "UNKNOWN",
+      ceoMode: ceoDecision?.strategy?.mode || "UNKNOWN",
 
-      system: {
+      systemHealth: {
         evolutionScore: evolution?.performanceScore || 0,
         healingScore: healing?.health || 0,
-        neuralOpportunities: neural?.opportunities?.length || 0,
+        neuralInsights: neural?.opportunities?.length || 0,
       },
 
-      execution,
       strategy,
+      execution,
     };
 
   } catch (e) {
     return {
       success: false,
+      version: "v5-autonomous-os",
       error: e.message,
     };
   }
 }
 
 /* ================= STRATEGY MERGER ================= */
-function mergeStrategies({ market, ceoDecision, evolution, healing, neural }) {
+function mergeStrategies({
+  market,
+  evolution,
+  healing,
+  neural,
+}) {
   const baseScore =
     (market?.trendingProducts?.length || 0) * 2 +
     (market?.topProducts?.length || 0) * 3 +
@@ -76,39 +78,39 @@ function mergeStrategies({ market, ceoDecision, evolution, healing, neural }) {
     (evolution?.performanceScore || 0) -
     (healing?.brokenPages || 0) * 2;
 
-  /* ================= FINAL MODE DECISION ================= */
+  /* ================= STRATEGY MODE DECISION ================= */
   if (baseScore > 200) {
     return {
-      mode: "AGGRESSIVE_GROWTH",
+      mode: "GROWTH_FOCUS",
       actions: [
-        "generate new SEO clusters",
-        "create high-profit blog posts",
-        "expand homepage feed",
-        "push viral products",
-        "increase internal linking density",
+        "generate SEO content clusters",
+        "create high-performing blog content",
+        "expand homepage recommendations",
+        "highlight viral products",
+        "improve internal linking structure",
       ],
     };
   }
 
   if (baseScore > 100) {
     return {
-      mode: "STABLE_GROWTH",
+      mode: "OPTIMIZATION_FOCUS",
       actions: [
         "optimize trending pages",
-        "refresh old content",
-        "improve CTR titles",
-        "boost affiliate conversion pages",
+        "refresh existing content",
+        "improve click-through rate titles",
+        "enhance affiliate conversion pages",
       ],
     };
   }
 
   return {
-    mode: "RECOVERY_MODE",
+    mode: "STABILITY_FOCUS",
     actions: [
-      "fix broken SEO pages",
-      "regenerate low traffic content",
-      "remove dead pages from sitemap",
-      "rebuild internal linking graph",
+      "fix SEO inconsistencies",
+      "regenerate low-performing content",
+      "remove outdated sitemap entries",
+      "strengthen internal linking",
     ],
   };
-}
+      }
