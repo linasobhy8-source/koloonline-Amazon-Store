@@ -16,24 +16,35 @@ const db = getFirestore(app);
 
 /* ================= HELPERS ================= */
 function cleanUrl(url) {
-  return url?.replace(/\/+$/, "")?.trim();
+  return typeof url === "string"
+    ? url.replace(/\/+$/, "").trim()
+    : null;
 }
 
-/* ================= SAFE VALUE GUARD ================= */
-function safeId(value, fallback) {
-  if (!value || typeof value !== "string") return fallback || null;
-  return value.trim();
+function safeString(v) {
+  return typeof v === "string" && v.trim().length > 0
+    ? v.trim()
+    : null;
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
+  const startTime = Date.now();
+
   try {
     const key = process.env.INDEXNOW_KEY;
     const baseUrl = "https://koloonline.online";
 
-    /* ================= CORE SEO PAGES ================= */
-    let urls = [
-      `${baseUrl}`,
+    if (!key) {
+      return res.status(500).json({
+        success: false,
+        error: "Missing INDEXNOW_KEY",
+      });
+    }
+
+    /* ================= STATIC CORE PAGES ================= */
+    const staticUrls = [
+      baseUrl,
       `${baseUrl}/blog`,
       `${baseUrl}/products`,
       `${baseUrl}/categories`,
@@ -43,76 +54,68 @@ export default async function handler(req, res) {
       `${baseUrl}/aliexpress`,
     ];
 
-    /* ================= PRODUCTS (SAFE) ================= */
+    /* ================= PRODUCTS ================= */
     const productsSnap = await getDocs(collection(db, "products"));
 
     const productUrls = productsSnap.docs
       .map((doc) => {
-        const id = safeId(doc.id);
-
-        if (!id) return null;
-
-        return `${baseUrl}/product/${id}`;
+        const id = safeString(doc.id);
+        return id ? `${baseUrl}/product/${id}` : null;
       })
       .filter(Boolean)
       .slice(0, 200);
 
-    /* ================= BLOGS (SAFE) ================= */
+    /* ================= BLOGS ================= */
     const blogSnap = await getDocs(collection(db, "blog"));
 
     const blogUrls = blogSnap.docs
       .map((doc) => {
-        const d = doc.data();
+        const data = doc.data();
+        const slug = safeString(data?.slug || doc.id);
 
-        const slug = safeId(d.slug, doc.id);
-
-        if (!slug) return null;
-
-        return `${baseUrl}/blog/${slug}`;
+        return slug ? `${baseUrl}/blog/${slug}` : null;
       })
       .filter(Boolean)
-      .slice(0, 100);
+      .slice(0, 150);
 
-    /* ================= CATEGORIES (SAFE) ================= */
+    /* ================= CATEGORIES ================= */
     const categoriesSnap = await getDocs(collection(db, "products"));
 
     const categoryUrls = [
       ...new Set(
-        categoriesSnap.docs.map((doc) => {
-          const d = doc.data();
-
-          const cat = d?.category;
-
-          if (!cat || typeof cat !== "string") return null;
-
-          return `${baseUrl}/category/${cat.toLowerCase()}`;
-        })
+        categoriesSnap.docs
+          .map((doc) => {
+            const cat = safeString(doc.data()?.category);
+            return cat
+              ? `${baseUrl}/category/${cat.toLowerCase()}`
+              : null;
+          })
+          .filter(Boolean)
       ),
-    ].filter(Boolean);
+    ];
 
-    /* ================= MERGE URLS ================= */
-    let urlsFinal = [
-      ...new Set([...urls, ...productUrls, ...blogUrls, ...categoryUrls]),
+    /* ================= MERGE ALL ================= */
+    const allUrls = [
+      ...new Set([...staticUrls, ...productUrls, ...blogUrls, ...categoryUrls]),
     ]
       .map(cleanUrl)
       .filter(Boolean);
 
-    /* ================= HIGH PRIORITY FILTER ================= */
-    const highPriorityUrls = urlsFinal.filter(
+    /* ================= PRIORITY FILTER ================= */
+    const priorityUrls = allUrls.filter(
       (u) =>
         u.includes("/product/") ||
         u.includes("/blog/") ||
-        u === baseUrl ||
-        u.includes("/fiverr") ||
-        u.includes("/aliexpress")
+        u.includes("/category/") ||
+        u === baseUrl
     );
 
     /* ================= CHUNKING ================= */
-    const chunks = [];
     const chunkSize = 50;
+    const chunks = [];
 
-    for (let i = 0; i < highPriorityUrls.length; i += chunkSize) {
-      chunks.push(highPriorityUrls.slice(i, i + chunkSize));
+    for (let i = 0; i < priorityUrls.length; i += chunkSize) {
+      chunks.push(priorityUrls.slice(i, i + chunkSize));
     }
 
     /* ================= INDEXNOW PUSH ================= */
@@ -120,13 +123,6 @@ export default async function handler(req, res) {
 
     for (const chunk of chunks) {
       try {
-        if (!key) {
-          results.push({
-            error: "Missing INDEXNOW_KEY",
-          });
-          break;
-        }
-
         const response = await fetch(
           "https://api.indexnow.org/indexnow",
           {
@@ -142,16 +138,14 @@ export default async function handler(req, res) {
           }
         );
 
-        const text = await response.text();
-
         results.push({
           count: chunk.length,
           status: response.status,
-          result: text,
+          ok: response.ok,
         });
       } catch (err) {
         results.push({
-          error: err.message,
+          error: err?.message || "IndexNow chunk failed",
         });
       }
     }
@@ -159,19 +153,20 @@ export default async function handler(req, res) {
     /* ================= GOOGLE PING ================= */
     try {
       await fetch(
-        `https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml`
+        "https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml"
       );
     } catch (e) {
       results.push({
-        googlePingError: e.message,
+        googlePingError: e?.message,
       });
     }
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      totalUrls: urlsFinal.length,
-      indexedUrls: highPriorityUrls.length,
+      runtime: Date.now() - startTime,
+      totalUrls: allUrls.length,
+      indexedUrls: priorityUrls.length,
       chunks: chunks.length,
       results,
     });
@@ -181,7 +176,7 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: e?.message || "Unknown error",
     });
   }
-}
+  }
