@@ -26,6 +26,8 @@ export default function SearchPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
+
         const snap = await getDocs(collection(db, "products"));
 
         const data = snap.docs.map((doc) => {
@@ -38,7 +40,7 @@ export default function SearchPage() {
             (d.viralBoost ? 40 : 0);
 
           return {
-            id: doc.id,   // ✅ أهم تعديل
+            id: doc.id,
             ...d,
             aiScore,
           };
@@ -46,7 +48,7 @@ export default function SearchPage() {
 
         setProducts(data);
       } catch (err) {
-        console.error(err);
+        console.error("Products error:", err);
       } finally {
         setLoading(false);
       }
@@ -65,11 +67,11 @@ export default function SearchPage() {
 
         const data = await res.json();
 
-        if (data.items) {
+        if (data?.items) {
           setBlogPosts(data.items.slice(0, 4));
         }
       } catch (e) {
-        console.error(e);
+        console.error("Blog error:", e);
       }
     };
 
@@ -85,7 +87,9 @@ export default function SearchPage() {
 
     const results = products
       .filter((p) =>
-        p.title?.toLowerCase().includes(search.toLowerCase())
+        (p.title || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
       )
       .sort((a, b) => b.aiScore - a.aiScore)
       .slice(0, 6);
@@ -97,20 +101,27 @@ export default function SearchPage() {
   const filtered = useMemo(() => {
     return products
       .filter((p) => {
-        const title = p.title?.toLowerCase() || "";
-        const cat = p.category?.toLowerCase() || "";
+        const title = (p.title || "").toLowerCase();
+        const cat = (p.category || "").toLowerCase();
 
         const searchMatch = title.includes(search.toLowerCase());
+
         const categoryMatch =
-          category === "all" ? true : cat === category.toLowerCase();
+          category === "all"
+            ? true
+            : cat === category.toLowerCase();
 
         return searchMatch && categoryMatch;
       })
       .sort((a, b) => b.aiScore - a.aiScore);
   }, [products, search, category]);
 
+  /* ================= CATEGORIES ================= */
   const categories = useMemo(() => {
-    return ["all", ...new Set(products.map((p) => p.category).filter(Boolean))];
+    return [
+      "all",
+      ...new Set(products.map((p) => p.category).filter(Boolean)),
+    ];
   }, [products]);
 
   return (
@@ -123,23 +134,39 @@ export default function SearchPage() {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      {/* ================= SEARCH ================= */}
+      {/* ================= SEARCH INPUT ================= */}
       <div style={{ padding: 20 }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search products..."
-          style={{ padding: 12, width: "100%" }}
+          style={{
+            padding: 12,
+            width: "100%",
+            borderRadius: 8,
+            border: "1px solid #ddd",
+          }}
         />
 
-        {/* Suggestions */}
+        {/* ================= SUGGESTIONS ================= */}
         {suggestions.length > 0 && (
-          <div style={{ background: "white" }}>
+          <div
+            style={{
+              background: "white",
+              marginTop: 5,
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
             {suggestions.map((s) => (
               <div
                 key={s.id}
-                onClick={() => router.push(`/product/${s.id}`)} // ✅ FIXED
-                style={{ padding: 10, cursor: "pointer" }}
+                onClick={() => router.push(`/product/${s.id}`)}
+                style={{
+                  padding: 10,
+                  cursor: "pointer",
+                  borderBottom: "1px solid #eee",
+                }}
               >
                 {s.title}
               </div>
@@ -150,20 +177,43 @@ export default function SearchPage() {
 
       {/* ================= PRODUCTS ================= */}
       {loading ? (
-        <p>Loading...</p>
+        <p style={{ padding: 20 }}>Loading...</p>
       ) : (
-        <div style={{ display: "grid", gap: 20, padding: 20 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(220px,1fr))",
+            gap: 20,
+            padding: 20,
+          }}
+        >
           {filtered.map((p) => (
-            <Link key={p.id} href={`/product/${p.id}`}> {/* ✅ FIXED */}
-              <div style={{ background: "white", padding: 15 }}>
+            <Link key={p.id} href={`/product/${p.id}`}>
+              <div
+                style={{
+                  background: "white",
+                  padding: 15,
+                  borderRadius: 12,
+                  cursor: "pointer",
+                }}
+              >
                 <Image
                   src={p.image || fallbackImage}
                   width={300}
                   height={300}
-                  alt={p.title}
+                  alt={p.title || "product"}
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                  }}
                 />
+
                 <h3>{p.title}</h3>
-                <p>${p.price}</p>
+
+                <p style={{ color: "#B12704" }}>
+                  ${p.price || 0}
+                </p>
               </div>
             </Link>
           ))}
@@ -171,4 +221,4 @@ export default function SearchPage() {
       )}
     </div>
   );
-        }
+}
