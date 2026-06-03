@@ -8,84 +8,165 @@ import Footer from "../components/layout/Footer";
 import "../styles/globals.css";
 
 export default function App({ Component, pageProps }) {
-  return (
-    <>
-      {/* ================= GLOBAL HEAD ================= */}
-      <Head>
-        <meta charSet="UTF-8" />
+return (
+<>
+<Head>
+<meta charSet="UTF-8" />
 
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
 
-        <meta name="theme-color" content="#111827" />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large"
+    />
 
-        <meta
-          name="robots"
-          content="index,follow,max-image-preview:large"
-        />
+    <meta
+      name="googlebot"
+      content="index,follow,max-image-preview:large"
+    />
 
-        <meta name="googlebot" content="index,follow" />
+    <meta name="theme-color" content="#111827" />
 
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <link rel="icon" href="/favicon.ico" />
 
-      {/* ================= GOOGLE TAG MANAGER (GTM) ================= */}
-      <Script
-        id="gtm-script"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-KNQM8KBN');
-          `,
-        }}
-      />
+    <link
+      rel="preconnect"
+      href="https://pagead2.googlesyndication.com"
+    />
 
-      {/* ================= GOOGLE ANALYTICS 4 ================= */}
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
-        strategy="afterInteractive"
-      />
+    <link
+      rel="preconnect"
+      href="https://www.googletagmanager.com"
+    />
 
-      <Script id="ga4-script" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
+    <link
+      rel="dns-prefetch"
+      href="https://www.googletagmanager.com"
+    />
 
-          gtag('js', new Date());
+    <link
+      rel="dns-prefetch"
+      href="https://pagead2.googlesyndication.com"
+    />
+  </Head>
 
-          gtag('config', 'G-YS8L61XLPR', {
-            page_path: window.location.pathname,
-          });
-        `}
-      </Script>
+  {/* ================= GTM ================= */}
+  <Script
+    id="gtm-script"
+    strategy="afterInteractive"
+    dangerouslySetInnerHTML={{
+      __html: `
+      (function(w,d,s,l,i){
+        w[l]=w[l]||[];
+        w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});
+        var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),
+        dl=l!='dataLayer'?'&l='+l:'';
+        j.async=true;
+        j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+        f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-KNQM8KBN');
+      `,
+    }}
+  />
 
-      {/* ================= GTM NOSCRIPT (fallback) ================= */}
-      <noscript>
-        <iframe
-          src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
-          height="0"
-          width="0"
-          style={{ display: "none", visibility: "hidden" }}
-        />
-      </noscript>
+  {/* ================= GA4 ================= */}
+  <Script
+    src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
+    strategy="lazyOnload"
+  />
 
-      {/* ================= LAYOUT ================= */}
-      <Navbar />
+  <Script
+    id="ga4-script"
+    strategy="lazyOnload"
+  >
+    {`
+      window.dataLayer = window.dataLayer || [];
 
-      <main>
-        <Component {...pageProps} />
-      </main>
+      function gtag(){
+        dataLayer.push(arguments);
+      }
 
-      <Footer />
+      gtag('js', new Date());
 
-      {/* ================= PERFORMANCE ================= */}
-      <SpeedInsights />
-    </>
-  );
-            }
+      gtag('config', 'G-YS8L61XLPR', {
+        page_path: window.location.pathname,
+        anonymize_ip: true
+      });
+    `}
+  </Script>
+
+  {/* ================= FACEBOOK PIXEL ================= */}
+  <Script
+    id="facebook-pixel"
+    strategy="lazyOnload"
+  >
+    {`
+      !function(f,b,e,v,n,t,s)
+      {
+        if(f.fbq)return;
+        n=f.fbq=function(){
+          n.callMethod ?
+          n.callMethod.apply(n,arguments) :
+          n.queue.push(arguments)
+        };
+        if(!f._fbq)f._fbq=n;
+        n.push=n;
+        n.loaded=!0;
+        n.version='2.0';
+        n.queue=[];
+        t=b.createElement(e);
+        t.async=!0;
+        t.src=v;
+        s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)
+      }(
+        window,
+        document,
+        'script',
+        'https://connect.facebook.net/en_US/fbevents.js'
+      );
+
+      fbq('init', '1038760229314882');
+      fbq('track', 'PageView');
+    `}
+  </Script>
+
+  {/* ================= ADSENSE ================= */}
+  <Script
+    async
+    strategy="lazyOnload"
+    crossOrigin="anonymous"
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
+  />
+
+  {/* ================= GTM NOSCRIPT ================= */}
+  <noscript>
+    <iframe
+      src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
+      height="0"
+      width="0"
+      style={{
+        display: "none",
+        visibility: "hidden",
+      }}
+    />
+  </noscript>
+
+  <Navbar />
+
+  <main>
+    <Component {...pageProps} />
+  </main>
+
+  <Footer />
+
+  <SpeedInsights />
+</>
+
+);
+        }
