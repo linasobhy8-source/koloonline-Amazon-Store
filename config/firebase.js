@@ -14,27 +14,26 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/* ================= SINGLETON INIT (OPTIMIZED) ================= */
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApp();
+/* ================= SINGLETON INIT ================= */
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 /* ================= FIRESTORE ================= */
 const db = getFirestore(app);
 
-/* ================= ANALYTICS (CLIENT ONLY SAFE) ================= */
+/* ================= ANALYTICS (SAFE + OPTIMIZED) ================= */
 let analytics = null;
 
 if (typeof window !== "undefined") {
-  isSupported()
-    .then((yes) => {
-      if (yes) {
+  (async () => {
+    try {
+      const supported = await isSupported();
+      if (supported && !analytics) {
         analytics = getAnalytics(app);
       }
-    })
-    .catch(() => {
+    } catch (e) {
       analytics = null;
-    });
+    }
+  })();
 }
 
 export { app, db, analytics };
