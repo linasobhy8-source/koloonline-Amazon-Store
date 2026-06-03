@@ -4,8 +4,9 @@ import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
+import { getProductsFast } from "../../lib/firebaseQuery";
 
-/* ================= FALLBACK IMAGE ================= */
+/* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
@@ -21,18 +22,11 @@ export default function ProductPage({ product, related }) {
   }
 
   const url = `https://koloonline.online/product/${product.id}`;
-
   const imageSrc =
     optimizeAmazonImage(product.image) || fallbackImage;
 
   return (
-    <div
-      style={{
-        fontFamily: "Arial",
-        background: "#f5f5f5",
-        padding: 20,
-      }}
-    >
+    <div style={{ fontFamily: "Arial", background: "#f5f5f5", padding: 20 }}>
       {/* ================= SEO ================= */}
       <Head>
         <title>{product.title} | Koloonline</title>
@@ -68,10 +62,9 @@ export default function ProductPage({ product, related }) {
       >
         <h1>{product.title}</h1>
 
-        {/* ================= OPTIMIZED IMAGE ================= */}
         <Image
           src={imageSrc}
-          alt={product.title || "product image"}
+          alt={product.title || "product"}
           width={500}
           height={500}
           priority
@@ -124,43 +117,40 @@ export default function ProductPage({ product, related }) {
               gap: 15,
             }}
           >
-            {related.map((p) => {
-              const relatedImage =
-                optimizeAmazonImage(p.image) ||
-                fallbackImage;
-
-              return (
-                <Link key={p.id} href={`/product/${p.id}`}>
-                  <div
+            {related.map((p) => (
+              <Link key={p.id} href={`/product/${p.id}`}>
+                <div
+                  style={{
+                    background: "#fff",
+                    padding: 10,
+                    borderRadius: 10,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Image
+                    src={
+                      optimizeAmazonImage(p.image) ||
+                      fallbackImage
+                    }
+                    width={300}
+                    height={300}
+                    alt={p.title || "product"}
+                    loading="lazy"
+                    quality={75}
+                    placeholder="blur"
+                    blurDataURL={fallbackImage}
                     style={{
-                      background: "#fff",
-                      padding: 10,
-                      borderRadius: 10,
-                      cursor: "pointer",
+                      width: "100%",
+                      height: "auto",
+                      objectFit: "contain",
                     }}
-                  >
-                    <Image
-                      src={relatedImage}
-                      width={300}
-                      height={300}
-                      alt={p.title || "product"}
-                      loading="lazy"
-                      quality={75}
-                      placeholder="blur"
-                      blurDataURL={fallbackImage}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        objectFit: "contain",
-                      }}
-                    />
+                  />
 
-                    <h3>{p.title}</h3>
-                    <p>${p.price || 0}</p>
-                  </div>
-                </Link>
-              );
-            })}
+                  <h3>{p.title}</h3>
+                  <p>${p.price || 0}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       )}
@@ -168,44 +158,45 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= STATIC PATHS ================= */
+/* ================= STATIC PATHS (OPTIMIZED) ================= */
 export async function getStaticPaths() {
   const snap = await getDocs(collection(db, "products"));
 
+  const paths = snap.docs.slice(0, 100).map((d) => ({
+    params: { id: d.id },
+  }));
+
   return {
-    paths: snap.docs.map((d) => ({
-      params: { id: d.id },
-    })),
+    paths,
     fallback: "blocking",
   };
 }
 
-/* ================= STATIC PROPS ================= */
+/* ================= STATIC PROPS (TURBO) ================= */
 export async function getStaticProps({ params }) {
-  const snap = await getDocs(collection(db, "products"));
+  try {
+    const products = await getProductsFast(); // 🔥 أهم تحسين
 
-  const products = snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+    const product = products.find((p) => p.id === params.id);
 
-  const product = products.find((p) => p.id === params.id);
+    if (!product) {
+      return { notFound: true };
+    }
 
-  if (!product) {
+    const related = products
+      .filter((p) => p.id !== params.id)
+      .slice(0, 4);
+
+    return {
+      props: {
+        product,
+        related,
+      },
+      revalidate: 3600,
+    };
+  } catch (e) {
     return {
       notFound: true,
     };
   }
-
-  const related = products
-    .filter((p) => p.id !== params.id)
-    .slice(0, 4);
-
-  return {
-    props: {
-      product,
-      related,
-    },
-    revalidate: 3600,
-  };
-}
+          }
