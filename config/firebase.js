@@ -1,103 +1,34 @@
-/** @type {import('next').NextConfig} */
+// config/firebase.js
 
-const nextConfig = {
-  reactStrictMode: true,
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
-  /* ================= PERFORMANCE ================= */
-  compress: true,
-  poweredByHeader: false,
-
-  /* ================= COMPILER OPTIMIZATION ================= */
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
-  },
-
-  /* ================= IMAGE OPTIMIZATION ================= */
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "m.media-amazon.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images-na.ssl-images-amazon.com",
-      },
-
-      {
-        protocol: "https",
-        hostname: "**.amazon.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.ae",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.co.uk",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.de",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.fr",
-      },
-      {
-        protocol: "https",
-        hostname: "**.amazon.in",
-      },
-
-      {
-        protocol: "https",
-        hostname: "**firebaseapp.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**googleusercontent.com",
-      },
-
-      {
-        protocol: "https",
-        hostname: "via.placeholder.com",
-      },
-    ],
-
-    formats: ["image/avif", "image/webp"],
-
-    minimumCacheTTL: 60 * 60 * 24 * 7,
-
-    deviceSizes: [320, 420, 768, 1024, 1200, 1600],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828],
-  },
-
-  /* ================= HEADERS ================= */
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-        ],
-      },
-    ];
-  },
+/* ================= FIREBASE CONFIG ================= */
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-module.exports = nextConfig;
+/* ================= SINGLETON INIT (IMPORTANT) ================= */
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+/* ================= FIRESTORE ================= */
+const db = getFirestore(app);
+
+/* ================= ANALYTICS (CLIENT ONLY SAFE) ================= */
+let analytics = null;
+
+if (typeof window !== "undefined") {
+  isSupported().then((yes) => {
+    if (yes) {
+      analytics = getAnalytics(app);
+    }
+  });
+}
+
+export { app, db, analytics };
