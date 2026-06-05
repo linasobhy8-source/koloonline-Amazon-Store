@@ -1,40 +1,29 @@
 import { useState, useMemo } from "react";
-import Link from "next/link";
 
 export default function Navbar({ products = [] }) {
-  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return [];
-
-    const t = search.toLowerCase();
+  const results = useMemo(() => {
+    if (!q) return [];
 
     return products
-      .filter((p) => (p?.title || "").toLowerCase().includes(t))
+      .filter((p) =>
+        (p.title || "").toLowerCase().includes(q.toLowerCase())
+      )
       .slice(0, 5);
-  }, [search, products]);
+  }, [q, products]);
 
   return (
-    <nav style={{ position: "sticky", top: 0, background: "#fff", zIndex: 999 }}>
-      <div style={{ display: "flex", gap: 10, padding: 12 }}>
-        <Link href="/">Koloonline</Link>
+    <nav style={{ padding: 10, background: "#fff" }}>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search..."
+      />
 
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search..."
-        />
-      </div>
-
-      {filtered.length > 0 && (
-        <div style={{ background: "#fff", border: "1px solid #eee" }}>
-          {filtered.map((p) => (
-            <Link key={p.id} href={`/product/${p.id}`}>
-              <div style={{ padding: 10 }}>{p.title}</div>
-            </Link>
-          ))}
-        </div>
-      )}
+      {results.map((p) => (
+        <div key={p.id}>{p.title}</div>
+      ))}
     </nav>
   );
-}
+          }
