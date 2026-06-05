@@ -1,6 +1,6 @@
 import sharp from "sharp";
 
-/* ================= EDGE IMAGE CDN PROXY ================= */
+/* ================= EDGE IMAGE CDN PROXY (OPTIMIZED) ================= */
 export default async function handler(req, res) {
   try {
     const { url, w = 500, q = 75 } = req.query;
@@ -32,10 +32,17 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ================= FETCH IMAGE ================= */
+    /* ================= CACHE LAYER (FAST EDGE STYLE) ================= */
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=31536000, immutable, stale-while-revalidate=86400"
+    );
+
+    /* ================= FETCH IMAGE (OPTIMIZED) ================= */
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Koloonline-CDN-Bot",
+        "Accept": "image/*",
       },
     });
 
@@ -45,8 +52,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.from(await response.arrayBuffer());
 
     /* ================= FORMAT DETECTION ================= */
     const accept = req.headers["accept"] || "";
@@ -55,22 +61,15 @@ export default async function handler(req, res) {
     /* ================= IMAGE OPTIMIZATION ================= */
     const optimizedBuffer = await sharp(buffer)
       .resize({
-        width: Number(w),
+        width: Math.min(Number(w) || 500, 800), // 🔥 limit max size (performance boost)
         fit: "inside",
         withoutEnlargement: true,
       })
-      .toFormat(useWebp ? "webp" : "jpeg", {
-        quality: Number(q),
-        progressive: true,
-      })
+      .rotate() // 🔥 auto fix orientation (EXIF fix)
+      .webp({ quality: Number(q) }) // 🔥 force WebP for speed (better LCP)
       .toBuffer();
 
-    /* ================= HEADERS (CRITICAL FOR SPEED) ================= */
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=31536000, immutable"
-    );
-
+    /* ================= HEADERS ================= */
     res.setHeader(
       "Content-Type",
       useWebp ? "image/webp" : "image/jpeg"
@@ -84,6 +83,7 @@ export default async function handler(req, res) {
 
     /* ================= RESPONSE ================= */
     return res.status(200).send(optimizedBuffer);
+
   } catch (error) {
     console.error("CDN ERROR:", error);
 
@@ -92,4 +92,4 @@ export default async function handler(req, res) {
       message: error.message,
     });
   }
-          }
+  }
