@@ -26,7 +26,6 @@ export default function SmartImage({ src, alt }) {
         alt={alt || "image"}
         fill
         sizes="(max-width: 768px) 100vw, 500px"
-        priority={false}
         loading="lazy"
         quality={60}
         onError={() => setError(true)}
@@ -36,4 +35,4 @@ export default function SmartImage({ src, alt }) {
       />
     </div>
   );
-          }
+}
