@@ -1,74 +1,59 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-
 import { getProductsFast } from "../../lib/firebaseQuery";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
 
+const fallbackImage = "https://via.placeholder.com/500x500";
+
 export default function ProductPage({ product, related }) {
-  if (!product) return <div>Not Found</div>;
+  if (!product) return <div>Not found</div>;
+
+  const url = `https://koloonline.online/product/${product.id}`;
+  const imageSrc = optimizeAmazonImage(product.image) || fallbackImage;
 
   return (
-    <>
+    <div style={{ padding: 20 }}>
       <Head>
         <title>{product.title}</title>
       </Head>
 
-      <div style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
-        <h1>{product.title}</h1>
+      <h1>{product.title}</h1>
 
-        <Image
-          src={optimizeAmazonImage(product.image)}
-          width={500}
-          height={500}
-          alt={product.title}
-          priority
-        />
+      <Image
+        src={imageSrc}
+        width={500}
+        height={500}
+        alt={product.title}
+        priority
+      />
 
-        <h2>${product.price}</h2>
+      <h2>${product.price}</h2>
 
-        {/* Affiliate Button */}
-        <button
-          onClick={() => {
-            window.open(
-              product.affiliateLink || product.link,
-              "_blank"
-            );
-          }}
-          style={{
-            padding: 15,
-            background: "#ff9900",
-            border: 0,
-            width: "100%",
-            marginTop: 10,
-          }}
-        >
-          🛒 Buy Now
-        </button>
+      <p>{product.description}</p>
 
-        <h3>Related</h3>
+      <Link href="/products">Back</Link>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          {related.map((p) => (
-            <Link key={p.id} href={`/product/${p.id}`}>
-              <div>
-                <Image
-                  src={optimizeAmazonImage(p.image)}
-                  width={150}
-                  height={150}
-                  alt={p.title}
-                />
-              </div>
-            </Link>
-          ))}
-        </div>
+      <h2>Related</h2>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+        {related.map((p) => (
+          <Link key={p.id} href={`/product/${p.id}`}>
+            <div>
+              <Image
+                src={optimizeAmazonImage(p.image) || fallbackImage}
+                width={200}
+                height={200}
+                alt={p.title}
+                loading="lazy"
+              />
+              <p>{p.title}</p>
+            </div>
+          </Link>
+        ))}
       </div>
-    </>
+    </div>
   );
-}
-
-export async function getStaticPaths() {
-  return { paths: [], fallback: "blocking" };
 }
 
 export async function getStaticProps({ params }) {
@@ -78,11 +63,21 @@ export async function getStaticProps({ params }) {
 
   if (!product) return { notFound: true };
 
+  const related = products.filter((p) => p.id !== params.id).slice(0, 4);
+
   return {
-    props: {
-      product,
-      related: products.slice(0, 4),
-    },
+    props: { product, related },
     revalidate: 3600,
   };
-            }
+}
+
+export async function getStaticPaths() {
+  const products = await getProductsFast();
+
+  return {
+    paths: products.slice(0, 50).map((p) => ({
+      params: { id: p.id },
+    })),
+    fallback: "blocking",
+  };
+                  }
