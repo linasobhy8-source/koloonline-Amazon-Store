@@ -1,68 +1,22 @@
-import Head from "next/head";
-import Link from "next/link";
-import Image from "next/image";
-import { useMemo, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../config/firebase";
 
-import { getProductsFast } from "../../lib/firebaseQuery";
-import { optimizeAmazonImage } from "../../lib/amazonImage";
+export default async function handler(req, res) {
+  try {
+    const snap = await getDocs(collection(db, "products"));
 
-export default function ProductsPage({ products }) {
-  const [search, setSearch] = useState("");
+    const data = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
 
-  const filtered = useMemo(() => {
-    const t = search.toLowerCase();
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=600, stale-while-revalidate=86400"
+    );
 
-    return products
-      .filter((p) => (p.title || "").toLowerCase().includes(t))
-      .slice(0, 80);
-  }, [search, products]);
-
-  return (
-    <>
-      <Head>
-        <title>Trending Products</title>
-      </Head>
-
-      <div style={{ padding: 20 }}>
-        <input
-          placeholder="Search..."
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: "100%", padding: 12 }}
-        />
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-            gap: 15,
-            marginTop: 20,
-          }}
-        >
-          {filtered.map((p) => (
-            <Link key={p.id} href={`/product/${p.id}`}>
-              <div style={{ background: "#fff", padding: 10 }}>
-                <Image
-                  src={optimizeAmazonImage(p.image)}
-                  width={200}
-                  height={200}
-                  alt={p.title}
-                />
-
-                <h4>{p.title}</h4>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-export async function getStaticProps() {
-  const products = await getProductsFast();
-
-  return {
-    props: { products },
-    revalidate: 120,
-  };
+    return res.status(200).json(data);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
 }
