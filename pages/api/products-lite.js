@@ -1,21 +1,31 @@
-import { collection, getDocs, limit, query } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
+
+let cache = null;
+let lastFetch = 0;
+const TTL = 1000 * 60 * 10;
 
 export default async function handler(req, res) {
   try {
-    const q = query(collection(db, "products"), limit(50));
-    const snap = await getDocs(q);
+    const now = Date.now();
 
-    const data = snap.docs.map(d => ({
+    if (cache && now - lastFetch < TTL) {
+      return res.status(200).json(cache);
+    }
+
+    const snap = await getDocs(collection(db, "products"));
+
+    const data = snap.docs.map((d) => ({
       id: d.id,
-      title: d.data().title,
-      price: d.data().price,
-      image: d.data().image
+      ...d.data(),
     }));
+
+    cache = data;
+    lastFetch = now;
 
     res.setHeader(
       "Cache-Control",
-      "public, s-maxage=600, stale-while-revalidate=86400"
+      "public, s-maxage=600, stale-while-revalidate=3600"
     );
 
     return res.status(200).json(data);
