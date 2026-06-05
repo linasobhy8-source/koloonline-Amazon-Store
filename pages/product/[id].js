@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { optimizeAmazonImage } from "../../lib/imageCDN";
+import { optimizeImage } from "../../lib/image";
 
 export default function Product({ product }) {
   return (
@@ -8,7 +8,7 @@ export default function Product({ product }) {
       <h1>{product.title}</h1>
 
       <Image
-        src={optimizeAmazonImage(product.image)}
+        src={optimizeImage(product.image)}
         width={400}
         height={400}
         alt={product.title}
@@ -23,7 +23,7 @@ export async function getStaticPaths() {
   const products = await getProductsFast();
 
   return {
-    paths: products.slice(0, 50).map((p) => ({
+    paths: products.slice(0, 80).map((p) => ({
       params: { id: p.id },
     })),
     fallback: "blocking",
