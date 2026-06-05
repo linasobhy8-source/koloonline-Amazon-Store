@@ -1,37 +1,24 @@
-import Link from "next/link";
-import Image from "next/image";
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { optimizeAmazonImage } from "../../lib/imageCDN";
 
-export default function Products({ products }) {
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>🔥 Products</h1>
+let cache = null;
+let last = 0;
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 20 }}>
-        {products.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
-            <div>
-              <Image
-                src={optimizeAmazonImage(p.image)}
-                width={200}
-                height={200}
-                alt={p.title}
-              />
-              <h3>{p.title}</h3>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+export default async function handler(req, res) {
+  const now = Date.now();
+
+  if (cache && now - last < 1000 * 60 * 5) {
+    return res.status(200).json(cache);
+  }
+
+  const data = await getProductsFast();
+
+  cache = data;
+  last = now;
+
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=600, stale-while-revalidate=3600"
   );
+
+  return res.status(200).json(data);
 }
-
-export async function getStaticProps() {
-  const products = await getProductsFast();
-
-  return {
-    props: { products },
-    revalidate: 300,
-  };
-                  }
