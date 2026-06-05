@@ -7,28 +7,36 @@ export default function Document() {
         {/* ================= BASIC SEO ================= */}
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-
         <meta name="robots" content="index,follow" />
         <meta name="googlebot" content="index,follow" />
 
         {/* ================= THEME ================= */}
         <meta name="theme-color" content="#ff9900" />
 
+        {/* ================= PERFORMANCE BOOST (DNS PREFETCH) ================= */}
+        <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+
+        {/* ================= PRECONNECT (CRITICAL) ================= */}
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="" />
+        <link rel="preconnect" href="https://www.google.com" crossOrigin="" />
+
         {/* ================= ADSENSE ================= */}
-        {/* مهم: لازم pub-cid مش pub-id */}
         <meta
           name="google-adsense-account"
           content="ca-pub-1294940976431468"
         />
 
-        {/* ================= ADSENSE SCRIPT ================= */}
+        {/* ================= ADSENSE SCRIPT (DEFER OPTIMIZED) ================= */}
         <script
           async
+          defer
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
           crossOrigin="anonymous"
         />
 
-        {/* ================= STRUCTURED DATA ================= */}
+        {/* ================= STRUCTURED DATA (SEO BOOST) ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -47,14 +55,19 @@ export default function Document() {
           }}
         />
 
-        {/* ================= SPEED BOOST ================= */}
-        <link rel="preconnect" href="https://pagead2.googlesyndication.com" />
-        <link rel="preconnect" href="https://www.google.com" />
-        <link rel="preconnect" href="https://www.google-analytics.com" />
+        {/* ================= CRITICAL CSS HINT ================= */}
+        <link rel="preload" as="style" href="/styles/globals.css" />
+
+        {/* ================= FAVICON (OPTIONAL BOOST) ================= */}
+        <link rel="icon" href="/favicon.ico" />
+
       </Head>
 
       <body>
+        {/* ================= MAIN APP ================= */}
         <Main />
+
+        {/* ================= NEXT SCRIPTS ================= */}
         <NextScript />
       </body>
     </Html>
