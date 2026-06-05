@@ -1,29 +1,60 @@
-import { getProductsFast } from "../../lib/firebaseQuery";
-import { optimizeImage } from "../../lib/image";
-import Image from "next/image";
+import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
+import { useMemo, useState } from "react";
 
-export default function Products({ products }) {
+import { getProductsFast } from "../../lib/firebaseQuery";
+import { optimizeAmazonImage } from "../../lib/amazonImage";
+
+export default function ProductsPage({ products }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const t = search.toLowerCase();
+
+    return products
+      .filter((p) => (p.title || "").toLowerCase().includes(t))
+      .slice(0, 80);
+  }, [search, products]);
+
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Products</h1>
+    <>
+      <Head>
+        <title>Trending Products</title>
+      </Head>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 20 }}>
-        {products.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
-            <div>
-              <Image
-                src={optimizeImage(p.image)}
-                width={200}
-                height={200}
-                alt={p.title}
-              />
-              <h3>{p.title}</h3>
-            </div>
-          </Link>
-        ))}
+      <div style={{ padding: 20 }}>
+        <input
+          placeholder="Search..."
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: "100%", padding: 12 }}
+        />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+            gap: 15,
+            marginTop: 20,
+          }}
+        >
+          {filtered.map((p) => (
+            <Link key={p.id} href={`/product/${p.id}`}>
+              <div style={{ background: "#fff", padding: 10 }}>
+                <Image
+                  src={optimizeAmazonImage(p.image)}
+                  width={200}
+                  height={200}
+                  alt={p.title}
+                />
+
+                <h4>{p.title}</h4>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -32,6 +63,6 @@ export async function getStaticProps() {
 
   return {
     props: { products },
-    revalidate: 300,
+    revalidate: 120,
   };
 }
