@@ -1,3 +1,4 @@
+
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
@@ -13,22 +14,21 @@ export default function Document() {
         {/* ================= THEME ================= */}
         <meta name="theme-color" content="#ff9900" />
 
-        {/* ================= PERFORMANCE BOOST (DNS PREFETCH) ================= */}
-        <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
-        <link rel="dns-prefetch" href="https://www.google.com" />
-        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
-
-        {/* ================= PRECONNECT (CRITICAL) ================= */}
-        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="" />
-        <link rel="preconnect" href="https://www.google.com" crossOrigin="" />
-
-        {/* ================= ADSENSE ================= */}
+        {/* ================= ADSENSE (OPTIMIZED) ================= */}
         <meta
           name="google-adsense-account"
           content="ca-pub-1294940976431468"
         />
 
-        {/* ================= ADSENSE SCRIPT (DEFER OPTIMIZED) ================= */}
+        {/* preload ads script (faster load) */}
+        <link
+          rel="preconnect"
+          href="https://pagead2.googlesyndication.com"
+        />
+        <link rel="preconnect" href="https://www.google.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
+
+        {/* Adsense script (defer for speed) */}
         <script
           async
           defer
@@ -36,7 +36,7 @@ export default function Document() {
           crossOrigin="anonymous"
         />
 
-        {/* ================= STRUCTURED DATA (SEO BOOST) ================= */}
+        {/* ================= STRUCTURED DATA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -54,20 +54,10 @@ export default function Document() {
             }),
           }}
         />
-
-        {/* ================= CRITICAL CSS HINT ================= */}
-        <link rel="preload" as="style" href="/styles/globals.css" />
-
-        {/* ================= FAVICON (OPTIONAL BOOST) ================= */}
-        <link rel="icon" href="/favicon.ico" />
-
       </Head>
 
       <body>
-        {/* ================= MAIN APP ================= */}
         <Main />
-
-        {/* ================= NEXT SCRIPTS ================= */}
         <NextScript />
       </body>
     </Html>
