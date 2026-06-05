@@ -1,16 +1,49 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #f5f5f5;
+  overflow-x: hidden; /* 🔥 يمنع layout shift أفقي */
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* IMPORTANT: خلي img fallback فقط */
+/* ================= GLOBAL IMAGE OPTIMIZATION ================= */
+/* IMPORTANT: نخلي الصورة مرنة + بدون قيود تسبب CLS */
 img {
   max-width: 100%;
+  width: 100%;
+  height: auto;
   display: block;
+
+  /* 🔥 مهم جدًا للأداء */
+  object-fit: contain;
+  content-visibility: auto;
+  contain-intrinsic-size: 500px 500px;
+
+  /* 🔥 يمنع blur shift أثناء التحميل */
+  background: #f5f5f5;
+}
+
+/* ================= LINKS ================= */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ================= BUTTON RESET ================= */
+button {
+  font-family: inherit;
+}
+
+/* ================= PERFORMANCE BOOST ================= */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ================= REDUCE LAYOUT SHIFT ================= */
+img, video {
+  aspect-ratio: auto;
 }
