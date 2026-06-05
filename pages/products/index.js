@@ -1,160 +1,64 @@
 import Head from "next/head";
-import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo } from "react";
-
+import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
+import { fetchProducts } from "../../lib/fetchProducts";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
-import { getProductsFast } from "../../lib/firebaseQuery";
 
-/* ================= FALLBACK ================= */
-const fallbackImage =
-  "https://via.placeholder.com/500x500?text=Koloonline";
+const fallbackImage = "https://via.placeholder.com/500x500";
 
-/* ================= STARS ================= */
-function Stars({ rating = 4.5 }) {
-  const full = Math.floor(Number(rating) || 0);
+export default function ProductsPage() {
+  const [products, setProducts] = useState([]);
 
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
-      <div style={{ color: "#FFA41C" }}>{"★".repeat(full)}</div>
-      <span style={{ fontSize: 13, color: "#666" }}>{rating}/5</span>
-    </div>
-  );
-}
+  useEffect(() => {
+    fetchProducts().then(setProducts);
+  }, []);
 
-/* ================= PAGE ================= */
-export default function ProductsPage({ products = [] }) {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-
-  /* ================= CATEGORIES ================= */
-  const categories = useMemo(() => {
-    const cats = products
-      .map((p) => p.category || "general")
-      .filter(Boolean);
-
-    return ["all", ...Array.from(new Set(cats))];
+  const filtered = useMemo(() => {
+    return products.slice(0, 40); // 🔥 تقليل الحمل
   }, [products]);
 
-  /* ================= FILTER ================= */
-  const filteredProducts = useMemo(() => {
-    return (products || [])
-      .filter((p) => {
-        const title = (p.title || "").toLowerCase();
-
-        const searchMatch = title.includes(search.toLowerCase());
-
-        const categoryMatch =
-          category === "all"
-            ? true
-            : (p.category || "general") === category;
-
-        return searchMatch && categoryMatch;
-      })
-      .slice(0, 120);
-  }, [products, search, category]);
+  if (!products.length) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, padding: 20 }}>
+        {Array(8).fill(0).map((_, i) => (
+          <div key={i} style={{ height: 250, background: "#eee", borderRadius: 10 }} />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div style={{ background: "#f4f6f9", minHeight: "100vh" }}>
+    <div>
       <Head>
-        <title>Products | Koloonline</title>
+        <title>Products</title>
       </Head>
 
-      <div style={{ padding: 20 }}>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search..."
-          style={{ padding: 10, width: "100%", marginBottom: 20 }}
-        />
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              style={{
-                padding: 8,
-                background: category === cat ? "#111" : "#eee",
-                color: category === cat ? "#fff" : "#000",
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
+      <h1>Trending Products</h1>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-          gap: 15,
-          padding: 20,
+          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gap: 20,
         }}
       >
-        {filteredProducts.map((product) => {
-          const imageSrc =
-            optimizeAmazonImage(product.image) || fallbackImage;
-
-          return (
-            <Link
-              key={product.asin || product.id}
-              href={`/product/${product.asin || product.id}`}
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div
-                style={{
-                  background: "#fff",
-                  padding: 10,
-                  borderRadius: 12,
-                }}
-              >
-                <Image
-                  src={imageSrc}
-                  alt={product.title || "product"}
-                  width={300}
-                  height={300}
-                  style={{
-                    width: "100%",
-                    height: 260,
-                    objectFit: "contain",
-                  }}
-                />
-
-                <h3>{product.title}</h3>
-
-                <Stars rating={product.rating || 4.5} />
-
-                <p style={{ color: "#B12704", fontWeight: "bold" }}>
-                  ${product.price || 0}
-                </p>
-              </div>
-            </Link>
-          );
-        })}
+        {filtered.map((p, index) => (
+          <Link key={p.id} href={`/product/${p.id}`}>
+            <div>
+              <Image
+                src={optimizeAmazonImage(p.image) || fallbackImage}
+                width={300}
+                height={300}
+                alt={p.title}
+                priority={index < 6}   // 🔥 أهم تحسين
+                style={{ objectFit: "contain" }}
+              />
+              <h3>{p.title}</h3>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
-}
-
-/* ================= STATIC PROPS (FIXED) ================= */
-export async function getStaticProps() {
-  try {
-    const products = await getProductsFast(); // ✅ مهم جدًا (await)
-
-    return {
-      props: {
-        products: products || [],
-      },
-      revalidate: 120,
-    };
-  } catch (err) {
-    return {
-      props: {
-        products: [],
-      },
-      revalidate: 120,
-    };
-  }
 }
