@@ -3,7 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo } from "react";
 
-import { collection, getDocs, query, limit } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  limit,
+} from "firebase/firestore";
+
 import { db } from "../../config/firebase";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
 
@@ -16,17 +22,37 @@ function Stars({ rating = 4.5 }) {
   const full = Math.floor(Number(rating) || 0);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
-      <div style={{ color: "#FFA41C" }}>{"★".repeat(full)}</div>
-      <span style={{ fontSize: 13, color: "#666" }}>{rating}/5</span>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        marginTop: 8,
+      }}
+    >
+      <div style={{ color: "#FFA41C" }}>
+        {"★".repeat(full)}
+      </div>
+
+      <span
+        style={{
+          fontSize: 13,
+          color: "#666",
+        }}
+      >
+        {rating}/5
+      </span>
     </div>
   );
 }
 
 /* ================= PAGE ================= */
-export default function ProductsPage({ products = [] }) {
+export default function ProductsPage({
+  products = [],
+}) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] =
+    useState("all");
 
   /* ================= CATEGORIES ================= */
   const categories = useMemo(() => {
@@ -34,23 +60,35 @@ export default function ProductsPage({ products = [] }) {
       .map((p) => p.category || "general")
       .filter(Boolean);
 
-    return ["all", ...Array.from(new Set(cats))];
+    return [
+      "all",
+      ...Array.from(new Set(cats)),
+    ];
   }, [products]);
 
   /* ================= FILTER + SORT ================= */
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
-        const title = (p.title || "").toLowerCase();
+        const title = (
+          p.title || ""
+        ).toLowerCase();
 
-        const searchMatch = title.includes(search.toLowerCase());
+        const searchMatch =
+          title.includes(
+            search.toLowerCase()
+          );
 
         const categoryMatch =
           category === "all"
             ? true
-            : (p.category || "general") === category;
+            : (p.category ||
+                "general") === category;
 
-        return searchMatch && categoryMatch;
+        return (
+          searchMatch &&
+          categoryMatch
+        );
       })
       .sort((a, b) => {
         const aScore =
@@ -65,22 +103,40 @@ export default function ProductsPage({ products = [] }) {
 
         return bScore - aScore;
       })
-      .slice(0, 120);
+      .slice(0, 60);
   }, [products, search, category]);
 
   return (
-    <div style={{ background: "#f4f6f9", minHeight: "100vh", fontFamily: "Arial" }}>
+    <div
+      style={{
+        background: "#f4f6f9",
+        minHeight: "100vh",
+        fontFamily: "Arial",
+      }}
+    >
       {/* ================= SEO ================= */}
       <Head>
-        <title>Best Amazon Products | Koloonline</title>
-        <meta name="description" content="Trending Amazon products and deals" />
-        <meta name="robots" content="index,follow" />
+        <title>
+          Best Amazon Products |
+          Koloonline
+        </title>
+
+        <meta
+          name="description"
+          content="Trending Amazon products and deals"
+        />
+
+        <meta
+          name="robots"
+          content="index,follow"
+        />
       </Head>
 
       {/* ================= HEADER ================= */}
       <div
         style={{
-          background: "linear-gradient(45deg,#111827,#1f2937)",
+          background:
+            "linear-gradient(45deg,#111827,#1f2937)",
           padding: "50px 20px",
           color: "white",
           textAlign: "center",
@@ -90,7 +146,13 @@ export default function ProductsPage({ products = [] }) {
       </div>
 
       {/* ================= CONTAINER ================= */}
-      <div style={{ maxWidth: 1400, margin: "auto", padding: 20 }}>
+      <div
+        style={{
+          maxWidth: 1400,
+          margin: "auto",
+          padding: 20,
+        }}
+      >
         {/* ================= FILTER ================= */}
         <div
           style={{
@@ -104,28 +166,48 @@ export default function ProductsPage({ products = [] }) {
             type="text"
             placeholder="Search..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
             style={{
               width: "100%",
               padding: 14,
               borderRadius: 10,
-              border: "1px solid #ddd",
+              border:
+                "1px solid #ddd",
               marginBottom: 15,
             }}
           />
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setCategory(cat)}
+                onClick={() =>
+                  setCategory(cat)
+                }
                 style={{
-                  padding: "8px 14px",
+                  padding:
+                    "8px 14px",
                   borderRadius: 20,
                   border: "none",
                   cursor: "pointer",
-                  background: category === cat ? "#111827" : "#eee",
-                  color: category === cat ? "white" : "black",
+                  background:
+                    category === cat
+                      ? "#111827"
+                      : "#eee",
+                  color:
+                    category === cat
+                      ? "white"
+                      : "black",
                 }}
               >
                 {cat}
@@ -138,79 +220,137 @@ export default function ProductsPage({ products = [] }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(260px,1fr))",
             gap: 20,
           }}
         >
-          {filteredProducts.map((product) => {
-            const rating = Number(product.rating || 4.5);
+          {filteredProducts.map(
+            (product) => {
+              const rating =
+                Number(
+                  product.rating || 4.5
+                );
 
-            const imageSrc =
-              optimizeAmazonImage(product.image) || fallbackImage;
+              const imageSrc =
+                optimizeAmazonImage(
+                  product.image
+                ) || fallbackImage;
 
-            return (
-              <Link
-                key={product.asin || product.id}
-                href={`/product/${product.asin || product.id}`}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                <div
+              return (
+                <Link
+                  key={
+                    product.asin ||
+                    product.id
+                  }
+                  href={`/product/${
+                    product.asin ||
+                    product.id
+                  }`}
                   style={{
-                    background: "white",
-                    borderRadius: 20,
-                    overflow: "hidden",
-                    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+                    textDecoration:
+                      "none",
+                    color: "inherit",
                   }}
                 >
-                  {/* ================= OPTIMIZED IMAGE ================= */}
-                  <Image
-                    src={imageSrc}
-                    alt={product.title || "Product"}
-                    width={300}
-                    height={300}
-                    loading="lazy"
-                    placeholder="blur"
-                    blurDataURL={fallbackImage}
-                    quality={75}
+                  <div
                     style={{
-                      width: "100%",
-                      height: 240,
-                      objectFit: "contain",
-                      background: "#fff",
+                      background:
+                        "white",
+                      borderRadius: 20,
+                      overflow:
+                        "hidden",
+                      boxShadow:
+                        "0 8px 20px rgba(0,0,0,0.06)",
                     }}
-                  />
-
-                  <div style={{ padding: 15 }}>
-                    <span style={{ fontSize: 12, color: "#2563eb" }}>
-                      {product.category || "Trending"}
-                    </span>
-
-                    <h3 style={{ fontSize: 15 }}>
-                      {product.title || "No title"}
-                    </h3>
-
-                    <Stars rating={rating} />
+                  >
+                    <Image
+                      src={imageSrc}
+                      alt={
+                        product.title ||
+                        "Product"
+                      }
+                      width={300}
+                      height={300}
+                      loading="lazy"
+                      quality={60}
+                      sizes="(max-width:768px) 100vw, 300px"
+                      placeholder="blur"
+                      blurDataURL={
+                        fallbackImage
+                      }
+                      style={{
+                        width: "100%",
+                        height: 240,
+                        objectFit:
+                          "contain",
+                        background:
+                          "#fff",
+                      }}
+                    />
 
                     <div
                       style={{
-                        marginTop: 10,
-                        fontWeight: "bold",
-                        color: "#B12704",
-                        fontSize: 20,
+                        padding: 15,
                       }}
                     >
-                      ${Number(product.price || 0)}
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color:
+                            "#2563eb",
+                        }}
+                      >
+                        {product.category ||
+                          "Trending"}
+                      </span>
+
+                      <h3
+                        style={{
+                          fontSize: 15,
+                        }}
+                      >
+                        {product.title ||
+                          "No title"}
+                      </h3>
+
+                      <Stars
+                        rating={rating}
+                      />
+
+                      <div
+                        style={{
+                          marginTop: 10,
+                          fontWeight:
+                            "bold",
+                          color:
+                            "#B12704",
+                          fontSize: 20,
+                        }}
+                      >
+                        $
+                        {Number(
+                          product.price ||
+                            0
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            }
+          )}
         </div>
 
         {/* ================= EMPTY STATE ================= */}
-        {filteredProducts.length === 0 && (
-          <div style={{ textAlign: "center", padding: 40 }}>
+        {filteredProducts.length ===
+          0 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: 40,
+            }}
+          >
             No products found
           </div>
         )}
@@ -223,23 +363,34 @@ export default function ProductsPage({ products = [] }) {
 export async function getStaticProps() {
   try {
     const snap = await getDocs(
-      query(collection(db, "products"), limit(120))
+      query(
+        collection(
+          db,
+          "products"
+        ),
+        limit(60)
+      )
     );
 
-    const products = snap.docs.map((d) => ({
-      id: d.id,
-      asin: d.id,
-      ...d.data(),
-    }));
+    const products =
+      snap.docs.map((d) => ({
+        id: d.id,
+        asin: d.id,
+        ...d.data(),
+      }));
 
     return {
-      props: { products },
-      revalidate: 120,
+      props: {
+        products,
+      },
+      revalidate: 300,
     };
   } catch (err) {
     return {
-      props: { products: [] },
-      revalidate: 120,
+      props: {
+        products: [],
+      },
+      revalidate: 300,
     };
   }
         }
