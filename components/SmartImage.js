@@ -1,27 +1,39 @@
 import Image from "next/image";
+import { useState } from "react";
 import { cdnImage } from "../lib/cdnImage";
 
 const fallback =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
 export default function SmartImage({ src, alt }) {
-  const final = cdnImage(src);
+  const [error, setError] = useState(false);
+
+  const finalSrc = error
+    ? fallback
+    : cdnImage(src || fallback);
 
   return (
-    <Image
-      src={final || fallback}
-      alt={alt || "image"}
-      width={500}
-      height={500}
-      loading="lazy"
-      quality={60}
-      placeholder="blur"
-      blurDataURL={fallback}
+    <div
       style={{
+        position: "relative",
         width: "100%",
-        height: "auto",
-        objectFit: "contain",
+        aspectRatio: "1 / 1",
+        overflow: "hidden",
       }}
-    />
+    >
+      <Image
+        src={finalSrc}
+        alt={alt || "image"}
+        fill
+        sizes="(max-width: 768px) 100vw, 500px"
+        priority={false}
+        loading="lazy"
+        quality={60}
+        onError={() => setError(true)}
+        style={{
+          objectFit: "contain",
+        }}
+      />
+    </div>
   );
-}
+          }
