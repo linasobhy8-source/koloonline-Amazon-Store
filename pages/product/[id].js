@@ -1,53 +1,107 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { collection, getDocs } from "firebase/firestore";
+
+import {
+  collection,
+  getDocs,
+  query,
+  limit,
+} from "firebase/firestore";
+
 import { db } from "../../config/firebase";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
-import { getProductsFast } from "../../lib/firebaseQuery";
 
 /* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
 /* ================= PAGE ================= */
-export default function ProductPage({ product, related }) {
+export default function ProductPage({
+  product,
+  related,
+}) {
   if (!product) {
     return (
       <div style={{ padding: 30 }}>
         <h1>❌ Product Not Found</h1>
-        <Link href="/products">Back to Products</Link>
+
+        <Link href="/products">
+          Back to Products
+        </Link>
       </div>
     );
   }
 
-  const url = `https://koloonline.online/product/${product.id}`;
+  const url = `https://www.koloonline.online/product/${product.id}`;
+
   const imageSrc =
-    optimizeAmazonImage(product.image) || fallbackImage;
+    optimizeAmazonImage(product.image) ||
+    fallbackImage;
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5", padding: 20 }}>
+    <div
+      style={{
+        fontFamily: "Arial",
+        background: "#f5f5f5",
+        padding: 20,
+      }}
+    >
       {/* ================= SEO ================= */}
       <Head>
-        <title>{product.title} | Koloonline</title>
+        <title>
+          {product.title} | Koloonline
+        </title>
 
         <meta
           name="description"
-          content={product.description || product.title}
+          content={
+            product.description ||
+            product.title
+          }
         />
 
-        <meta name="robots" content="index,follow" />
-        <link rel="canonical" href={url} />
+        <meta
+          name="robots"
+          content="index,follow"
+        />
 
-        <meta property="og:title" content={product.title || ""} />
+        <link
+          rel="canonical"
+          href={url}
+        />
+
+        <meta
+          property="og:title"
+          content={product.title || ""}
+        />
+
         <meta
           property="og:description"
-          content={product.description || ""}
+          content={
+            product.description || ""
+          }
         />
-        <meta property="og:image" content={imageSrc} />
-        <meta property="og:url" content={url} />
 
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          property="og:image"
+          content={imageSrc}
+        />
+
+        <meta
+          property="og:url"
+          content={url}
+        />
+
+        <meta
+          property="og:type"
+          content="product"
+        />
+
+        <meta
+          name="twitter:card"
+          content="summary_large_image"
+        />
       </Head>
 
       {/* ================= PRODUCT ================= */}
@@ -69,8 +123,7 @@ export default function ProductPage({ product, related }) {
           height={500}
           priority
           quality={80}
-          placeholder="blur"
-          blurDataURL={fallbackImage}
+          sizes="(max-width:768px) 100vw, 500px"
           style={{
             width: "100%",
             height: "auto",
@@ -78,36 +131,52 @@ export default function ProductPage({ product, related }) {
           }}
         />
 
-        <h2 style={{ color: "#B12704" }}>
+        <h2
+          style={{
+            color: "#B12704",
+          }}
+        >
           ${product.price || 0}
         </h2>
 
-        <p>{product.description || ""}</p>
+        <p>
+          {product.description || ""}
+        </p>
 
-        <button
-          onClick={() => {
-            if (product.link) {
-              window.open(product.link, "_blank");
-            }
-          }}
-          style={{
-            width: "100%",
-            padding: 15,
-            background: "#ff9900",
-            border: 0,
-            fontWeight: "bold",
-            cursor: "pointer",
-            marginTop: 10,
-          }}
-        >
-          🛒 Buy Now
-        </button>
+        {product.link && (
+          <a
+            href={product.link}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: 15,
+              background: "#ff9900",
+              color: "#000",
+              textAlign: "center",
+              textDecoration: "none",
+              fontWeight: "bold",
+              marginTop: 10,
+              borderRadius: 8,
+            }}
+          >
+            🛒 Buy Now
+          </a>
+        )}
       </div>
 
       {/* ================= RELATED ================= */}
       {related?.length > 0 && (
-        <div style={{ maxWidth: 1000, margin: "40px auto" }}>
-          <h2>🔥 Related Products</h2>
+        <div
+          style={{
+            maxWidth: 1000,
+            margin: "40px auto",
+          }}
+        >
+          <h2>
+            🔥 Related Products
+          </h2>
 
           <div
             style={{
@@ -118,7 +187,10 @@ export default function ProductPage({ product, related }) {
             }}
           >
             {related.map((p) => (
-              <Link key={p.id} href={`/product/${p.id}`}>
+              <Link
+                key={p.id}
+                href={`/product/${p.id}`}
+              >
                 <div
                   style={{
                     background: "#fff",
@@ -129,16 +201,18 @@ export default function ProductPage({ product, related }) {
                 >
                   <Image
                     src={
-                      optimizeAmazonImage(p.image) ||
-                      fallbackImage
+                      optimizeAmazonImage(
+                        p.image
+                      ) || fallbackImage
                     }
                     width={300}
                     height={300}
-                    alt={p.title || "product"}
+                    alt={
+                      p.title || "product"
+                    }
                     loading="lazy"
-                    quality={75}
-                    placeholder="blur"
-                    blurDataURL={fallbackImage}
+                    quality={70}
+                    sizes="300px"
                     style={{
                       width: "100%",
                       height: "auto",
@@ -147,7 +221,10 @@ export default function ProductPage({ product, related }) {
                   />
 
                   <h3>{p.title}</h3>
-                  <p>${p.price || 0}</p>
+
+                  <p>
+                    ${p.price || 0}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -158,33 +235,67 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= STATIC PATHS (OPTIMIZED) ================= */
+/* ================= STATIC PATHS ================= */
 export async function getStaticPaths() {
-  const snap = await getDocs(collection(db, "products"));
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, "products"),
+        limit(100)
+      )
+    );
 
-  const paths = snap.docs.slice(0, 100).map((d) => ({
-    params: { id: d.id },
-  }));
+    const paths = snap.docs.map((d) => ({
+      params: {
+        id: d.id,
+      },
+    }));
 
-  return {
-    paths,
-    fallback: "blocking",
-  };
+    return {
+      paths,
+      fallback: "blocking",
+    };
+  } catch {
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
+  }
 }
 
-/* ================= STATIC PROPS (TURBO) ================= */
-export async function getStaticProps({ params }) {
+/* ================= STATIC PROPS ================= */
+export async function getStaticProps({
+  params,
+}) {
   try {
-    const products = await getProductsFast(); // 🔥 أهم تحسين
+    const snap = await getDocs(
+      query(
+        collection(db, "products"),
+        limit(120)
+      )
+    );
 
-    const product = products.find((p) => p.id === params.id);
+    const products = snap.docs.map(
+      (d) => ({
+        id: d.id,
+        ...d.data(),
+      })
+    );
+
+    const product = products.find(
+      (p) => p.id === params.id
+    );
 
     if (!product) {
-      return { notFound: true };
+      return {
+        notFound: true,
+      };
     }
 
     const related = products
-      .filter((p) => p.id !== params.id)
+      .filter(
+        (p) => p.id !== params.id
+      )
       .slice(0, 4);
 
     return {
@@ -194,9 +305,9 @@ export async function getStaticProps({ params }) {
       },
       revalidate: 3600,
     };
-  } catch (e) {
+  } catch {
     return {
       notFound: true,
     };
   }
-          }
+}
