@@ -1,37 +1,21 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
 
   compress: true,
-
   poweredByHeader: false,
+
+  productionBrowserSourceMaps: false,
 
   images: {
     formats: ["image/avif", "image/webp"],
 
-    minimumCacheTTL: 31536000, // سنة كاملة
+    minimumCacheTTL: 60 * 60 * 24 * 30,
 
-    deviceSizes: [
-      320,
-      420,
-      640,
-      768,
-      1024,
-      1200,
-      1600,
-    ],
+    deviceSizes: [320, 420, 640, 768, 1024, 1200, 1600],
 
-    imageSizes: [
-      16,
-      32,
-      48,
-      64,
-      96,
-      128,
-      256,
-      384,
-    ],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
 
     remotePatterns: [
       {
@@ -65,4 +49,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
