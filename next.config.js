@@ -1,17 +1,37 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  reactStrictMode: false, // 🔥 يقلل re-render
+  reactStrictMode: true,
 
   compress: true,
+
   poweredByHeader: false,
 
   images: {
     formats: ["image/avif", "image/webp"],
 
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days cache
+    minimumCacheTTL: 31536000, // سنة كاملة
 
-    deviceSizes: [320, 420, 768, 1024, 1200],
+    deviceSizes: [
+      320,
+      420,
+      640,
+      768,
+      1024,
+      1200,
+      1600,
+    ],
+
+    imageSizes: [
+      16,
+      32,
+      48,
+      64,
+      96,
+      128,
+      256,
+      384,
+    ],
 
     remotePatterns: [
       {
@@ -24,16 +44,23 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**firebaseapp.com",
+        hostname: "**.googleusercontent.com",
       },
       {
         protocol: "https",
-        hostname: "**googleusercontent.com",
+        hostname: "**.firebaseapp.com",
       },
       {
         protocol: "https",
         hostname: "via.placeholder.com",
       },
+    ],
+  },
+
+  experimental: {
+    optimizePackageImports: [
+      "firebase",
+      "@vercel/speed-insights",
     ],
   },
 };
