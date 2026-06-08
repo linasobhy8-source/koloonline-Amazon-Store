@@ -14,10 +14,7 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
-
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* ================= SAFE RUN ================= */
@@ -26,7 +23,7 @@ async function safeRun(label, fn) {
     const result = await fn();
     return { success: true, label, result };
   } catch (e) {
-    return { success: false, label, error: e?.message };
+    return { success: false, label, error: e?.message || "error" };
   }
 }
 
@@ -62,55 +59,55 @@ function generateProduct() {
   return products[Math.floor(Math.random() * products.length)];
 }
 
-/* ================= BLOG ENGINE (SEO + ADSENSE SAFE) ================= */
+/* ================= BLOG ENGINE ================= */
 function generateBlog(product) {
+  const slug = (product.title || "product")
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+
   return {
-    title: `Review: ${product.title} – Is It Worth Buying in 2026?`,
-    excerpt: `Detailed review of ${product.title}, features, pros, cons and real user opinions.`,
+    title: `Review: ${product.title} – Is It Worth It?`,
+    excerpt: `Review of ${product.title} with pros, cons and analysis.`,
     content: `
       <h2>Overview</h2>
-      <p>
-        ${product.title} is currently one of the trending products in the ${product.category} category.
-      </p>
+      <p>${product.title} is trending in ${product.category}.</p>
 
-      <h2>Key Features</h2>
+      <h2>Features</h2>
       <ul>
-        <li>High quality build</li>
-        <li>Affordable price: $${product.price}</li>
-        <li>Good user feedback and performance</li>
+        <li>Good quality</li>
+        <li>Price: $${product.price}</li>
+        <li>Trending product</li>
       </ul>
 
-      <h2>Pros & Cons</h2>
-      <p>
-        This product is popular due to its balance between price and performance.
-      </p>
-
-      <h2>Final Verdict</h2>
-      <p>
-        If you're looking for value in this category, ${product.title} is a strong option worth considering.
-      </p>
+      <h2>Verdict</h2>
+      <p>Recommended for value buyers.</p>
     `,
-    slug: product.title.toLowerCase().replace(/\s+/g, "-"),
+    slug,
   };
 }
 
 /* ================= INDEXNOW ================= */
-async function runIndexNow(urls) {
+async function runIndexNow(urls = []) {
   const key = process.env.INDEXNOW_KEY;
 
   if (!key) return { success: false, error: "Missing INDEXNOW_KEY" };
 
-  const res = await fetch("https://api.indexnow.org/indexnow", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      host: "koloonline.online",
-      key,
-      urlList: urls.slice(0, 50),
-    }),
-  });
+  try {
+    const res = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        host: "koloonline.online",
+        key,
+        urlList: urls.slice(0, 50),
+      }),
+    });
 
-  return { success: res.ok, sent: urls.length };
+    return { success: res.ok };
+  } catch (e) {
+    return { success: false, error: e?.message };
+  }
 }
 
 /* ================= GOOGLE PING ================= */
@@ -138,9 +135,9 @@ export default async function handler(req, res) {
     const logs = [];
     const newUrls = [];
 
-    /* ================= EXISTING DATA ================= */
+    /* ================= COUNT PRODUCTS ================= */
     const productsSnap = await getDocs(collection(db, "products"));
-    const existingCount = productsSnap.size;
+    const existingCount = productsSnap?.size || 0;
 
     /* ================= CREATE PRODUCT ================= */
     const product = generateProduct();
@@ -155,10 +152,7 @@ export default async function handler(req, res) {
 
     newUrls.push(`${baseUrl}/product/${productRef.id}`);
 
-    logs.push({
-      step: "product_created",
-      title: product.title,
-    });
+    logs.push({ step: "product_created" });
 
     /* ================= CREATE BLOG ================= */
     const blog = generateBlog(product);
@@ -170,12 +164,9 @@ export default async function handler(req, res) {
 
     newUrls.push(`${baseUrl}/blog/${blogRef.id}`);
 
-    logs.push({
-      step: "blog_created",
-      title: blog.title,
-    });
+    logs.push({ step: "blog_created" });
 
-    /* ================= URL LIST ================= */
+    /* ================= URLS ================= */
     const urls = [
       baseUrl,
       `${baseUrl}/products`,
@@ -183,7 +174,7 @@ export default async function handler(req, res) {
       ...newUrls,
     ];
 
-    /* ================= INDEXING ================= */
+    /* ================= INDEX + PING ================= */
     const indexResult = await safeRun("IndexNow", () =>
       runIndexNow(urls)
     );
@@ -196,18 +187,15 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       runtime: Date.now() - startTime,
-      message: "🔥 Master Pipeline V2 executed",
+      message: "🔥 Master Pipeline V2 Running Stable",
       existingProducts: existingCount,
-      newProduct: product,
-      newBlog: blog,
       urlsGenerated: urls.length,
       logs,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
       error: error?.message || "Unknown error",
     });
   }
-    }
+}
