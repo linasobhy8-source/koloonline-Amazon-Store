@@ -6,15 +6,28 @@ import { optimizeAmazonImage } from "../../lib/amazonImage";
 
 const fallbackImage = "https://via.placeholder.com/500x500";
 
-/* ================= HARD SAFE ================= */
+/* ================= HARD SAFE CLEANER ================= */
 const safe = (v) => {
   if (v === null || v === undefined) return "";
+
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
   if (typeof v === "boolean") return String(v);
 
-  // 🚨 أهم نقطة: أي object يتحول لفاضي (ممنوع يظهر)
-  if (typeof v === "object") return "";
+  // Firebase Timestamp / object fallback
+  if (typeof v === "object") {
+    try {
+      if (typeof v.toDate === "function") {
+        return v.toDate().toISOString();
+      }
+    } catch {}
+
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return "";
+    }
+  }
 
   return "";
 };
@@ -23,23 +36,26 @@ const safe = (v) => {
 const safeImage = (img) => {
   if (typeof img !== "string") return fallbackImage;
 
-  const optimized = optimizeAmazonImage(img);
-  return typeof optimized === "string" && optimized.length > 5
-    ? optimized
-    : fallbackImage;
+  const fixed = optimizeAmazonImage(img);
+
+  if (typeof fixed !== "string" || fixed.length < 5) {
+    return fallbackImage;
+  }
+
+  return fixed;
 };
 
 export default function ProductPage({ product, related }) {
-  if (!product || typeof product !== "object") {
+  if (!product) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  const id = safe(product.id);
   const title = safe(product.title);
   const description = safe(product.description);
   const price = safe(product.price);
+  const id = safe(product.id);
 
-  const url = `https://koloonline.online/product/${id || ""}`;
+  const url = `https://koloonline.online/product/${id}`;
 
   return (
     <>
@@ -50,19 +66,19 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{title || "Untitled Product"}</h1>
+        <h1>{title}</h1>
 
         <Image
           src={safeImage(product.image)}
           width={500}
           height={500}
-          alt={title || "product"}
+          alt={title}
           priority
         />
 
-        {price ? <h2>${price}</h2> : null}
+        {price && <h2>${price}</h2>}
 
-        {description ? <p>{description}</p> : null}
+        {description && <p>{description}</p>}
 
         <Link href="/products">← Back</Link>
 
@@ -70,24 +86,28 @@ export default function ProductPage({ product, related }) {
           <>
             <h2 style={{ marginTop: 30 }}>Related</h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: 12,
+              }}
+            >
               {related.map((p) => {
-                if (!p || typeof p !== "object") return null;
-
-                const pid = safe(p.id);
+                const pid = safe(p?.id);
                 if (!pid) return null;
 
                 return (
                   <Link key={pid} href={`/product/${pid}`}>
                     <div>
                       <Image
-                        src={safeImage(p.image)}
+                        src={safeImage(p?.image)}
                         width={200}
                         height={200}
-                        alt={safe(p.title)}
+                        alt={safe(p?.title)}
                         loading="lazy"
                       />
-                      <p>{safe(p.title)}</p>
+                      <p>{safe(p?.title)}</p>
                     </div>
                   </Link>
                 );
@@ -100,23 +120,25 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= STATIC PROPS ================= */
+/* ================= SSR SAFE ================= */
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    if (!Array.isArray(products)) return { notFound: true };
+    if (!Array.isArray(products)) {
+      return { notFound: true };
+    }
 
     const product = products.find(
-      (p) => p && String(p.id) === String(params?.id)
+      (p) => String(p?.id) === String(params?.id)
     );
 
-    if (!product || typeof product !== "object") {
+    if (!product) {
       return { notFound: true };
     }
 
     const related = products
-      .filter((p) => p && String(p.id) !== String(params?.id))
+      .filter((p) => String(p?.id) !== String(params?.id))
       .slice(0, 4);
 
     return {
@@ -131,7 +153,7 @@ export async function getStaticProps({ params }) {
   }
 }
 
-/* ================= STATIC PATHS ================= */
+/* ================= PATHS SAFE ================= */
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
@@ -142,7 +164,7 @@ export async function getStaticPaths() {
 
     return {
       paths: products
-        .filter((p) => p && p.id)
+        .filter((p) => p?.id)
         .slice(0, 50)
         .map((p) => ({
           params: { id: String(p.id) },
