@@ -2,7 +2,10 @@ import { db } from "../../config/firebase";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 
 import { autonomousEngine } from "../../lib/autonomousEngine";
-import { revenueEngine } from "../../lib/revenueEngine";
+import {
+  applyRevenueBoost,
+  rankByRevenue
+} from "../../lib/revenue-intelligence";
 
 export default async function handler(req, res) {
   try {
@@ -10,36 +13,37 @@ export default async function handler(req, res) {
 
     let products = snap.docs.map((d) => ({
       id: d.id,
-      ...d.data(),
+      ...d.data()
     }));
 
-    // 🧠 AI ranking layer
+    // 🧠 AI Engine
     products = autonomousEngine(products);
 
-    // 💰 revenue optimization layer (NEW)
-    products = revenueEngine(products);
+    // 💰 Revenue Engine (NEW)
+    products = applyRevenueBoost(products);
+    products = rankByRevenue(products);
 
     const top = products.slice(0, 20);
 
-    // 💾 save learning back to Firestore
+    // 💾 Save back to Firestore
     for (const p of top) {
       await updateDoc(doc(db, "products", p.id), {
-        aiScore: p.aiScore || 0,
+        brainScore: p.brainScore || 0,
         revenueScore: p.revenueScore || 0,
-        ctr: p.ctr || 0,
-        lastOptimized: Date.now(),
+        profitBoost: p.profitBoost || false,
+        lastOptimized: Date.now()
       });
     }
 
     return res.status(200).json({
       success: true,
       top,
-      message: "Revenue engine activated",
+      message: "💰 Revenue AI System Active"
     });
   } catch (e) {
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: e.message
     });
   }
 }
