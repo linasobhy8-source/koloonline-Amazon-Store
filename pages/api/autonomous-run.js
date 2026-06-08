@@ -1,30 +1,8 @@
 import { db } from "../../config/firebase";
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 
 import { autonomousEngine } from "../../lib/autonomousEngine";
-
-// fallback safe function (بدل revenueOptimizer لو مش موجودة)
-function revenueOptimizer(products = []) {
-  try {
-    if (!Array.isArray(products)) return [];
-
-    return products.map((p) => ({
-      ...p,
-      revenueScore:
-        (p.aiScore || 0) * 1.2 +
-        (p.clicks || 0) * 0.5 +
-        (p.views || 0) * 0.1,
-    }));
-  } catch (e) {
-    console.error("revenueOptimizer error:", e);
-    return products;
-  }
-}
+import { revenueEngine } from "../../lib/revenueEngine";
 
 export default async function handler(req, res) {
   try {
@@ -35,20 +13,20 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    // 🧠 AI Ranking
-    products = autonomousEngine(products || []);
-    products = revenueOptimizer(products || []);
+    // 🧠 AI ranking layer
+    products = autonomousEngine(products);
 
-    // 🔥 Top 20 فقط
+    // 💰 revenue optimization layer (NEW)
+    products = revenueEngine(products);
+
     const top = products.slice(0, 20);
 
-    // 💾 تحديث Firestore (Auto Learning)
+    // 💾 save learning back to Firestore
     for (const p of top) {
-      if (!p?.id) continue;
-
       await updateDoc(doc(db, "products", p.id), {
         aiScore: p.aiScore || 0,
         revenueScore: p.revenueScore || 0,
+        ctr: p.ctr || 0,
         lastOptimized: Date.now(),
       });
     }
@@ -56,14 +34,12 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       top,
-      message: "Autonomous optimization complete",
+      message: "Revenue engine activated",
     });
   } catch (e) {
-    console.error("autonomous-run error:", e);
-
     return res.status(500).json({
       success: false,
-      error: e.message || "Unknown error",
+      error: e.message,
     });
   }
 }
