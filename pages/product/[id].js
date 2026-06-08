@@ -1,12 +1,13 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+
 import { getProductsFast } from "../../lib/firebaseQuery";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
 
 const fallbackImage = "https://via.placeholder.com/500x500";
 
-/* ================= STRICT SAFE ================= */
+/* ================= SAFE TEXT ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
@@ -18,7 +19,6 @@ const safeText = (v) => {
     return v.map(safeText).join(" ");
   }
 
-  // ❌ مهم جدًا: أي object ممنوع يظهر في UI
   if (typeof v === "object") {
     if (v?.toDate) return v.toDate().toISOString();
     return "";
@@ -32,20 +32,28 @@ const safeImage = (img) => {
   if (typeof img !== "string") return fallbackImage;
 
   const optimized = optimizeAmazonImage(img);
-  if (!optimized || typeof optimized !== "string") {
+
+  if (typeof optimized !== "string" || !optimized.trim()) {
     return fallbackImage;
   }
 
   return optimized;
 };
 
+/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
-  if (!product) return <div>Not found</div>;
+  if (!product) {
+    return (
+      <div style={{ padding: 20 }}>
+        Product not found
+      </div>
+    );
+  }
 
-  const id = safeText(product.id);
-  const title = safeText(product.title);
-  const description = safeText(product.description);
-  const price = safeText(product.price);
+  const id = safeText(product?.id);
+  const title = safeText(product?.title);
+  const description = safeText(product?.description);
+  const price = safeText(product?.price);
 
   const url = `https://koloonline.online/product/${id}`;
 
@@ -61,10 +69,10 @@ export default function ProductPage({ product, related }) {
         <h1>{title}</h1>
 
         <Image
-          src={safeImage(product.image)}
+          src={safeImage(product?.image)}
           width={500}
           height={500}
-          alt={title}
+          alt={title || "Product"}
           priority
         />
 
@@ -72,31 +80,41 @@ export default function ProductPage({ product, related }) {
 
         {description && <p>{description}</p>}
 
-        <Link href="/products">Back</Link>
+        <Link href="/products">← Back to Products</Link>
 
-        <h2 style={{ marginTop: 30 }}>Related</h2>
+        {Array.isArray(related) && related.length > 0 && (
+          <>
+            <h2 style={{ marginTop: 30 }}>Related Products</h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
-          {(related || []).map((p) => {
-            const pid = safeText(p?.id);
-            if (!pid) return null;
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: 12,
+              }}
+            >
+              {related.map((p) => {
+                const pid = safeText(p?.id);
+                if (!pid) return null;
 
-            return (
-              <Link key={pid} href={`/product/${pid}`}>
-                <div>
-                  <Image
-                    src={safeImage(p?.image)}
-                    width={200}
-                    height={200}
-                    alt={safeText(p?.title)}
-                    loading="lazy"
-                  />
-                  <p>{safeText(p?.title)}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                return (
+                  <Link key={pid} href={`/product/${pid}`}>
+                    <div>
+                      <Image
+                        src={safeImage(p?.image)}
+                        width={200}
+                        height={200}
+                        alt={safeText(p?.title)}
+                        loading="lazy"
+                      />
+                      <p>{safeText(p?.title)}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </>
   );
@@ -111,14 +129,19 @@ export async function getStaticProps({ params }) {
       return { notFound: true };
     }
 
-    const product = products.find(
-      (p) => String(p?.id) === String(params?.id)
-    );
+    const product =
+      products.find(
+        (p) => String(p?.id) === String(params?.id)
+      ) || null;
 
-    if (!product) return { notFound: true };
+    if (!product) {
+      return { notFound: true };
+    }
 
     const related = products
-      .filter((p) => String(p?.id) !== String(params?.id))
+      .filter(
+        (p) => String(p?.id) !== String(params?.id)
+      )
       .slice(0, 4);
 
     return {
@@ -128,7 +151,8 @@ export async function getStaticProps({ params }) {
       },
       revalidate: 3600,
     };
-  } catch (e) {
+  } catch (error) {
+    console.error("Product page error:", error);
     return { notFound: true };
   }
 }
@@ -139,7 +163,10 @@ export async function getStaticPaths() {
     const products = await getProductsFast();
 
     if (!Array.isArray(products)) {
-      return { paths: [], fallback: "blocking" };
+      return {
+        paths: [],
+        fallback: "blocking",
+      };
     }
 
     return {
@@ -151,7 +178,12 @@ export async function getStaticPaths() {
         })),
       fallback: "blocking",
     };
-  } catch {
-    return { paths: [], fallback: "blocking" };
+  } catch (error) {
+    console.error("getStaticPaths error:", error);
+
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
   }
-    }
+                  }
