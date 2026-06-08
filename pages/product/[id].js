@@ -6,29 +6,28 @@ import { optimizeAmazonImage } from "../../lib/amazonImage";
 
 const fallbackImage = "https://via.placeholder.com/500x500";
 
-/* ================= HARD SAFE CLEANER ================= */
+/* ================= HARD SAFE (NO OBJECTS ALLOWED) ================= */
 const safe = (v) => {
   if (v === null || v === undefined) return "";
-
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
-  if (typeof v === "boolean") return String(v);
+  if (typeof v === "boolean") return v ? "true" : "false";
 
-  // Firebase Timestamp / object fallback
-  if (typeof v === "object") {
+  // Firebase Timestamp
+  if (v && typeof v.toDate === "function") {
     try {
-      if (typeof v.toDate === "function") {
-        return v.toDate().toISOString();
-      }
-    } catch {}
-
-    try {
-      return JSON.stringify(v);
+      return v.toDate().toISOString();
     } catch {
       return "";
     }
   }
 
+  // array → flatten safely
+  if (Array.isArray(v)) {
+    return v.map(safe).join(" ");
+  }
+
+  // ❌ any object = NEVER render it
   return "";
 };
 
@@ -38,7 +37,7 @@ const safeImage = (img) => {
 
   const fixed = optimizeAmazonImage(img);
 
-  if (typeof fixed !== "string" || fixed.length < 5) {
+  if (typeof fixed !== "string" || !fixed.startsWith("http")) {
     return fallbackImage;
   }
 
@@ -50,10 +49,10 @@ export default function ProductPage({ product, related }) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
+  const id = safe(product.id);
   const title = safe(product.title);
   const description = safe(product.description);
   const price = safe(product.price);
-  const id = safe(product.id);
 
   const url = `https://koloonline.online/product/${id}`;
 
@@ -95,6 +94,8 @@ export default function ProductPage({ product, related }) {
             >
               {related.map((p) => {
                 const pid = safe(p?.id);
+                const ptitle = safe(p?.title);
+
                 if (!pid) return null;
 
                 return (
@@ -104,10 +105,10 @@ export default function ProductPage({ product, related }) {
                         src={safeImage(p?.image)}
                         width={200}
                         height={200}
-                        alt={safe(p?.title)}
+                        alt={ptitle}
                         loading="lazy"
                       />
-                      <p>{safe(p?.title)}</p>
+                      <p>{ptitle}</p>
                     </div>
                   </Link>
                 );
@@ -120,7 +121,7 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= SSR SAFE ================= */
+/* ================= STATIC PROPS ================= */
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
@@ -153,7 +154,7 @@ export async function getStaticProps({ params }) {
   }
 }
 
-/* ================= PATHS SAFE ================= */
+/* ================= STATIC PATHS ================= */
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
@@ -164,7 +165,7 @@ export async function getStaticPaths() {
 
     return {
       paths: products
-        .filter((p) => p?.id)
+        .filter((p) => p?.id && typeof p.id === "string")
         .slice(0, 50)
         .map((p) => ({
           params: { id: String(p.id) },
@@ -174,4 +175,4 @@ export async function getStaticPaths() {
   } catch {
     return { paths: [], fallback: "blocking" };
   }
-}
+      }
