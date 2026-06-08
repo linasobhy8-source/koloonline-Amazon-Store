@@ -21,13 +21,8 @@ export default function Footer() {
           gap: 30,
         }}
       >
-        {/* BRAND */}
         <div>
-          <h3
-            style={{
-              marginTop: 0,
-            }}
-          >
+          <h3 style={{ marginTop: 0 }}>
             🟠 Koloonline
           </h3>
 
@@ -37,13 +32,11 @@ export default function Footer() {
               lineHeight: 1.7,
             }}
           >
-            Smart Amazon Deals Platform
-            powered by AI trend discovery
-            and affiliate technology.
+            Smart Amazon Deals Platform powered by AI trend
+            discovery and affiliate technology.
           </p>
         </div>
 
-        {/* PAGES */}
         <div>
           <h4>Pages</h4>
 
@@ -54,39 +47,20 @@ export default function Footer() {
               gap: 10,
             }}
           >
-            <Link
-              href="/about"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/about" style={linkStyle}>
               About
             </Link>
 
-            <Link
-              href="/contact"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/contact" style={linkStyle}>
               Contact
             </Link>
 
-            <Link
-              href="/products"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/products" style={linkStyle}>
               Products
             </Link>
           </div>
         </div>
 
-        {/* LEGAL */}
         <div>
           <h4>Legal</h4>
 
@@ -97,39 +71,20 @@ export default function Footer() {
               gap: 10,
             }}
           >
-            <Link
-              href="/privacy"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/privacy" style={linkStyle}>
               Privacy Policy
             </Link>
 
-            <Link
-              href="/terms"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/terms" style={linkStyle}>
               Terms of Service
             </Link>
 
-            <Link
-              href="/disclaimer"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/disclaimer" style={linkStyle}>
               Disclaimer
             </Link>
           </div>
         </div>
 
-        {/* SEO LINKS */}
         <div>
           <h4>Trending</h4>
 
@@ -140,33 +95,15 @@ export default function Footer() {
               gap: 10,
             }}
           >
-            <Link
-              href="/blog"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/blog" style={linkStyle}>
               Blog
             </Link>
 
-            <Link
-              href="/amazon-haul"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/amazon-haul" style={linkStyle}>
               Amazon Haul
             </Link>
 
-            <Link
-              href="/categories"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-              }}
-            >
+            <Link href="/categories" style={linkStyle}>
               Categories
             </Link>
           </div>
@@ -182,8 +119,13 @@ export default function Footer() {
           fontSize: 14,
         }}
       >
-        © 2026 Koloonline. All rights reserved.
+        © {new Date().getFullYear()} Koloonline. All rights reserved.
       </div>
     </footer>
   );
 }
+
+const linkStyle = {
+  color: "#d1d5db",
+  textDecoration: "none",
+};
