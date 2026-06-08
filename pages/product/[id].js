@@ -6,8 +6,8 @@ import { optimizeAmazonImage } from "../../lib/amazonImage";
 
 const fallbackImage = "https://via.placeholder.com/500x500";
 
-/* ================= SAFE TEXT ================= */
-const safe = (v) => {
+/* ================= STRICT SAFE ================= */
+const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
   if (typeof v === "string") return v;
@@ -15,12 +15,13 @@ const safe = (v) => {
   if (typeof v === "boolean") return String(v);
 
   if (Array.isArray(v)) {
-    return v.map((x) => safe(x)).join(" ");
+    return v.map(safeText).join(" ");
   }
 
+  // ❌ مهم جدًا: أي object ممنوع يظهر في UI
   if (typeof v === "object") {
     if (v?.toDate) return v.toDate().toISOString();
-    return ""; // ❗ مهم: ممنوع JSON.stringify (بيكسر React)
+    return "";
   }
 
   return "";
@@ -28,32 +29,25 @@ const safe = (v) => {
 
 /* ================= SAFE IMAGE ================= */
 const safeImage = (img) => {
-  try {
-    if (typeof img !== "string") return fallbackImage;
+  if (typeof img !== "string") return fallbackImage;
 
-    const optimized = optimizeAmazonImage(img);
-
-    if (!optimized || typeof optimized !== "string") {
-      return fallbackImage;
-    }
-
-    return optimized;
-  } catch {
+  const optimized = optimizeAmazonImage(img);
+  if (!optimized || typeof optimized !== "string") {
     return fallbackImage;
   }
+
+  return optimized;
 };
 
 export default function ProductPage({ product, related }) {
-  if (!product) {
-    return <div style={{ padding: 20 }}>Product not found</div>;
-  }
+  if (!product) return <div>Not found</div>;
 
-  const productId = safe(product.id);
-  const title = safe(product.title);
-  const description = safe(product.description);
-  const price = safe(product.price);
+  const id = safeText(product.id);
+  const title = safeText(product.title);
+  const description = safeText(product.description);
+  const price = safeText(product.price);
 
-  const url = `https://koloonline.online/product/${productId}`;
+  const url = `https://koloonline.online/product/${id}`;
 
   return (
     <>
@@ -70,7 +64,7 @@ export default function ProductPage({ product, related }) {
           src={safeImage(product.image)}
           width={500}
           height={500}
-          alt={title || "Product"}
+          alt={title}
           priority
         />
 
@@ -82,15 +76,9 @@ export default function ProductPage({ product, related }) {
 
         <h2 style={{ marginTop: 30 }}>Related</h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: 12,
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
           {(related || []).map((p) => {
-            const pid = safe(p?.id);
+            const pid = safeText(p?.id);
             if (!pid) return null;
 
             return (
@@ -100,10 +88,10 @@ export default function ProductPage({ product, related }) {
                     src={safeImage(p?.image)}
                     width={200}
                     height={200}
-                    alt={safe(p?.title)}
+                    alt={safeText(p?.title)}
                     loading="lazy"
                   />
-                  <p>{safe(p?.title)}</p>
+                  <p>{safeText(p?.title)}</p>
                 </div>
               </Link>
             );
@@ -123,13 +111,11 @@ export async function getStaticProps({ params }) {
       return { notFound: true };
     }
 
-    const product =
-      products.find((p) => String(p?.id) === String(params?.id)) ||
-      null;
+    const product = products.find(
+      (p) => String(p?.id) === String(params?.id)
+    );
 
-    if (!product) {
-      return { notFound: true };
-    }
+    if (!product) return { notFound: true };
 
     const related = products
       .filter((p) => String(p?.id) !== String(params?.id))
@@ -142,13 +128,8 @@ export async function getStaticProps({ params }) {
       },
       revalidate: 3600,
     };
-  } catch (error) {
-    console.error("Product page error:", error);
-
-    return {
-      notFound: true,
-      revalidate: 3600,
-    };
+  } catch (e) {
+    return { notFound: true };
   }
 }
 
@@ -170,12 +151,7 @@ export async function getStaticPaths() {
         })),
       fallback: "blocking",
     };
-  } catch (error) {
-    console.error("getStaticPaths error:", error);
-
-    return {
-      paths: [],
-      fallback: "blocking",
-    };
+  } catch {
+    return { paths: [], fallback: "blocking" };
   }
-                         }
+    }
