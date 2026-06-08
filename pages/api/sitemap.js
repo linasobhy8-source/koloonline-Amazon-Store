@@ -1,5 +1,9 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+} from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -8,36 +12,60 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* ================= SAFE FETCH ================= */
+async function safeCount(collectionName) {
+  try {
+    const snap = await getDocs(collection(db, collectionName));
+    return snap?.size || 0;
+  } catch (e) {
+    console.error(`Error fetching ${collectionName}:`, e);
+    return 0;
+  }
+}
+
+/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   try {
+    // 🔒 Only POST allowed
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return res.status(405).json({
+        success: false,
+        error: "Method not allowed",
+      });
     }
 
-    const productSnap = await getDocs(collection(db, "products"));
-    const blogSnap = await getDocs(collection(db, "blog"));
+    /* ================= PARALLEL FETCH ================= */
+    const [productsCount, blogsCount] = await Promise.all([
+      safeCount("products"),
+      safeCount("blog"),
+    ]);
 
-    const products = productSnap.docs.map(d => d.id);
-    const blogs = blogSnap.docs.map(d => d.id);
+    /* ================= BASE URLS ================= */
+    const baseUrls = [
+      "https://koloonline.online/",
+      "https://koloonline.online/blog",
+      "https://koloonline.online/products",
+    ];
 
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      productsCount: products.length,
-      blogsCount: blogs.length,
-      urls: [
-        "https://koloonline.online/",
-        "https://koloonline.online/blog",
-        "https://koloonline.online/products",
-      ],
+      stats: {
+        productsCount,
+        blogsCount,
+        totalContent: productsCount + blogsCount,
+      },
+      urls: baseUrls,
+      timestamp: Date.now(),
     });
 
   } catch (e) {
     return res.status(500).json({
       success: false,
-      error: e.message,
+      error: e?.message || "Unknown error",
     });
   }
-}
+        }
