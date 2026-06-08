@@ -4,91 +4,159 @@ import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 import { optimizeAmazonImage } from "../../lib/amazonImage";
 
-const fallbackImage = "https://via.placeholder.com/500x500";
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Koloonline";
 
 /* ================= SAFE VALUE ================= */
 function safe(val) {
-  if (val === null || val === undefined) return "";
+  try {
+    if (val === null || val === undefined) return "";
 
-  if (typeof val === "string") return val;
-  if (typeof val === "number") return String(val);
+    if (typeof val === "string") return val;
+    if (typeof val === "number") return String(val);
+    if (typeof val === "boolean") return String(val);
 
-  if (typeof val === "object") {
-    if (val?.toDate) return val.toDate().toISOString();
-    if (Array.isArray(val)) return val.join(" ");
-    return JSON.stringify(val);
+    if (Array.isArray(val)) {
+      return val.map((v) => safe(v)).join(" ");
+    }
+
+    if (typeof val === "object") {
+      if (val?.toDate) {
+        return val.toDate().toISOString();
+      }
+
+      if ("seconds" in val) {
+        return "";
+      }
+
+      return JSON.stringify(val);
+    }
+
+    return String(val);
+  } catch {
+    return "";
   }
-
-  return String(val);
 }
 
 /* ================= SAFE IMAGE ================= */
 function safeImage(img) {
-  const optimized = optimizeAmazonImage(img);
+  try {
+    const optimized = optimizeAmazonImage(img);
 
-  if (!optimized || typeof optimized !== "string") {
+    if (
+      !optimized ||
+      typeof optimized !== "string" ||
+      optimized.trim() === ""
+    ) {
+      return fallbackImage;
+    }
+
+    return optimized;
+  } catch {
     return fallbackImage;
   }
-
-  return optimized;
 }
 
-export default function ProductPage({ product, related }) {
-  if (!product) return <div>Not found</div>;
+export default function ProductPage({
+  product = null,
+  related = [],
+}) {
+  if (!product) {
+    return (
+      <div style={{ padding: 20 }}>
+        Product not found
+      </div>
+    );
+  }
 
-  const url = `https://koloonline.online/product/${product.id}`;
+  const productId = safe(product.id);
+  const title = safe(product.title);
+  const description = safe(product.description);
+  const price = safe(product.price);
 
   const imageSrc = safeImage(product.image);
 
+  const url = `https://koloonline.online/product/${productId}`;
+
   return (
-    <div style={{ padding: 20 }}>
+    <>
       <Head>
-        <title>{safe(product.title)}</title>
-        <meta name="description" content={safe(product.description)} />
+        <title>{title || "Product"}</title>
+
+        <meta
+          name="description"
+          content={description || title}
+        />
+
         <link rel="canonical" href={url} />
       </Head>
 
-      <h1>{safe(product.title)}</h1>
+      <div style={{ padding: 20 }}>
+        <h1>{title}</h1>
 
-      <Image
-        src={imageSrc}
-        width={500}
-        height={500}
-        alt={safe(product.title)}
-        priority
-      />
+        <Image
+          src={imageSrc}
+          width={500}
+          height={500}
+          alt={title || "Product"}
+          priority
+          unoptimized={false}
+        />
 
-      <h2>${safe(product.price)}</h2>
+        {price && <h2>${price}</h2>}
 
-      <p>{safe(product.description)}</p>
+        {description && <p>{description}</p>}
 
-      <Link href="/products">Back</Link>
-
-      <h2>Related</h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2,1fr)",
-          gap: 10,
-        }}
-      >
-        {(related || []).map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
-            <div>
-              <Image
-                src={safeImage(p.image)}
-                width={200}
-                height={200}
-                alt={safe(p.title)}
-                loading="lazy"
-              />
-              <p>{safe(p.title)}</p>
-            </div>
+        <div style={{ marginTop: 20 }}>
+          <Link href="/products">
+            Back to Products
           </Link>
-        ))}
+        </div>
+
+        {Array.isArray(related) &&
+          related.length > 0 && (
+            <>
+              <h2 style={{ marginTop: 30 }}>
+                Related Products
+              </h2>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "repeat(auto-fill,minmax(180px,1fr))",
+                  gap: 16,
+                }}
+              >
+                {related.map((p) => {
+                  const pid = safe(p?.id);
+
+                  if (!pid) return null;
+
+                  return (
+                    <Link
+                      key={pid}
+                      href={`/product/${pid}`}
+                    >
+                      <div>
+                        <Image
+                          src={safeImage(p?.image)}
+                          width={200}
+                          height={200}
+                          alt={safe(p?.title)}
+                          loading="lazy"
+                        />
+
+                        <p>{safe(p?.title)}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -97,54 +165,86 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const product =
-      products.find((p) => p.id === params.id) || null;
-
-    if (!product) {
-      return { notFound: true };
+    if (!Array.isArray(products)) {
+      return {
+        notFound: true,
+      };
     }
 
-    const related = (products || [])
-      .filter((p) => p.id !== params.id)
+    const product =
+      products.find(
+        (p) => String(p?.id) === String(params?.id)
+      ) || null;
+
+    if (!product) {
+      return {
+        notFound: true,
+      };
+    }
+
+    const related = products
+      .filter(
+        (p) =>
+          String(p?.id) !== String(params?.id)
+      )
       .slice(0, 4);
 
     return {
       props: {
-        product,
-        related,
+        product: JSON.parse(
+          JSON.stringify(product)
+        ),
+        related: JSON.parse(
+          JSON.stringify(related)
+        ),
       },
       revalidate: 3600,
     };
-  } catch (err) {
-    console.error("Product page error:", err);
+  } catch (error) {
+    console.error(
+      "Product Page Error:",
+      error
+    );
 
     return {
-      props: {
-        product: null,
-        related: [],
-      },
+      notFound: true,
       revalidate: 3600,
     };
   }
 }
 
-/* ================= PATHS ================= */
+/* ================= STATIC PATHS ================= */
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
+    if (!Array.isArray(products)) {
+      return {
+        paths: [],
+        fallback: "blocking",
+      };
+    }
+
     return {
-      paths: (products || []).slice(0, 50).map((p) => ({
-        params: { id: String(p.id) },
-      })),
+      paths: products
+        .filter((p) => p?.id)
+        .slice(0, 50)
+        .map((p) => ({
+          params: {
+            id: String(p.id),
+          },
+        })),
       fallback: "blocking",
     };
-  } catch (err) {
-    console.error("getStaticPaths error:", err);
+  } catch (error) {
+    console.error(
+      "getStaticPaths Error:",
+      error
+    );
 
     return {
       paths: [],
       fallback: "blocking",
     };
   }
-          }
+      }
