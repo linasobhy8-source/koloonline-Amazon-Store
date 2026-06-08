@@ -1,8 +1,7 @@
 import { db } from "../../config/firebase";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 
-import { masterRevenueBrain } from "../../lib/master-revenue-brain";
-import { learnFromPerformance } from "../../lib/master-revenue-brain";
+import { getMoneyProducts } from "../../lib/revenue-machine";
 
 export default async function handler(req, res) {
   try {
@@ -13,21 +12,17 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    // 🧠 MASTER AI BRAIN
-    products = masterRevenueBrain(products);
-
-    // 📊 learning layer
-    products = learnFromPerformance(products);
+    // 💰 MONEY ENGINE
+    products = getMoneyProducts(products);
 
     const top = products.slice(0, 20);
 
-    // 💾 save intelligence back to Firestore
+    // 🔁 feedback loop (learning)
     for (const p of top) {
       await updateDoc(doc(db, "products", p.id), {
-        aiScore: p.aiScore || 0,
+        profitScore: p.profitScore || 0,
         brainScore: p.brainScore || 0,
-        finalScore: p.finalScore || 0,
-        profitTier: p.profitTier,
+        ctrMultiplier: p.ctrMultiplier || 1,
         lastOptimized: Date.now(),
       });
     }
@@ -35,7 +30,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       top,
-      message: "🧠 Master Revenue Brain Active",
+      message: "💰 Revenue Machine ACTIVE",
     });
   } catch (e) {
     return res.status(500).json({
