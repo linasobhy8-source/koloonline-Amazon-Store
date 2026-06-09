@@ -1,9 +1,4 @@
 import Head from "next/head";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase";
 
 /* ================= SCORE ENGINE ================= */
 function getScore(p) {
@@ -11,66 +6,22 @@ function getScore(p) {
 }
 
 /* ================= PAGE ================= */
-export default function ComparePage() {
-  const router = useRouter();
-  const { slug } = router.query;
-
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!slug) return;
-
-    const load = async () => {
-      try {
-        setLoading(true);
-
-        const snap = await getDocs(collection(db, "products"));
-
-        const all = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-
-        const keyword = String(slug)
-          .toLowerCase()
-          .split("-")[0];
-
-        const matched = all
-          .filter((p) =>
-            (p.title || "")
-              .toLowerCase()
-              .includes(keyword)
-          )
-          .slice(0, 2);
-
-        setProducts(matched);
-      } catch (err) {
-        console.error("Compare error:", err);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [slug]);
-
-  /* ================= STATES ================= */
-  if (loading)
-    return <p style={{ padding: 20 }}>Loading...</p>;
-
-  if (products.length < 2)
+export default function ComparePage({ p1, p2, slug }) {
+  if (!p1 || !p2) {
     return (
       <p style={{ padding: 20 }}>
         Not enough products to compare
       </p>
     );
+  }
 
-  const [p1, p2] = products;
+  const score1 = getScore(p1);
+  const score2 = getScore(p2);
 
   const winner =
-    getScore(p1) > getScore(p2)
+    score1 === score2
+      ? "Tie"
+      : score1 > score2
       ? p1.title
       : p2.title;
 
@@ -87,20 +38,24 @@ export default function ComparePage() {
     >
       {/* ================= SEO ================= */}
       <Head>
-        <title>
-          {p1.title} vs {p2.title} | Compare
-        </title>
+        <title>{p1.title} vs {p2.title} | Compare</title>
 
         <meta
           name="description"
-          content={`Compare ${p1.title} and ${p2.title} - find the best deal`}
+          content={`Compare ${p1.title} and ${p2.title} and find the best deal`}
         />
 
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href={url} />
 
-        <meta property="og:title" content="Product Comparison" />
+        <meta property="og:title" content={`${p1.title} vs ${p2.title}`} />
         <meta property="og:description" content="AI product comparison" />
+        <meta property="og:url" content={url} />
+        <meta property="og:type" content="article" />
+        <meta
+          property="og:image"
+          content={p1.image || p2.image}
+        />
       </Head>
 
       <h1>🔥 Product Comparison</h1>
@@ -130,6 +85,10 @@ export default function ComparePage() {
         <div>Rating</div>
         <div>{p1.rating || 0}</div>
         <div>{p2.rating || 0}</div>
+
+        <div>Score</div>
+        <div>{score1.toFixed(2)}</div>
+        <div>{score2.toFixed(2)}</div>
       </div>
 
       {/* ================= BUY LINKS ================= */}
@@ -137,7 +96,7 @@ export default function ComparePage() {
         <a
           href={p1.link}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener noreferrer sponsored"
         >
           🛒 Buy {p1.title}
         </a>
@@ -147,7 +106,7 @@ export default function ComparePage() {
         <a
           href={p2.link}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener noreferrer sponsored"
         >
           🛒 Buy {p2.title}
         </a>
@@ -155,3 +114,55 @@ export default function ComparePage() {
     </div>
   );
 }
+
+/* ================= ISR (FAST LOADING) ================= */
+export async function getStaticProps({ params }) {
+  const slug = params.slug;
+
+  try {
+    const { getProductsFast } = await import("../../lib/firebaseQuery");
+
+    const products = await getProductsFast();
+
+    if (!Array.isArray(products)) {
+      return { notFound: true };
+    }
+
+    const keyword = String(slug)
+      .toLowerCase()
+      .replace("-vs-", " ");
+
+    const filtered = products
+      .filter((p) =>
+        (p.title || "")
+          .toLowerCase()
+          .includes(keyword.split(" ")[0])
+      )
+      .slice(0, 2);
+
+    const p1 = filtered[0] || null;
+    const p2 = filtered[1] || null;
+
+    return {
+      props: {
+        p1,
+        p2,
+        slug,
+      },
+
+      // 🔥 أهم تحسين أداء
+      revalidate: 600, // 10 دقائق
+    };
+  } catch (e) {
+    console.error("COMPARE ERROR:", e);
+    return { notFound: true };
+  }
+}
+
+/* ================= STATIC PATHS (LIMIT CACHE BOOST) ================= */
+export async function getStaticPaths() {
+  return {
+    paths: [],
+    fallback: "blocking",
+  };
+          }
