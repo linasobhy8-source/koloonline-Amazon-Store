@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true, // 🔥 مهم لكشف أخطاء React اللي عندك (زي #130)
 
   compress: true,
   poweredByHeader: false,
 
   productionBrowserSourceMaps: false,
+
+  // 🔥 أفضل للأداء + تقليل bundle size
+  swcMinify: true,
 
   images: {
     formats: ["image/avif", "image/webp"],
@@ -14,7 +17,6 @@ const nextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30,
 
     deviceSizes: [320, 420, 640, 768, 1024, 1200, 1600],
-
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
 
     remotePatterns: [
@@ -46,6 +48,9 @@ const nextConfig = {
       "firebase",
       "@vercel/speed-insights",
     ],
+
+    // 🔥 تحسين مهم في Next 15 (بيقلل مشاكل build عند static generation)
+    serverComponentsExternalPackages: ["firebase"],
   },
 };
 
