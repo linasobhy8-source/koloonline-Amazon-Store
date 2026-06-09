@@ -8,20 +8,52 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { title } = req.body;
-
-    /* ================= VALIDATION ================= */
-    if (!title || typeof title !== "string") {
-      return res.status(400).json({
+    /* ================= API KEY CHECK ================= */
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({
         success: false,
-        error: "Missing or invalid title",
+        error: "Missing GEMINI_API_KEY",
       });
     }
 
+    const title =
+      typeof req.body?.title === "string"
+        ? req.body.title.trim()
+        : "";
+
+    /* ================= VALIDATION ================= */
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing product title",
+      });
+    }
+
+    /* ================= PROMPT ================= */
+    const prompt = `
+اكتب وصفاً احترافياً لمنتج تجارة إلكترونية باللغة العربية.
+
+اسم المنتج:
+${title}
+
+المطلوب:
+
+1- وصف تسويقي احترافي (120-200 كلمة)
+2- خمس مميزات رئيسية
+3- أهم الاستخدامات
+4- فقرة إقناعية قصيرة للشراء
+
+شروط مهمة:
+- أسلوب طبيعي
+- متوافق مع SEO
+- بدون مبالغة
+- بدون كلمات سبام
+- بدون تكرار
+`;
+
     /* ================= GEMINI REQUEST ================= */
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" +
-        process.env.GEMINI_API_KEY,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -32,22 +64,7 @@ export default async function handler(req, res) {
             {
               parts: [
                 {
-                  text: `
-اكتب وصف تسويقي احترافي لمنتج باللغة العربية بأسلوب جذاب ومقنع للمشتري.
-
-الشروط:
-- أسلوب طبيعي غير مبالغ فيه
-- مناسب لمواقع التجارة الإلكترونية
-- مناسب لتحسين SEO
-- لا تستخدم كلمات spam أو تكرار مبالغ فيه
-
-المنتج: ${title}
-
-ثم اكتب:
-- 5 مميزات واضحة
-- استخدامات المنتج
-- فقرة قصيرة إقناعية للشراء
-                  `,
+                  text: prompt,
                 },
               ],
             },
@@ -56,25 +73,44 @@ export default async function handler(req, res) {
       }
     );
 
-    /* ================= RESPONSE CHECK ================= */
+    /* ================= RESPONSE VALIDATION ================= */
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      console.error("Gemini HTTP Error:", errorText);
+
+      return res.status(500).json({
+        success: false,
+        error: "Gemini request failed",
+      });
+    }
+
     const data = await response.json();
 
-    const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No description generated";
+    const description =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+      "";
 
-    /* ================= FINAL RESPONSE ================= */
+    if (!description) {
+      return res.status(500).json({
+        success: false,
+        error: "No description generated",
+      });
+    }
+
+    /* ================= SUCCESS ================= */
     return res.status(200).json({
       success: true,
-      description: text,
+      title,
+      description,
+      generatedAt: Date.now(),
     });
-
   } catch (error) {
     console.error("GEMINI API ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      error: "AI Error occurred",
+      error: error?.message || "Unknown AI Error",
     });
   }
-}
+      }
