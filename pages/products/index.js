@@ -11,16 +11,24 @@ const fallbackImage = "https://via.placeholder.com/500x500";
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
-  if (typeof v === "string") return v;
-  if (typeof v === "number") return String(v);
-  if (typeof v === "boolean") return String(v);
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean"
+  ) {
+    return String(v);
+  }
 
   if (Array.isArray(v)) {
     return v.map(safeText).join(" ");
   }
 
-  if (typeof v === "object") {
-    return ""; // ❗ يمنع crash نهائي
+  if (v && typeof v.toDate === "function") {
+    try {
+      return v.toDate().toISOString();
+    } catch {
+      return "";
+    }
   }
 
   return "";
@@ -33,7 +41,7 @@ const safeImage = (img) => {
 
     const optimized = optimizeAmazonImage(img);
 
-    if (!optimized || typeof optimized !== "string") {
+    if (typeof optimized !== "string" || !optimized.startsWith("http")) {
       return fallbackImage;
     }
 
@@ -45,17 +53,15 @@ const safeImage = (img) => {
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProducts()
       .then((data) => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          setProducts([]);
-        }
+        setProducts(Array.isArray(data) ? data : []);
       })
-      .catch(() => setProducts([]));
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -63,7 +69,7 @@ export default function ProductsPage() {
   }, [products]);
 
   /* ================= LOADING ================= */
-  if (!products.length) {
+  if (loading) {
     return (
       <div
         style={{
@@ -103,7 +109,7 @@ export default function ProductsPage() {
           gap: 20,
         }}
       >
-        {filtered.map((p, index) => {
+        {filtered.map((p) => {
           const id = safeText(p?.id);
           const title = safeText(p?.title);
 
@@ -117,7 +123,7 @@ export default function ProductsPage() {
                   width={300}
                   height={300}
                   alt={title || "Product"}
-                  priority={index < 6}
+                  loading="lazy"
                   style={{ objectFit: "contain" }}
                 />
 
@@ -129,4 +135,4 @@ export default function ProductsPage() {
       </div>
     </div>
   );
-}
+          }
