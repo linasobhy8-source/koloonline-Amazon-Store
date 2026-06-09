@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { cdnImage } from "../lib/cdnImage";
 
 const fallback =
@@ -8,9 +8,16 @@ const fallback =
 export default function SmartImage({ src, alt }) {
   const [error, setError] = useState(false);
 
-  const finalSrc = error
-    ? fallback
-    : cdnImage(src || fallback);
+  /* ================= MEMOIZED FINAL SRC ================= */
+  const finalSrc = useMemo(() => {
+    if (error) return fallback;
+    return cdnImage(src || fallback);
+  }, [src, error]);
+
+  /* ================= STABLE HANDLER ================= */
+  const handleError = useCallback(() => {
+    setError(true);
+  }, []);
 
   return (
     <div
@@ -19,6 +26,7 @@ export default function SmartImage({ src, alt }) {
         width: "100%",
         aspectRatio: "1 / 1",
         overflow: "hidden",
+        background: "#f5f5f5", // improves perceived loading
       }}
     >
       <Image
@@ -27,10 +35,13 @@ export default function SmartImage({ src, alt }) {
         fill
         sizes="(max-width: 768px) 100vw, 500px"
         loading="lazy"
-        quality={60}
-        onError={() => setError(true)}
+        quality={65}
+        placeholder="blur"
+        blurDataURL={fallback}
+        onError={handleError}
         style={{
           objectFit: "contain",
+          transition: "0.2s ease-in-out",
         }}
       />
     </div>
