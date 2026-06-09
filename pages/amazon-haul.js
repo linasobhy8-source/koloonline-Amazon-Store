@@ -4,19 +4,56 @@ const fallbackImage =
   "https://via.placeholder.com/500x500?text=Product";
 
 /* ================= SAFE HELPERS ================= */
-const safeText = (v) =>
-  typeof v === "string" ? v : "";
+const safeText = (v) => {
+  if (v === null || v === undefined) return "";
 
-const safeImage = (v) =>
-  typeof v === "string"
-    ? v
-    : v?.url || v?.image || fallbackImage;
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean"
+  ) {
+    return String(v);
+  }
+
+  if (Array.isArray(v)) {
+    return v.map(safeText).join(" ");
+  }
+
+  if (v && typeof v.toDate === "function") {
+    try {
+      return v.toDate().toISOString();
+    } catch {
+      return "";
+    }
+  }
+
+  return "";
+};
+
+const safeImage = (v) => {
+  if (typeof v === "string") {
+    const img = v.trim();
+    if (img.startsWith("http")) return img;
+  }
+
+  if (v && typeof v === "object") {
+    if (typeof v.url === "string" && v.url.startsWith("http")) {
+      return v.url;
+    }
+    if (typeof v.image === "string" && v.image.startsWith("http")) {
+      return v.image;
+    }
+  }
+
+  return fallbackImage;
+};
 
 /* ================= PAGE ================= */
 export default function AmazonHaul({ products = [] }) {
+  const safeProducts = Array.isArray(products) ? products : [];
+
   return (
     <div style={{ padding: 20, fontFamily: "Arial" }}>
-      
       {/* ================= SEO ================= */}
       <Head>
         <title>Amazon Haul | Trending Deals</title>
@@ -33,19 +70,21 @@ export default function AmazonHaul({ products = [] }) {
       <section
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(220px,1fr))",
+          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
           gap: 20,
           marginTop: 20,
         }}
       >
-        {products.map((product) => {
-          const title = safeText(product.title);
-          const image = safeImage(product.image);
+        {safeProducts.map((product, index) => {
+          const title = safeText(product?.title);
+          const image = safeImage(product?.image);
+          const id = safeText(product?.id);
+
+          if (!id) return null;
 
           return (
             <div
-              key={product.id || title}
+              key={id}
               style={{
                 background: "#fff",
                 padding: 15,
@@ -73,7 +112,7 @@ export default function AmazonHaul({ products = [] }) {
                 </h3>
 
                 {/* VIRAL BADGE */}
-                {product.viralBoost ? (
+                {product?.viralBoost ? (
                   <span
                     style={{
                       color: "white",
@@ -93,4 +132,4 @@ export default function AmazonHaul({ products = [] }) {
       </section>
     </div>
   );
-                  }
+    }
