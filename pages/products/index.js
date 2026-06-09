@@ -3,9 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { fetchProducts } from "../../lib/fetchProducts";
-import { optimizeAmazonImage } from "../../lib/amazonImage";
 
-const fallbackImage = "https://via.placeholder.com/500x500";
+const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
 
 /* ================= SAFE TEXT ================= */
 const safeText = (v) => {
@@ -31,37 +30,62 @@ const safeText = (v) => {
     }
   }
 
+  if (typeof v === "object") {
+    if (typeof v.text === "string") return v.text;
+    if (typeof v.title === "string") return v.title;
+    if (typeof v.value === "string") return v.value;
+    return "";
+  }
+
   return "";
 };
 
 /* ================= SAFE IMAGE ================= */
 const safeImage = (img) => {
   try {
-    if (typeof img !== "string") return fallbackImage;
-
-    const optimized = optimizeAmazonImage(img);
-
-    if (typeof optimized !== "string" || !optimized.startsWith("http")) {
-      return fallbackImage;
+    if (typeof img === "string" && img.startsWith("http")) {
+      return img;
     }
 
-    return optimized;
+    if (img && typeof img === "object") {
+      if (typeof img.url === "string") return img.url;
+      if (typeof img.image === "string") return img.image;
+    }
+
+    return fallbackImage;
   } catch {
     return fallbackImage;
   }
 };
 
+/* ================= PAGE ================= */
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     fetchProducts()
       .then((data) => {
-        setProducts(Array.isArray(data) ? data : []);
+        if (!mounted) return;
+
+        if (Array.isArray(data)) {
+          setProducts(data);
+        } else {
+          setProducts([]);
+        }
       })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (mounted) setProducts([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -96,38 +120,54 @@ export default function ProductsPage() {
   return (
     <div style={{ padding: 20 }}>
       <Head>
-        <title>Products</title>
-        <meta name="description" content="Trending products" />
+        <title>Products | Koloonline</title>
+        <meta
+          name="description"
+          content="Browse trending products and deals"
+        />
       </Head>
 
-      <h1>Trending Products</h1>
+      <h1>🔥 Trending Products</h1>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 20,
+          marginTop: 20,
         }}
       >
-        {filtered.map((p) => {
+        {filtered.map((p, index) => {
           const id = safeText(p?.id);
           const title = safeText(p?.title);
+          const image = safeImage(p?.image);
 
           if (!id) return null;
 
           return (
             <Link key={id} href={`/product/${id}`}>
-              <div>
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 10,
+                  padding: 10,
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+                }}
+              >
                 <Image
-                  src={safeImage(p?.image)}
+                  src={image || fallbackImage}
                   width={300}
                   height={300}
-                  alt={title || "Product"}
-                  loading="lazy"
+                  alt={title || "product"}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  priority={index < 4}
                   style={{ objectFit: "contain" }}
                 />
 
-                <h3>{title}</h3>
+                <h3 style={{ fontSize: 14 }}>
+                  {title || "Untitled"}
+                </h3>
               </div>
             </Link>
           );
@@ -135,4 +175,4 @@ export default function ProductsPage() {
       </div>
     </div>
   );
-          }
+            }
