@@ -1,9 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-} from "firebase/firestore";
+import { getFirestore, collection, getCountFromServer } from "firebase/firestore";
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -15,21 +11,21 @@ const firebaseConfig = {
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ================= SAFE FETCH ================= */
+/* ================= FAST COUNT (NO FULL LOAD) ================= */
 async function safeCount(collectionName) {
   try {
-    const snap = await getDocs(collection(db, collectionName));
-    return snap?.size || 0;
+    const coll = collection(db, collectionName);
+    const snapshot = await getCountFromServer(coll);
+    return snapshot.data().count || 0;
   } catch (e) {
-    console.error(`Error fetching ${collectionName}:`, e);
+    console.error(`Error counting ${collectionName}:`, e);
     return 0;
   }
 }
 
-/* ================= MAIN HANDLER ================= */
+/* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    // 🔒 Only POST allowed
     if (req.method !== "POST") {
       return res.status(405).json({
         success: false,
@@ -37,18 +33,11 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ================= PARALLEL FETCH ================= */
+    /* ================= PARALLEL ================= */
     const [productsCount, blogsCount] = await Promise.all([
       safeCount("products"),
       safeCount("blog"),
     ]);
-
-    /* ================= BASE URLS ================= */
-    const baseUrls = [
-      "https://koloonline.online/",
-      "https://koloonline.online/blog",
-      "https://koloonline.online/products",
-    ];
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
@@ -58,7 +47,11 @@ export default async function handler(req, res) {
         blogsCount,
         totalContent: productsCount + blogsCount,
       },
-      urls: baseUrls,
+      urls: [
+        "https://koloonline.online/",
+        "https://koloonline.online/blog",
+        "https://koloonline.online/products",
+      ],
       timestamp: Date.now(),
     });
 
@@ -68,4 +61,4 @@ export default async function handler(req, res) {
       error: e?.message || "Unknown error",
     });
   }
-        }
+}
