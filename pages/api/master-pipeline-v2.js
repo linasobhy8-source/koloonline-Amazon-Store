@@ -1,201 +1,213 @@
-import { initializeApp, getApps } from "firebase/app";
+import { db } from "../../config/firebase";
 import {
-  getFirestore,
   collection,
-  getDocs,
   addDoc,
+  getCountFromServer,
   serverTimestamp,
 } from "firebase/firestore";
 
-/* ================= FIREBASE ================= */
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-};
+/* ================= CONFIG ================= */
+const BASE_URL = "https://koloonline.online";
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+/* ================= PRODUCT POOL ================= */
+const PRODUCT_POOL = [
+  {
+    title: "Smart Watch Ultra AI",
+    price: 39.99,
+    category: "electronics",
+    image:
+      "https://m.media-amazon.com/images/I/71gJb7R6Q7L._AC_SL1500_.jpg",
+    viralBoost: true,
+  },
+  {
+    title: "Wireless Earbuds Pro",
+    price: 24.99,
+    category: "audio",
+    image:
+      "https://m.media-amazon.com/images/I/61f1xD6g0LL._AC_SL1500_.jpg",
+    viralBoost: true,
+  },
+  {
+    title: "Mini LED Projector HD",
+    price: 59.99,
+    category: "home",
+    image:
+      "https://m.media-amazon.com/images/I/71Rr0Y2K3LL._AC_SL1500_.jpg",
+    viralBoost: false,
+  },
+];
 
-/* ================= SAFE RUN ================= */
-async function safeRun(label, fn) {
-  try {
-    const result = await fn();
-    return { success: true, label, result };
-  } catch (e) {
-    return { success: false, label, error: e?.message || "error" };
-  }
-}
-
-/* ================= PRODUCT ENGINE ================= */
-function generateProduct() {
-  const products = [
-    {
-      title: "Smart Watch Ultra AI",
-      price: 39.99,
-      category: "electronics",
-      image:
-        "https://m.media-amazon.com/images/I/71gJb7R6Q7L._AC_SL1500_.jpg",
-      viralBoost: true,
-    },
-    {
-      title: "Wireless Earbuds Pro",
-      price: 24.99,
-      category: "audio",
-      image:
-        "https://m.media-amazon.com/images/I/61f1xD6g0LL._AC_SL1500_.jpg",
-      viralBoost: true,
-    },
-    {
-      title: "Mini LED Projector HD",
-      price: 59.99,
-      category: "home",
-      image:
-        "https://m.media-amazon.com/images/I/71Rr0Y2K3LL._AC_SL1500_.jpg",
-      viralBoost: false,
-    },
+/* ================= HELPERS ================= */
+function randomProduct() {
+  return PRODUCT_POOL[
+    Math.floor(Math.random() * PRODUCT_POOL.length)
   ];
-
-  return products[Math.floor(Math.random() * products.length)];
 }
 
-/* ================= BLOG ENGINE ================= */
-function generateBlog(product) {
-  const slug = (product.title || "product")
+function generateSlug(text = "") {
+  return text
     .toLowerCase()
+    .trim()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
+}
+
+function generateBlog(product) {
+  const slug = generateSlug(product.title);
 
   return {
-    title: `Review: ${product.title} – Is It Worth It?`,
-    excerpt: `Review of ${product.title} with pros, cons and analysis.`,
-    content: `
-      <h2>Overview</h2>
-      <p>${product.title} is trending in ${product.category}.</p>
-
-      <h2>Features</h2>
-      <ul>
-        <li>Good quality</li>
-        <li>Price: $${product.price}</li>
-        <li>Trending product</li>
-      </ul>
-
-      <h2>Verdict</h2>
-      <p>Recommended for value buyers.</p>
-    `,
+    title: `${product.title} Review`,
     slug,
+    excerpt: `${product.title} review and buying guide.`,
+    content: `
+<h2>${product.title}</h2>
+
+<p>
+Discover features, benefits and value for money.
+</p>
+
+<ul>
+<li>Affordable pricing</li>
+<li>Good user experience</li>
+<li>Popular category</li>
+</ul>
+
+<p>
+Suitable for everyday use.
+</p>
+`,
   };
 }
 
-/* ================= INDEXNOW ================= */
-async function runIndexNow(urls = []) {
-  const key = process.env.INDEXNOW_KEY;
-
-  if (!key) return { success: false, error: "Missing INDEXNOW_KEY" };
-
+/* ================= SAFE FETCH ================= */
+async function safeFetch(url, options = {}) {
   try {
-    const res = await fetch("https://api.indexnow.org/indexnow", {
+    const controller = new AbortController();
+
+    const timer = setTimeout(
+      () => controller.abort(),
+      10000
+    );
+
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    return {
+      ok: response.ok,
+      status: response.status,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e.message,
+    };
+  }
+}
+
+/* ================= INDEXNOW ================= */
+async function submitIndexNow(urls = []) {
+  if (!process.env.INDEXNOW_KEY) {
+    return { skipped: true };
+  }
+
+  return safeFetch(
+    "https://api.indexnow.org/indexnow",
+    {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         host: "koloonline.online",
-        key,
+        key: process.env.INDEXNOW_KEY,
         urlList: urls.slice(0, 50),
       }),
-    });
-
-    return { success: res.ok };
-  } catch (e) {
-    return { success: false, error: e?.message };
-  }
+    }
+  );
 }
 
-/* ================= GOOGLE PING ================= */
-async function pingGoogle() {
-  try {
-    const url = "https://koloonline.online/sitemap.xml";
+/* ================= HANDLER ================= */
+export default async function handler(req, res) {
+  const started = Date.now();
 
-    await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`
+  try {
+    /* ===== Optional Security ===== */
+    if (
+      process.env.CRON_SECRET &&
+      req.headers.authorization !==
+        `Bearer ${process.env.CRON_SECRET}`
+    ) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
+
+    /* ===== Count Only (FAST) ===== */
+    const countSnap = await getCountFromServer(
+      collection(db, "products")
     );
 
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e?.message };
-  }
-}
+    const existingProducts = countSnap.data().count;
 
-/* ================= MAIN PIPELINE ================= */
-export default async function handler(req, res) {
-  const startTime = Date.now();
+    /* ===== Create Product ===== */
+    const product = randomProduct();
 
-  try {
-    const baseUrl = "https://koloonline.online";
+    const productRef = await addDoc(
+      collection(db, "products"),
+      {
+        ...product,
+        views: 0,
+        clicks: 0,
+        rating: 4.5,
+        createdAt: serverTimestamp(),
+      }
+    );
 
-    const logs = [];
-    const newUrls = [];
-
-    /* ================= COUNT PRODUCTS ================= */
-    const productsSnap = await getDocs(collection(db, "products"));
-    const existingCount = productsSnap?.size || 0;
-
-    /* ================= CREATE PRODUCT ================= */
-    const product = generateProduct();
-
-    const productRef = await addDoc(collection(db, "products"), {
-      ...product,
-      views: 0,
-      clicks: 0,
-      rating: 4.5,
-      createdAt: serverTimestamp(),
-    });
-
-    newUrls.push(`${baseUrl}/product/${productRef.id}`);
-
-    logs.push({ step: "product_created" });
-
-    /* ================= CREATE BLOG ================= */
+    /* ===== Create Blog ===== */
     const blog = generateBlog(product);
 
-    const blogRef = await addDoc(collection(db, "blog"), {
-      ...blog,
-      createdAt: serverTimestamp(),
-    });
-
-    newUrls.push(`${baseUrl}/blog/${blogRef.id}`);
-
-    logs.push({ step: "blog_created" });
-
-    /* ================= URLS ================= */
-    const urls = [
-      baseUrl,
-      `${baseUrl}/products`,
-      `${baseUrl}/blog`,
-      ...newUrls,
-    ];
-
-    /* ================= INDEX + PING ================= */
-    const indexResult = await safeRun("IndexNow", () =>
-      runIndexNow(urls)
+    const blogRef = await addDoc(
+      collection(db, "blog"),
+      {
+        ...blog,
+        createdAt: serverTimestamp(),
+      }
     );
 
-    const pingResult = await safeRun("GooglePing", pingGoogle);
+    const urls = [
+      `${BASE_URL}/product/${productRef.id}`,
+      `${BASE_URL}/blog/${blogRef.id}`,
+    ];
 
-    logs.push(indexResult, pingResult);
+    /* ===== Run In Parallel ===== */
+    const [indexNow] = await Promise.all([
+      submitIndexNow(urls),
+    ]);
 
-    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      runtime: Date.now() - startTime,
-      message: "🔥 Master Pipeline V2 Running Stable",
-      existingProducts: existingCount,
-      urlsGenerated: urls.length,
-      logs,
+      runtime: Date.now() - started,
+
+      existingProducts,
+
+      productId: productRef.id,
+      blogId: blogRef.id,
+
+      urlsIndexed: urls.length,
+
+      indexNow,
     });
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
-      error: error?.message || "Unknown error",
+      error: error?.message || "Internal Error",
     });
   }
-}
+      }
