@@ -3,7 +3,6 @@ import Script from "next/script";
 import { Component } from "react";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/react";
 
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
@@ -14,18 +13,12 @@ import "../styles/globals.css";
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      hasError: false,
-    };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error) {
     console.error("App Error:", error);
-
-    return {
-      hasError: true,
-    };
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
@@ -61,33 +54,12 @@ export default function App({ Component, pageProps }) {
     <ErrorBoundary>
       <>
         <Head>
-          {/* ================= BASIC META ================= */}
           <meta charSet="UTF-8" />
-
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1"
-          />
-
-          <meta
-            name="robots"
-            content="index,follow,max-image-preview:large"
-          />
-
-          <meta
-            name="theme-color"
-            content="#111827"
-          />
-
-          <meta
-            name="format-detection"
-            content="telephone=no"
-          />
-
-          <meta
-            httpEquiv="X-UA-Compatible"
-            content="IE=edge"
-          />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="robots" content="index,follow,max-image-preview:large" />
+          <meta name="theme-color" content="#111827" />
+          <meta name="format-detection" content="telephone=no" />
+          <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         </Head>
 
         {/* ================= GOOGLE TAG MANAGER ================= */}
@@ -139,12 +111,9 @@ export default function App({ Component, pageProps }) {
 
         <Footer />
 
-        {/* ================= VERCEL ANALYTICS ================= */}
-        <Analytics />
-
-        {/* ================= SPEED INSIGHTS ================= */}
+        {/* ================= VERCEL SPEED ================= */}
         <SpeedInsights />
       </>
     </ErrorBoundary>
   );
-  }
+}
