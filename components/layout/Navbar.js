@@ -1,26 +1,38 @@
 import Link from "next/link";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 export default function Navbar({ products = [] }) {
   const [q, setQ] = useState("");
   const timeoutRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  /* ================= MOUNT SAFETY ================= */
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   /* ================= DEBOUNCE ================= */
   const handleSearch = (value) => {
     clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(() => {
-      setQ(value);
-    }, 150); // ⚡ سريع جدًا
+      if (!mountedRef.current) return;
+      setQ(String(value || ""));
+    }, 150);
   };
 
   /* ================= FAST FILTER ================= */
   const results = useMemo(() => {
-    const query = q.trim().toLowerCase();
+    const query = String(q || "").trim().toLowerCase();
     if (!query) return [];
 
+    if (!Array.isArray(products)) return [];
+
     return products
-      .slice(0, 200) // ⚡ limit مهم جدًا للأداء
+      .slice(0, 200)
       .filter((p) =>
         String(p?.title || "")
           .toLowerCase()
@@ -66,10 +78,10 @@ export default function Navbar({ products = [] }) {
               overflow: "hidden",
             }}
           >
-            {results.map((p) => (
+            {results.map((p, i) => (
               <Link
-                key={String(p.id)}
-                href={`/product/${p.id}`}
+                key={p?.id || i}
+                href={`/product/${p?.id || ""}`}
                 style={{
                   display: "block",
                   padding: "10px",
@@ -78,7 +90,7 @@ export default function Navbar({ products = [] }) {
                   borderBottom: "1px solid #f3f4f6",
                 }}
               >
-                {String(p.title || "Product")}
+                {String(p?.title || "Product")}
               </Link>
             ))}
           </div>
