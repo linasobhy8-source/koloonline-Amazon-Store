@@ -6,14 +6,18 @@ import { optimizeAmazonImage } from "../../lib/amazonImage";
 
 const fallbackImage = "https://via.placeholder.com/500x500";
 
-/* ================= HARD SAFE (NO OBJECTS ALLOWED) ================= */
+/* ================= SAFE FUNCTION ================= */
 const safe = (v) => {
   if (v === null || v === undefined) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number") return String(v);
-  if (typeof v === "boolean") return v ? "true" : "false";
 
-  // Firebase Timestamp
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean"
+  ) {
+    return String(v);
+  }
+
   if (v && typeof v.toDate === "function") {
     try {
       return v.toDate().toISOString();
@@ -22,13 +26,12 @@ const safe = (v) => {
     }
   }
 
-  // array → flatten safely
   if (Array.isArray(v)) {
     return v.map(safe).join(" ");
   }
 
-  // ❌ any object = NEVER render it
-  return "";
+  // prevent React crash
+  return JSON.stringify(v || "");
 };
 
 /* ================= SAFE IMAGE ================= */
@@ -159,20 +162,22 @@ export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
-    if (!Array.isArray(products)) {
-      return { paths: [], fallback: "blocking" };
-    }
+    console.log("🔥 STATIC PATHS PRODUCTS:", products.length);
 
     return {
       paths: products
-        .filter((p) => p?.id && typeof p.id === "string")
-        .slice(0, 50)
+        .filter((p) => p?.id)
         .map((p) => ({
           params: { id: String(p.id) },
         })),
       fallback: "blocking",
     };
-  } catch {
-    return { paths: [], fallback: "blocking" };
+  } catch (e) {
+    console.error("STATIC PATHS ERROR:", e);
+
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
   }
-      }
+    }
