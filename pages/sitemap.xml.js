@@ -12,9 +12,10 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+const app =
+  !getApps().length
+    ? initializeApp(firebaseConfig)
+    : getApps()[0];
 
 const db = getFirestore(app);
 
@@ -22,8 +23,15 @@ const db = getFirestore(app);
 function safeDate(date) {
   try {
     if (!date) return new Date().toISOString();
-    if (typeof date === "number") return new Date(date).toISOString();
-    if (date?.toDate) return date.toDate().toISOString();
+
+    if (typeof date === "number") {
+      return new Date(date).toISOString();
+    }
+
+    if (date?.toDate) {
+      return date.toDate().toISOString();
+    }
+
     return new Date(date).toISOString();
   } catch {
     return new Date().toISOString();
@@ -34,67 +42,83 @@ function safeDate(date) {
 export async function getServerSideProps({ res }) {
   const baseUrl = "https://koloonline.online";
 
-  /* ================= FETCH DATA ================= */
-  const productSnap = await getDocs(collection(db, "products"));
-  const blogSnap = await getDocs(collection(db, "blog"));
+  const today = new Date().toISOString();
 
-  const products = productSnap.docs.map((d) => d.id);
+  let products = [];
+  let blogs = [];
 
-  const blogs = blogSnap.docs.map((d) => ({
-    id: d.id,
-    updatedAt: safeDate(
-      d.data().updatedAt || d.data().createdAt
-    ),
-  }));
+  try {
+    const [productSnap, blogSnap] = await Promise.all([
+      getDocs(collection(db, "products")),
+      getDocs(collection(db, "blog")),
+    ]);
+
+    products = productSnap.docs.map((d) => d.id);
+
+    blogs = blogSnap.docs.map((d) => ({
+      id: d.id,
+      updatedAt: safeDate(
+        d.data().updatedAt ||
+        d.data().createdAt
+      ),
+    }));
+  } catch (error) {
+    console.error("Sitemap Error:", error);
+  }
 
   /* ================= URL BUILDER ================= */
   let urls = "";
 
   /* ================= MAIN PAGES ================= */
+
   urls += `
 <url>
   <loc>${baseUrl}/</loc>
+  <lastmod>${today}</lastmod>
   <priority>1.0</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/blog</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.9</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/products</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.9</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/search</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.9</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/amazon-haul</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.9</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/categories</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.8</priority>
 </url>
 
-<!-- ================= AFFILIATE PAGES ================= -->
-
 <url>
   <loc>${baseUrl}/fiverr</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.8</priority>
 </url>
 
 <url>
   <loc>${baseUrl}/aliexpress</loc>
+  <lastmod>${today}</lastmod>
   <priority>0.8</priority>
 </url>
-
-<!-- ================= BLOGGER ================= -->
 
 <url>
   <loc>https://linasobhy.blogspot.com/</loc>
@@ -110,14 +134,10 @@ export async function getServerSideProps({ res }) {
   <loc>https://linasobhy.blogspot.com/p/contact.html</loc>
   <priority>0.6</priority>
 </url>
-
-<url>
-  <loc>https://linasobhy.blogspot.com/feeds/posts/default</loc>
-  <priority>0.6</priority>
-</url>
 `;
 
   /* ================= PRODUCTS ================= */
+
   products.forEach((id) => {
     urls += `
 <url>
@@ -128,6 +148,7 @@ export async function getServerSideProps({ res }) {
   });
 
   /* ================= BLOG POSTS ================= */
+
   blogs.forEach((b) => {
     urls += `
 <url>
@@ -139,21 +160,33 @@ export async function getServerSideProps({ res }) {
   });
 
   /* ================= FINAL XML ================= */
+
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 ${urls}
 
 </urlset>`;
 
+  /* ================= CACHE ================= */
+
   res.setHeader("Content-Type", "text/xml");
+
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=3600, stale-while-revalidate=86400"
+  );
+
   res.write(sitemap);
   res.end();
 
-  return { props: {} };
+  return {
+    props: {},
+  };
 }
 
 /* ================= PAGE ================= */
 export default function Sitemap() {
   return null;
-      }
+}
