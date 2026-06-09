@@ -1,81 +1,158 @@
-import { initializeApp, getApps } from "firebase/app";
+import { db } from "../../config/firebase";
+
 import {
-  getFirestore,
   collection,
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
 
-/* ================= FIREBASE SAFE INIT ================= */
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-};
+/* ================= CACHE ================= */
+let cache = null;
+let lastRun = 0;
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+const CACHE_TTL = 1000 * 60 * 5;
 
-const db = getFirestore(app);
-
-/* ================= SAFE FETCH (with timeout) ================= */
+/* ================= SAFE FETCH ================= */
 async function run(path, timeout = 10000) {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
+  const controller = new AbortController();
 
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}${path}`,
-      { signal: controller.signal }
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "https://koloonline.online";
+
+    const response = await fetch(
+      `${baseUrl}${path}`,
+      {
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+        },
+      }
     );
 
     clearTimeout(timer);
 
-    if (!res.ok) {
-      throw new Error(`HTTP Error: ${res.status}`);
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
 
-    return await res.json();
-  } catch (e) {
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timer);
+
     return {
       success: false,
-      error: e?.message || "Unknown error",
+      error:
+        error?.message ||
+        "Request failed",
     };
   }
 }
 
-/* ================= API HANDLER ================= */
-export default async function handler(req, res) {
-  const startTime = Date.now();
+/* ================= HANDLER ================= */
+export default async function handler(
+  req,
+  res
+) {
+  const startedAt = Date.now();
 
   try {
-    /* ================= CORE PIPELINE ================= */
-    const flywheel = await run("/api/growth-flywheel-v1");
+    /* ================= METHOD CHECK ================= */
+    if (req.method !== "GET") {
+      return res.status(405).json({
+        success: false,
+        error: "Method Not Allowed",
+      });
+    }
 
-    /* ================= FIRESTORE LOG ================= */
-    await addDoc(collection(db, "cron_logs"), {
-      type: "autonomous_runner_v1",
-      status: flywheel?.success ? "success" : "failed",
-      runtime: Date.now() - startTime,
-      timestamp: serverTimestamp(),
-      details: flywheel,
-    });
+    /* ================= MEMORY CACHE ================= */
+    if (
+      cache &&
+      Date.now() - lastRun < CACHE_TTL
+    ) {
+      return res.status(200).json(cache);
+    }
 
-    /* ================= RESPONSE ================= */
-    return res.status(200).json({
+    /* ================= PIPELINE ================= */
+    const flywheel = await run(
+      "/api/growth-flywheel-v1"
+    );
+
+    const runtime =
+      Date.now() - startedAt;
+
+    /* ================= LOG ERRORS ONLY ================= */
+    if (!flywheel?.success) {
+      await addDoc(
+        collection(db, "cron_logs"),
+        {
+          type: "autonomous_runner",
+          status: "failed",
+          runtime,
+          error:
+            flywheel?.error ||
+            "Unknown error",
+          timestamp:
+            serverTimestamp(),
+        }
+      );
+    }
+
+    /* ================= CACHE HEADERS ================= */
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=300, stale-while-revalidate=600"
+    );
+
+    const result = {
       success: true,
-      message: "Autonomous system executed successfully",
-      runtime: Date.now() - startTime,
+      runtime,
+      timestamp: Date.now(),
       flywheel,
-    });
+      message:
+        "Autonomous system executed successfully",
+    };
+
+    cache = result;
+    lastRun = Date.now();
+
+    return res.status(200).json(result);
 
   } catch (error) {
-    console.error("AUTONOMOUS RUNNER ERROR:", error);
+    console.error(
+      "AUTONOMOUS RUNNER ERROR:",
+      error
+    );
+
+    try {
+      await addDoc(
+        collection(db, "cron_logs"),
+        {
+          type: "autonomous_runner",
+          status: "crash",
+          error:
+            error?.message ||
+            "Unknown error",
+          timestamp:
+            serverTimestamp(),
+        }
+      );
+    } catch {}
 
     return res.status(500).json({
       success: false,
-      error: error?.message || "Internal Server Error",
+      error:
+        error?.message ||
+        "Internal Server Error",
     });
   }
-}
+          }
