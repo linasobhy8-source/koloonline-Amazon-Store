@@ -19,7 +19,7 @@ export default function SearchPage({ products }) {
 
   const timeoutRef = useRef(null);
 
-  /* ================= DEBOUNCED SEARCH ================= */
+  /* ================= DEBOUNCE ================= */
   const handleSearch = (value) => {
     clearTimeout(timeoutRef.current);
 
@@ -28,23 +28,19 @@ export default function SearchPage({ products }) {
     }, 200);
   };
 
-  /* ================= AI SCORE ================= */
+  /* ================= AI SCORE (MEMOIZED) ================= */
   const enrichedProducts = useMemo(() => {
-    return products.map((d) => {
-      const aiScore =
+    return (products || []).map((d) => ({
+      ...d,
+      aiScore:
         (d.views || 0) * 1 +
         (d.clicks || 0) * 3 +
         (d.orders || 0) * 8 +
-        (d.viralBoost ? 40 : 0);
-
-      return {
-        ...d,
-        aiScore,
-      };
-    });
+        (d.viralBoost ? 40 : 0),
+    }));
   }, [products]);
 
-  /* ================= SUGGESTIONS (LIGHTWEIGHT) ================= */
+  /* ================= SUGGESTIONS ================= */
   useEffect(() => {
     if (!search) {
       setSuggestions([]);
@@ -56,12 +52,12 @@ export default function SearchPage({ products }) {
     const results = enrichedProducts
       .filter((p) => (p.title || "").toLowerCase().includes(lower))
       .sort((a, b) => b.aiScore - a.aiScore)
-      .slice(0, 5); // 🔥 limit for performance
+      .slice(0, 5);
 
     setSuggestions(results);
   }, [search, enrichedProducts]);
 
-  /* ================= FILTER ================= */
+  /* ================= FILTERED LIST ================= */
   const filtered = useMemo(() => {
     const lower = search.toLowerCase();
 
@@ -70,13 +66,14 @@ export default function SearchPage({ products }) {
         const title = (p.title || "").toLowerCase();
         const cat = (p.category || "").toLowerCase();
 
-        return (
-          title.includes(lower) &&
-          (category === "all" || cat === category.toLowerCase())
-        );
+        const matchSearch = title.includes(lower);
+        const matchCategory =
+          category === "all" || cat === category.toLowerCase();
+
+        return matchSearch && matchCategory;
       })
       .sort((a, b) => b.aiScore - a.aiScore)
-      .slice(0, 60); // 🔥 limit DOM load
+      .slice(0, 60);
   }, [enrichedProducts, search, category]);
 
   return (
@@ -88,7 +85,7 @@ export default function SearchPage({ products }) {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      {/* ================= SEARCH ================= */}
+      {/* ================= SEARCH INPUT ================= */}
       <div style={{ padding: 20 }}>
         <input
           onChange={(e) => handleSearch(e.target.value)}
@@ -128,7 +125,7 @@ export default function SearchPage({ products }) {
         )}
       </div>
 
-      {/* ================= PRODUCTS ================= */}
+      {/* ================= PRODUCTS GRID ================= */}
       <div
         style={{
           display: "grid",
@@ -168,7 +165,7 @@ export default function SearchPage({ products }) {
   );
 }
 
-/* ================= ISR + FIREBASE (SERVER SIDE ONLY) ================= */
+/* ================= ISR (FAST CACHE) ================= */
 export async function getStaticProps() {
   try {
     const snap = await getDocs(collection(db, "products"));
@@ -182,18 +179,16 @@ export async function getStaticProps() {
       props: {
         products,
       },
-
-      revalidate: 300, // 🔥 5 minutes cache
+      revalidate: 300, // 5 minutes cache
     };
   } catch (error) {
-    console.error(error);
+    console.error("SearchPage error:", error);
 
     return {
       props: {
         products: [],
       },
-
       revalidate: 300,
     };
   }
-            }
+      }
