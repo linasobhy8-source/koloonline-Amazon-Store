@@ -1,17 +1,30 @@
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 
 export default function Navbar({ products = [] }) {
   const [q, setQ] = useState("");
+  const timeoutRef = useRef(null);
 
+  /* ================= DEBOUNCE ================= */
+  const handleSearch = (value) => {
+    clearTimeout(timeoutRef.current);
+
+    timeoutRef.current = setTimeout(() => {
+      setQ(value);
+    }, 150); // ⚡ سريع جدًا
+  };
+
+  /* ================= FAST FILTER ================= */
   const results = useMemo(() => {
-    if (!q?.trim()) return [];
+    const query = q.trim().toLowerCase();
+    if (!query) return [];
 
     return products
+      .slice(0, 200) // ⚡ limit مهم جدًا للأداء
       .filter((p) =>
         String(p?.title || "")
           .toLowerCase()
-          .includes(q.toLowerCase())
+          .includes(query)
       )
       .slice(0, 5);
   }, [q, products]);
@@ -27,16 +40,10 @@ export default function Navbar({ products = [] }) {
         zIndex: 100,
       }}
     >
-      <div
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-        }}
-      >
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <input
           type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search products..."
           aria-label="Search products"
           style={{
@@ -48,6 +55,7 @@ export default function Navbar({ products = [] }) {
           }}
         />
 
+        {/* ================= RESULTS ================= */}
         {results.length > 0 && (
           <div
             style={{
@@ -78,4 +86,4 @@ export default function Navbar({ products = [] }) {
       </div>
     </nav>
   );
-}
+      }
