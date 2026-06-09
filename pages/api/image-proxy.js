@@ -1,95 +1,152 @@
 import sharp from "sharp";
 
-/* ================= EDGE IMAGE CDN PROXY (OPTIMIZED) ================= */
+/* ================= CONFIG ================= */
+const ALLOWED_HOSTS = [
+  "m.media-amazon.com",
+  "images-na.ssl-images-amazon.com",
+  "lh3.googleusercontent.com",
+  "firebasestorage.googleapis.com",
+  "via.placeholder.com",
+];
+
+/* ================= IMAGE CDN PROXY ================= */
 export default async function handler(req, res) {
   try {
-    const { url, w = 500, q = 75 } = req.query;
+    const {
+      url,
+      w = "500",
+      q = "75",
+    } = req.query;
 
     /* ================= VALIDATION ================= */
     if (!url || typeof url !== "string") {
       return res.status(400).json({
+        success: false,
         error: "Missing image url",
       });
     }
 
-    /* ================= SECURITY WHITELIST ================= */
-    const allowedDomains = [
-      "m.media-amazon.com",
-      "images-na.ssl-images-amazon.com",
-      "amazon",
-      "googleusercontent.com",
-      "firebaseapp.com",
-      "via.placeholder.com",
-    ];
+    let parsedUrl;
 
-    const isAllowed = allowedDomains.some((domain) =>
-      url.includes(domain)
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid image url",
+      });
+    }
+
+    /* ================= HOST WHITELIST ================= */
+    const allowed = ALLOWED_HOSTS.some(
+      (host) =>
+        parsedUrl.hostname === host ||
+        parsedUrl.hostname.endsWith(`.${host}`)
     );
 
-    if (!isAllowed) {
+    if (!allowed) {
       return res.status(403).json({
+        success: false,
         error: "Domain not allowed",
       });
     }
 
-    /* ================= CACHE LAYER (FAST EDGE STYLE) ================= */
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=31536000, immutable, stale-while-revalidate=86400"
+    /* ================= SIZE LIMIT ================= */
+    const width = Math.min(
+      Math.max(parseInt(w, 10) || 500, 100),
+      1200
     );
 
-    /* ================= FETCH IMAGE (OPTIMIZED) ================= */
+    const quality = Math.min(
+      Math.max(parseInt(q, 10) || 75, 40),
+      90
+    );
+
+    /* ================= CACHE ================= */
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=31536000, immutable"
+    );
+
+    /* ================= FETCH IMAGE ================= */
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 10000);
+
     const response = await fetch(url, {
+      signal: controller.signal,
       headers: {
-        "User-Agent": "Koloonline-CDN-Bot",
-        "Accept": "image/*",
+        "User-Agent": "Koloonline-CDN",
+        Accept: "image/*",
       },
     });
 
+    clearTimeout(timeout);
+
     if (!response.ok) {
       return res.status(404).json({
+        success: false,
         error: "Image not found",
       });
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer());
-
-    /* ================= FORMAT DETECTION ================= */
-    const accept = req.headers["accept"] || "";
-    const useWebp = accept.includes("image/webp");
-
-    /* ================= IMAGE OPTIMIZATION ================= */
-    const optimizedBuffer = await sharp(buffer)
-      .resize({
-        width: Math.min(Number(w) || 500, 800), // 🔥 limit max size (performance boost)
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .rotate() // 🔥 auto fix orientation (EXIF fix)
-      .webp({ quality: Number(q) }) // 🔥 force WebP for speed (better LCP)
-      .toBuffer();
-
-    /* ================= HEADERS ================= */
-    res.setHeader(
-      "Content-Type",
-      useWebp ? "image/webp" : "image/jpeg"
+    const buffer = Buffer.from(
+      await response.arrayBuffer()
     );
 
+    /* ================= FORMAT ================= */
+    const accept = req.headers.accept || "";
+
+    const supportsAvif = accept.includes("image/avif");
+    const supportsWebp = accept.includes("image/webp");
+
+    let outputBuffer;
+    let contentType;
+
+    const pipeline = sharp(buffer)
+      .rotate()
+      .resize({
+        width,
+        fit: "inside",
+        withoutEnlargement: true,
+      });
+
+    if (supportsAvif) {
+      outputBuffer = await pipeline
+        .avif({ quality })
+        .toBuffer();
+
+      contentType = "image/avif";
+    } else if (supportsWebp) {
+      outputBuffer = await pipeline
+        .webp({ quality })
+        .toBuffer();
+
+      contentType = "image/webp";
+    } else {
+      outputBuffer = await pipeline
+        .jpeg({ quality })
+        .toBuffer();
+
+      contentType = "image/jpeg";
+    }
+
+    /* ================= HEADERS ================= */
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Vary", "Accept");
-
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Optimized-By", "Koloonline-CDN");
 
-    res.setHeader("X-Optimized-By", "Koloonline-CDN-Pro");
-
-    /* ================= RESPONSE ================= */
-    return res.status(200).send(optimizedBuffer);
+    return res.status(200).send(outputBuffer);
 
   } catch (error) {
     console.error("CDN ERROR:", error);
 
     return res.status(500).json({
-      error: "CDN PRO error",
-      message: error.message,
+      success: false,
+      error: "Image optimization failed",
     });
   }
-  }
+                  }
