@@ -4,9 +4,10 @@ import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 
 /* ================= FALLBACK ================= */
-const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Product";
 
-/* ================= SAFE TEXT ================= */
+/* ================= SAFE CORE ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
@@ -30,27 +31,24 @@ const safeText = (v) => {
     return v.map(safeText).join(" ");
   }
 
-  if (typeof v === "object") {
-    return v?.text || v?.title || v?.value || "";
-  }
-
+  // ❌ NEVER allow objects into React
   return "";
 };
 
-/* ================= SAFE IMAGE ================= */
 const safeImage = (img) => {
   if (typeof img === "string" && img.startsWith("http")) {
     return img;
   }
 
   if (img && typeof img === "object") {
-    return img?.url || img?.image || fallbackImage;
+    if (typeof img.url === "string") return img.url;
+    if (typeof img.image === "string") return img.image;
   }
 
   return fallbackImage;
 };
 
-/* ================= NORMALIZE PRODUCT ================= */
+/* ================= NORMALIZER ================= */
 const normalizeProduct = (p) => {
   if (!p || typeof p !== "object") return null;
 
@@ -63,6 +61,7 @@ const normalizeProduct = (p) => {
   };
 };
 
+/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
   const p = normalizeProduct(product);
 
@@ -77,7 +76,10 @@ export default function ProductPage({ product, related }) {
       {/* ================= SEO ================= */}
       <Head>
         <title>{p.title || "Product"}</title>
-        <meta name="description" content={p.description || p.title} />
+        <meta
+          name="description"
+          content={p.description || p.title || ""}
+        />
         <link rel="canonical" href={url} />
       </Head>
 
@@ -93,9 +95,9 @@ export default function ProductPage({ product, related }) {
           priority
         />
 
-        {p.price && <h2>${p.price}</h2>}
+        {p.price ? <h2>${p.price}</h2> : null}
 
-        {p.description && <p>{p.description}</p>}
+        {p.description ? <p>{p.description}</p> : null}
 
         <Link href="/products">← Back</Link>
 
@@ -112,12 +114,12 @@ export default function ProductPage({ product, related }) {
                 gap: 12,
               }}
             >
-              {related.map((item) => {
+              {related.map((item, i) => {
                 const rp = normalizeProduct(item);
                 if (!rp?.id) return null;
 
                 return (
-                  <Link key={rp.id} href={`/product/${rp.id}`}>
+                  <Link key={`${rp.id}-${i}`} href={`/product/${rp.id}`}>
                     <div>
                       <Image
                         src={rp.image || fallbackImage}
@@ -144,6 +146,10 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
+    if (!Array.isArray(products)) {
+      return { notFound: true };
+    }
+
     const productRaw = products.find(
       (p) => String(p?.id) === String(params?.id)
     );
@@ -154,7 +160,7 @@ export async function getStaticProps({ params }) {
 
     const related = products
       .filter((p) => String(p?.id) !== String(params?.id))
-      .slice(0, 4)
+      .slice(0, 6)
       .map(normalizeProduct)
       .filter(Boolean);
 
@@ -166,7 +172,6 @@ export async function getStaticProps({ params }) {
       revalidate: 3600,
     };
   } catch (e) {
-    console.error("getStaticProps error:", e);
     return { notFound: true };
   }
 }
@@ -176,25 +181,21 @@ export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
-    const paths = products
+    const paths = (products || [])
       .filter((p) => p?.id)
       .slice(0, 50)
       .map((p) => ({
         params: { id: String(p.id) },
       }));
 
-    console.log("🔥 STATIC PATHS:", paths.length);
-
     return {
       paths,
       fallback: "blocking",
     };
-  } catch (e) {
-    console.error("STATIC PATHS ERROR:", e);
-
+  } catch {
     return {
       paths: [],
       fallback: "blocking",
     };
   }
-}
+    }
