@@ -1,132 +1,86 @@
 import Head from "next/head";
-import { useEffect, useState, useMemo } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../config/firebase";
 
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
 /* ================= PAGE ================= */
-export default function SearchPage() {
+export default function SearchPage({ products }) {
   const router = useRouter();
-
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-
   const [suggestions, setSuggestions] = useState([]);
-  const [blogPosts, setBlogPosts] = useState([]);
 
-  /* ================= FETCH PRODUCTS ================= */
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
+  const timeoutRef = useRef(null);
 
-        const snap = await getDocs(collection(db, "products"));
+  /* ================= DEBOUNCED SEARCH ================= */
+  const handleSearch = (value) => {
+    clearTimeout(timeoutRef.current);
 
-        const data = snap.docs.map((doc) => {
-          const d = doc.data();
+    timeoutRef.current = setTimeout(() => {
+      setSearch(value);
+    }, 200);
+  };
 
-          const aiScore =
-            (d.views || 0) * 1 +
-            (d.clicks || 0) * 3 +
-            (d.orders || 0) * 8 +
-            (d.viralBoost ? 40 : 0);
+  /* ================= AI SCORE ================= */
+  const enrichedProducts = useMemo(() => {
+    return products.map((d) => {
+      const aiScore =
+        (d.views || 0) * 1 +
+        (d.clicks || 0) * 3 +
+        (d.orders || 0) * 8 +
+        (d.viralBoost ? 40 : 0);
 
-          return {
-            id: doc.id,
-            ...d,
-            aiScore,
-          };
-        });
+      return {
+        ...d,
+        aiScore,
+      };
+    });
+  }, [products]);
 
-        setProducts(data);
-      } catch (err) {
-        console.error("Products error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  /* ================= BLOG POSTS ================= */
-  useEffect(() => {
-    const fetchBlogPosts = async () => {
-      try {
-        const res = await fetch(
-          "https://api.rss2json.com/v1/api.json?rss_url=https://linasobhy.blogspot.com/feeds/posts/default?alt=rss"
-        );
-
-        const data = await res.json();
-
-        if (data?.items) {
-          setBlogPosts(data.items.slice(0, 4));
-        }
-      } catch (e) {
-        console.error("Blog error:", e);
-      }
-    };
-
-    fetchBlogPosts();
-  }, []);
-
-  /* ================= SUGGESTIONS ================= */
+  /* ================= SUGGESTIONS (LIGHTWEIGHT) ================= */
   useEffect(() => {
     if (!search) {
       setSuggestions([]);
       return;
     }
 
-    const results = products
-      .filter((p) =>
-        (p.title || "")
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      )
+    const lower = search.toLowerCase();
+
+    const results = enrichedProducts
+      .filter((p) => (p.title || "").toLowerCase().includes(lower))
       .sort((a, b) => b.aiScore - a.aiScore)
-      .slice(0, 6);
+      .slice(0, 5); // 🔥 limit for performance
 
     setSuggestions(results);
-  }, [search, products]);
+  }, [search, enrichedProducts]);
 
   /* ================= FILTER ================= */
   const filtered = useMemo(() => {
-    return products
+    const lower = search.toLowerCase();
+
+    return enrichedProducts
       .filter((p) => {
         const title = (p.title || "").toLowerCase();
         const cat = (p.category || "").toLowerCase();
 
-        const searchMatch = title.includes(search.toLowerCase());
-
-        const categoryMatch =
-          category === "all"
-            ? true
-            : cat === category.toLowerCase();
-
-        return searchMatch && categoryMatch;
+        return (
+          title.includes(lower) &&
+          (category === "all" || cat === category.toLowerCase())
+        );
       })
-      .sort((a, b) => b.aiScore - a.aiScore);
-  }, [products, search, category]);
-
-  /* ================= CATEGORIES ================= */
-  const categories = useMemo(() => {
-    return [
-      "all",
-      ...new Set(products.map((p) => p.category).filter(Boolean)),
-    ];
-  }, [products]);
+      .sort((a, b) => b.aiScore - a.aiScore)
+      .slice(0, 60); // 🔥 limit DOM load
+  }, [enrichedProducts, search, category]);
 
   return (
     <div style={{ background: "#f4f6f9", minHeight: "100vh" }}>
-
       {/* ================= SEO ================= */}
       <Head>
         <title>Search Products | Koloonline</title>
@@ -134,11 +88,10 @@ export default function SearchPage() {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      {/* ================= SEARCH INPUT ================= */}
+      {/* ================= SEARCH ================= */}
       <div style={{ padding: 20 }}>
         <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search products..."
           style={{
             padding: 12,
@@ -152,7 +105,7 @@ export default function SearchPage() {
         {suggestions.length > 0 && (
           <div
             style={{
-              background: "white",
+              background: "#fff",
               marginTop: 5,
               borderRadius: 8,
               overflow: "hidden",
@@ -176,49 +129,71 @@ export default function SearchPage() {
       </div>
 
       {/* ================= PRODUCTS ================= */}
-      {loading ? (
-        <p style={{ padding: 20 }}>Loading...</p>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(220px,1fr))",
-            gap: 20,
-            padding: 20,
-          }}
-        >
-          {filtered.map((p) => (
-            <Link key={p.id} href={`/product/${p.id}`}>
-              <div
-                style={{
-                  background: "white",
-                  padding: 15,
-                  borderRadius: 12,
-                  cursor: "pointer",
-                }}
-              >
-                <Image
-                  src={p.image || fallbackImage}
-                  width={300}
-                  height={300}
-                  alt={p.title || "product"}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                  }}
-                />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gap: 20,
+          padding: 20,
+        }}
+      >
+        {filtered.map((p) => (
+          <Link key={p.id} href={`/product/${p.id}`}>
+            <div
+              style={{
+                background: "white",
+                padding: 15,
+                borderRadius: 12,
+                cursor: "pointer",
+              }}
+            >
+              <Image
+                src={p.image || fallbackImage}
+                width={300}
+                height={300}
+                alt={p.title || "product"}
+                style={{ width: "100%", height: "auto" }}
+              />
 
-                <h3>{p.title}</h3>
+              <h3>{p.title}</h3>
 
-                <p style={{ color: "#B12704" }}>
-                  ${p.price || 0}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+              <p style={{ color: "#B12704" }}>
+                ${p.price || 0}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
-    }
+}
+
+/* ================= ISR + FIREBASE (SERVER SIDE ONLY) ================= */
+export async function getStaticProps() {
+  try {
+    const snap = await getDocs(collection(db, "products"));
+
+    const products = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return {
+      props: {
+        products,
+      },
+
+      revalidate: 300, // 🔥 5 minutes cache
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      props: {
+        products: [],
+      },
+
+      revalidate: 300,
+    };
+  }
+            }
