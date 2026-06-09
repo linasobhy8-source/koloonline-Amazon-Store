@@ -1,124 +1,148 @@
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
-/* ================= FIREBASE INIT ================= */
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
 /* ================= HELPERS ================= */
-function cleanUrl(url) {
-  return typeof url === "string"
-    ? url.replace(/\/+$/, "").trim()
-    : null;
+function safeString(v) {
+  if (
+    typeof v === "string" &&
+    v.trim().length > 0
+  ) {
+    return v.trim();
+  }
+
+  return null;
 }
 
-function safeString(v) {
-  return typeof v === "string" && v.trim().length > 0
-    ? v.trim()
-    : null;
+function cleanUrl(url) {
+  if (!url || typeof url !== "string") return null;
+
+  return url.replace(/\/+$/, "").trim();
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
-  const startTime = Date.now();
+  const start = Date.now();
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      error: "Method Not Allowed",
+    });
+  }
 
   try {
-    const key = process.env.INDEXNOW_KEY;
-    const baseUrl = "https://koloonline.online";
+    const INDEXNOW_KEY = process.env.INDEXNOW_KEY;
 
-    if (!key) {
+    if (!INDEXNOW_KEY) {
       return res.status(500).json({
         success: false,
         error: "Missing INDEXNOW_KEY",
       });
     }
 
-    /* ================= STATIC CORE PAGES ================= */
-    const staticUrls = [
+    const baseUrl = "https://koloonline.online";
+
+    /* ================= CACHE ================= */
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=300, stale-while-revalidate=600"
+    );
+
+    /* ================= STATIC URLS ================= */
+    const urlSet = new Set([
       baseUrl,
       `${baseUrl}/blog`,
       `${baseUrl}/products`,
       `${baseUrl}/categories`,
       `${baseUrl}/search`,
       `${baseUrl}/amazon-haul`,
-      `${baseUrl}/fiverr`,
       `${baseUrl}/aliexpress`,
-    ];
+      `${baseUrl}/fiverr`,
+    ]);
+
+    /* ================= FETCH FIRESTORE ================= */
+    const [productsSnap, blogSnap] = await Promise.all([
+      getDocs(collection(db, "products")),
+      getDocs(collection(db, "blog")),
+    ]);
 
     /* ================= PRODUCTS ================= */
-    const productsSnap = await getDocs(collection(db, "products"));
+    productsSnap.docs.forEach((doc) => {
+      const id = safeString(doc.id);
 
-    const productUrls = productsSnap.docs
-      .map((doc) => {
-        const id = safeString(doc.id);
-        return id ? `${baseUrl}/product/${id}` : null;
-      })
-      .filter(Boolean)
-      .slice(0, 200);
+      if (id) {
+        urlSet.add(`${baseUrl}/product/${id}`);
+      }
 
-    /* ================= BLOGS ================= */
-    const blogSnap = await getDocs(collection(db, "blog"));
+      const category = safeString(
+        doc.data()?.category
+      );
 
-    const blogUrls = blogSnap.docs
-      .map((doc) => {
-        const data = doc.data();
-        const slug = safeString(data?.slug || doc.id);
+      if (category) {
+        urlSet.add(
+          `${baseUrl}/category/${encodeURIComponent(
+            category.toLowerCase()
+          )}`
+        );
+      }
+    });
 
-        return slug ? `${baseUrl}/blog/${slug}` : null;
-      })
-      .filter(Boolean)
-      .slice(0, 150);
+    /* ================= BLOG ================= */
+    blogSnap.docs.forEach((doc) => {
+      const data = doc.data();
 
-    /* ================= CATEGORIES ================= */
-    const categoriesSnap = await getDocs(collection(db, "products"));
+      const slug = safeString(
+        data?.slug || doc.id
+      );
 
-    const categoryUrls = [
-      ...new Set(
-        categoriesSnap.docs
-          .map((doc) => {
-            const cat = safeString(doc.data()?.category);
-            return cat
-              ? `${baseUrl}/category/${cat.toLowerCase()}`
-              : null;
-          })
-          .filter(Boolean)
-      ),
-    ];
+      if (slug) {
+        urlSet.add(`${baseUrl}/blog/${slug}`);
+      }
+    });
 
-    /* ================= MERGE ALL ================= */
-    const allUrls = [
-      ...new Set([...staticUrls, ...productUrls, ...blogUrls, ...categoryUrls]),
-    ]
+    /* ================= CLEAN ================= */
+    const allUrls = [...urlSet]
       .map(cleanUrl)
       .filter(Boolean);
 
-    /* ================= PRIORITY FILTER ================= */
+    /* ================= PRIORITY ================= */
     const priorityUrls = allUrls.filter(
-      (u) =>
-        u.includes("/product/") ||
-        u.includes("/blog/") ||
-        u.includes("/category/") ||
-        u === baseUrl
+      (url) =>
+        url === baseUrl ||
+        url.includes("/product/") ||
+        url.includes("/blog/") ||
+        url.includes("/category/")
     );
 
-    /* ================= CHUNKING ================= */
-    const chunkSize = 50;
+    /* ================= CHUNK ================= */
+    const CHUNK_SIZE = 100;
+
     const chunks = [];
 
-    for (let i = 0; i < priorityUrls.length; i += chunkSize) {
-      chunks.push(priorityUrls.slice(i, i + chunkSize));
+    for (
+      let i = 0;
+      i < priorityUrls.length;
+      i += CHUNK_SIZE
+    ) {
+      chunks.push(
+        priorityUrls.slice(i, i + CHUNK_SIZE)
+      );
     }
 
-    /* ================= INDEXNOW PUSH ================= */
+    /* ================= INDEXNOW ================= */
     const results = [];
 
     for (const chunk of chunks) {
@@ -128,55 +152,57 @@ export default async function handler(req, res) {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type":
+                "application/json",
             },
             body: JSON.stringify({
               host: "koloonline.online",
-              key,
+              key: INDEXNOW_KEY,
               urlList: chunk,
             }),
           }
         );
 
         results.push({
-          count: chunk.length,
           status: response.status,
           ok: response.ok,
+          urls: chunk.length,
         });
       } catch (err) {
         results.push({
-          error: err?.message || "IndexNow chunk failed",
+          ok: false,
+          error:
+            err?.message ||
+            "IndexNow Request Failed",
         });
       }
     }
 
     /* ================= GOOGLE PING ================= */
-    try {
-      await fetch(
-        "https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml"
-      );
-    } catch (e) {
-      results.push({
-        googlePingError: e?.message,
-      });
-    }
+    fetch(
+      "https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml"
+    ).catch(() => {});
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      runtime: Date.now() - startTime,
+      runtime: Date.now() - start,
       totalUrls: allUrls.length,
       indexedUrls: priorityUrls.length,
       chunks: chunks.length,
       results,
     });
-
-  } catch (e) {
-    console.error("IndexNow Error:", e);
+  } catch (error) {
+    console.error(
+      "INDEXNOW ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      error: e?.message || "Unknown error",
+      error:
+        error?.message ||
+        "Internal Server Error",
     });
   }
-  }
+              }
