@@ -19,6 +19,12 @@ const safeText = (v) => {
     return String(v);
   }
 
+  if (v && typeof v === "object") {
+    if (typeof v.text === "string") return v.text;
+    if (typeof v.title === "string") return v.title;
+    if (typeof v.value === "string") return v.value;
+  }
+
   if (v?.toDate && typeof v.toDate === "function") {
     try {
       return v.toDate().toISOString();
@@ -27,18 +33,12 @@ const safeText = (v) => {
     }
   }
 
-  if (Array.isArray(v)) {
-    return v.map(safeText).join(" ");
-  }
-
-  // ❌ NEVER allow objects into React
   return "";
 };
 
+/* ================= SAFE IMAGE ================= */
 const safeImage = (img) => {
-  if (typeof img === "string" && img.startsWith("http")) {
-    return img;
-  }
+  if (typeof img === "string" && img.startsWith("http")) return img;
 
   if (img && typeof img === "object") {
     if (typeof img.url === "string") return img.url;
@@ -48,7 +48,7 @@ const safeImage = (img) => {
   return fallbackImage;
 };
 
-/* ================= NORMALIZER ================= */
+/* ================= NORMALIZE PRODUCT ================= */
 const normalizeProduct = (p) => {
   if (!p || typeof p !== "object") return null;
 
@@ -61,11 +61,10 @@ const normalizeProduct = (p) => {
   };
 };
 
-/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
   const p = normalizeProduct(product);
 
-  if (!p?.id) {
+  if (!p || !p.id) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
@@ -76,10 +75,7 @@ export default function ProductPage({ product, related }) {
       {/* ================= SEO ================= */}
       <Head>
         <title>{p.title || "Product"}</title>
-        <meta
-          name="description"
-          content={p.description || p.title || ""}
-        />
+        <meta name="description" content={p.description || p.title || ""} />
         <link rel="canonical" href={url} />
       </Head>
 
@@ -88,7 +84,7 @@ export default function ProductPage({ product, related }) {
         <h1>{p.title || "Untitled Product"}</h1>
 
         <Image
-          src={p.image || fallbackImage}
+          src={p.image}
           width={500}
           height={500}
           alt={p.title || "product"}
@@ -122,13 +118,13 @@ export default function ProductPage({ product, related }) {
                   <Link key={`${rp.id}-${i}`} href={`/product/${rp.id}`}>
                     <div>
                       <Image
-                        src={rp.image || fallbackImage}
+                        src={rp.image}
                         width={200}
                         height={200}
                         alt={rp.title || "product"}
                         loading="lazy"
                       />
-                      <p>{rp.title || "No title"}</p>
+                      <p>{rp.title || ""}</p>
                     </div>
                   </Link>
                 );
@@ -146,10 +142,6 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    if (!Array.isArray(products)) {
-      return { notFound: true };
-    }
-
     const productRaw = products.find(
       (p) => String(p?.id) === String(params?.id)
     );
@@ -158,11 +150,9 @@ export async function getStaticProps({ params }) {
 
     const product = normalizeProduct(productRaw);
 
-    const related = products
+    const related = (products || [])
       .filter((p) => String(p?.id) !== String(params?.id))
-      .slice(0, 6)
-      .map(normalizeProduct)
-      .filter(Boolean);
+      .slice(0, 6);
 
     return {
       props: {
@@ -181,15 +171,13 @@ export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
-    const paths = (products || [])
-      .filter((p) => p?.id)
-      .slice(0, 50)
-      .map((p) => ({
-        params: { id: String(p.id) },
-      }));
-
     return {
-      paths,
+      paths: (products || [])
+        .filter((p) => p?.id)
+        .slice(0, 50)
+        .map((p) => ({
+          params: { id: String(p.id) },
+        })),
       fallback: "blocking",
     };
   } catch {
@@ -198,4 +186,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-    }
+            }
