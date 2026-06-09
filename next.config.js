@@ -1,15 +1,12 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  reactStrictMode: true, // 🔥 مهم لكشف أخطاء React اللي عندك (زي #130)
+  reactStrictMode: true,
 
   compress: true,
   poweredByHeader: false,
 
   productionBrowserSourceMaps: false,
-
-  // 🔥 أفضل للأداء + تقليل bundle size
-  swcMinify: true,
 
   images: {
     formats: ["image/avif", "image/webp"],
@@ -49,8 +46,7 @@ const nextConfig = {
       "@vercel/speed-insights",
     ],
 
-    // 🔥 تحسين مهم في Next 15 (بيقلل مشاكل build عند static generation)
-    serverComponentsExternalPackages: ["firebase"],
+    // ❌ مهم: اتحذف serverComponentsExternalPackages لأنه سبب الخطأ في Next 15
   },
 };
 
