@@ -16,13 +16,12 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
-    console.error("App Error:", error);
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("Component Crash:", error);
+    console.error("App Crash:", error);
     console.error(errorInfo);
   }
 
@@ -32,7 +31,7 @@ class ErrorBoundary extends Component {
         <div
           style={{
             padding: 20,
-            fontFamily: "sans-serif",
+            fontFamily: "Arial",
             minHeight: "100vh",
             display: "flex",
             alignItems: "center",
@@ -63,7 +62,7 @@ export default function App({ Component, pageProps }) {
           <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         </Head>
 
-        {/* ================= GTM SCRIPT ================= */}
+        {/* ================= GTM ================= */}
         <Script
           id="gtm"
           strategy="afterInteractive"
@@ -92,9 +91,9 @@ export default function App({ Component, pageProps }) {
 
         <Footer />
 
-        {/* ================= ANALYTICS ================= */}
+        {/* ================= SPEED INSIGHTS ================= */}
         <SpeedInsights />
       </>
     </ErrorBoundary>
   );
-  }
+    }
