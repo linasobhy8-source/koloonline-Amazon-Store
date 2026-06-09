@@ -53,6 +53,7 @@ export default function App({ Component, pageProps }) {
   return (
     <ErrorBoundary>
       <>
+        {/* ================= HEAD ================= */}
         <Head>
           <meta charSet="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,7 +63,7 @@ export default function App({ Component, pageProps }) {
           <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         </Head>
 
-        {/* ================= GOOGLE TAG MANAGER ================= */}
+        {/* ================= GTM SCRIPT ================= */}
         <Script
           id="gtm"
           strategy="afterInteractive"
@@ -70,37 +71,17 @@ export default function App({ Component, pageProps }) {
             __html: `
               (function(w,d,s,l,i){
                 w[l]=w[l]||[];
-                w[l].push({
-                  'gtm.start': new Date().getTime(),
-                  event:'gtm.js'
-                });
-
+                w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
                 var f=d.getElementsByTagName(s)[0],
                 j=d.createElement(s),
                 dl=l!='dataLayer'?'&l='+l:'';
-
                 j.async=true;
                 j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-
                 f.parentNode.insertBefore(j,f);
-
               })(window,document,'script','dataLayer','GTM-KNQM8KBN');
             `,
           }}
         />
-
-        {/* ================= GTM NOSCRIPT ================= */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
-            height="0"
-            width="0"
-            style={{
-              display: "none",
-              visibility: "hidden",
-            }}
-          />
-        </noscript>
 
         {/* ================= LAYOUT ================= */}
         <Navbar />
@@ -111,9 +92,9 @@ export default function App({ Component, pageProps }) {
 
         <Footer />
 
-        {/* ================= VERCEL SPEED ================= */}
+        {/* ================= ANALYTICS ================= */}
         <SpeedInsights />
       </>
     </ErrorBoundary>
   );
-}
+  }
