@@ -2,88 +2,44 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { optimizeAmazonImage } from "../../lib/amazonImage";
-
-const fallbackImage = "https://via.placeholder.com/500x500";
-
-/* ================= SAFE FUNCTION ================= */
-const safe = (v) => {
-  if (v === null || v === undefined) return "";
-
-  if (
-    typeof v === "string" ||
-    typeof v === "number" ||
-    typeof v === "boolean"
-  ) {
-    return String(v);
-  }
-
-  if (v && typeof v.toDate === "function") {
-    try {
-      return v.toDate().toISOString();
-    } catch {
-      return "";
-    }
-  }
-
-  if (Array.isArray(v)) {
-    return v.map(safe).join(" ");
-  }
-
-  // prevent React crash
-  return JSON.stringify(v || "");
-};
-
-/* ================= SAFE IMAGE ================= */
-const safeImage = (img) => {
-  if (typeof img !== "string") return fallbackImage;
-
-  const fixed = optimizeAmazonImage(img);
-
-  if (typeof fixed !== "string" || !fixed.startsWith("http")) {
-    return fallbackImage;
-  }
-
-  return fixed;
-};
+import { safeProduct, safeProducts } from "../../lib/safe";
 
 export default function ProductPage({ product, related }) {
-  if (!product) {
+  // 🔥 IMPORTANT: normalize once
+  const p = safeProduct(product);
+
+  if (!p) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  const id = safe(product.id);
-  const title = safe(product.title);
-  const description = safe(product.description);
-  const price = safe(product.price);
-
-  const url = `https://koloonline.online/product/${id}`;
+  const url = `https://koloonline.online/product/${p.id}`;
 
   return (
     <>
       <Head>
-        <title>{title || "Product"}</title>
-        <meta name="description" content={description || title} />
+        <title>{p.title || "Product"}</title>
+        <meta name="description" content={p.description || p.title} />
         <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{title}</h1>
+        <h1>{p.title}</h1>
 
         <Image
-          src={safeImage(product.image)}
+          src={p.image}
           width={500}
           height={500}
-          alt={title}
+          alt={p.title || "Product"}
           priority
         />
 
-        {price && <h2>${price}</h2>}
+        {p.price && <h2>${p.price}</h2>}
 
-        {description && <p>{description}</p>}
+        {p.description && <p>{p.description}</p>}
 
         <Link href="/products">← Back</Link>
 
+        {/* ================= RELATED ================= */}
         {Array.isArray(related) && related.length > 0 && (
           <>
             <h2 style={{ marginTop: 30 }}>Related</h2>
@@ -91,27 +47,25 @@ export default function ProductPage({ product, related }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(180px, 1fr))",
                 gap: 12,
               }}
             >
-              {related.map((p) => {
-                const pid = safe(p?.id);
-                const ptitle = safe(p?.title);
-
-                if (!pid) return null;
+              {safeProducts(related).map((item) => {
+                if (!item?.id) return null;
 
                 return (
-                  <Link key={pid} href={`/product/${pid}`}>
+                  <Link key={item.id} href={`/product/${item.id}`}>
                     <div>
                       <Image
-                        src={safeImage(p?.image)}
+                        src={item.image}
                         width={200}
                         height={200}
-                        alt={ptitle}
+                        alt={item.title || "Product"}
                         loading="lazy"
                       />
-                      <p>{ptitle}</p>
+                      <p>{item.title}</p>
                     </div>
                   </Link>
                 );
@@ -129,10 +83,6 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    if (!Array.isArray(products)) {
-      return { notFound: true };
-    }
-
     const product = products.find(
       (p) => String(p?.id) === String(params?.id)
     );
@@ -147,8 +97,8 @@ export async function getStaticProps({ params }) {
 
     return {
       props: {
-        product: JSON.parse(JSON.stringify(product)),
-        related: JSON.parse(JSON.stringify(related)),
+        product, // ❗ raw data (safeProduct inside component)
+        related,
       },
       revalidate: 3600,
     };
@@ -162,22 +112,16 @@ export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
-    console.log("🔥 STATIC PATHS PRODUCTS:", products.length);
-
     return {
-      paths: products
-        .filter((p) => p?.id)
-        .map((p) => ({
-          params: { id: String(p.id) },
-        })),
+      paths: products.map((p) => ({
+        params: { id: String(p.id) },
+      })),
       fallback: "blocking",
     };
-  } catch (e) {
-    console.error("STATIC PATHS ERROR:", e);
-
+  } catch {
     return {
       paths: [],
       fallback: "blocking",
     };
   }
-    }
+}
