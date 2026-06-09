@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 
-/* ================= SAFE (FINAL FIX) ================= */
+/* ================= SAFE TEXT (FINAL) ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
@@ -27,14 +27,16 @@ const safeText = (v) => {
     return v.map(safeText).join(" ");
   }
 
-  return ""; // ❗ NEVER return object
+  return "";
 };
 
-/* ================= SAFE IMAGE ================= */
+/* ================= SAFE IMAGE (FINAL) ================= */
 const fallbackImage = "https://via.placeholder.com/500x500";
 
 const safeImage = (img) => {
-  if (typeof img === "string" && img.startsWith("http")) return img;
+  if (typeof img === "string" && img.startsWith("http")) {
+    return img;
+  }
 
   if (img && typeof img === "object") {
     if (typeof img.url === "string") return img.url;
@@ -44,66 +46,81 @@ const safeImage = (img) => {
   return fallbackImage;
 };
 
+/* ================= NORMALIZE PRODUCT ================= */
+const normalizeProduct = (p) => {
+  if (!p || typeof p !== "object") return null;
+
+  return {
+    id: safeText(p.id),
+    title: safeText(p.title),
+    description: safeText(p.description),
+    image: safeImage(p.image),
+    price: safeText(p.price),
+  };
+};
+
 export default function ProductPage({ product, related }) {
-  if (!product) {
+  const p = normalizeProduct(product);
+
+  if (!p || !p.id) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  const id = safeText(product.id);
-  const title = safeText(product.title);
-  const description = safeText(product.description);
-  const price = safeText(product.price);
-
-  const url = `https://koloonline.online/product/${id}`;
+  const url = `https://koloonline.online/product/${p.id}`;
 
   return (
     <>
       <Head>
-        <title>{title || "Product"}</title>
-        <meta name="description" content={description || title} />
+        <title>{p.title || "Product"}</title>
+        <meta name="description" content={p.description || p.title} />
         <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{title}</h1>
+        <h1>{p.title}</h1>
 
         <Image
-          src={safeImage(product.image)}
+          src={p.image}
           width={500}
           height={500}
-          alt={title}
+          alt={p.title || "product"}
           priority
         />
 
-        {price && <h2>${price}</h2>}
+        {p.price && <h2>${p.price}</h2>}
 
-        {description && <p>{description}</p>}
+        {p.description && <p>{p.description}</p>}
 
         <Link href="/products">← Back</Link>
 
-        {/* RELATED */}
+        {/* ================= RELATED ================= */}
         {Array.isArray(related) && related.length > 0 && (
           <>
             <h2 style={{ marginTop: 30 }}>Related</h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
-              {related.map((p) => {
-                const pid = safeText(p?.id);
-                const ptitle = safeText(p?.title);
-
-                if (!pid) return null;
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: 12,
+              }}
+            >
+              {related.map((item) => {
+                const rp = normalizeProduct(item);
+                if (!rp?.id) return null;
 
                 return (
-                  <Link key={pid} href={`/product/${pid}`}>
+                  <Link key={rp.id} href={`/product/${rp.id}`}>
                     <div>
                       <Image
-                        src={safeImage(p?.image)}
+                        src={rp.image}
                         width={200}
                         height={200}
-                        alt={ptitle}
+                        alt={rp.title || "product"}
                         loading="lazy"
                       />
-                      <p>{ptitle}</p>
+                      <p>{rp.title}</p>
                     </div>
                   </Link>
                 );
@@ -138,7 +155,7 @@ export async function getStaticProps({ params }) {
       },
       revalidate: 3600,
     };
-  } catch {
+  } catch (e) {
     return { notFound: true };
   }
 }
@@ -160,4 +177,4 @@ export async function getStaticPaths() {
   } catch {
     return { paths: [], fallback: "blocking" };
   }
-         }
+}
