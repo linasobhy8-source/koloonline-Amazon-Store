@@ -8,27 +8,16 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig);
-
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* ================= HELPERS ================= */
 function safeString(v) {
-  if (
-    typeof v === "string" &&
-    v.trim().length > 0
-  ) {
-    return v.trim();
-  }
-
-  return null;
+  return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
 function cleanUrl(url) {
   if (!url || typeof url !== "string") return null;
-
   return url.replace(/\/+$/, "").trim();
 }
 
@@ -55,7 +44,6 @@ export default async function handler(req, res) {
 
     const baseUrl = "https://koloonline.online";
 
-    /* ================= CACHE ================= */
     res.setHeader(
       "Cache-Control",
       "public, s-maxage=300, stale-while-revalidate=600"
@@ -73,7 +61,7 @@ export default async function handler(req, res) {
       `${baseUrl}/fiverr`,
     ]);
 
-    /* ================= FETCH FIRESTORE ================= */
+    /* ================= FIRESTORE ================= */
     const [productsSnap, blogSnap] = await Promise.all([
       getDocs(collection(db, "products")),
       getDocs(collection(db, "blog")),
@@ -82,15 +70,9 @@ export default async function handler(req, res) {
     /* ================= PRODUCTS ================= */
     productsSnap.docs.forEach((doc) => {
       const id = safeString(doc.id);
+      if (id) urlSet.add(`${baseUrl}/product/${id}`);
 
-      if (id) {
-        urlSet.add(`${baseUrl}/product/${id}`);
-      }
-
-      const category = safeString(
-        doc.data()?.category
-      );
-
+      const category = safeString(doc.data()?.category);
       if (category) {
         urlSet.add(
           `${baseUrl}/category/${encodeURIComponent(
@@ -103,22 +85,16 @@ export default async function handler(req, res) {
     /* ================= BLOG ================= */
     blogSnap.docs.forEach((doc) => {
       const data = doc.data();
-
-      const slug = safeString(
-        data?.slug || doc.id
-      );
-
-      if (slug) {
-        urlSet.add(`${baseUrl}/blog/${slug}`);
-      }
+      const slug = safeString(data?.slug || doc.id);
+      if (slug) urlSet.add(`${baseUrl}/blog/${slug}`);
     });
 
-    /* ================= CLEAN ================= */
+    /* ================= CLEAN URLS ================= */
     const allUrls = [...urlSet]
       .map(cleanUrl)
       .filter(Boolean);
 
-    /* ================= PRIORITY ================= */
+    /* ================= PRIORITY URLS ================= */
     const priorityUrls = allUrls.filter(
       (url) =>
         url === baseUrl ||
@@ -129,17 +105,10 @@ export default async function handler(req, res) {
 
     /* ================= CHUNK ================= */
     const CHUNK_SIZE = 100;
-
     const chunks = [];
 
-    for (
-      let i = 0;
-      i < priorityUrls.length;
-      i += CHUNK_SIZE
-    ) {
-      chunks.push(
-        priorityUrls.slice(i, i + CHUNK_SIZE)
-      );
+    for (let i = 0; i < priorityUrls.length; i += CHUNK_SIZE) {
+      chunks.push(priorityUrls.slice(i, i + CHUNK_SIZE));
     }
 
     /* ================= INDEXNOW ================= */
@@ -152,8 +121,7 @@ export default async function handler(req, res) {
           {
             method: "POST",
             headers: {
-              "Content-Type":
-                "application/json",
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               host: "koloonline.online",
@@ -171,19 +139,16 @@ export default async function handler(req, res) {
       } catch (err) {
         results.push({
           ok: false,
-          error:
-            err?.message ||
-            "IndexNow Request Failed",
+          error: err?.message || "IndexNow Request Failed",
         });
       }
     }
 
     /* ================= GOOGLE PING ================= */
     fetch(
-      "https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml"
+      `https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml`
     ).catch(() => {});
 
-    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       runtime: Date.now() - start,
@@ -193,16 +158,9 @@ export default async function handler(req, res) {
       results,
     });
   } catch (error) {
-    console.error(
-      "INDEXNOW ERROR:",
-      error
-    );
-
     return res.status(500).json({
       success: false,
-      error:
-        error?.message ||
-        "Internal Server Error",
+      error: error?.message || "Internal Server Error",
     });
   }
-              }
+      }
