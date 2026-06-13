@@ -1,16 +1,36 @@
 export default async function handler(req, res) {
   try {
-    const baseUrl = "https://koloonline.online";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      "https://koloonline.online";
 
-    /* ================= INPUT ================= */
-    const { type } = req.body || {};
+    const { type = "all", force = false } = req.body || {};
 
-    /* ================= DECISION ENGINE ================= */
+    console.log("🧠 V6 SEO BRAIN STARTED:", { type });
 
+    /* ================= SAFE FETCH ================= */
+    const safeFetch = async (url, options = {}) => {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
+        const res = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+        return { ok: true, status: res.status };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    };
+
+    /* ================= INTELLIGENCE SIGNALS ================= */
     const signals = {
       content: {
-        blog: true,
-        product: true,
+        blog: type === "blog" || type === "all",
+        product: type === "product" || type === "all",
       },
 
       ranking: {
@@ -26,72 +46,122 @@ export default async function handler(req, res) {
       },
     };
 
-    /* ================= CLUSTER BOOST LOGIC ================= */
+    /* ================= SIMPLE INTELLIGENCE SCORE ================= */
+    let score = 50;
 
-    const clusterBoost = {
-      enabled: true,
-      weight: 1.8,
-      discoverPriority: "HIGH",
-    };
+    if (type === "blog") score += 15;
+    if (type === "product") score += 15;
+    if (force) score += 20;
 
-    /* ================= AUTO TRIGGERS ================= */
+    const isAggressiveMode = score >= 80;
 
+    console.log("📊 Brain Score:", score);
+
+    /* ================= ACTION QUEUE ================= */
     const actions = [];
 
-    /* 1. Home Feed */
+    // Core systems (always run)
     actions.push(
-      fetch(`${baseUrl}/api/home-feed`, { method: "POST" }).catch(() => {})
+      safeFetch(`${baseUrl}/api/home-feed`, { method: "POST" })
     );
 
-    /* 2. Neural Ranking */
     actions.push(
-      fetch(`${baseUrl}/api/neural-ranking-engine-v2`, {
+      safeFetch(`${baseUrl}/api/neural-ranking-engine-v2`, {
         method: "POST",
-      }).catch(() => {})
+      })
     );
 
-    /* 3. Profit Engine */
     actions.push(
-      fetch(`${baseUrl}/api/ai-profit-engine-v2`, {
+      safeFetch(`${baseUrl}/api/ai-profit-engine-v2`, {
         method: "POST",
-      }).catch(() => {})
+      })
     );
 
-    /* 4. Sitemap Refresh */
     actions.push(
-      fetch(`${baseUrl}/api/sitemap`, { method: "POST" }).catch(() => {})
+      safeFetch(`${baseUrl}/api/sitemap`, { method: "POST" })
     );
 
-    /* 5. IndexNow Ping */
     actions.push(
-      fetch(`${baseUrl}/api/indexnow`, { method: "POST" }).catch(() => {})
+      safeFetch(`${baseUrl}/api/indexnow`, { method: "POST" })
     );
 
-    /* ================= DISCOVER BOOST SIGNAL ================= */
+    /* ================= CONDITIONAL BOOSTING ================= */
 
-    if (type === "blog") {
+    if (isAggressiveMode) {
+      console.log("🔥 AGGRESSIVE MODE ACTIVE");
+
       actions.push(
-        fetch(`${baseUrl}/api/seo/discover-brain`, {
+        safeFetch(`${baseUrl}/api/seo/discover-brain`, {
           method: "POST",
-        }).catch(() => {})
+        })
+      );
+
+      actions.push(
+        safeFetch(`${baseUrl}/api/seo/traffic-os`, {
+          method: "POST",
+        })
+      );
+
+      actions.push(
+        safeFetch(`${baseUrl}/api/seo/flywheel-engine`, {
+          method: "POST",
+        })
       );
     }
 
-    await Promise.allSettled(actions);
+    /* ================= TYPE-SPECIFIC LOGIC ================= */
+
+    if (signals.content.blog) {
+      actions.push(
+        safeFetch(`${baseUrl}/api/seo/self-learning-loop`, {
+          method: "POST",
+        })
+      );
+    }
+
+    if (signals.content.product) {
+      actions.push(
+        safeFetch(`${baseUrl}/api/seo/revenue-os`, {
+          method: "POST",
+        })
+      );
+    }
+
+    /* ================= EXECUTION ================= */
+    const results = await Promise.allSettled(actions);
+
+    const successCount = results.filter(
+      (r) => r.status === "fulfilled"
+    ).length;
+
+    console.log(
+      `✅ SEO BRAIN DONE: ${successCount}/${actions.length}`
+    );
 
     /* ================= RESPONSE ================= */
 
     return res.status(200).json({
       success: true,
-      message: "SEO Brain executed",
-      clusterBoost,
-      signals,
-    });
+      message: "V6 SEO Brain executed successfully",
 
+      meta: {
+        type,
+        score,
+        aggressive: isAggressiveMode,
+      },
+
+      signals,
+      stats: {
+        totalActions: actions.length,
+        success: successCount,
+      },
+    });
   } catch (e) {
+    console.error("❌ V6 SEO BRAIN ERROR:", e);
+
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-        }
+      }
