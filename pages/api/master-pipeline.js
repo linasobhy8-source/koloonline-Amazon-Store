@@ -1,7 +1,8 @@
 export default async function handler(req, res) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://koloonline.online";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    "https://koloonline.online";
 
-  /* ================= ADSENSE / SEO FRIENDLY DESCRIPTION ================= */
   const seoDescription =
     "Discover trending Amazon products, in-depth reviews, and smart shopping guides. Updated daily with high-quality deals and buying insights.";
 
@@ -15,54 +16,54 @@ export default async function handler(req, res) {
       });
     }
 
-    const targetUrl = url || `${baseUrl}/${type}/${id}`;
+    const targetUrl =
+      url || `${baseUrl}/${type}/${id}`;
 
-    console.log("🚀 Pipeline Started:", targetUrl);
+    console.log("🚀 PIPELINE START:", targetUrl);
 
-    /* ================= 1️⃣ INDEXING ================= */
-    try {
-      await fetch(`${baseUrl}/api/indexnow`, {
+    /* ================= 1️⃣ FAST INDEXNOW ================= */
+    const indexNowPromise = fetch(
+      `${baseUrl}/api/indexnow`,
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl }),
-      });
-    } catch (e) {
-      console.log("Index Error:", e.message);
-    }
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          host: "koloonline.online",
+          key: process.env.INDEXNOW_KEY,
+          urlList: [targetUrl],
+        }),
+      }
+    ).catch((e) =>
+      console.log("IndexNow Error:", e.message)
+    );
 
-    /* ================= 2️⃣ SITEMAP ================= */
-    try {
-      await fetch(`${baseUrl}/api/sitemap`, { method: "POST" });
-    } catch (e) {
-      console.log("Sitemap Error:", e.message);
-    }
-
-    /* ================= 3️⃣ GOOGLE PING ================= */
-    try {
-      await fetch(`${baseUrl}/api/ping-google`, { method: "POST" });
-    } catch (e) {
-      console.log("Google Ping Error:", e.message);
-    }
-
-    /* ================= 4️⃣ SOCIAL HOOK ================= */
-    try {
-      await fetch(`${baseUrl}/api/social-hook`, {
+    /* ================= 2️⃣ SOCIAL HOOK ================= */
+    const socialPromise = fetch(
+      `${baseUrl}/api/social-hook`,
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           url: targetUrl,
           type,
         }),
-      });
-    } catch (e) {
-      console.log("Social Hook Error:", e.message);
-    }
+      }
+    ).catch((e) =>
+      console.log("Social Hook Error:", e.message)
+    );
 
-    /* ================= 5️⃣ LOGGING ================= */
-    try {
-      await fetch(`${baseUrl}/api/cron-logs`, {
+    /* ================= 3️⃣ LOGGING ================= */
+    const logPromise = fetch(
+      `${baseUrl}/api/cron-logs`,
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           type: "master_pipeline",
           status: "success",
@@ -70,46 +71,79 @@ export default async function handler(req, res) {
           source: `${type}/${id}`,
           createdAt: new Date().toISOString(),
         }),
-      });
-    } catch (e) {
-      console.log("Log Error:", e.message);
-    }
-
-    /* ================= 6️⃣ SEO BOOST ================= */
-    try {
-      if (type === "blog") {
-        await fetch(`${baseUrl}/api/seo/boost-blog`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, url: targetUrl }),
-        });
       }
+    ).catch((e) =>
+      console.log("Log Error:", e.message)
+    );
 
-      if (type === "product") {
-        await fetch(`${baseUrl}/api/seo/boost-product`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, url: targetUrl }),
-        });
+    /* ================= 4️⃣ SEO BOOST ================= */
+    const seoBoostPromise = (async () => {
+      try {
+        if (type === "blog") {
+          await fetch(
+            `${baseUrl}/api/seo/boost-blog`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                id,
+                url: targetUrl,
+              }),
+            }
+          );
+        }
+
+        if (type === "product") {
+          await fetch(
+            `${baseUrl}/api/seo/boost-product`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                id,
+                url: targetUrl,
+              }),
+            }
+          );
+        }
+      } catch (e) {
+        console.log(
+          "SEO Boost Error:",
+          e.message
+        );
       }
-    } catch (e) {
-      console.log("SEO Boost Error:", e.message);
-    }
+    })();
 
-    /* ================= 7️⃣ ADS SIGNAL (SAFE) ================= */
-    try {
-      await fetch(`${baseUrl}/api/seo/boost-ads`, {
+    /* ================= 5️⃣ ADS SIGNAL ================= */
+    const adsPromise = fetch(
+      `${baseUrl}/api/seo/boost-ads`,
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           type,
           id,
           url: targetUrl,
         }),
-      });
-    } catch (e) {
-      console.log("Ads Boost Error:", e.message);
-    }
+      }
+    ).catch((e) =>
+      console.log("Ads Boost Error:", e.message)
+    );
+
+    /* ================= 6️⃣ RUN ALL IN PARALLEL ================= */
+    await Promise.allSettled([
+      indexNowPromise,
+      socialPromise,
+      logPromise,
+      seoBoostPromise,
+      adsPromise,
+    ]);
 
     console.log("✅ PIPELINE DONE:", targetUrl);
 
@@ -118,18 +152,16 @@ export default async function handler(req, res) {
       message: "Pipeline executed successfully",
       url: targetUrl,
 
-      /* ================= ADSENSE-FRIENDLY METADATA ================= */
       seoDescription,
       seoHint:
         "High-quality content optimized for search intent, affiliate transparency, and user engagement.",
     });
-
   } catch (e) {
-    console.error("❌ MASTER PIPELINE ERROR:", e);
+    console.error("❌ PIPELINE ERROR:", e);
 
     return res.status(500).json({
       success: false,
       error: e.message,
     });
   }
-        }
+}
