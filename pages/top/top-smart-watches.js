@@ -78,13 +78,14 @@ export default function TopSmartWatches() {
           Bluetooth notifications, and long battery life.
         </p>
 
+        {/* ✅ UPDATED SECTION START */}
         <h2>Recommended Products</h2>
 
         <ol>
           <li>
-            Smart Watch Series 1 –
+            Smart Watch Model 1 –
             <a
-              href="https://www.amazon.com/dp/PRODUCT_ID?tag=koloonlinesto-20"
+              href="https://www.amazon.com/dp/B0DGLC7HF3?tag=koloonlinesto-20"
               target="_blank"
               rel="nofollow sponsored"
             >
@@ -93,9 +94,9 @@ export default function TopSmartWatches() {
           </li>
 
           <li>
-            Smart Watch Series 2 –
+            Smart Watch Model 2 –
             <a
-              href="https://www.amazon.com/dp/PRODUCT_ID?tag=koloonlinesto-20"
+              href="https://www.amazon.com/dp/B0FP8YTJWS?tag=koloonlinesto-20"
               target="_blank"
               rel="nofollow sponsored"
             >
@@ -104,9 +105,86 @@ export default function TopSmartWatches() {
           </li>
 
           <li>
-            Smart Watch Series 3 –
+            Smart Watch Model 3 –
             <a
-              href="https://www.amazon.com/dp/PRODUCT_ID?tag=koloonlinesto-20"
+              href="https://www.amazon.com/dp/B0F943K6DW?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 4 –
+            <a
+              href="https://www.amazon.com/dp/B0FK9DKR1B?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 5 –
+            <a
+              href="https://www.amazon.com/dp/B0C89JQ77Q?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 6 –
+            <a
+              href="https://www.amazon.com/dp/B0GQTFHFPD?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 7 –
+            <a
+              href="https://www.amazon.com/dp/B0GWR1RZQV?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 8 –
+            <a
+              href="https://www.amazon.com/dp/B0GQ3SHXWN?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 9 –
+            <a
+              href="https://www.amazon.com/dp/B0GVHRLBMW?tag=koloonlinesto-20"
+              target="_blank"
+              rel="nofollow sponsored"
+            >
+              View on Amazon
+            </a>
+          </li>
+
+          <li>
+            Smart Watch Model 10 –
+            <a
+              href="https://www.amazon.com/dp/B0GMPZRT1G?tag=koloonlinesto-20"
               target="_blank"
               rel="nofollow sponsored"
             >
@@ -114,6 +192,7 @@ export default function TopSmartWatches() {
             </a>
           </li>
         </ol>
+        {/* ✅ UPDATED SECTION END */}
 
         <h2>AliExpress Alternative</h2>
 
@@ -131,10 +210,11 @@ export default function TopSmartWatches() {
 
         <h2>Watch Review Video</h2>
 
+        {/* ✅ FIXED VIDEO URL */}
         <iframe
           width="100%"
           height="500"
-          src="https://www.youtube.com/embed/Bwz8Tx75YU"
+          src="https://www.youtube.com/embed/Bwz8Tx75YUA"
           title="Smart Watch Review"
           allowFullScreen
         />
@@ -163,19 +243,13 @@ export default function TopSmartWatches() {
 
         <h2>FAQ</h2>
 
-        <h3>
-          Are budget smart watches worth buying?
-        </h3>
-
+        <h3>Are budget smart watches worth buying?</h3>
         <p>
           Yes. Many affordable models provide excellent
           battery life and fitness tracking features.
         </p>
 
-        <h3>
-          Do smart watches work with Android and iPhone?
-        </h3>
-
+        <h3>Do smart watches work with Android and iPhone?</h3>
         <p>
           Most modern smart watches support both
           platforms.
@@ -183,4 +257,4 @@ export default function TopSmartWatches() {
       </main>
     </>
   );
-}
+            }
