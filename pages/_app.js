@@ -52,44 +52,15 @@ export default function App({ Component, pageProps }) {
   return (
     <ErrorBoundary>
       <>
-        {/* ================= HEAD ================= */}
         <Head>
           <meta charSet="UTF-8" />
-
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1"
-          />
-
-          <meta
-            name="robots"
-            content="index,follow,max-image-preview:large"
-          />
-
-          <meta
-            name="theme-color"
-            content="#111827"
-          />
-
-          <meta
-            name="format-detection"
-            content="telephone=no"
-          />
-
-          <meta
-            httpEquiv="X-UA-Compatible"
-            content="IE=edge"
-          />
-
-          <meta
-            name="author"
-            content="Koloonline"
-          />
-
-          <meta
-            name="application-name"
-            content="Koloonline"
-          />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="robots" content="index,follow,max-image-preview:large" />
+          <meta name="theme-color" content="#111827" />
+          <meta name="format-detection" content="telephone=no" />
+          <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+          <meta name="author" content="Koloonline" />
+          <meta name="application-name" content="Koloonline" />
 
           <meta
             name="keywords"
@@ -107,18 +78,9 @@ export default function App({ Component, pageProps }) {
           "
           />
 
-          <link
-            rel="icon"
-            href="/favicon.ico"
-          />
-
-          <link
-            rel="canonical"
-            href="https://koloonline.online"
-          />
+          <link rel="icon" href="/favicon.ico" />
+          <link rel="canonical" href="https://koloonline.online" />
         </Head>
-
-        {/* ================= GTM ================= */}
 
         <Script
           id="gtm"
@@ -155,8 +117,6 @@ export default function App({ Component, pageProps }) {
           }}
         />
 
-        {/* ================= GA4 ================= */}
-
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
           strategy="afterInteractive"
@@ -188,21 +148,14 @@ export default function App({ Component, pageProps }) {
           }}
         />
 
-        {/* ================= GTM NOSCRIPT ================= */}
-
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
             height="0"
             width="0"
-            style={{
-              display: "none",
-              visibility: "hidden",
-            }}
+            style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-
-        {/* ================= LAYOUT ================= */}
 
         <Navbar />
 
@@ -212,10 +165,8 @@ export default function App({ Component, pageProps }) {
 
         <Footer />
 
-        {/* ================= SPEED INSIGHTS ================= */}
-
         <SpeedInsights />
       </>
     </ErrorBoundary>
   );
-              }
+            }
