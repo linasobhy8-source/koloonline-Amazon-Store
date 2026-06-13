@@ -1,40 +1,22 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  limit,
-  query,
-} from "firebase/firestore";
+import { db } from "../../config/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
-/* ================= FIREBASE INIT ================= */
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-};
+/* ================= SAFE ================= */
+const num = (v) => Number(v) || 0;
 
-const app = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+/* ================= SCORE ================= */
+function score(p) {
+  const views = num(p.views);
+  const clicks = num(p.clicks);
+  const viral = p.viralBoost ? 50 : 0;
 
-const db = getFirestore(app);
-
-/* ================= SIMPLE SCORING ENGINE ================= */
-function calculateScore(product) {
-  return (
-    (product.views || 0) +
-    (product.clicks || 0) * 2 +
-    (product.viralBoost ? 50 : 0)
-  );
+  return views + clicks * 2 + viral;
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    const snap = await getDocs(
-      query(collection(db, "products"), limit(30))
-    );
+    const snap = await getDocs(collection(db, "products"));
 
     const products = snap.docs.map((d) => ({
       id: d.id,
@@ -42,20 +24,18 @@ export default async function handler(req, res) {
     }));
 
     const trending = products
-      .sort((a, b) => calculateScore(b) - calculateScore(a))
+      .sort((a, b) => score(b) - score(a))
       .slice(0, 10);
 
     return res.status(200).json({
       success: true,
       trending,
-      description:
-        "This endpoint provides a curated list of trending products based on basic engagement signals such as views, clicks, and content relevance. It is intended to improve product discovery and browsing experience.",
+      meta: {
+        total: products.length,
+        engine: "lite-v1",
+      },
     });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
   }
 }
