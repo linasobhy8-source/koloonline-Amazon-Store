@@ -52,30 +52,43 @@ function generateSlug(text = "") {
     .replace(/[^a-z0-9-]/g, "");
 }
 
+/* ================= SEO BLOG GENERATOR (IMPROVED) ================= */
 function generateBlog(product) {
   const slug = generateSlug(product.title);
 
   return {
-    title: `${product.title} Review`,
+    title: `${product.title} Review 2026 – Is It Worth It?`,
     slug,
-    excerpt: `${product.title} review and buying guide.`,
+    excerpt: `Full review of ${product.title} including features, pros, cons and Amazon value analysis.`,
+    seoTitle: `${product.title} Review 2026 | Best Buying Guide`,
+    seoDescription: `Detailed review of ${product.title}. Features, price, pros, cons and best alternatives.`,
     content: `
-<h2>${product.title}</h2>
+<h2>${product.title} Full Review</h2>
 
 <p>
-Discover features, benefits and value for money.
+This is one of the trending products in ${product.category} category.
+We analyze performance, price and real value.
 </p>
 
+<h3>Key Features</h3>
 <ul>
-<li>Affordable pricing</li>
-<li>Good user experience</li>
-<li>Popular category</li>
+<li>High quality build</li>
+<li>Affordable price</li>
+<li>Good user ratings</li>
 </ul>
 
+<h3>Why People Buy It</h3>
 <p>
-Suitable for everyday use.
+Because it offers strong value compared to competitors.
+</p>
+
+<h3>Final Verdict</h3>
+<p>
+Recommended for budget buyers looking for reliable performance.
 </p>
 `,
+    tags: [product.category, "review", "amazon", "2026"],
+    affiliateReady: true,
   };
 }
 
@@ -83,11 +96,7 @@ Suitable for everyday use.
 async function safeFetch(url, options = {}) {
   try {
     const controller = new AbortController();
-
-    const timer = setTimeout(
-      () => controller.abort(),
-      10000
-    );
+    const timer = setTimeout(() => controller.abort(), 10000);
 
     const response = await fetch(url, {
       ...options,
@@ -110,24 +119,27 @@ async function safeFetch(url, options = {}) {
 
 /* ================= INDEXNOW ================= */
 async function submitIndexNow(urls = []) {
-  if (!process.env.INDEXNOW_KEY) {
-    return { skipped: true };
-  }
+  if (!process.env.INDEXNOW_KEY) return { skipped: true };
 
-  return safeFetch(
+  const payload = {
+    host: "koloonline.online",
+    key: process.env.INDEXNOW_KEY,
+    urlList: urls.slice(0, 50),
+  };
+
+  const res = await safeFetch(
     "https://api.indexnow.org/indexnow",
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        host: "koloonline.online",
-        key: process.env.INDEXNOW_KEY,
-        urlList: urls.slice(0, 50),
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     }
   );
+
+  return {
+    ...res,
+    submittedUrls: urls.length,
+  };
 }
 
 /* ================= HANDLER ================= */
@@ -135,11 +147,10 @@ export default async function handler(req, res) {
   const started = Date.now();
 
   try {
-    /* ===== Optional Security ===== */
+    /* ===== SECURITY ===== */
     if (
       process.env.CRON_SECRET &&
-      req.headers.authorization !==
-        `Bearer ${process.env.CRON_SECRET}`
+      req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`
     ) {
       return res.status(401).json({
         success: false,
@@ -147,14 +158,21 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ===== Count Only (FAST) ===== */
+    /* ===== LIMIT CONTROL (ANTI-SPAM) ===== */
     const countSnap = await getCountFromServer(
       collection(db, "products")
     );
 
     const existingProducts = countSnap.data().count;
 
-    /* ===== Create Product ===== */
+    if (existingProducts > 5000) {
+      return res.status(200).json({
+        success: false,
+        reason: "limit_reached",
+      });
+    }
+
+    /* ===== GENERATE PRODUCT ===== */
     const product = randomProduct();
 
     const productRef = await addDoc(
@@ -164,11 +182,12 @@ export default async function handler(req, res) {
         views: 0,
         clicks: 0,
         rating: 4.5,
+        trendingScore: product.viralBoost ? 80 : 40,
         createdAt: serverTimestamp(),
       }
     );
 
-    /* ===== Create Blog ===== */
+    /* ===== GENERATE BLOG ===== */
     const blog = generateBlog(product);
 
     const blogRef = await addDoc(
@@ -179,12 +198,13 @@ export default async function handler(req, res) {
       }
     );
 
+    /* ===== URLS ===== */
     const urls = [
       `${BASE_URL}/product/${productRef.id}`,
       `${BASE_URL}/blog/${blogRef.id}`,
     ];
 
-    /* ===== Run In Parallel ===== */
+    /* ===== INDEXING ===== */
     const [indexNow] = await Promise.all([
       submitIndexNow(urls),
     ]);
@@ -194,20 +214,19 @@ export default async function handler(req, res) {
       runtime: Date.now() - started,
 
       existingProducts,
-
       productId: productRef.id,
       blogId: blogRef.id,
 
-      urlsIndexed: urls.length,
+      seoBoost: true,
+      trendingInjected: true,
 
+      urlsIndexed: urls.length,
       indexNow,
     });
   } catch (error) {
-    console.error(error);
-
     return res.status(500).json({
       success: false,
       error: error?.message || "Internal Error",
     });
   }
-      }
+    }
