@@ -41,7 +41,6 @@ function safeDate(date) {
 /* ================= SITEMAP ================= */
 export async function getServerSideProps({ res }) {
   const baseUrl = "https://koloonline.online";
-
   const today = new Date().toISOString();
 
   let products = [];
@@ -58,8 +57,7 @@ export async function getServerSideProps({ res }) {
     blogs = blogSnap.docs.map((d) => ({
       id: d.id,
       updatedAt: safeDate(
-        d.data().updatedAt ||
-        d.data().createdAt
+        d.data().updatedAt || d.data().createdAt
       ),
     }));
   } catch (error) {
@@ -69,8 +67,7 @@ export async function getServerSideProps({ res }) {
   /* ================= URL BUILDER ================= */
   let urls = "";
 
-  /* ================= MAIN PAGES ================= */
-
+  /* ================= STATIC PAGES ================= */
   urls += `
 <url>
   <loc>${baseUrl}/</loc>
@@ -136,8 +133,7 @@ export async function getServerSideProps({ res }) {
 </url>
 `;
 
-  /* ================= PRODUCTS ================= */
-
+  /* ================= DYNAMIC PRODUCTS ================= */
   products.forEach((id) => {
     urls += `
 <url>
@@ -147,8 +143,7 @@ export async function getServerSideProps({ res }) {
 `;
   });
 
-  /* ================= BLOG POSTS ================= */
-
+  /* ================= DYNAMIC BLOGS ================= */
   blogs.forEach((b) => {
     urls += `
 <url>
@@ -160,17 +155,14 @@ export async function getServerSideProps({ res }) {
   });
 
   /* ================= FINAL XML ================= */
-
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
 ${urls}
 
 </urlset>`;
 
-  /* ================= CACHE ================= */
-
+  /* ================= RESPONSE HEADERS ================= */
   res.setHeader("Content-Type", "text/xml");
 
   res.setHeader(
@@ -189,4 +181,4 @@ ${urls}
 /* ================= PAGE ================= */
 export default function Sitemap() {
   return null;
-}
+             }
