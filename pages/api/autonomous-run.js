@@ -1,5 +1,4 @@
 import { db } from "../../config/firebase";
-
 import {
   collection,
   getDocs,
@@ -13,12 +12,15 @@ import { getMoneyProducts } from "../../lib/revenue-machine";
 let cache = null;
 let lastRun = 0;
 
-const CACHE_TTL = 1000 * 60 * 10;
+const CACHE_TTL = 1000 * 60 * 10; // 10 min
+
+/* ================= SAFE NUMBER ================= */
+const n = (v) => Number(v) || 0;
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    /* ================= METHOD CHECK ================= */
+    /* ================= METHOD GUARD ================= */
     if (req.method !== "GET") {
       return res.status(405).json({
         success: false,
@@ -28,7 +30,7 @@ export default async function handler(req, res) {
 
     const now = Date.now();
 
-    /* ================= MEMORY CACHE ================= */
+    /* ================= CACHE HIT ================= */
     if (cache && now - lastRun < CACHE_TTL) {
       return res.status(200).json(cache);
     }
@@ -41,68 +43,63 @@ export default async function handler(req, res) {
       ...d.data(),
     }));
 
-    /* ================= MONEY ENGINE ================= */
-    products = getMoneyProducts(products);
+    /* ================= REVENUE AI ENGINE ================= */
+    products = getMoneyProducts(products).map((p) => ({
+      ...p,
+      profitScore: n(p.profitScore),
+      brainScore: n(p.brainScore),
+      ctrMultiplier: n(p.ctrMultiplier) || 1,
+    }));
 
-    /* ================= SORT ================= */
-    products.sort(
-      (a, b) =>
-        (b.profitScore || 0) -
-        (a.profitScore || 0)
-    );
+    /* ================= SORT BY PROFIT ================= */
+    products.sort((a, b) => b.profitScore - a.profitScore);
 
     const top = products.slice(0, 20);
 
-    /* ================= BATCH UPDATE ================= */
+    /* ================= BATCH OPTIMIZATION ================= */
     const batch = writeBatch(db);
 
     top.forEach((p) => {
-      batch.update(
-        doc(db, "products", p.id),
-        {
-          profitScore: Number(p.profitScore || 0),
-          brainScore: Number(p.brainScore || 0),
-          ctrMultiplier: Number(
-            p.ctrMultiplier || 1
-          ),
-          lastOptimized: now,
-        }
-      );
+      const ref = doc(db, "products", p.id);
+
+      batch.update(ref, {
+        profitScore: n(p.profitScore),
+        brainScore: n(p.brainScore),
+        ctrMultiplier: n(p.ctrMultiplier),
+        lastOptimized: now,
+      });
     });
 
     await batch.commit();
 
-    /* ================= CACHE HEADERS ================= */
+    /* ================= RESPONSE ================= */
+    const response = {
+      success: true,
+      engine: "autonomous-v2",
+      totalProducts: products.length,
+      optimizedProducts: top.length,
+      runtime: Date.now() - now,
+      top,
+      status: "Revenue Machine ACTIVE",
+    };
+
+    /* ================= CACHE STORE ================= */
+    cache = response;
+    lastRun = Date.now();
+
+    /* ================= HEADERS ================= */
     res.setHeader(
       "Cache-Control",
       "public, s-maxage=600, stale-while-revalidate=3600"
     );
 
-    const response = {
-      success: true,
-      totalProducts: products.length,
-      optimizedProducts: top.length,
-      runtime: Date.now() - now,
-      top,
-      message: "Revenue Machine ACTIVE",
-    };
-
-    cache = response;
-    lastRun = Date.now();
-
     return res.status(200).json(response);
-
   } catch (e) {
-    console.error(
-      "Revenue Machine Error:",
-      e
-    );
+    console.error("Autonomous Run Error:", e);
 
     return res.status(500).json({
       success: false,
-      error:
-        e?.message ||
-        "Internal Server Error",
+      error: e?.message || "Internal Server Error",
     });
   }
-      }
+}
