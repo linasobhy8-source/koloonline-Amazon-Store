@@ -19,13 +19,13 @@ export default function CategoryPage() {
 
   /* ================= SAFE CATEGORY ================= */
   const safeCategory = useMemo(() => {
-    return (category || "").toString().toLowerCase();
+    return (category || "").toString().toLowerCase().trim();
   }, [category]);
 
   useEffect(() => {
-    if (!category) return;
+    if (!safeCategory) return;
     fetchProducts();
-  }, [category, sort]);
+  }, [safeCategory, sort]);
 
   async function fetchProducts() {
     try {
@@ -41,11 +41,10 @@ export default function CategoryPage() {
       setAllProducts(all);
 
       let filtered = all
-        .filter((p) =>
-          (p.category || "")
-            .toLowerCase()
-            .includes(safeCategory)
-        )
+        .filter((p) => {
+          const productCategory = (p.category || "").toLowerCase().trim();
+          return productCategory === safeCategory;
+        })
         .map((p) => {
           const trendScore =
             (p.score || 0) * 3 +
@@ -85,8 +84,7 @@ export default function CategoryPage() {
   const description =
     `Discover trending ${safeCategory} products, viral Amazon deals, and smart shopping offers.`;
 
-  const url =
-    `https://koloonline.online/category/${safeCategory}`;
+  const url = `https://koloonline.online/category/${safeCategory}`;
 
   const schema = {
     "@context": "https://schema.org",
@@ -99,7 +97,6 @@ export default function CategoryPage() {
   return (
     <div style={{ background: "#f3f4f6", minHeight: "100vh", padding: 20 }}>
 
-      {/* ================= SEO ================= */}
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
@@ -119,7 +116,6 @@ export default function CategoryPage() {
         />
       </Head>
 
-      {/* ================= HEADER ================= */}
       <h1 style={{ fontSize: 36, textTransform: "capitalize" }}>
         📦 {safeCategory || "Category"}
       </h1>
@@ -128,7 +124,6 @@ export default function CategoryPage() {
         Trending products & AI-ranked deals
       </p>
 
-      {/* ================= SORT ================= */}
       <select
         value={sort}
         onChange={(e) => setSort(e.target.value)}
@@ -140,7 +135,6 @@ export default function CategoryPage() {
         <option value="price_high">Highest Price</option>
       </select>
 
-      {/* ================= RELATED CATEGORIES ================= */}
       <div style={{ marginTop: 20 }}>
         <h3>🔥 Categories</h3>
 
@@ -163,7 +157,6 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* ================= PRODUCTS ================= */}
       {loading ? (
         <p>Loading...</p>
       ) : products.length === 0 ? (
@@ -179,14 +172,7 @@ export default function CategoryPage() {
         >
           {products.map((p) => (
             <Link key={p.id} href={`/product/${p.id}`}>
-              <div
-                style={{
-                  background: "#fff",
-                  padding: 12,
-                  borderRadius: 12,
-                  transition: "0.3s",
-                }}
-              >
+              <div style={{ background: "#fff", padding: 12, borderRadius: 12 }}>
                 <Image
                   src={p.image || "https://via.placeholder.com/400"}
                   width={300}
@@ -206,4 +192,4 @@ export default function CategoryPage() {
       )}
     </div>
   );
-        }
+  }
