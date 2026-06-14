@@ -13,6 +13,7 @@ function escapeXml(str = "") {
     .replace(/'/g, "&apos;");
 }
 
+/* ================= BUILD URL ================= */
 function buildUrl(loc) {
   return `
   <url>
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
   try {
     const snap = await getDocs(collection(db, "blog"));
 
-    const urls = [];
+    let urls = [];
 
     snap.forEach((doc) => {
       const data = doc.data();
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
     });
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join("\n")}
 </urlset>`;
 
@@ -53,9 +54,6 @@ ${urls.join("\n")}
   } catch (error) {
     console.error("Sitemap Blog Error:", error);
 
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return res.status(500).send("Error generating sitemap");
   }
-        }
+}
