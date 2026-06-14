@@ -33,17 +33,50 @@ export default function BlogPost({ post, relatedPosts }) {
       {/* ================= SEO ================= */}
       <Head>
         <title>{post.title} | Koloonline</title>
-        <meta
-          name="description"
-          content={post.excerpt || post.title}
-        />
-        <meta name="robots" content="index,follow" />
+
+        <meta name="description" content={post.excerpt || post.title} />
+        <meta name="robots" content="index,follow,max-image-preview:large" />
         <link rel="canonical" href={url} />
 
+        {/* ================= OPEN GRAPH ================= */}
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Koloonline" />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt || ""} />
         <meta property="og:image" content={post.image || ""} />
         <meta property="og:url" content={url} />
+
+        {/* ================= TWITTER ================= */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={post.excerpt || ""} />
+        {post.image && (
+          <meta name="twitter:image" content={post.image} />
+        )}
+
+        {/* ================= ARTICLE SCHEMA ================= */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Article",
+              headline: post.title,
+              description: post.excerpt || post.title,
+              image: post.image || "",
+              author: {
+                "@type": "Organization",
+                name: "Koloonline",
+              },
+              publisher: {
+                "@type": "Organization",
+                name: "Koloonline",
+              },
+              mainEntityOfPage: url,
+              datePublished: post.createdAt?.toDate?.() || new Date(),
+            }),
+          }}
+        />
       </Head>
 
       {/* ================= ADS SCRIPT ================= */}
@@ -91,7 +124,14 @@ export default function BlogPost({ post, relatedPosts }) {
 
         {relatedPosts?.map((p) => (
           <Link key={p.id} href={`/blog/${p.slug}`}>
-            <div style={{ padding: 10, background: "#fff", marginTop: 10 }}>
+            <div
+              style={{
+                padding: 10,
+                background: "#fff",
+                marginTop: 10,
+                borderRadius: 6,
+              }}
+            >
               {p.title}
             </div>
           </Link>
@@ -144,4 +184,4 @@ export async function getStaticProps({ params }) {
     },
     revalidate: 3600,
   };
-                }
+        }
