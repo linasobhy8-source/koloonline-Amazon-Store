@@ -1,159 +1,59 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
+import { db } from "../../lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 import { conversionScore } from "../../lib/conversionScore";
 
-/* ================= FIREBASE (SAFE SINGLETON) ================= */
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-};
-
-const app = getApps().length
-  ? getApps()[0]
-  : initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
-
-/* ================= FAST SAFE HELPERS ================= */
-const safeText = (v, fallback = "") =>
-  typeof v === "string" ? v : fallback;
-
-const safeNumber = (v, fallback = 0) =>
-  typeof v === "number" ? v : fallback;
-
-/* ================= CACHE (IN-MEMORY) ================= */
 let cache = null;
-let lastFetch = 0;
-const TTL = 1000 * 60 * 5; // 5 minutes
+let last = 0;
+const TTL = 1000 * 60 * 5;
 
-/* ================= ADSENSE DESCRIPTION ================= */
-function buildAdSenseDescription(p) {
-  return `Discover ${p.title} at $${p.price}. Category: ${p.category}. High value product with strong performance and user demand.`;
-}
-
-/* ================= REVIEWS (LIGHTWEIGHT) ================= */
-function buildReviews(p) {
-  return [
-    {
-      user: "Ahmed",
-      rating: 5,
-      comment: `${p.title} is very useful for daily use.`,
-    },
-    {
-      user: "Sara",
-      rating: 4,
-      comment: `Good value and quality in ${p.category}.`,
-    },
-    {
-      user: "Mike",
-      rating: 4,
-      comment: `Solid performance overall.`,
-    },
-  ];
-}
-
-/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const now = Date.now();
 
-    /* ================= CACHE HIT (🔥 SPEED BOOST) ================= */
-    if (cache && now - lastFetch < TTL) {
+    if (cache && now - last < TTL) {
       return res.status(200).json(cache);
     }
 
-    /* ================= FIRESTORE READ ================= */
     const snap = await getDocs(collection(db, "products"));
 
-    const rawProducts = snap.docs;
-
-    /* ================= TRANSFORM (FAST LOOP) ================= */
-    const products = new Array(rawProducts.length);
-
-    for (let i = 0; i < rawProducts.length; i++) {
-      const d = rawProducts[i];
+    const products = snap.docs.map((d) => {
       const p = d.data();
 
-      const product = {
+      return {
         id: d.id,
-        title: safeText(p.title),
-        image: safeText(p.image),
-        price: safeNumber(p.price),
-        category: safeText(p.category, "general"),
-        link: safeText(p.link, "#"),
-        views: safeNumber(p.views),
-        clicks: safeNumber(p.clicks),
-        orders: safeNumber(p.orders),
+        title: p.title || "",
+        image: p.image || "",
+        price: p.price || 0,
+        category: p.category || "general",
+        link: p.link || "#",
+        views: p.views || 0,
+        clicks: p.clicks || 0,
+        orders: p.orders || 0,
         viralBoost: !!p.viralBoost,
       };
+    });
 
-      const score = conversionScore(product);
+    const ranked = products
+      .map((p) => ({
+        ...p,
+        conversionScore: conversionScore(p),
+      }))
+      .sort((a, b) => b.conversionScore - a.conversionScore);
 
-      products[i] = {
-        ...product,
-        conversionScore: score,
-        adSenseDescription: buildAdSenseDescription(product),
-        reviews: buildReviews(product),
-      };
-    }
-
-    /* ================= FAST SORT ================= */
-    products.sort((a, b) => b.conversionScore - a.conversionScore);
-
-    /* ================= SEGMENTS ================= */
-    const topPicks = products.slice(0, 8);
-    const bestBuy = products.slice(8, 16);
-    const impulseDeals = [];
-
-    for (let i = 0; i < products.length; i++) {
-      if (products[i].conversionScore > 80) {
-        impulseDeals.push(products[i]);
-      }
-    }
-
-    /* ================= SEO STRUCTURED DATA ================= */
-    const structuredData = {
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      name: "Koloonline Product Ranking",
-      itemListElement: topPicks.map((p, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: p.title,
-        url: p.link,
-      })),
-    };
-
-    /* ================= RESPONSE ================= */
     const response = {
       success: true,
-      engine: "conversion-ai-v3-ultra-fast",
-      topPicks,
-      bestBuy,
-      impulseDeals,
-      structuredData,
-      meta: {
-        total: products.length,
-        timestamp: now,
-      },
+      topPicks: ranked.slice(0, 8),
+      bestBuy: ranked.slice(8, 16),
     };
 
-    /* ================= SAVE CACHE ================= */
     cache = response;
-    lastFetch = now;
+    last = now;
 
     return res.status(200).json(response);
-
   } catch (e) {
     return res.status(500).json({
       success: false,
-      error: e?.message || "Unknown error",
+      error: e.message,
     });
   }
 }
