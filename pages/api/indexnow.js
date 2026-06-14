@@ -11,156 +11,127 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const baseUrl = "https://koloonline.online";
+
 /* ================= HELPERS ================= */
-function safeString(v) {
-  return typeof v === "string" && v.trim() ? v.trim() : null;
+function safe(v) {
+  return typeof v === "string" ? v.trim() : "";
 }
 
-function cleanUrl(url) {
-  if (!url || typeof url !== "string") return null;
-  return url.replace(/\/+$/, "").trim();
+/* ================= VIRAL SCORE ================= */
+function viralScore(data) {
+  let score = 0;
+
+  score += (data.views || 0) * 0.5;
+  score += (data.clicks || 0) * 1.5;
+  score += (data.likes || 0) * 2;
+  score += (data.orders || 0) * 5;
+  score += (data.rating || 0) * 10;
+
+  if (data.viralBoost) score += 50;
+
+  return score;
+}
+
+/* ================= PRIORITY ENGINE ================= */
+function getPriority(score) {
+  if (score > 80) return 1.0;
+  if (score > 60) return 0.85;
+  if (score > 40) return 0.7;
+  if (score > 25) return 0.6;
+  return 0.4;
+}
+
+/* ================= INDEXNOW CALL ================= */
+async function sendIndexNow(urlList) {
+  const KEY = process.env.INDEXNOW_KEY;
+
+  if (!KEY) return null;
+
+  try {
+    const res = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        host: "koloonline.online",
+        key: KEY,
+        urlList,
+      }),
+    });
+
+    return { ok: res.ok, status: res.status };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 }
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   const start = Date.now();
 
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      error: "Method Not Allowed",
-    });
-  }
-
   try {
-    const INDEXNOW_KEY = process.env.INDEXNOW_KEY;
+    const snap = await getDocs(collection(db, "products"));
 
-    if (!INDEXNOW_KEY) {
-      return res.status(500).json({
-        success: false,
-        error: "Missing INDEXNOW_KEY",
-      });
-    }
+    const urls = [];
+    const priorityUrls = [];
 
-    const baseUrl = "https://koloonline.online";
+    snap.forEach((doc) => {
+      const data = doc.data();
 
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=600"
-    );
+      const score = viralScore(data);
 
-    /* ================= STATIC URLS ================= */
-    const urlSet = new Set([
-      baseUrl,
-      `${baseUrl}/blog`,
-      `${baseUrl}/products`,
-      `${baseUrl}/categories`,
-      `${baseUrl}/search`,
-      `${baseUrl}/amazon-haul`,
-      `${baseUrl}/aliexpress`,
-      `${baseUrl}/fiverr`,
-    ]);
+      // ❌ remove weak products
+      if (score < 25) return;
 
-    /* ================= FIRESTORE ================= */
-    const [productsSnap, blogSnap] = await Promise.all([
-      getDocs(collection(db, "products")),
-      getDocs(collection(db, "blog")),
-    ]);
+      const priority = getPriority(score);
 
-    /* ================= PRODUCTS ================= */
-    productsSnap.docs.forEach((doc) => {
-      const id = safeString(doc.id);
-      if (id) urlSet.add(`${baseUrl}/product/${id}`);
+      const url = `${baseUrl}/product/${doc.id}`;
 
-      const category = safeString(doc.data()?.category);
-      if (category) {
-        urlSet.add(
-          `${baseUrl}/category/${encodeURIComponent(
-            category.toLowerCase()
-          )}`
-        );
+      urls.push(url);
+
+      // priority urls only
+      if (priority >= 0.7) {
+        priorityUrls.push(url);
       }
     });
 
-    /* ================= BLOG ================= */
-    blogSnap.docs.forEach((doc) => {
-      const data = doc.data();
-      const slug = safeString(data?.slug || doc.id);
-      if (slug) urlSet.add(`${baseUrl}/blog/${slug}`);
-    });
+    /* ================= DEDUP ================= */
+    const unique = [...new Set(urls)];
+    const uniquePriority = [...new Set(priorityUrls)];
 
-    /* ================= CLEAN URLS ================= */
-    const allUrls = [...urlSet]
-      .map(cleanUrl)
-      .filter(Boolean);
-
-    /* ================= PRIORITY URLS ================= */
-    const priorityUrls = allUrls.filter(
-      (url) =>
-        url === baseUrl ||
-        url.includes("/product/") ||
-        url.includes("/blog/") ||
-        url.includes("/category/")
-    );
-
-    /* ================= CHUNK ================= */
-    const CHUNK_SIZE = 100;
+    /* ================= CHUNKING ================= */
+    const chunkSize = 50;
     const chunks = [];
 
-    for (let i = 0; i < priorityUrls.length; i += CHUNK_SIZE) {
-      chunks.push(priorityUrls.slice(i, i + CHUNK_SIZE));
+    for (let i = 0; i < uniquePriority.length; i += chunkSize) {
+      chunks.push(uniquePriority.slice(i, i + chunkSize));
     }
 
     /* ================= INDEXNOW ================= */
     const results = [];
 
     for (const chunk of chunks) {
-      try {
-        const response = await fetch(
-          "https://api.indexnow.org/indexnow",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              host: "koloonline.online",
-              key: INDEXNOW_KEY,
-              urlList: chunk,
-            }),
-          }
-        );
-
-        results.push({
-          status: response.status,
-          ok: response.ok,
-          urls: chunk.length,
-        });
-      } catch (err) {
-        results.push({
-          ok: false,
-          error: err?.message || "IndexNow Request Failed",
-        });
-      }
+      const r = await sendIndexNow(chunk);
+      results.push(r);
     }
 
     /* ================= GOOGLE PING ================= */
     fetch(
-      `https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml`
+      `https://www.google.com/ping?sitemap=${baseUrl}/sitemap.xml`
     ).catch(() => {});
 
     return res.status(200).json({
       success: true,
-      runtime: Date.now() - start,
-      totalUrls: allUrls.length,
-      indexedUrls: priorityUrls.length,
+      totalUrls: unique.length,
+      priorityUrls: uniquePriority.length,
       chunks: chunks.length,
+      runtime: Date.now() - start,
       results,
     });
-  } catch (error) {
+  } catch (err) {
     return res.status(500).json({
       success: false,
-      error: error?.message || "Internal Server Error",
+      error: err.message,
     });
   }
       }
