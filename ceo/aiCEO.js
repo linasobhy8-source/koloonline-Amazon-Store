@@ -42,7 +42,6 @@ export async function aiCEO() {
         neural,
       }),
     };
-
   } catch (e) {
     return {
       success: false,
@@ -52,11 +51,23 @@ export async function aiCEO() {
 }
 
 /* ================= STRATEGY ENGINE ================= */
-function buildStrategy({ growthData, evolution, healing, neural }) {
-  const traffic = growthData?.trendingProducts?.length || 0;
-  const revenue = growthData?.topProducts?.length || 0;
-  const risk = healing?.brokenFixed || 0;
-  const optimization = evolution?.performanceScore || 0;
+function buildStrategy({
+  growthData,
+  evolution,
+  healing,
+  neural,
+}) {
+  const traffic =
+    growthData?.trendingProducts?.length || 0;
+
+  const revenue =
+    growthData?.topProducts?.length || 0;
+
+  const risk =
+    healing?.brokenFixed || 0;
+
+  const optimization =
+    evolution?.performanceScore || 0;
 
   /* ================= DECISION MATRIX ================= */
   const score =
@@ -73,6 +84,14 @@ function buildStrategy({ growthData, evolution, healing, neural }) {
         "scale SEO clusters",
         "expand blog categories",
         "boost trending products",
+
+        /* SEO */
+        "generate sitemap",
+        "submit indexnow",
+        "expand amazon haul pages",
+        "generate blog pages",
+        "generate product pages",
+        "build internal links",
       ],
     };
   }
@@ -85,6 +104,12 @@ function buildStrategy({ growthData, evolution, healing, neural }) {
         "refine keywords",
         "reorder homepage feed",
         "enhance monetization pages",
+
+        /* SEO */
+        "refresh sitemap",
+        "resubmit indexnow",
+        "optimize top pages",
+        "optimize product schema",
       ],
     };
   }
@@ -96,25 +121,57 @@ function buildStrategy({ growthData, evolution, healing, neural }) {
       "regenerate weak content",
       "reduce dead traffic routes",
       "clean SEO structure",
+
+      /* SEO */
+      "repair sitemap",
+      "repair internal links",
+      "repair indexing issues",
+      "repair canonical tags",
     ],
   };
 }
 
 /* ================= CEO REPORT ================= */
-function generateCEOReport({ growthData, evolution, healing, neural }) {
+function generateCEOReport({
+  growthData,
+  evolution,
+  healing,
+  neural,
+}) {
   return {
-    totalProducts: growthData?.total || 0,
-    topProducts: growthData?.topProducts?.length || 0,
-    trending: growthData?.trendingProducts?.length || 0,
+    totalProducts:
+      growthData?.total || 0,
+
+    topProducts:
+      growthData?.topProducts?.length || 0,
+
+    trending:
+      growthData?.trendingProducts?.length || 0,
 
     systemHealth: {
-      evolutionScore: evolution?.performanceScore || 0,
-      fixedPages: healing?.brokenFixed || 0,
-      improvedPages: healing?.improved || 0,
+      evolutionScore:
+        evolution?.performanceScore || 0,
+
+      fixedPages:
+        healing?.brokenFixed || 0,
+
+      improvedPages:
+        healing?.improved || 0,
     },
 
-    neuralInsights: neural?.opportunities?.length || 0,
+    neuralInsights:
+      neural?.opportunities?.length || 0,
 
-    status: "AI CEO Running Autonomous Business System",
+    seoStatus: {
+      sitemap: true,
+      indexnow: true,
+      blogEngine: true,
+      productPages: true,
+      topPages: true,
+      amazonHaul: true,
+    },
+
+    status:
+      "AI CEO Running Autonomous Business System",
   };
-}
+      }
