@@ -16,28 +16,28 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
+    const serviceAccount = process.env.GOOGLE_SERVICE_ACCOUNT;
+
+    if (!serviceAccount) {
       return res.status(500).json({
         success: false,
         message: "Missing GOOGLE_SERVICE_ACCOUNT",
       });
     }
 
-    // Dynamic Import
-    const { google } = await import("googleapis");
-
     let credentials;
-
     try {
-      credentials = JSON.parse(
-        process.env.GOOGLE_SERVICE_ACCOUNT
-      );
-    } catch {
+      credentials = JSON.parse(serviceAccount);
+    } catch (e) {
       return res.status(500).json({
         success: false,
         message: "Invalid GOOGLE_SERVICE_ACCOUNT JSON",
       });
     }
+
+    // 🔥 Dynamic import بطريقة آمنة 100%
+    const googleapis = await import("googleapis");
+    const google = googleapis.google;
 
     const auth = new google.auth.GoogleAuth({
       credentials,
@@ -53,19 +53,20 @@ export default async function handler(req, res) {
       auth: client,
     });
 
-    const result =
-      await indexing.urlNotifications.publish({
-        requestBody: {
-          url,
-          type: "URL_UPDATED",
-        },
-      });
+    const result = await indexing.urlNotifications.publish({
+      requestBody: {
+        url,
+        type: "URL_UPDATED",
+      },
+    });
 
     return res.status(200).json({
       success: true,
       data: result.data,
     });
   } catch (error) {
+    console.error("Indexing Error:", error);
+
     return res.status(500).json({
       success: false,
       error: error.message || "Indexing failed",
