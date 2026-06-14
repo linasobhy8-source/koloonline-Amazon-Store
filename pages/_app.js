@@ -2,10 +2,10 @@ import Head from "next/head";
 import Script from "next/script";
 import { Component } from "react";
 
-import { SpeedInsights } from "@vercel/speed-insights";
-
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "../styles/globals.css";
 
@@ -55,7 +55,7 @@ export default function App({ Component, pageProps }) {
           <link rel="canonical" href="https://koloonline.online" />
         </Head>
 
-        {/* ================= GTM ================= */}
+        {/* GTM */}
         <Script
           id="gtm"
           strategy="afterInteractive"
@@ -75,7 +75,7 @@ export default function App({ Component, pageProps }) {
           }}
         />
 
-        {/* ================= GA4 ================= */}
+        {/* GA4 */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
           strategy="afterInteractive"
@@ -113,9 +113,9 @@ export default function App({ Component, pageProps }) {
 
         <Footer />
 
-        {/* ================= SPEED INSIGHTS ================= */}
+        {/* SPEED INSIGHTS */}
         <SpeedInsights />
       </>
     </ErrorBoundary>
   );
-            }
+    }
