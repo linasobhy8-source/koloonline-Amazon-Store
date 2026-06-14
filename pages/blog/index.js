@@ -32,9 +32,36 @@ export default function Blog({ posts }) {
           content="amazon deals, product reviews, buying guide, koloonline blog, tech reviews, shopping tips"
         />
 
-        <meta name="robots" content="index,follow" />
+        {/* ================= ROBOTS ================= */}
+        <meta name="robots" content="index,follow,max-image-preview:large" />
+        <meta name="author" content="Koloonline" />
+        <meta name="publisher" content="Koloonline" />
 
         <link rel="canonical" href="https://koloonline.online/blog" />
+
+        {/* ================= RSS ================= */}
+        <link rel="alternate" type="application/rss+xml" href="/rss.xml" />
+
+        {/* ================= OPEN GRAPH ================= */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Koloonline" />
+        <meta property="og:url" content="https://koloonline.online/blog" />
+        <meta
+          property="og:title"
+          content="Amazon Deals Blog | Koloonline Reviews & Guides"
+        />
+        <meta
+          property="og:description"
+          content="Amazon reviews, buying guides, and trending deals."
+        />
+
+        {/* ================= TWITTER ================= */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Koloonline Blog" />
+        <meta
+          name="twitter:description"
+          content="Amazon reviews and buying guides"
+        />
 
         {/* ================= STRUCTURED DATA ================= */}
         <script
@@ -47,6 +74,10 @@ export default function Blog({ posts }) {
               url: "https://koloonline.online/blog",
               description:
                 "Amazon product reviews, buying guides, and deal insights",
+              publisher: {
+                "@type": "Organization",
+                name: "Koloonline",
+              },
             }),
           }}
         />
@@ -118,10 +149,10 @@ export default function Blog({ posts }) {
             {/* ================= EXCERPT ================= */}
             <p style={{ fontSize: 13, color: "#666" }}>
               {post.excerpt?.slice(0, 140) ||
-                "This article provides structured product information, general user feedback patterns, and comparison-based insights for informational purposes."}
+                "This article provides structured product information, general user feedback patterns, and comparison-based insights."}
             </p>
 
-            {/* ================= NEUTRAL INSIGHTS (ADS SAFE) ================= */}
+            {/* ================= INSIGHTS ================= */}
             <div
               style={{
                 marginTop: 10,
@@ -133,19 +164,9 @@ export default function Blog({ posts }) {
               }}
             >
               <b>📊 General Overview:</b>
-
-              <p style={{ margin: "5px 0" }}>
-                • This type of product is commonly evaluated based on value, features,
-                and ease of use across different user groups.
-              </p>
-
-              <p style={{ margin: "5px 0" }}>
-                • Feedback patterns often focus on performance consistency and pricing.
-              </p>
-
-              <p style={{ margin: "5px 0" }}>
-                • Experiences may vary depending on usage and expectations.
-              </p>
+              <p>• Value, features, and usability are key factors.</p>
+              <p>• Feedback varies based on user expectations.</p>
+              <p>• Performance consistency is commonly evaluated.</p>
             </div>
 
             {/* ================= SCORE ================= */}
@@ -153,7 +174,7 @@ export default function Blog({ posts }) {
               Trending Score: {post.trendingScore || 0}
             </p>
 
-            {/* ================= INTERNAL LINK ================= */}
+            {/* ================= LINK ================= */}
             {post.productId && (
               <Link href={`/product/${post.productId}`}>
                 <p style={{ color: "#2563eb", fontSize: 12 }}>
@@ -213,7 +234,7 @@ export async function getServerSideProps() {
     ...d.data(),
   }));
 
-  /* ================= SAFE TRENDING SCORE ================= */
+  /* ================= TRENDING SCORE ================= */
   posts = posts.map((p) => {
     const created = p.createdAt?.toDate?.() || new Date();
 
@@ -247,4 +268,4 @@ export async function getServerSideProps() {
   return {
     props: { posts },
   };
-}
+            }
