@@ -26,72 +26,103 @@ function safeDate(date) {
   }
 }
 
-function url(loc, lastmod, priority) {
-  return `
-<url>
-  <loc>${loc}</loc>
-  ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
-  <priority>${priority}</priority>
-</url>`;
+function escapeXml(url) {
+  return url
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
-/* ================= SITEMAP ================= */
-export default async function Sitemap() {
-  const urls = [];
+function url(loc, lastmod, priority = 0.7) {
+  return `
+  <url>
+    <loc>${escapeXml(loc)}</loc>
+    ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
+    <priority>${priority}</priority>
+  </url>`;
+}
 
-  /* ===== CORE PAGES ===== */
-  urls.push(url(`${baseUrl}/`, new Date().toISOString(), 1.0));
-  urls.push(url(`${baseUrl}/products`, new Date().toISOString(), 0.9));
-  urls.push(url(`${baseUrl}/blog`, new Date().toISOString(), 0.9));
-  urls.push(url(`${baseUrl}/categories`, new Date().toISOString(), 0.8));
-  urls.push(url(`${baseUrl}/amazon-haul`, new Date().toISOString(), 0.8));
+/* ================= SITEMAP PAGE ================= */
+export default function SitemapXML() {
+  return null;
+}
 
-  /* ===== TOP PAGES ===== */
-  topPages.forEach((p) => {
-    urls.push(
-      url(`${baseUrl}/top/${p.slug}`, new Date().toISOString(), 0.8)
-    );
-  });
+/* ================= SERVER SIDE RENDER ================= */
+export async function getServerSideProps({ res }) {
+  try {
+    const urls = new Set();
 
-  /* ===== PRODUCTS ===== */
-  const productsSnap = await getDocs(collection(db, "products"));
+    /* ===== CORE PAGES ===== */
+    urls.add(url(`${baseUrl}/`, new Date().toISOString(), 1.0));
+    urls.add(url(`${baseUrl}/products`, new Date().toISOString(), 0.9));
+    urls.add(url(`${baseUrl}/blog`, new Date().toISOString(), 0.9));
+    urls.add(url(`${baseUrl}/categories`, new Date().toISOString(), 0.8));
+    urls.add(url(`${baseUrl}/amazon-haul`, new Date().toISOString(), 0.8));
 
-  productsSnap.forEach((doc) => {
-    const data = doc.data();
+    /* ===== TOP PAGES ===== */
+    if (Array.isArray(topPages)) {
+      topPages.forEach((p) => {
+        if (p?.slug) {
+          urls.add(
+            url(`${baseUrl}/top/${p.slug}`, new Date().toISOString(), 0.8)
+          );
+        }
+      });
+    }
 
-    urls.push(
-      url(
-        `${baseUrl}/product/${doc.id}`,
-        safeDate(data?.updatedAt),
-        0.85
-      )
-    );
-  });
+    /* ===== PRODUCTS ===== */
+    const productsSnap = await getDocs(collection(db, "products"));
 
-  /* ===== BLOG ===== */
-  const blogSnap = await getDocs(collection(db, "blog"));
+    productsSnap.forEach((doc) => {
+      const data = doc.data();
 
-  blogSnap.forEach((doc) => {
-    const data = doc.data();
+      urls.add(
+        url(
+          `${baseUrl}/product/${doc.id}`,
+          safeDate(data?.updatedAt),
+          0.85
+        )
+      );
+    });
 
-    urls.push(
-      url(
-        `${baseUrl}/blog/${data.slug || doc.id}`,
-        safeDate(data?.createdAt),
-        0.9
-      )
-    );
-  });
+    /* ===== BLOG ===== */
+    const blogSnap = await getDocs(collection(db, "blog"));
 
-  /* ================= FINAL XML ================= */
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    blogSnap.forEach((doc) => {
+      const data = doc.data();
+
+      const slug = data?.slug || doc.id;
+
+      urls.add(
+        url(
+          `${baseUrl}/blog/${slug}`,
+          safeDate(data?.createdAt),
+          0.9
+        )
+      );
+    });
+
+    /* ================= XML OUTPUT ================= */
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.join("\n")}
+${Array.from(urls).join("\n")}
 </urlset>`;
 
-  return new Response(xml, {
-    headers: {
-      "Content-Type": "application/xml",
-    },
-  });
-}
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
+
+    res.write(xml);
+    res.end();
+
+    return {
+      props: {},
+    };
+  } catch (e) {
+    res.statusCode = 500;
+    res.end("Sitemap Error");
+
+    return {
+      props: {},
+    };
+  }
+          }
