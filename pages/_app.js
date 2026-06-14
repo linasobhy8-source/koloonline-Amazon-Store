@@ -64,24 +64,14 @@ export default function App({ Component, pageProps }) {
 
           <meta
             name="keywords"
-            content="
-            Amazon Deals,
-            Amazon Haul,
-            Amazon Reviews,
-            Product Reviews,
-            Smart Watches,
-            Tech Gadgets,
-            AliExpress Deals,
-            Online Shopping,
-            Best Products,
-            Koloonline
-          "
+            content="Amazon Deals, Amazon Haul, Amazon Reviews, Product Reviews, Smart Watches, Tech Gadgets, AliExpress Deals, Online Shopping, Best Products, Koloonline"
           />
 
           <link rel="icon" href="/favicon.ico" />
           <link rel="canonical" href="https://koloonline.online" />
         </Head>
 
+        {/* ================= GTM ================= */}
         <Script
           id="gtm"
           strategy="afterInteractive"
@@ -96,27 +86,18 @@ export default function App({ Component, pageProps }) {
 
                 var f=d.getElementsByTagName(s)[0],
                 j=d.createElement(s),
-                dl=l!='dataLayer'
-                ? '&l='+l
-                : '';
+                dl=l!='dataLayer' ? '&l='+l : '';
 
                 j.async=true;
-                j.src=
-                'https://www.googletagmanager.com/gtm.js?id='
-                + i + dl;
+                j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
 
                 f.parentNode.insertBefore(j,f);
-              })(
-                window,
-                document,
-                'script',
-                'dataLayer',
-                'GTM-KNQM8KBN'
-              );
+              })(window,document,'script','dataLayer','GTM-KNQM8KBN');
             `,
           }}
         />
 
+        {/* ================= GA4 ================= */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-YS8L61XLPR"
           strategy="afterInteractive"
@@ -127,33 +108,29 @@ export default function App({ Component, pageProps }) {
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer =
-              window.dataLayer || [];
+              window.dataLayer = window.dataLayer || [];
 
-              function gtag(){
-                dataLayer.push(arguments);
-              }
+              function gtag(){dataLayer.push(arguments);}
 
               gtag('js', new Date());
 
-              gtag(
-                'config',
-                'G-YS8L61XLPR',
-                {
-                  page_path:
-                  window.location.pathname
-                }
-              );
+              gtag('config', 'G-YS8L61XLPR', {
+                page_path: window.location.pathname,
+              });
             `,
           }}
         />
 
+        {/* ================= NOSCRIPT GTM ================= */}
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
             height="0"
             width="0"
-            style={{ display: "none", visibility: "hidden" }}
+            style={{
+              display: "none",
+              visibility: "hidden",
+            }}
           />
         </noscript>
 
@@ -165,8 +142,9 @@ export default function App({ Component, pageProps }) {
 
         <Footer />
 
+        {/* ================= SPEED INSIGHTS ================= */}
         <SpeedInsights />
       </>
     </ErrorBoundary>
   );
-            }
+    }
