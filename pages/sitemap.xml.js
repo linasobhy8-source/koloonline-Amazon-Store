@@ -1,259 +1,97 @@
-import Head from "next/head";
-import Link from "next/link";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 
-export default function TopEarbuds() {
-  const pageUrl = "https://koloonline.online/top/top-earbuds";
+import { topPages } from "../data/topPages";
 
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "Top 10 Earbuds Under $50 on Amazon 2026",
-    description:
-      "Best budget earbuds under $50 with high-quality sound, long battery life, and Bluetooth stability. Amazon and AliExpress comparison included.",
-    author: {
-      "@type": "Organization",
-      name: "Koloonline",
+/* ================= FIREBASE ================= */
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const baseUrl = "https://koloonline.online";
+
+/* ================= HELPERS ================= */
+function safeDate(date) {
+  try {
+    if (!date) return new Date().toISOString();
+    if (typeof date.toDate === "function") return date.toDate().toISOString();
+    return new Date(date).toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
+function url(loc, lastmod, priority) {
+  return `
+<url>
+  <loc>${loc}</loc>
+  ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
+  <priority>${priority}</priority>
+</url>`;
+}
+
+/* ================= SITEMAP ================= */
+export default async function Sitemap() {
+  const urls = [];
+
+  /* ===== CORE PAGES ===== */
+  urls.push(url(`${baseUrl}/`, new Date().toISOString(), 1.0));
+  urls.push(url(`${baseUrl}/products`, new Date().toISOString(), 0.9));
+  urls.push(url(`${baseUrl}/blog`, new Date().toISOString(), 0.9));
+  urls.push(url(`${baseUrl}/categories`, new Date().toISOString(), 0.8));
+  urls.push(url(`${baseUrl}/amazon-haul`, new Date().toISOString(), 0.8));
+
+  /* ===== TOP PAGES ===== */
+  topPages.forEach((p) => {
+    urls.push(
+      url(`${baseUrl}/top/${p.slug}`, new Date().toISOString(), 0.8)
+    );
+  });
+
+  /* ===== PRODUCTS ===== */
+  const productsSnap = await getDocs(collection(db, "products"));
+
+  productsSnap.forEach((doc) => {
+    const data = doc.data();
+
+    urls.push(
+      url(
+        `${baseUrl}/product/${doc.id}`,
+        safeDate(data?.updatedAt),
+        0.85
+      )
+    );
+  });
+
+  /* ===== BLOG ===== */
+  const blogSnap = await getDocs(collection(db, "blog"));
+
+  blogSnap.forEach((doc) => {
+    const data = doc.data();
+
+    urls.push(
+      url(
+        `${baseUrl}/blog/${data.slug || doc.id}`,
+        safeDate(data?.createdAt),
+        0.9
+      )
+    );
+  });
+
+  /* ================= FINAL XML ================= */
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join("\n")}
+</urlset>`;
+
+  return new Response(xml, {
+    headers: {
+      "Content-Type": "application/xml",
     },
-    publisher: {
-      "@type": "Organization",
-      name: "Koloonline",
-    },
-    mainEntityOfPage: pageUrl,
-  };
-
-  return (
-    <>
-      <Head>
-        <title>
-          Top 10 Earbuds Under $50 on Amazon 2026 | Best Budget Picks
-        </title>
-
-        <meta
-          name="description"
-          content="Discover the best earbuds under $50 on Amazon. Compare sound quality, battery life, comfort, and value. Includes AliExpress alternatives."
-        />
-
-        <link rel="canonical" href={pageUrl} />
-
-        {/* Open Graph */}
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content="Top 10 Earbuds Under $50 on Amazon" />
-        <meta
-          property="og:description"
-          content="Best budget earbuds with great sound and battery life."
-        />
-        <meta property="og:url" content={pageUrl} />
-
-        {/* Schema */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(schema),
-          }}
-        />
-      </Head>
-
-      <main
-        style={{
-          maxWidth: "1000px",
-          margin: "0 auto",
-          padding: "20px",
-          lineHeight: "1.7",
-        }}
-      >
-        <h1>Top 10 Earbuds Under $50 on Amazon 2026</h1>
-
-        <p>
-          If you're looking for affordable wireless earbuds with great sound
-          quality, this guide highlights the best options under $50 on Amazon.
-        </p>
-
-        <h2>Why Choose Budget Earbuds?</h2>
-
-        <p>
-          Modern earbuds now include Bluetooth 5.3, noise isolation, touch
-          controls, and long battery life — all at a low price.
-        </p>
-
-        {/* ================= PRODUCTS ================= */}
-        <h2>Recommended Products</h2>
-
-        <ol>
-          <li>
-            Earbuds Model 1 –
-            <a
-              href="https://www.amazon.com/dp/B0DGLC7HF3?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 2 –
-            <a
-              href="https://www.amazon.com/dp/B0FP8YTJWS?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 3 –
-            <a
-              href="https://www.amazon.com/dp/B0F943K6DW?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 4 –
-            <a
-              href="https://www.amazon.com/dp/B0FK9DKR1B?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 5 –
-            <a
-              href="https://www.amazon.com/dp/B0C89JQ77Q?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 6 –
-            <a
-              href="https://www.amazon.com/dp/B0GQTFHFPD?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 7 –
-            <a
-              href="https://www.amazon.com/dp/B0GWR1RZQV?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 8 –
-            <a
-              href="https://www.amazon.com/dp/B0GQ3SHXWN?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 9 –
-            <a
-              href="https://www.amazon.com/dp/B0GVHRLBMW?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-
-          <li>
-            Earbuds Model 10 –
-            <a
-              href="https://www.amazon.com/dp/B0GMPZRT1G?tag=koloonlinesto-20"
-              target="_blank"
-              rel="nofollow sponsored"
-            >
-              View on Amazon
-            </a>
-          </li>
-        </ol>
-
-        {/* ================= ALIEXPRESS ================= */}
-        <h2>AliExpress Alternative (Cheaper Deals)</h2>
-
-        <p>
-          You can also find similar earbuds on AliExpress at lower prices with
-          worldwide shipping.
-        </p>
-
-        <a
-          href="https://s.click.aliexpress.com/e/_c2Qrmxzn"
-          target="_blank"
-          rel="nofollow sponsored"
-        >
-          Browse Earbuds on AliExpress
-        </a>
-
-        {/* ================= VIDEO ================= */}
-        <h2>Review Video</h2>
-
-        <iframe
-          width="100%"
-          height="500"
-          src="https://www.youtube.com/embed/Bwz8Tx75YUA"
-          title="Earbuds Review"
-          allowFullScreen
-        />
-
-        {/* ================= INTERNAL LINKS ================= */}
-        <h2>Related Pages</h2>
-
-        <ul>
-          <li>
-            <Link href="/top/top-smart-watches">
-              Smart Watches Under $50
-            </Link>
-          </li>
-
-          <li>
-            <Link href="/amazon-haul">
-              Amazon Haul Deals
-            </Link>
-          </li>
-
-          <li>
-            <Link href="/products">
-              All Products
-            </Link>
-          </li>
-        </ul>
-
-        {/* ================= FAQ ================= */}
-        <h2>FAQ</h2>
-
-        <h3>Are cheap earbuds worth it?</h3>
-        <p>
-          Yes, many budget earbuds now offer excellent sound quality and stable
-          Bluetooth performance.
-        </p>
-
-        <h3>Do they work with Android and iPhone?</h3>
-        <p>
-          Yes, most earbuds support both platforms via Bluetooth.
-        </p>
-      </main>
-    </>
-  );
-            }
+  });
+}
