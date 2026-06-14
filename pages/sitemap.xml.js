@@ -3,7 +3,6 @@ import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 import { topPages } from "../data/topPages";
 
-/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -15,114 +14,112 @@ const db = getFirestore(app);
 
 const baseUrl = "https://koloonline.online";
 
-/* ================= HELPERS ================= */
-function safeDate(date) {
-  try {
-    if (!date) return new Date().toISOString();
-    if (typeof date.toDate === "function") return date.toDate().toISOString();
-    return new Date(date).toISOString();
-  } catch {
-    return new Date().toISOString();
-  }
+/* ================= AI SEO SCORE ================= */
+function aiScore(item) {
+  let score = 50;
+
+  if (item?.views > 1000) score += 20;
+  if (item?.clicks > 200) score += 15;
+  if (item?.likes > 50) score += 10;
+  if (item?.title?.length > 20) score += 5;
+  if (item?.auto) score -= 10; // low quality penalty
+
+  return Math.min(100, Math.max(0, score));
 }
 
-function escapeXml(url) {
-  return url
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function url(loc, lastmod, priority = 0.7) {
+/* ================= XML HELPER ================= */
+function url(loc, lastmod, priority) {
   return `
   <url>
-    <loc>${escapeXml(loc)}</loc>
+    <loc>${loc}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
     <priority>${priority}</priority>
   </url>`;
 }
 
-/* ================= SITEMAP PAGE ================= */
-export default function SitemapXML() {
-  return null;
+function xmlWrap(urls) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join("\n")}
+</urlset>`;
 }
 
-/* ================= SERVER SIDE RENDER ================= */
-export async function getServerSideProps({ res }) {
-  try {
-    const urls = new Set();
+/* ================= HANDLER ================= */
+export default async function handler(req, res) {
+  const urls = [];
 
-    /* ===== CORE PAGES ===== */
-    urls.add(url(`${baseUrl}/`, new Date().toISOString(), 1.0));
-    urls.add(url(`${baseUrl}/products`, new Date().toISOString(), 0.9));
-    urls.add(url(`${baseUrl}/blog`, new Date().toISOString(), 0.9));
-    urls.add(url(`${baseUrl}/categories`, new Date().toISOString(), 0.8));
-    urls.add(url(`${baseUrl}/amazon-haul`, new Date().toISOString(), 0.8));
+  /* ===== CORE ===== */
+  urls.push(url(`${baseUrl}/`, new Date().toISOString(), 1.0));
+  urls.push(url(`${baseUrl}/products`, new Date().toISOString(), 0.9));
+  urls.push(url(`${baseUrl}/blog`, new Date().toISOString(), 0.9));
 
-    /* ===== TOP PAGES ===== */
-    if (Array.isArray(topPages)) {
-      topPages.forEach((p) => {
-        if (p?.slug) {
-          urls.add(
-            url(`${baseUrl}/top/${p.slug}`, new Date().toISOString(), 0.8)
-          );
-        }
-      });
-    }
+  /* ===== TOP PAGES ===== */
+  topPages.forEach((p) => {
+    urls.push(url(`${baseUrl}/top/${p.slug}`, new Date().toISOString(), 0.8));
+  });
 
-    /* ===== PRODUCTS ===== */
-    const productsSnap = await getDocs(collection(db, "products"));
+  /* ===== PRODUCTS (AI FILTER + RANKING) ===== */
+  const productsSnap = await getDocs(collection(db, "products"));
 
-    productsSnap.forEach((doc) => {
-      const data = doc.data();
+  const products = [];
 
-      urls.add(
+  productsSnap.forEach((doc) => {
+    const data = doc.data();
+
+    const score = aiScore(data);
+
+    // ❌ remove low quality pages
+    if (score < 30) return;
+
+    products.push({
+      url: `${baseUrl}/product/${doc.id}`,
+      score,
+      updated: data?.updatedAt,
+    });
+  });
+
+  // 🔥 ranking
+  products
+    .sort((a, b) => b.score - a.score)
+    .forEach((p) => {
+      urls.push(
         url(
-          `${baseUrl}/product/${doc.id}`,
-          safeDate(data?.updatedAt),
-          0.85
+          p.url,
+          new Date().toISOString(),
+          Math.min(1, p.score / 100)
         )
       );
     });
 
-    /* ===== BLOG ===== */
-    const blogSnap = await getDocs(collection(db, "blog"));
+  /* ===== BLOG (AI FILTER + RANKING) ===== */
+  const blogSnap = await getDocs(collection(db, "blog"));
 
-    blogSnap.forEach((doc) => {
-      const data = doc.data();
+  const blogs = [];
 
-      const slug = data?.slug || doc.id;
+  blogSnap.forEach((doc) => {
+    const data = doc.data();
 
-      urls.add(
-        url(
-          `${baseUrl}/blog/${slug}`,
-          safeDate(data?.createdAt),
-          0.9
-        )
+    const score = aiScore(data);
+
+    if (score < 25) return;
+
+    blogs.push({
+      url: `${baseUrl}/blog/${data.slug || doc.id}`,
+      score,
+    });
+  });
+
+  blogs
+    .sort((a, b) => b.score - a.score)
+    .forEach((b) => {
+      urls.push(
+        url(b.url, new Date().toISOString(), Math.min(1, b.score / 100))
       );
     });
 
-    /* ================= XML OUTPUT ================= */
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${Array.from(urls).join("\n")}
-</urlset>`;
+  /* ===== OUTPUT ===== */
+  const xml = xmlWrap(urls);
 
-    res.setHeader("Content-Type", "application/xml");
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
-
-    res.write(xml);
-    res.end();
-
-    return {
-      props: {},
-    };
-  } catch (e) {
-    res.statusCode = 500;
-    res.end("Sitemap Error");
-
-    return {
-      props: {},
-    };
-  }
-          }
+  res.setHeader("Content-Type", "application/xml");
+  return res.status(200).send(xml);
+      }
