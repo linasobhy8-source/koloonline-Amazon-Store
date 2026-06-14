@@ -210,7 +210,9 @@ export default function TopPage({ page }) {
 export async function getStaticPaths() {
   return {
     paths: topPages.map((page) => ({
-      params: { slug: page.slug },
+      params: {
+        slug: page.slug,
+      },
     })),
     fallback: false,
   };
@@ -227,4 +229,4 @@ export async function getStaticProps({ params }) {
       page,
     },
   };
-                                           }
+          }
