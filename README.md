@@ -1,6 +1,6 @@
 # 🛒 Koloonline Amazon Store
 
-A modern Amazon Affiliate store built with **Next.js + Firebase**, focused on SEO performance, fast loading, and structured product discovery.
+A high-performance **Amazon Affiliate E-commerce platform** built with **Next.js + Firebase**, optimized for SEO, fast indexing, and automated product discovery.
 
 ---
 
@@ -12,7 +12,7 @@ A modern Amazon Affiliate store built with **Next.js + Firebase**, focused on SE
 | 📦 Product | https://koloonline.online/product/B0GWTCCHFZ |
 | 🛒 Cart | https://koloonline.online/cart |
 | 📰 Blog | https://koloonline.online/blog |
-| ✉️ Contact | https://koloonline.online/contact |
+| 📂 Categories | https://koloonline.online/categories |
 | 📊 Dashboard | https://koloonline.online/dashboard |
 | 🎉 Thank You | https://koloonline.online/thankyou |
 
@@ -20,64 +20,82 @@ A modern Amazon Affiliate store built with **Next.js + Firebase**, focused on SE
 
 ## ⚙️ Tech Stack
 
-- Next.js (SSR + SEO optimized rendering)
-- Firebase Firestore (product data storage)
-- Vercel (serverless deployment)
-- Google Analytics 4 (GA4)
-- Google Tag Manager (GTM)
-- Amazon Affiliate Program integration
+- ⚡ Next.js (SSR + ISR for SEO optimization)
+- 🔥 Firebase Firestore (real-time product database)
+- 🚀 Vercel (serverless edge deployment)
+- 📊 Google Analytics 4 (GA4 tracking)
+- 🧭 Google Tag Manager (GTM events system)
+- 🛒 Amazon Affiliate Program integration
 
 ---
 
 ## 📈 Key Features
 
-- Dynamic product pages using `/product/[asin]`
-- Firebase-based product catalog
-- Affiliate tracking system
-- Click event tracking via GA4 & GTM
-- WhatsApp conversion flow integration
-- Related product recommendations
-- SEO-friendly metadata (OpenGraph + Schema.org)
-- Dynamic sitemap generation from database
+- Dynamic product pages (`/product/[id]`)
+- Firebase-powered product catalog
+- Automated affiliate link system
+- Click tracking (GA4 + GTM events)
+- WhatsApp conversion funnel
+- Related product recommendation engine
+- SEO optimized metadata (OpenGraph + Twitter Cards)
+- Schema.org structured data for rich results
+- Dynamic sitemap generation from Firestore database
+- Fast indexing via Google Search Console + IndexNow
 
 ---
 
-## 🚀 Business Objectives
+## 🚀 SEO Infrastructure
 
-- Improve product discovery experience
-- Enhance SEO visibility and indexing performance
-- Build structured affiliate funnels
-- Enable analytics-driven optimization
-- Prepare for future SaaS expansion
+- 🗺️ Dynamic Sitemap:  
+  https://koloonline.online/sitemap.xml
+
+- 🤖 Robots.txt optimized for indexing:  
+  https://koloonline.online/robots.txt
+
+- ⚡ Instant indexing via IndexNow API
+
+- 🔍 Structured product & blog schema markup
+
+- 📈 Clean URL architecture for maximum crawlability
 
 ---
 
-## 🔐 Architecture Overview
+## 🧠 Data Flow Architecture
 
-- Frontend: Next.js (React-based framework)
+All product data is stored in **Firebase Firestore**, and automatically synchronized across:
+
+- 🛍️ Product pages
+- 📰 Blog system
+- 🗺️ Sitemap generator
+- 🔍 SEO metadata system
+- 📊 Analytics & tracking layer
+
+This ensures **real-time SEO consistency** across the entire platform.
+
+---
+
+## 🔐 System Architecture
+
+- Frontend: Next.js (SSR + ISR hybrid rendering)
 - Backend: Firebase Firestore (serverless database)
-- Hosting: Vercel (edge deployment)
-- External Services: Google Analytics & Amazon Affiliate System
+- Hosting: Vercel Edge Network
+- Analytics: GA4 + GTM
+- SEO Layer: Dynamic Sitemap + Structured Data + IndexNow
 
 ---
 
-## ⚡ SEO Strategy
+## ⚡ Business Objectives
 
-- Dynamic sitemap generation from product database
-- Clean and structured URL architecture
-- Metadata optimization for social sharing (OpenGraph)
-- Schema markup for better search engine understanding
-- Fast indexing support via Google Search Console
+- Improve organic traffic through SEO automation
+- Increase product discovery efficiency
+- Build scalable affiliate monetization system
+- Enable data-driven content optimization
+- Prepare foundation for SaaS expansion
 
 ---
 
-## 🧠 Data Flow
+## 📌 Notes
 
-All products are stored in Firebase Firestore and automatically reflected across:
-
-- Website pages
-- Blog system
-- Sitemap generation
-- SEO metadata system
-
-This ensures consistent and synchronized product visibility across the platform.
+- Sitemap updates dynamically from Firestore
+- All product URLs are SEO indexed automatically
+- System designed for high crawl efficiency and fast Google indexing
