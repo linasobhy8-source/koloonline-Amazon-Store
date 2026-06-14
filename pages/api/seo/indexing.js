@@ -1,5 +1,3 @@
-import { google } from "googleapis";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -25,11 +23,16 @@ export default async function handler(req, res) {
       });
     }
 
+    // Dynamic Import
+    const { google } = await import("googleapis");
+
     let credentials;
 
     try {
-      credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-    } catch (err) {
+      credentials = JSON.parse(
+        process.env.GOOGLE_SERVICE_ACCOUNT
+      );
+    } catch {
       return res.status(500).json({
         success: false,
         message: "Invalid GOOGLE_SERVICE_ACCOUNT JSON",
@@ -38,7 +41,9 @@ export default async function handler(req, res) {
 
     const auth = new google.auth.GoogleAuth({
       credentials,
-      scopes: ["https://www.googleapis.com/auth/indexing"],
+      scopes: [
+        "https://www.googleapis.com/auth/indexing",
+      ],
     });
 
     const client = await auth.getClient();
@@ -48,21 +53,22 @@ export default async function handler(req, res) {
       auth: client,
     });
 
-    const result = await indexing.urlNotifications.publish({
-      requestBody: {
-        url,
-        type: "URL_UPDATED",
-      },
-    });
+    const result =
+      await indexing.urlNotifications.publish({
+        requestBody: {
+          url,
+          type: "URL_UPDATED",
+        },
+      });
 
     return res.status(200).json({
       success: true,
       data: result.data,
     });
-  } catch (e) {
+  } catch (error) {
     return res.status(500).json({
       success: false,
-      error: e.message || "Indexing failed",
+      error: error.message || "Indexing failed",
     });
   }
-      }
+}
