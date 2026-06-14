@@ -4,12 +4,18 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-
         {/* ================= BASIC SEO ================= */}
         <meta charSet="UTF-8" />
         <meta name="robots" content="index,follow,max-image-preview:large" />
         <meta name="googlebot" content="index,follow" />
         <meta name="theme-color" content="#ff9900" />
+
+        {/* ================= SITEMAP ================= */}
+        <link
+          rel="sitemap"
+          type="application/xml"
+          href="https://koloonline.online/sitemap.xml"
+        />
 
         {/* ================= DNS PREFETCH ================= */}
         <link
@@ -84,6 +90,32 @@ export default function Document() {
           }}
         />
 
+        {/* ================= OPEN GRAPH ================= */}
+        <meta property="og:site_name" content="Koloonline" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://koloonline.online" />
+        <meta
+          property="og:title"
+          content="Koloonline - Amazon Deals & Trending Products"
+        />
+        <meta
+          property="og:description"
+          content="Discover trending Amazon products, reviews, Amazon Haul deals and buying guides."
+        />
+
+        {/* ================= TWITTER ================= */}
+        <meta
+          name="twitter:card"
+          content="summary_large_image"
+        />
+        <meta
+          name="twitter:title"
+          content="Koloonline - Amazon Deals & Trending Products"
+        />
+        <meta
+          name="twitter:description"
+          content="Discover trending Amazon products and daily deals."
+        />
       </Head>
 
       <body>
@@ -92,4 +124,4 @@ export default function Document() {
       </body>
     </Html>
   );
-            }
+          }
