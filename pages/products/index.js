@@ -5,18 +5,17 @@ import { getProductsFast } from "../../lib/firebaseQuery";
 
 const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
 
-/* ================= SAFE UTILS (OPTIMIZED) ================= */
+/* ================= SAFE UTILS ================= */
 const safeText = (v) => {
-  if (!v) return "";
-
+  if (v === null || v === undefined) return "";
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
 
-  if (Array.isArray(v)) return v.join(" ");
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
 
-  if (v?.text) return v.text;
-  if (v?.title) return v.title;
-  if (v?.value) return v.value;
+  if (typeof v === "object") {
+    return v?.text || v?.title || v?.value || v?.name || "";
+  }
 
   return "";
 };
@@ -25,16 +24,23 @@ const safeImage = (img) => {
   if (typeof img === "string" && img.startsWith("http")) return img;
   if (img?.url) return img.url;
   if (img?.image) return img.image;
+  if (img?.src) return img.src;
   return fallbackImage;
 };
 
-/* ================= SERVER SIDE (FAST RENDER) ================= */
+/* ================= SERVER SIDE ================= */
 export async function getStaticProps() {
   try {
-    const products = await getProductsFast();
+    const products = await getProductsFast(); // ✅ REQUIRED
 
-    // 🔥 أهم تحسين: نعمل trim على السيرفر قبل ما نبعته للعميل
-    const optimized = (products || [])
+    if (!Array.isArray(products)) {
+      return {
+        props: { products: [] },
+        revalidate: 300,
+      };
+    }
+
+    const optimized = products
       .slice(0, 40)
       .map((p) => ({
         id: safeText(p?.id),
@@ -44,16 +50,14 @@ export async function getStaticProps() {
       .filter((p) => p.id);
 
     return {
-      props: {
-        products: optimized,
-      },
-      revalidate: 300, // كل 5 دقائق فقط
+      props: { products: optimized },
+      revalidate: 300,
     };
-  } catch {
+  } catch (e) {
+    console.error("PRODUCT LIST ERROR:", e);
+
     return {
-      props: {
-        products: [],
-      },
+      props: { products: [] },
       revalidate: 300,
     };
   }
@@ -73,13 +77,12 @@ export default function ProductsPage({ products }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 20,
           marginTop: 20,
         }}
       >
-        {products.map((p) => (
+        {(products || []).map((p) => (
           <Link key={p.id} href={`/product/${p.id}`}>
             <div
               style={{
@@ -90,12 +93,11 @@ export default function ProductsPage({ products }) {
               }}
             >
               <Image
-                src={p.image}
+                src={p.image || fallbackImage}
                 width={300}
                 height={300}
-                alt={p.title}
+                alt={p.title || "product"}
                 loading="lazy"
-                style={{ objectFit: "contain" }}
               />
 
               <h3 style={{ fontSize: 14 }}>{p.title}</h3>
@@ -105,4 +107,4 @@ export default function ProductsPage({ products }) {
       </div>
     </div>
   );
-}
+    }
