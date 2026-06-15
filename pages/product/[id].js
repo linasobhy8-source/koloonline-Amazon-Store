@@ -2,55 +2,37 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
+import { safeText, safeImage } from "../../lib/safe";
 
 const fallbackImage = "https://via.placeholder.com/500x500";
 
-const safe = (v) => {
-  if (v === null || v === undefined) return "";
-  if (typeof v === "string" || typeof v === "number") return String(v);
-  if (typeof v === "object") return JSON.stringify(v); // 🔥 يمنع crash نهائيًا
-  return "";
-};
-
-const safeImage = (img) => {
-  if (typeof img === "string") return img;
-  if (img?.url) return img.url;
-  if (img?.image) return img.image;
-  return fallbackImage;
-};
-
 export default function ProductPage({ product, related }) {
-  if (!product) return <div>Product not found</div>;
-
-  const title = safe(product.title);
-  const description = safe(product.description);
-  const image = safeImage(product.image);
-  const price = safe(product.price);
+  if (!product?.id) return <div>Product not found</div>;
 
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
     <>
       <Head>
-        <title>{title}</title>
-        <meta name="description" content={description} />
+        <title>{safeText(product.title)}</title>
+        <meta name="description" content={safeText(product.description)} />
         <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{title}</h1>
+        <h1>{safeText(product.title)}</h1>
 
         <Image
-          src={image}
+          src={safeImage(product.image)}
           width={500}
           height={500}
-          alt={title}
+          alt={safeText(product.title)}
           priority
         />
 
-        {price ? <h2>${price}</h2> : null}
+        {product.price ? <h2>${product.price}</h2> : null}
 
-        <p>{description}</p>
+        <p>{safeText(product.description)}</p>
 
         <Link href="/">← Home</Link>
 
@@ -66,9 +48,9 @@ export default function ProductPage({ product, related }) {
                       src={safeImage(p.image)}
                       width={200}
                       height={200}
-                      alt={safe(p.title)}
+                      alt={safeText(p.title)}
                     />
-                    <p>{safe(p.title)}</p>
+                    <p>{safeText(p.title)}</p>
                   </div>
                 </Link>
               ))}
@@ -83,17 +65,17 @@ export default function ProductPage({ product, related }) {
 /* ================= DATA ================= */
 export async function getStaticProps({ params }) {
   try {
-    const products = await getProductsFast(); // ✅ المطلوب
+    const products = await getProductsFast();
 
     const clean = (products || []).map((p) => ({
       id: String(p?.id || ""),
-      title: safe(p?.title),
-      description: safe(p?.description),
+      title: safeText(p?.title),
+      description: safeText(p?.description),
       image: safeImage(p?.image),
-      price: safe(p?.price),
+      price: Number(p?.price) || 0,
     }));
 
-    const product = clean.find((p) => p.id === String(params.id));
+    const product = clean.find((p) => p.id === params.id);
 
     if (!product) return { notFound: true };
 
@@ -114,19 +96,15 @@ export async function getStaticProps({ params }) {
 /* ================= PATHS ================= */
 export async function getStaticPaths() {
   try {
-    const products = await getProductsFast(); // ✅
-
-    const clean = (products || []).map((p) => ({
-      id: String(p?.id || ""),
-    }));
+    const products = await getProductsFast();
 
     return {
-      paths: clean.slice(0, 20).map((p) => ({
-        params: { id: p.id },
+      paths: (products || []).slice(0, 20).map((p) => ({
+        params: { id: String(p.id) },
       })),
       fallback: "blocking",
     };
   } catch {
     return { paths: [], fallback: "blocking" };
   }
-                                          }
+    }
