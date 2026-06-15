@@ -4,8 +4,19 @@ import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 import { normalizeProduct } from "../../lib/normalizeProduct";
 
-const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Product";
 
+/* ================= SAFE IMAGE ================= */
+const safeImage = (img) => {
+  if (typeof img === "string") return img;
+  if (img?.url) return img.url;
+  if (img?.image) return img.image;
+  if (img?.src) return img.src;
+  return fallbackImage;
+};
+
+/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
   if (!product?.id) return <div>Product not found</div>;
 
@@ -23,7 +34,7 @@ export default function ProductPage({ product, related }) {
         <h1>{String(product.title || "")}</h1>
 
         <Image
-          src={product.image || fallbackImage}
+          src={safeImage(product.image)}
           width={500}
           height={500}
           alt={String(product.title || "product")}
@@ -51,7 +62,7 @@ export default function ProductPage({ product, related }) {
                 <Link key={p.id} href={`/product/${p.id}`}>
                   <div>
                     <Image
-                      src={p.image || fallbackImage}
+                      src={safeImage(p.image)}
                       width={200}
                       height={200}
                       alt={String(p.title || "")}
@@ -68,12 +79,14 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= DATA ================= */
+/* ================= DATA FETCH ================= */
 export async function getStaticProps({ params }) {
   try {
+    // ⚠️ لازم استخدام موحد زي ما طلبت
     const products = await getProductsFast();
 
-    const clean = (products || []).map(normalizeProduct);
+    const clean = (Array.isArray(products) ? products : [])
+      .map(normalizeProduct);
 
     const product = clean.find(
       (p) => String(p.id) === String(params.id)
@@ -86,11 +99,14 @@ export async function getStaticProps({ params }) {
       .slice(0, 6);
 
     return {
-      props: { product, related },
+      props: {
+        product,
+        related,
+      },
       revalidate: 3600,
     };
   } catch (e) {
-    console.error(e);
+    console.error("PRODUCT ERROR:", e);
     return { notFound: true };
   }
 }
@@ -100,7 +116,8 @@ export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
-    const clean = (products || []).map(normalizeProduct);
+    const clean = (Array.isArray(products) ? products : [])
+      .map(normalizeProduct);
 
     return {
       paths: clean.slice(0, 20).map((p) => ({
