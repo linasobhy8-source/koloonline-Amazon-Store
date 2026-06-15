@@ -7,11 +7,17 @@ import { getProductsFast } from "../../lib/firebaseQuery";
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Product";
 
-/* ================= FAST SAFE HELPERS ================= */
+/* ================= SAFE HELPERS ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
-  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean"
+  ) {
     return String(v);
+  }
 
   if (v?.toDate) {
     try {
@@ -22,18 +28,22 @@ const safeText = (v) => {
   }
 
   if (typeof v === "object") {
-    if (v.title) return v.title;
-    if (v.text) return v.text;
-    if (v.value) return v.value;
+    if (typeof v.title === "string") return v.title;
+    if (typeof v.text === "string") return v.text;
+    if (typeof v.value === "string") return v.value;
   }
 
   return "";
 };
 
 const safeImage = (img) => {
-  if (typeof img === "string") return img;
-  if (img?.url) return img.url;
-  if (img?.image) return img.image;
+  if (typeof img === "string" && img.trim()) return img;
+
+  if (img && typeof img === "object") {
+    if (typeof img.url === "string") return img.url;
+    if (typeof img.image === "string") return img.image;
+  }
+
   return fallbackImage;
 };
 
@@ -47,57 +57,73 @@ export default function ProductPage({ product, related }) {
 
   return (
     <>
-      {/* SEO */}
       <Head>
-        <title>{product.title || "Product"}</title>
+        <title>{safeText(product.title) || "Product"}</title>
+
         <meta
           name="description"
-          content={product.description || product.title || ""}
+          content={
+            safeText(product.description) ||
+            safeText(product.title) ||
+            ""
+          }
         />
+
         <link rel="canonical" href={url} />
       </Head>
 
-      {/* PRODUCT */}
       <div style={{ padding: 20 }}>
-        <h1>{product.title}</h1>
+        <h1>{safeText(product.title)}</h1>
 
         <Image
-          src={product.image || fallbackImage}
+          src={safeImage(product.image)}
           width={500}
           height={500}
-          alt={product.title || "product"}
+          alt={safeText(product.title) || "product"}
           priority
         />
 
-        {product.price ? <h2>${product.price}</h2> : null}
-        {product.description ? <p>{product.description}</p> : null}
+        {safeText(product.price) && (
+          <h2>${safeText(product.price)}</h2>
+        )}
 
-        <Link href="/products">← Back</Link>
+        {safeText(product.description) && (
+          <p>{safeText(product.description)}</p>
+        )}
 
-        {/* RELATED */}
+        <Link href="/products">
+          ← Back
+        </Link>
+
         {related?.length > 0 && (
           <>
-            <h2 style={{ marginTop: 30 }}>Related Products</h2>
+            <h2 style={{ marginTop: 30 }}>
+              Related Products
+            </h2>
 
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns:
-                  "repeat(auto-fill, minmax(180px, 1fr))",
+                  "repeat(auto-fill,minmax(180px,1fr))",
                 gap: 12,
               }}
             >
               {related.map((p) => (
-                <Link key={p.id} href={`/product/${p.id}`}>
+                <Link
+                  key={String(p.id)}
+                  href={`/product/${p.id}`}
+                >
                   <div>
                     <Image
-                      src={p.image || fallbackImage}
+                      src={safeImage(p.image)}
                       width={200}
                       height={200}
-                      alt={p.title || "product"}
+                      alt={safeText(p.title) || "product"}
                       loading="lazy"
                     />
-                    <p>{p.title}</p>
+
+                    <p>{safeText(p.title)}</p>
                   </div>
                 </Link>
               ))}
@@ -109,7 +135,7 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= ISR (FAST VERSION) ================= */
+/* ================= STATIC PROPS ================= */
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
@@ -118,16 +144,21 @@ export async function getStaticProps({ params }) {
       return { notFound: true };
     }
 
-    // 🔥 find once (fast path)
     const productRaw = products.find(
       (p) => String(p?.id) === String(params?.id)
     );
 
-    if (!productRaw) return { notFound: true };
+    if (!productRaw) {
+      return { notFound: true };
+    }
 
-    // ⚡ PRE-NORMALIZE (important for speed)
+    console.log(
+      "BUILDING PRODUCT:",
+      productRaw.id
+    );
+
     const product = {
-      id: productRaw.id,
+      id: String(productRaw.id || ""),
       title: safeText(productRaw.title),
       description: safeText(productRaw.description),
       image: safeImage(productRaw.image),
@@ -135,10 +166,13 @@ export async function getStaticProps({ params }) {
     };
 
     const related = products
-      .filter((p) => String(p?.id) !== String(params?.id))
+      .filter(
+        (p) =>
+          String(p?.id) !== String(params?.id)
+      )
       .slice(0, 6)
       .map((p) => ({
-        id: p.id,
+        id: String(p.id || ""),
         title: safeText(p.title),
         image: safeImage(p.image),
       }));
@@ -148,31 +182,45 @@ export async function getStaticProps({ params }) {
         product,
         related,
       },
-      revalidate: 3600, // 🔥 cache 1h
+      revalidate: 3600,
     };
-  } catch (e) {
-    console.error("PRODUCT ERROR:", e);
-    return { notFound: true };
+  } catch (error) {
+    console.error(
+      "PRODUCT PAGE BUILD ERROR:",
+      error
+    );
+
+    return {
+      notFound: true,
+    };
   }
 }
 
-/* ================= STATIC PATHS (LIMITED FOR SPEED) ================= */
+/* ================= STATIC PATHS ================= */
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
     return {
       paths: (products || [])
-        .slice(0, 30) // 🔥 تقليل build time
+        .filter((p) => p?.id)
+        .slice(0, 30)
         .map((p) => ({
-          params: { id: String(p.id) },
+          params: {
+            id: String(p.id),
+          },
         })),
       fallback: "blocking",
     };
-  } catch {
+  } catch (error) {
+    console.error(
+      "STATIC PATHS ERROR:",
+      error
+    );
+
     return {
       paths: [],
       fallback: "blocking",
     };
   }
-          }
+            }
