@@ -3,9 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 
-/* ================= SAFE ================= */
-const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
+/* ================= FALLBACK ================= */
+const fallbackImage =
+  "https://via.placeholder.com/500x500?text=Product";
 
+/* ================= SAFE HELPERS ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
   if (typeof v === "string" || typeof v === "number") return String(v);
@@ -34,16 +36,22 @@ const safeImage = (img) => {
   return fallbackImage;
 };
 
+/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
-  if (!product?.id) return <div>Product not found</div>;
+  if (!product?.id) {
+    return <div style={{ padding: 20 }}>Product not found</div>;
+  }
 
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
     <>
       <Head>
-        <title>{product.title}</title>
-        <meta name="description" content={product.description} />
+        <title>{product.title || "Product"}</title>
+        <meta
+          name="description"
+          content={product.description || product.title || ""}
+        />
         <link rel="canonical" href={url} />
       </Head>
 
@@ -51,24 +59,31 @@ export default function ProductPage({ product, related }) {
         <h1>{product.title}</h1>
 
         <Image
-          src={product.image}
+          src={product.image || fallbackImage}
           width={500}
           height={500}
-          alt={product.title}
+          alt={product.title || "product"}
           priority
         />
 
-        <h2>{product.price ? `$${product.price}` : ""}</h2>
+        {product.price ? <h2>${product.price}</h2> : null}
 
-        <p>{product.description}</p>
+        {product.description ? <p>{product.description}</p> : null}
 
         <Link href="/">← Home</Link>
 
-        {related?.length > 0 && (
+        {/* RELATED */}
+        {Array.isArray(related) && related.length > 0 && (
           <>
             <h3>Related</h3>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gap: 10,
+              }}
+            >
               {related.map((p) => (
                 <Link key={p.id} href={`/product/${p.id}`}>
                   <div>
@@ -76,7 +91,7 @@ export default function ProductPage({ product, related }) {
                       src={safeImage(p.image)}
                       width={200}
                       height={200}
-                      alt={p.title}
+                      alt={p.title || "product"}
                     />
                     <p>{p.title}</p>
                   </div>
@@ -90,12 +105,12 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= SSR ================= */
+/* ================= ISR ================= */
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const productRaw = products?.find(
+    const productRaw = (products || []).find(
       (p) => String(p?.id) === String(params?.id)
     );
 
@@ -110,7 +125,7 @@ export async function getStaticProps({ params }) {
     };
 
     const related = (products || [])
-      .filter((p) => p.id !== product.id)
+      .filter((p) => String(p?.id) !== String(params?.id))
       .slice(0, 6)
       .map((p) => ({
         id: p.id,
@@ -123,7 +138,7 @@ export async function getStaticProps({ params }) {
       revalidate: 3600,
     };
   } catch (e) {
-    console.error(e);
+    console.error("PRODUCT ERROR:", e);
     return { notFound: true };
   }
 }
@@ -140,6 +155,9 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   } catch {
-    return { paths: [], fallback: "blocking" };
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
   }
-    }
+          }
