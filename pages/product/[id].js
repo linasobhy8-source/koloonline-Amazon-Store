@@ -2,40 +2,55 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { normalizeProduct } from "../../lib/normalizeProduct";
 
-const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
+const fallbackImage = "https://via.placeholder.com/500x500";
+
+const safe = (v) => {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+  if (typeof v === "object") return JSON.stringify(v); // 🔥 يمنع crash نهائيًا
+  return "";
+};
+
+const safeImage = (img) => {
+  if (typeof img === "string") return img;
+  if (img?.url) return img.url;
+  if (img?.image) return img.image;
+  return fallbackImage;
+};
 
 export default function ProductPage({ product, related }) {
   if (!product) return <div>Product not found</div>;
+
+  const title = safe(product.title);
+  const description = safe(product.description);
+  const image = safeImage(product.image);
+  const price = safe(product.price);
 
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
     <>
       <Head>
-        <title>{String(product.title || "")}</title>
-        <meta
-          name="description"
-          content={String(product.description || "")}
-        />
+        <title>{title}</title>
+        <meta name="description" content={description} />
         <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{String(product.title || "")}</h1>
+        <h1>{title}</h1>
 
         <Image
-          src={product.image || fallbackImage}
+          src={image}
           width={500}
           height={500}
-          alt={String(product.title || "product")}
+          alt={title}
           priority
         />
 
-        {product.price ? <h2>${product.price}</h2> : null}
+        {price ? <h2>${price}</h2> : null}
 
-        <p>{String(product.description || "")}</p>
+        <p>{description}</p>
 
         <Link href="/">← Home</Link>
 
@@ -48,12 +63,12 @@ export default function ProductPage({ product, related }) {
                 <Link key={p.id} href={`/product/${p.id}`}>
                   <div>
                     <Image
-                      src={p.image || fallbackImage}
+                      src={safeImage(p.image)}
                       width={200}
                       height={200}
-                      alt={String(p.title || "")}
+                      alt={safe(p.title)}
                     />
-                    <p>{String(p.title || "")}</p>
+                    <p>{safe(p.title)}</p>
                   </div>
                 </Link>
               ))}
@@ -68,13 +83,17 @@ export default function ProductPage({ product, related }) {
 /* ================= DATA ================= */
 export async function getStaticProps({ params }) {
   try {
-    const products = await getProductsFast(); // ✅ required
+    const products = await getProductsFast(); // ✅ المطلوب
 
-    const clean = (products || []).map(normalizeProduct);
+    const clean = (products || []).map((p) => ({
+      id: String(p?.id || ""),
+      title: safe(p?.title),
+      description: safe(p?.description),
+      image: safeImage(p?.image),
+      price: safe(p?.price),
+    }));
 
-    const product = clean.find(
-      (p) => String(p.id) === String(params.id)
-    );
+    const product = clean.find((p) => p.id === String(params.id));
 
     if (!product) return { notFound: true };
 
@@ -95,17 +114,19 @@ export async function getStaticProps({ params }) {
 /* ================= PATHS ================= */
 export async function getStaticPaths() {
   try {
-    const products = await getProductsFast(); // ✅ required
+    const products = await getProductsFast(); // ✅
 
-    const clean = (products || []).map(normalizeProduct);
+    const clean = (products || []).map((p) => ({
+      id: String(p?.id || ""),
+    }));
 
     return {
       paths: clean.slice(0, 20).map((p) => ({
-        params: { id: String(p.id) },
+        params: { id: p.id },
       })),
       fallback: "blocking",
     };
   } catch {
     return { paths: [], fallback: "blocking" };
   }
-          }
+                                          }
