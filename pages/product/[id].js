@@ -3,14 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 
-/* ================= FALLBACK ================= */
+/* ================= SAFE HELPERS ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Product";
 
-/* ================= SAFE HELPERS ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
-  if (typeof v === "string" || typeof v === "number") return String(v);
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+    return String(v);
 
   if (v?.toDate) {
     try {
@@ -38,41 +38,35 @@ const safeImage = (img) => {
 
 /* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
-  if (!product?.id) {
-    return <div style={{ padding: 20 }}>Product not found</div>;
-  }
+  if (!product?.id) return <div>Product not found</div>;
 
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
     <>
       <Head>
-        <title>{product.title || "Product"}</title>
-        <meta
-          name="description"
-          content={product.description || product.title || ""}
-        />
+        <title>{safeText(product.title)}</title>
+        <meta name="description" content={safeText(product.description)} />
         <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{product.title}</h1>
+        <h1>{safeText(product.title)}</h1>
 
         <Image
-          src={product.image || fallbackImage}
+          src={safeImage(product.image)}
           width={500}
           height={500}
-          alt={product.title || "product"}
+          alt={safeText(product.title)}
           priority
         />
 
-        {product.price ? <h2>${product.price}</h2> : null}
+        <h2>{product.price ? `$${safeText(product.price)}` : ""}</h2>
 
-        {product.description ? <p>{product.description}</p> : null}
+        <p>{safeText(product.description)}</p>
 
         <Link href="/">← Home</Link>
 
-        {/* RELATED */}
         {Array.isArray(related) && related.length > 0 && (
           <>
             <h3>Related</h3>
@@ -80,7 +74,7 @@ export default function ProductPage({ product, related }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gridTemplateColumns: "repeat(3,1fr)",
                 gap: 10,
               }}
             >
@@ -91,9 +85,9 @@ export default function ProductPage({ product, related }) {
                       src={safeImage(p.image)}
                       width={200}
                       height={200}
-                      alt={p.title || "product"}
+                      alt={safeText(p.title)}
                     />
-                    <p>{p.title}</p>
+                    <p>{safeText(p.title)}</p>
                   </div>
                 </Link>
               ))}
@@ -105,12 +99,16 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= ISR ================= */
+/* ================= DATA ================= */
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const productRaw = (products || []).find(
+    if (!Array.isArray(products)) {
+      return { notFound: true };
+    }
+
+    const productRaw = products.find(
       (p) => String(p?.id) === String(params?.id)
     );
 
@@ -124,7 +122,7 @@ export async function getStaticProps({ params }) {
       price: safeText(productRaw.price),
     };
 
-    const related = (products || [])
+    const related = products
       .filter((p) => String(p?.id) !== String(params?.id))
       .slice(0, 6)
       .map((p) => ({
@@ -160,4 +158,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-          }
+}
