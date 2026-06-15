@@ -1,5 +1,5 @@
 import { getDocs, collection } from "firebase/firestore";
-import { db } from "../../../config/firebase";
+import { db } from "../../config/firebase";
 
 const baseUrl = "https://koloonline.online";
 
@@ -25,15 +25,18 @@ export default async function handler(req, res) {
   try {
     const snap = await getDocs(collection(db, "blog"));
 
-    let urls = [];
+    const urls = [];
 
     snap.forEach((doc) => {
       const data = doc.data();
 
       const slug = data?.slug || doc.id;
+
       if (!slug) return;
 
-      urls.push(buildUrl(`${baseUrl}/blog/${slug}`));
+      urls.push(
+        buildUrl(`${baseUrl}/blog/${slug}`)
+      );
     });
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -41,10 +44,23 @@ export default async function handler(req, res) {
 ${urls.join("\n")}
 </urlset>`;
 
-    res.setHeader("Content-Type", "application/xml");
+    res.setHeader(
+      "Content-Type",
+      "application/xml"
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=86400"
+    );
+
     return res.status(200).send(xml);
   } catch (error) {
-    console.error(error);
-    return res.status(500).send("Sitemap error");
+    console.error("Sitemap Error:", error);
+
+    return res.status(500).send(`
+      <?xml version="1.0" encoding="UTF-8"?>
+      <error>Sitemap generation failed</error>
+    `);
   }
 }
