@@ -1,4 +1,5 @@
 import useProducts from "../hooks/useProducts";
+import { safeText, safeImage } from "../lib/safe";
 
 export default function Products() {
   const { products, loading } = useProducts();
@@ -7,10 +8,12 @@ export default function Products() {
 
   return (
     <div>
-      {products.map((p) => (
+      <h1>Products</h1>
+
+      {products?.map((p) => (
         <div key={p.id}>
-          <img src={p.image} alt={p.title} />
-          <h3>{p.title}</h3>
+          <img src={safeImage(p.image)} width={100} />
+          <p>{safeText(p.title)}</p>
         </div>
       ))}
     </div>
