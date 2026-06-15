@@ -4,29 +4,21 @@ import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 import { normalizeProduct } from "../../lib/normalizeProduct";
 
-const fallbackImage =
-  "https://via.placeholder.com/500x500?text=Product";
+const fallbackImage = "https://via.placeholder.com/500x500?text=Product";
 
-/* ================= SAFE IMAGE ================= */
-const safeImage = (img) => {
-  if (typeof img === "string") return img;
-  if (img?.url) return img.url;
-  if (img?.image) return img.image;
-  if (img?.src) return img.src;
-  return fallbackImage;
-};
-
-/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
-  if (!product?.id) return <div>Product not found</div>;
+  if (!product) return <div>Product not found</div>;
 
   const url = `https://koloonline.online/product/${product.id}`;
 
   return (
     <>
       <Head>
-        <title>{product.title || "Product"}</title>
-        <meta name="description" content={product.description || ""} />
+        <title>{String(product.title || "")}</title>
+        <meta
+          name="description"
+          content={String(product.description || "")}
+        />
         <link rel="canonical" href={url} />
       </Head>
 
@@ -34,7 +26,7 @@ export default function ProductPage({ product, related }) {
         <h1>{String(product.title || "")}</h1>
 
         <Image
-          src={safeImage(product.image)}
+          src={product.image || fallbackImage}
           width={500}
           height={500}
           alt={String(product.title || "product")}
@@ -51,18 +43,12 @@ export default function ProductPage({ product, related }) {
           <>
             <h3>Related</h3>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3,1fr)",
-                gap: 10,
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
               {related.map((p) => (
                 <Link key={p.id} href={`/product/${p.id}`}>
                   <div>
                     <Image
-                      src={safeImage(p.image)}
+                      src={p.image || fallbackImage}
                       width={200}
                       height={200}
                       alt={String(p.title || "")}
@@ -79,34 +65,29 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= DATA FETCH ================= */
+/* ================= DATA ================= */
 export async function getStaticProps({ params }) {
   try {
-    // ⚠️ لازم استخدام موحد زي ما طلبت
-    const products = await getProductsFast();
+    const products = await getProductsFast(); // ✅ required
 
-    const clean = (Array.isArray(products) ? products : [])
-      .map(normalizeProduct);
+    const clean = (products || []).map(normalizeProduct);
 
     const product = clean.find(
       (p) => String(p.id) === String(params.id)
     );
 
-    if (!product?.id) return { notFound: true };
+    if (!product) return { notFound: true };
 
     const related = clean
       .filter((p) => p.id !== product.id)
       .slice(0, 6);
 
     return {
-      props: {
-        product,
-        related,
-      },
+      props: { product, related },
       revalidate: 3600,
     };
   } catch (e) {
-    console.error("PRODUCT ERROR:", e);
+    console.error(e);
     return { notFound: true };
   }
 }
@@ -114,10 +95,9 @@ export async function getStaticProps({ params }) {
 /* ================= PATHS ================= */
 export async function getStaticPaths() {
   try {
-    const products = await getProductsFast();
+    const products = await getProductsFast(); // ✅ required
 
-    const clean = (Array.isArray(products) ? products : [])
-      .map(normalizeProduct);
+    const clean = (products || []).map(normalizeProduct);
 
     return {
       paths: clean.slice(0, 20).map((p) => ({
@@ -126,9 +106,6 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   } catch {
-    return {
-      paths: [],
-      fallback: "blocking",
-    };
+    return { paths: [], fallback: "blocking" };
   }
-  }
+          }
