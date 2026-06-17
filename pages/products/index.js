@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 import { safeText, safeImage } from "../../lib/safe";
 
-export default function Products({ products }) {
+export default function Products({ products = [] }) {
   return (
     <div style={{ padding: 20 }}>
       <Head>
@@ -13,17 +13,27 @@ export default function Products({ products }) {
 
       <h1>🔥 Products</h1>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gap: 20,
+        }}
+      >
         {products.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
+          <Link
+            key={String(p?.id || Math.random())}
+            href={`/product/${encodeURIComponent(String(p?.id || ""))}`}
+          >
             <div>
               <Image
-                src={safeImage(p.image)}
+                src={safeImage(p?.image)}
                 width={300}
                 height={300}
-                alt={safeText(p.title)}
+                alt={safeText(p?.title)}
               />
-              <h3>{safeText(p.title)}</h3>
+
+              <h3>{safeText(p?.title)}</h3>
             </div>
           </Link>
         ))}
@@ -37,20 +47,28 @@ export async function getStaticProps() {
   try {
     const products = await getProductsFast();
 
-    const clean = (products || []).map((p) => ({
-      id: String(p?.id || ""),
-      title: safeText(p?.title),
-      image: safeImage(p?.image),
-    }));
+    const clean = Array.isArray(products)
+      ? products.map((p) => ({
+          id: String(p?.id || ""),
+          title: safeText(p?.title),
+          image: safeImage(p?.image),
+        }))
+      : [];
 
     return {
-      props: { products: clean },
+      props: {
+        products: clean,
+      },
       revalidate: 300,
     };
-  } catch {
+  } catch (error) {
+    console.error("Products page error:", error);
+
     return {
-      props: { products: [] },
+      props: {
+        products: [],
+      },
       revalidate: 300,
     };
   }
-}
+            }
