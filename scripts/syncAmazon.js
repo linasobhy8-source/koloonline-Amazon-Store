@@ -1,14 +1,7 @@
 import { db } from "../config/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-} from "firebase/firestore";
-
-const SERPAPI_KEY =
-  process.env.SERPAPI_KEY;
+const SERPAPI_KEY = process.env.SERPAPI_KEY;
 
 /* ================= KEYWORDS ================= */
 
@@ -23,11 +16,40 @@ const keywords = [
   "laptop stand",
 ];
 
+/* ================= CLEAN HELPERS ================= */
+
+function cleanText(v) {
+  if (!v) return "";
+
+  if (typeof v === "string") return v;
+
+  if (typeof v === "number") return String(v);
+
+  if (typeof v === "object") {
+    return v.text || v.title || v.name || "";
+  }
+
+  return "";
+}
+
+function cleanImage(v) {
+  if (typeof v === "string" && v.startsWith("http")) return v;
+
+  if (typeof v === "object") {
+    return v.url || v.image || v.src || v.thumbnail || "";
+  }
+
+  return "";
+}
+
+function cleanNumber(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /* ================= FETCH AMAZON ================= */
 
-async function fetchAmazonProducts(
-  keyword
-) {
+async function fetchAmazonProducts(keyword) {
   try {
     const res = await fetch(
       `https://serpapi.com/search.json?engine=amazon&q=${encodeURIComponent(
@@ -37,17 +59,9 @@ async function fetchAmazonProducts(
 
     const data = await res.json();
 
-    return (
-      data.organic_results || []
-    );
-
+    return data?.organic_results || [];
   } catch (err) {
-
-    console.error(
-      `❌ Fetch Error (${keyword}):`,
-      err
-    );
-
+    console.error(`❌ Fetch Error (${keyword}):`, err);
     return [];
   }
 }
@@ -55,15 +69,9 @@ async function fetchAmazonProducts(
 /* ================= CATEGORY ================= */
 
 function detectCategory(keyword) {
+  const k = keyword.toLowerCase();
 
-  const k =
-    keyword.toLowerCase();
-
-  if (
-    k.includes("watch")
-  )
-    return "smartwatch";
-
+  if (k.includes("watch")) return "smartwatch";
   if (
     k.includes("earbuds") ||
     k.includes("headset") ||
@@ -71,174 +79,75 @@ function detectCategory(keyword) {
   )
     return "audio";
 
-  if (
-    k.includes("keyboard") ||
-    k.includes("mouse")
-  )
+  if (k.includes("keyboard") || k.includes("mouse"))
     return "gaming";
 
-  if (
-    k.includes("iphone")
-  )
-    return "mobile";
-
-  if (
-    k.includes("laptop")
-  )
-    return "computer";
+  if (k.includes("iphone")) return "mobile";
+  if (k.includes("laptop")) return "computer";
 
   return "electronics";
 }
 
-/* ================= CLEAN SYNC ================= */
+/* ================= SYNC ================= */
 
 async function syncToFirestore() {
-
   try {
-
-    console.log(
-      "🚀 Amazon Sync Started..."
-    );
+    console.log("🚀 Amazon Sync Started...");
 
     for (const keyword of keywords) {
+      console.log(`🔍 Fetching: ${keyword}`);
 
-      console.log(
-        `🔍 Fetching: ${keyword}`
-      );
-
-      const products =
-        await fetchAmazonProducts(
-          keyword
-        );
+      const products = await fetchAmazonProducts(keyword);
 
       for (const p of products) {
-
-        if (!p.asin) continue;
+        if (!p?.asin) continue;
 
         try {
+          const ref = doc(db, "products", p.asin);
 
-          const ref = doc(
-            db,
-            "products",
-            p.asin
-          );
-
-          /* ================= CHECK EXISTING ================= */
-
-          const existing =
-            await getDoc(ref);
-
-          const oldData =
-            existing.exists()
-              ? existing.data()
-              : {};
+          const existing = await getDoc(ref);
+          const oldData = existing.exists() ? existing.data() : {};
 
           const newData = {
-
             asin: p.asin,
 
-            title:
-              (
-                p.title ||
-                "No Title"
-              ).trim(),
+            title: cleanText(p.title || "No Title").trim(),
 
-            image:
-              p.thumbnail || "",
+            image: cleanImage(p.thumbnail),
 
-            price:
-              Number(
-                p.price
-              ) || 0,
+            price: cleanNumber(p.price),
 
-            link:
-              p.link || "",
+            link: typeof p.link === "string" ? p.link : "",
 
-            category:
-              detectCategory(
-                keyword
-              ),
+            category: detectCategory(keyword),
 
-            rating:
-              Number(
-                p.rating
-              ) || 4.5,
+            rating: cleanNumber(p.rating, 4.5),
 
-            views:
-              oldData.views || 0,
+            views: oldData.views || 0,
+            clicks: oldData.clicks || 0,
+            orders: oldData.orders || 0,
+            whatsapp: oldData.whatsapp || 0,
 
-            clicks:
-              oldData.clicks || 0,
-
-            orders:
-              oldData.orders || 0,
-
-            whatsapp:
-              oldData.whatsapp || 0,
-
-            score:
-              oldData.score || 0,
-
-            viralBoost:
-              oldData.viralBoost ||
-              false,
+            score: oldData.score || 0,
+            viralBoost: Boolean(oldData.viralBoost),
 
             keyword,
 
-            updatedAt:
-              Date.now(),
+            updatedAt: Date.now(),
           };
 
-          /* ================= WRITE ================= */
+          await setDoc(ref, newData, { merge: true });
 
-          if (
-            !existing.exists()
-          ) {
-
-            await setDoc(
-              ref,
-              newData
-            );
-
-            console.log(
-              `🆕 Added: ${p.asin}`
-            );
-
-          } else {
-
-            await setDoc(
-              ref,
-              newData,
-              {
-                merge: true,
-              }
-            );
-
-            console.log(
-              `♻️ Updated: ${p.asin}`
-            );
-          }
-
+          console.log(`✅ Saved: ${p.asin}`);
         } catch (err) {
-
-          console.error(
-            `❌ Product Error (${p.asin}):`,
-            err
-          );
+          console.error(`❌ Product Error (${p?.asin})`, err);
         }
       }
     }
 
-    console.log(
-      "🔥 Auto Sync Completed Successfully"
-    );
-
+    console.log("🔥 Auto Sync Completed Successfully");
   } catch (err) {
-
-    console.error(
-      "❌ Sync Error:",
-      err
-    );
+    console.error("❌ Sync Error:", err);
   }
 }
 
