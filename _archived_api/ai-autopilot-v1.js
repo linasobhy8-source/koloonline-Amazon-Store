@@ -1,4 +1,4 @@
-import { autonomousOS } from "../../os/autonomousOS";
+import autonomousOS from "../../os/autonomousOS";
 
 /* ================= AUTO PILOT API ================= */
 
@@ -11,6 +11,8 @@ export default async function handler(req, res) {
       result,
     });
   } catch (error) {
+    console.error("daily-autopilot error:", error);
+
     return res.status(500).json({
       success: false,
       error: error.message,
