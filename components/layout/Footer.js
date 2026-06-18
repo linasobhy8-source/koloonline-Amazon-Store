@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+const linkStyle = {
+  color: "#d1d5db",
+  textDecoration: "none",
+};
+
 export default function Footer() {
   return (
     <footer
@@ -124,8 +129,3 @@ export default function Footer() {
     </footer>
   );
 }
-
-const linkStyle = {
-  color: "#d1d5db",
-  textDecoration: "none",
-};
