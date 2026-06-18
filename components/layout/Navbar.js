@@ -27,6 +27,7 @@ export default function Navbar({ products = [] }) {
   /* ================= FAST FILTER ================= */
   const results = useMemo(() => {
     const query = String(q || "").trim().toLowerCase();
+
     if (!query) return [];
 
     if (!Array.isArray(products)) return [];
@@ -67,7 +68,6 @@ export default function Navbar({ products = [] }) {
           }}
         />
 
-        {/* ================= RESULTS ================= */}
         {results.length > 0 && (
           <div
             style={{
@@ -98,4 +98,4 @@ export default function Navbar({ products = [] }) {
       </div>
     </nav>
   );
-      }
+            }
