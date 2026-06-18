@@ -1,5 +1,9 @@
 import sharp from "sharp";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 /* ================= CONFIG ================= */
 const ALLOWED_HOSTS = [
   "m.media-amazon.com",
@@ -12,32 +16,19 @@ const ALLOWED_HOSTS = [
 /* ================= IMAGE CDN PROXY ================= */
 export default async function handler(req, res) {
   try {
-    const {
-      url,
-      w = "500",
-      q = "75",
-    } = req.query;
+    const { url, w = "500", q = "75" } = req.query;
 
-    /* ================= VALIDATION ================= */
     if (!url || typeof url !== "string") {
-      return res.status(400).json({
-        success: false,
-        error: "Missing image url",
-      });
+      return res.status(400).json({ success: false, error: "Missing image url" });
     }
 
     let parsedUrl;
-
     try {
       parsedUrl = new URL(url);
     } catch {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid image url",
-      });
+      return res.status(400).json({ success: false, error: "Invalid image url" });
     }
 
-    /* ================= HOST WHITELIST ================= */
     const allowed = ALLOWED_HOSTS.some(
       (host) =>
         parsedUrl.hostname === host ||
@@ -45,35 +36,16 @@ export default async function handler(req, res) {
     );
 
     if (!allowed) {
-      return res.status(403).json({
-        success: false,
-        error: "Domain not allowed",
-      });
+      return res.status(403).json({ success: false, error: "Domain not allowed" });
     }
 
-    /* ================= SIZE LIMIT ================= */
-    const width = Math.min(
-      Math.max(parseInt(w, 10) || 500, 100),
-      1200
-    );
+    const width = Math.min(Math.max(parseInt(w, 10) || 500, 100), 1200);
+    const quality = Math.min(Math.max(parseInt(q, 10) || 75, 40), 90);
 
-    const quality = Math.min(
-      Math.max(parseInt(q, 10) || 75, 40),
-      90
-    );
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
 
-    /* ================= CACHE ================= */
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=31536000, immutable"
-    );
-
-    /* ================= FETCH IMAGE ================= */
     const controller = new AbortController();
-
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 10000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
     const response = await fetch(url, {
       signal: controller.signal,
@@ -86,24 +58,14 @@ export default async function handler(req, res) {
     clearTimeout(timeout);
 
     if (!response.ok) {
-      return res.status(404).json({
-        success: false,
-        error: "Image not found",
-      });
+      return res.status(404).json({ success: false, error: "Image not found" });
     }
 
-    const buffer = Buffer.from(
-      await response.arrayBuffer()
-    );
+    const buffer = Buffer.from(await response.arrayBuffer());
 
-    /* ================= FORMAT ================= */
     const accept = req.headers.accept || "";
-
     const supportsAvif = accept.includes("image/avif");
     const supportsWebp = accept.includes("image/webp");
-
-    let outputBuffer;
-    let contentType;
 
     const pipeline = sharp(buffer)
       .rotate()
@@ -113,34 +75,26 @@ export default async function handler(req, res) {
         withoutEnlargement: true,
       });
 
-    if (supportsAvif) {
-      outputBuffer = await pipeline
-        .avif({ quality })
-        .toBuffer();
+    let outputBuffer;
+    let contentType;
 
+    if (supportsAvif) {
+      outputBuffer = await pipeline.avif({ quality }).toBuffer();
       contentType = "image/avif";
     } else if (supportsWebp) {
-      outputBuffer = await pipeline
-        .webp({ quality })
-        .toBuffer();
-
+      outputBuffer = await pipeline.webp({ quality }).toBuffer();
       contentType = "image/webp";
     } else {
-      outputBuffer = await pipeline
-        .jpeg({ quality })
-        .toBuffer();
-
+      outputBuffer = await pipeline.jpeg({ quality }).toBuffer();
       contentType = "image/jpeg";
     }
 
-    /* ================= HEADERS ================= */
     res.setHeader("Content-Type", contentType);
     res.setHeader("Vary", "Accept");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Optimized-By", "Koloonline-CDN");
 
     return res.status(200).send(outputBuffer);
-
   } catch (error) {
     console.error("CDN ERROR:", error);
 
@@ -149,4 +103,4 @@ export default async function handler(req, res) {
       error: "Image optimization failed",
     });
   }
-                  }
+}
