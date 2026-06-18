@@ -17,70 +17,97 @@ export default function ProductPage({ product, related }) {
   return (
     <>
       <Head>
-        <title>{safeText(product.title)}</title>
+        <title>{String(safeText(product.title) || "")}</title>
+
         <meta
           name="description"
-          content={safeText(product.description)}
+          content={String(
+            safeText(product.description) || ""
+          )}
         />
+
         <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
-        <h1>{safeText(product.title)}</h1>
+        <h1>
+          {String(
+            safeText(product.title) || ""
+          )}
+        </h1>
 
         <Image
-          src={safeImage(product.image) || fallbackImage}
+          src={
+            safeImage(product.image) ||
+            fallbackImage
+          }
           width={500}
           height={500}
-          alt={safeText(product.title)}
+          alt={String(
+            safeText(product.title) || ""
+          )}
           priority
         />
 
-        {product.price > 0 && (
-          <h2>${product.price}</h2>
+        {Number(product.price) > 0 && (
+          <h2>${Number(product.price)}</h2>
         )}
 
-        <p>{safeText(product.description)}</p>
+        <p>
+          {String(
+            safeText(product.description) || ""
+          )}
+        </p>
 
-        <Link href="/">
-          ← Home
-        </Link>
+        <Link href="/">← Home</Link>
 
-        {related?.length > 0 && (
-          <>
-            <h3>Related Products</h3>
+        {Array.isArray(related) &&
+          related.length > 0 && (
+            <>
+              <h3>Related Products</h3>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit,minmax(200px,1fr))",
-                gap: 15,
-              }}
-            >
-              {related.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/product/${p.id}`}
-                >
-                  <div>
-                    <Image
-                      src={
-                        safeImage(p.image) ||
-                        fallbackImage
-                      }
-                      width={200}
-                      height={200}
-                      alt={safeText(p.title)}
-                    />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "repeat(auto-fit,minmax(200px,1fr))",
+                  gap: 15,
+                }}
+              >
+                {related.map((p) => (
+                  <Link
+                    key={String(p.id)}
+                    href={`/product/${p.id}`}
+                  >
+                    <div>
+                      <Image
+                        src={
+                          safeImage(
+                            p.image
+                          ) || fallbackImage
+                        }
+                        width={200}
+                        height={200}
+                        alt={String(
+                          safeText(
+                            p.title
+                          ) || ""
+                        )}
+                      />
 
-                    <p>{safeText(p.title)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </>
-        )}
+                      <p>
+                        {String(
+                          safeText(
+                            p.title
+                          ) || ""
+                        )}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
       </div>
     </>
   );
@@ -88,32 +115,68 @@ export default function ProductPage({ product, related }) {
 
 /* ================= DATA ================= */
 
-export async function getStaticProps({ params }) {
+export async function getStaticProps({
+  params,
+}) {
   try {
-    const products = await getProductsFast();
+    const products =
+      await getProductsFast();
 
-    const clean = (products || []).map((p) => ({
-      id: String(p?.id || ""),
-      title: safeText(
-        typeof p?.title === "string"
-          ? p.title
-          : String(p?.title || "")
+    const clean = (
+      products || []
+    ).map((p) => ({
+      id: String(
+        p?.id || ""
       ),
-      description: safeText(
-        typeof p?.description === "string"
-          ? p.description
-          : String(p?.description || "")
+
+      title: String(
+        safeText(p?.title) || ""
       ),
-      image:
-        typeof p?.image === "string" &&
-        p.image.trim()
-          ? p.image
-          : fallbackImage,
-      price: Number(p?.price || 0),
+
+      description: String(
+        safeText(
+          p?.description
+        ) || ""
+      ),
+
+      image: String(
+        safeImage(
+          p?.image
+        ) || fallbackImage
+      ),
+
+      price:
+        Number(p?.price) || 0,
     }));
 
-    const product = clean.find(
-      (p) => p.id === String(params?.id || "")
+    const product =
+      clean.find(
+        (p) =>
+          p.id ===
+          String(
+            params?.id || ""
+          )
+      ) || null;
+
+    console.log(
+      "===================="
+    );
+    console.log(
+      "BUILDING PRODUCT:",
+      params?.id
+    );
+    console.log(
+      "PRODUCT DATA:"
+    );
+    console.log(
+      JSON.stringify(
+        product,
+        null,
+        2
+      )
+    );
+    console.log(
+      "===================="
     );
 
     if (!product) {
@@ -123,7 +186,10 @@ export async function getStaticProps({ params }) {
     }
 
     const related = clean
-      .filter((p) => p.id !== product.id)
+      .filter(
+        (p) =>
+          p.id !== product.id
+      )
       .slice(0, 6);
 
     return {
@@ -149,17 +215,25 @@ export async function getStaticProps({ params }) {
 
 export async function getStaticPaths() {
   try {
-    const products = await getProductsFast();
+    const products =
+      await getProductsFast();
 
     return {
-      paths: (products || [])
-        .filter((p) => p?.id)
+      paths: (
+        products || []
+      )
+        .filter(
+          (p) => p?.id
+        )
         .slice(0, 20)
         .map((p) => ({
           params: {
-            id: String(p.id),
+            id: String(
+              p.id
+            ),
           },
         })),
+
       fallback: "blocking",
     };
   } catch (error) {
