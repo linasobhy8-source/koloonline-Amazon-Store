@@ -1,23 +1,61 @@
 import Image from "next/image";
 import { useMemo, useState, useCallback } from "react";
-import { cdnImage } from "../lib/cdnImage";
 
-const fallback =
+const FALLBACK =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
-export default function SmartImage({ src, alt }) {
+export default function SmartImage({
+  src,
+  alt = "Product Image",
+}) {
   const [error, setError] = useState(false);
 
-  /* ================= MEMOIZED FINAL SRC ================= */
+  /* ================= SAFE IMAGE ================= */
   const finalSrc = useMemo(() => {
-    if (error) return fallback;
-    return cdnImage(src || fallback);
+    try {
+      if (error) return FALLBACK;
+
+      if (typeof src !== "string") {
+        return FALLBACK;
+      }
+
+      const clean = src.trim();
+
+      if (!clean) {
+        return FALLBACK;
+      }
+
+      if (
+        !clean.startsWith("http://") &&
+        !clean.startsWith("https://")
+      ) {
+        return FALLBACK;
+      }
+
+      return clean;
+    } catch (err) {
+      console.error(
+        "SmartImage Error:",
+        err
+      );
+
+      return FALLBACK;
+    }
   }, [src, error]);
 
-  /* ================= STABLE HANDLER ================= */
+  /* ================= ERROR HANDLER ================= */
   const handleError = useCallback(() => {
     setError(true);
   }, []);
+
+  /* ================= DEBUG ================= */
+  if (typeof window === "undefined") {
+    console.log(
+      "SMART IMAGE:",
+      finalSrc,
+      typeof finalSrc
+    );
+  }
 
   return (
     <div
@@ -26,22 +64,19 @@ export default function SmartImage({ src, alt }) {
         width: "100%",
         aspectRatio: "1 / 1",
         overflow: "hidden",
-        background: "#f5f5f5", // improves perceived loading
+        background: "#f5f5f5",
       }}
     >
       <Image
         src={finalSrc}
-        alt={alt || "image"}
+        alt={String(alt || "Product Image")}
         fill
-        sizes="(max-width: 768px) 100vw, 500px"
-        loading="lazy"
+        sizes="(max-width:768px) 100vw, 500px"
         quality={65}
-        placeholder="blur"
-        blurDataURL={fallback}
+        unoptimized
         onError={handleError}
         style={{
           objectFit: "contain",
-          transition: "0.2s ease-in-out",
         }}
       />
     </div>
