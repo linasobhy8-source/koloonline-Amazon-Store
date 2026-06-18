@@ -1,4 +1,4 @@
-import { collection, getDocs, query, limit } from "firebase/firestore";
+import { collection, getDocs, query, limit, orderBy } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
 /* ================= MEMORY CACHE ================= */
@@ -11,12 +11,8 @@ const CACHE_TTL = 1000 * 60 * 10;
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
-  if (
-    typeof v === "string" ||
-    typeof v === "number" ||
-    typeof v === "boolean"
-  ) {
-    return String(v);
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+    return String(v).trim();
   }
 
   return "";
@@ -32,6 +28,7 @@ export default async function handler(req, res) {
   try {
     const now = Date.now();
 
+    /* ================= CACHE HIT ================= */
     if (cache && now - lastFetch < CACHE_TTL) {
       res.setHeader(
         "Cache-Control",
@@ -41,9 +38,11 @@ export default async function handler(req, res) {
       return res.status(200).json(cache);
     }
 
+    /* ================= FIRESTORE QUERY ================= */
     const q = query(
       collection(db, "products"),
-      limit(500)
+      orderBy("score", "desc"),
+      limit(200)
     );
 
     const snap = await getDocs(q);
@@ -53,18 +52,14 @@ export default async function handler(req, res) {
 
       return {
         id: String(doc.id),
-
         title: safeText(item.title),
         description: safeText(item.description),
-
         image: safeText(item.image),
         link: safeText(item.link),
-
         category: safeText(item.category),
 
         price: safeNumber(item.price),
         score: safeNumber(item.score),
-
         views: safeNumber(item.views),
         clicks: safeNumber(item.clicks),
 
@@ -72,6 +67,7 @@ export default async function handler(req, res) {
       };
     });
 
+    /* ================= SET CACHE ================= */
     cache = data;
     lastFetch = now;
 
@@ -89,4 +85,4 @@ export default async function handler(req, res) {
       error: e?.message || "Internal Server Error",
     });
   }
-    }
+        }
