@@ -1,46 +1,37 @@
 import sharp from "sharp";
 
-/* ================= GLOBAL CACHE ================= */
-const cache = global.__IMG_CACHE__ || new Map();
-global.__IMG_CACHE__ = cache;
-
 /* ================= AI SCORING ================= */
 function getImagePriority(url = "") {
   let score = 1;
 
-  // Amazon images أهم
   if (url.includes("m.media-amazon.com")) score += 3;
-
-  // product images
   if (url.includes("images")) score += 1;
-
-  // fallback images أقل أهمية
   if (url.includes("placeholder")) score -= 1;
 
   return score;
 }
 
+/* ================= IMAGE CDN ================= */
 export default async function handler(req, res) {
   try {
     const { url, w = 500, q = 75, priority = "normal" } = req.query;
 
-    if (!url) {
+    if (!url || typeof url !== "string") {
       return res.status(400).json({ error: "Missing image url" });
     }
 
-    /* ================= CACHE KEY ================= */
-    const key = `${url}-${w}-${q}`;
-
-    if (cache.has(key)) {
-      const cached = cache.get(key);
-
-      res.setHeader("Content-Type", cached.type);
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-
-      return res.send(cached.buffer);
+    /* ================= URL VALIDATION ================= */
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return res.status(400).json({ error: "Invalid URL" });
     }
 
-    /* ================= SECURITY ================= */
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return res.status(400).json({ error: "Invalid protocol" });
+    }
+
     const allowed = [
       "m.media-amazon.com",
       "images-na.ssl-images-amazon.com",
@@ -50,7 +41,7 @@ export default async function handler(req, res) {
       "via.placeholder.com",
     ];
 
-    if (!allowed.some((d) => url.includes(d))) {
+    if (!allowed.some((d) => parsed.hostname.includes(d))) {
       return res.status(403).json({ error: "Domain not allowed" });
     }
 
@@ -63,7 +54,7 @@ export default async function handler(req, res) {
 
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    /* ================= AI PRIORITY BOOST ================= */
+    /* ================= AI PRIORITY ================= */
     const aiScore = getImagePriority(url);
 
     const finalWidth =
@@ -73,19 +64,15 @@ export default async function handler(req, res) {
 
     const quality = aiScore > 3 ? 85 : Number(q);
 
-    /* ================= IMAGE OPTIMIZATION ================= */
+    /* ================= PROCESS ================= */
     const output = await sharp(buffer)
-      .resize(finalWidth)
-      .toFormat("webp", {
-        quality,
+      .resize({
+        width: finalWidth,
+        fit: "inside",
+        withoutEnlargement: true,
       })
+      .webp({ quality })
       .toBuffer();
-
-    /* ================= CACHE STORE ================= */
-    cache.set(key, {
-      buffer: output,
-      type: "image/webp",
-    });
 
     /* ================= HEADERS ================= */
     res.setHeader("Content-Type", "image/webp");
@@ -93,11 +80,13 @@ export default async function handler(req, res) {
     res.setHeader("Vary", "Accept");
     res.setHeader("X-AI-CDN", "Koloonline-v4");
 
-    return res.send(output);
+    return res.status(200).send(output);
   } catch (e) {
+    console.error("CDN ERROR:", e);
+
     return res.status(500).json({
       error: "AI CDN error",
       message: e.message,
     });
   }
-      }
+}
