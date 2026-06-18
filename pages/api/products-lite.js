@@ -1,4 +1,4 @@
-import { collection, getDocs, limit, query } from "firebase/firestore";
+import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
 let cache = null;
@@ -26,6 +26,11 @@ export default async function handler(req, res) {
     const now = Date.now();
 
     if (cache && now - lastFetch < TTL) {
+      res.setHeader(
+        "Cache-Control",
+        "public, s-maxage=600, stale-while-revalidate=3600"
+      );
+
       return res.status(200).json(cache);
     }
 
@@ -44,10 +49,10 @@ export default async function handler(req, res) {
         title: safeText(item.title),
         description: safeText(item.description),
         image: safeText(item.image),
-        price: Number(item.price || 0),
+        price: Number(item.price ?? 0),
         category: safeText(item.category),
         link: safeText(item.link),
-        score: Number(item.score || 0),
+        score: Number(item.score ?? 0),
       };
     });
 
