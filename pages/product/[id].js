@@ -76,21 +76,23 @@ export default function ProductPage({ product, related }) {
               >
                 {related.map((p) => (
                   <Link
-                    key={String(p.id)}
-                    href={`/product/${p.id}`}
+                    key={String(p?.id || "")}
+                    href={`/product/${String(
+                      p?.id || ""
+                    )}`}
                   >
                     <div>
                       <Image
                         src={
                           safeImage(
-                            p.image
+                            p?.image
                           ) || fallbackImage
                         }
                         width={200}
                         height={200}
                         alt={String(
                           safeText(
-                            p.title
+                            p?.title
                           ) || ""
                         )}
                       />
@@ -98,7 +100,7 @@ export default function ProductPage({ product, related }) {
                       <p>
                         {String(
                           safeText(
-                            p.title
+                            p?.title
                           ) || ""
                         )}
                       </p>
@@ -113,8 +115,6 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= DATA ================= */
-
 export async function getStaticProps({
   params,
 }) {
@@ -125,26 +125,17 @@ export async function getStaticProps({
     const clean = (
       products || []
     ).map((p) => ({
-      id: String(
-        p?.id || ""
-      ),
-
+      id: String(p?.id || ""),
       title: String(
         safeText(p?.title) || ""
       ),
-
       description: String(
-        safeText(
-          p?.description
-        ) || ""
+        safeText(p?.description) || ""
       ),
-
       image: String(
-        safeImage(
-          p?.image
-        ) || fallbackImage
+        safeImage(p?.image) ||
+          fallbackImage
       ),
-
       price:
         Number(p?.price) || 0,
     }));
@@ -158,27 +149,6 @@ export async function getStaticProps({
           )
       ) || null;
 
-    console.log(
-      "===================="
-    );
-    console.log(
-      "BUILDING PRODUCT:",
-      params?.id
-    );
-    console.log(
-      "PRODUCT DATA:"
-    );
-    console.log(
-      JSON.stringify(
-        product,
-        null,
-        2
-      )
-    );
-    console.log(
-      "===================="
-    );
-
     if (!product) {
       return {
         notFound: true,
@@ -191,6 +161,58 @@ export async function getStaticProps({
           p.id !== product.id
       )
       .slice(0, 6);
+
+    console.log(
+      "===================="
+    );
+    console.log(
+      "BUILDING PRODUCT:",
+      params?.id
+    );
+    console.log(
+      JSON.stringify(
+        product,
+        null,
+        2
+      )
+    );
+
+    console.log(
+      "TITLE TYPE:",
+      typeof product.title
+    );
+
+    console.log(
+      "DESCRIPTION TYPE:",
+      typeof product.description
+    );
+
+    console.log(
+      "IMAGE TYPE:",
+      typeof product.image
+    );
+
+    console.log(
+      "PRICE TYPE:",
+      typeof product.price
+    );
+
+    console.log(
+      "RELATED COUNT:",
+      related.length
+    );
+
+    console.log(
+      JSON.stringify(
+        related,
+        null,
+        2
+      )
+    );
+
+    console.log(
+      "===================="
+    );
 
     return {
       props: {
@@ -210,8 +232,6 @@ export async function getStaticProps({
     };
   }
 }
-
-/* ================= PATHS ================= */
 
 export async function getStaticPaths() {
   try {
@@ -233,7 +253,6 @@ export async function getStaticPaths() {
             ),
           },
         })),
-
       fallback: "blocking",
     };
   } catch (error) {
@@ -247,4 +266,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-            }
+    }
