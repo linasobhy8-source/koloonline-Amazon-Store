@@ -4,6 +4,7 @@ const fallbackImage =
   "https://via.placeholder.com/500x500?text=Product";
 
 /* ================= SAFE HELPERS ================= */
+
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
 
@@ -49,6 +50,7 @@ const safeImage = (v) => {
 };
 
 /* ================= PAGE ================= */
+
 export default function AmazonHaul({ products = [] }) {
   const safeProducts = Array.isArray(products) ? products : [];
 
@@ -70,12 +72,13 @@ export default function AmazonHaul({ products = [] }) {
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit,minmax(220px,1fr))",
           gap: 20,
           marginTop: 20,
         }}
       >
-        {safeProducts.map((product, index) => {
+        {safeProducts.map((product) => {
           const title = safeText(product?.title);
           const image = safeImage(product?.image);
           const id = safeText(product?.id);
@@ -92,7 +95,6 @@ export default function AmazonHaul({ products = [] }) {
                 boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
               }}
             >
-              {/* IMAGE */}
               <img
                 src={image}
                 alt={title || "product"}
@@ -105,13 +107,11 @@ export default function AmazonHaul({ products = [] }) {
                 loading="lazy"
               />
 
-              {/* TITLE */}
               <div style={{ marginTop: 10 }}>
                 <h3 style={{ fontSize: 16 }}>
                   {title || "No title"}
                 </h3>
 
-                {/* VIRAL BADGE */}
                 {product?.viralBoost ? (
                   <span
                     style={{
@@ -132,4 +132,4 @@ export default function AmazonHaul({ products = [] }) {
       </section>
     </div>
   );
-    }
+                  }
