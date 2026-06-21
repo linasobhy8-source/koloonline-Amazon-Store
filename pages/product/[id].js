@@ -3,32 +3,45 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 
-const fallbackImage =
-  "https://via.placeholder.com/500x500?text=Koloonline";
-
-/* ================= SAFE HELPERS (IMPORTANT FIX) ================= */
+/* ================= SAFE HELPERS ================= */
 const safeString = (v) => {
   if (!v) return "";
   if (typeof v === "string") return v;
-  if (typeof v === "number") return String(v);
-  if (typeof v === "object") return v.text || v.value || JSON.stringify(v);
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (typeof v === "object") {
+    return v.text || v.title || v.value || v.name || "";
+  }
   return "";
 };
 
 const safeImage = (v) => {
+  const fallback =
+    "https://via.placeholder.com/500x500?text=Koloonline";
+
   if (typeof v === "string" && v.trim()) return v;
-  return fallbackImage;
+
+  if (typeof v === "object") {
+    return v.url || v.image || v.src || fallback;
+  }
+
+  return fallback;
 };
 
+const safeNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/* ================= PAGE ================= */
 export default function ProductPage({ product, related }) {
   if (!product) {
-    return <div>Product not found</div>;
+    return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
   const title = safeString(product.title);
   const description = safeString(product.description);
   const image = safeImage(product.image);
-  const price = Number(product.price || 0);
+  const price = safeNumber(product.price);
 
   const url = `https://koloonline.online/product/${product.id}`;
 
@@ -75,7 +88,7 @@ export default function ProductPage({ product, related }) {
 
                 return (
                   <Link key={p.id} href={`/product/${p.id}`}>
-                    <div>
+                    <div style={{ cursor: "pointer" }}>
                       <Image
                         src={rImage}
                         width={200}
@@ -96,17 +109,16 @@ export default function ProductPage({ product, related }) {
 }
 
 /* ================= DATA ================= */
-
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
     const clean = (products || []).map((p) => ({
       id: String(p?.id || ""),
-      title: p?.title,
-      description: p?.description,
-      image: p?.image,
-      price: Number(p?.price || 0),
+      title: safeString(p?.title),
+      description: safeString(p?.description),
+      image: safeImage(p?.image),
+      price: safeNumber(p?.price),
     }));
 
     const product = clean.find(
@@ -135,7 +147,6 @@ export async function getStaticProps({ params }) {
 }
 
 /* ================= PATHS ================= */
-
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
@@ -155,4 +166,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-}
+            }
