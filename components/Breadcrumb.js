@@ -1,12 +1,21 @@
 import Link from "next/link";
 import Head from "next/head";
 
-export default function Breadcrumb({ items = [] }) {
+export default function Breadcrumb({ items }) {
   const baseUrl = "https://koloonline.online";
+
+  const safeItems = Array.isArray(items)
+    ? items.filter(
+        (item) =>
+          item &&
+          typeof item === "object" &&
+          item.name &&
+          item.link
+      )
+    : [];
 
   return (
     <>
-      {/* ================= SEO STRUCTURED DATA (IMPORTANT FOR GOOGLE + ADSENSE) ================= */}
       <Head>
         <script
           type="application/ld+json"
@@ -14,27 +23,39 @@ export default function Breadcrumb({ items = [] }) {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "BreadcrumbList",
-              itemListElement: items.map((item, index) => ({
-                "@type": "ListItem",
-                position: index + 1,
-                name: item.name,
-                item: `${baseUrl}${item.link}`,
-              })),
+              itemListElement: safeItems.map(
+                (item, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  name: String(item.name),
+                  item: `${baseUrl}${item.link}`,
+                })
+              ),
             }),
           }}
         />
       </Head>
 
-      {/* ================= BREADCRUMB UI ================= */}
-      <nav aria-label="breadcrumb" style={styles.container}>
-        {items.map((item, index) => (
-          <span key={index} style={styles.item}>
-            <Link href={item.link} style={styles.link}>
-              {item.name}
+      <nav
+        aria-label="breadcrumb"
+        style={styles.container}
+      >
+        {safeItems.map((item, index) => (
+          <span
+            key={`${item.link}-${index}`}
+            style={styles.item}
+          >
+            <Link
+              href={String(item.link)}
+              style={styles.link}
+            >
+              {String(item.name)}
             </Link>
 
-            {index < items.length - 1 && (
-              <span style={styles.separator}>›</span>
+            {index < safeItems.length - 1 && (
+              <span style={styles.separator}>
+                ›
+              </span>
             )}
           </span>
         ))}
@@ -42,8 +63,6 @@ export default function Breadcrumb({ items = [] }) {
     </>
   );
 }
-
-/* ================= STYLES ================= */
 
 const styles = {
   container: {
