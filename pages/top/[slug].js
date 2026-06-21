@@ -1,28 +1,59 @@
-// pages/top/[slug].js
-
 import Head from "next/head";
 import Link from "next/link";
 import { topPages } from "../../data/topPages";
 
+/* ================= SAFE HELPERS ================= */
+const safeText = (v) => {
+  if (v === null || v === undefined) return "";
+
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean"
+  ) {
+    return String(v);
+  }
+
+  if (Array.isArray(v)) {
+    return v.map(safeText).join(" ");
+  }
+
+  if (typeof v === "object") {
+    return v?.text || v?.title || v?.value || v?.name || "";
+  }
+
+  return "";
+};
+
 export default function TopPage({ page }) {
   if (!page) return <div>Page Not Found</div>;
 
-  const pageUrl = `https://koloonline.online/top/${page.slug}`;
+  const title = safeText(page.title);
+  const description = safeText(page.description);
+  const h1 = safeText(page.h1);
+  const intro = safeText(page.intro);
+  const buyingGuide = safeText(page.buyingGuide);
 
+  const items = Array.isArray(page.items) ? page.items : [];
+  const faq = Array.isArray(page.faq) ? page.faq : [];
+
+  const pageUrl = `https://koloonline.online/top/${safeText(page.slug)}`;
+
+  /* ================= FAQ SCHEMA ================= */
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity:
-      page.faq?.map((f) => ({
-        "@type": "Question",
-        name: f.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: f.answer,
-        },
-      })) || [],
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: safeText(f?.question),
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: safeText(f?.answer),
+      },
+    })),
   };
 
+  /* ================= BREADCRUMB ================= */
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -42,7 +73,7 @@ export default function TopPage({ page }) {
       {
         "@type": "ListItem",
         position: 3,
-        name: page.title,
+        name: title,
         item: pageUrl,
       },
     ],
@@ -51,55 +82,22 @@ export default function TopPage({ page }) {
   return (
     <>
       <Head>
-        <title>{page.title}</title>
+        <title>{title}</title>
 
-        <meta
-          name="description"
-          content={page.description}
-        />
-
+        <meta name="description" content={description} />
         <meta
           name="keywords"
-          content={`${page.title}, Amazon Deals, Amazon Finds, Best Products, Top Products`}
+          content={`${title}, Amazon Deals, Best Products, Top Products`}
         />
 
-        <meta
-          name="robots"
-          content="index,follow,max-image-preview:large"
-        />
+        <meta name="robots" content="index,follow,max-image-preview:large" />
+        <link rel="canonical" href={pageUrl} />
 
-        <link
-          rel="canonical"
-          href={pageUrl}
-        />
-
-        {/* Open Graph */}
+        {/* OG */}
         <meta property="og:type" content="article" />
-        <meta property="og:title" content={page.title} />
-        <meta property="og:description" content={page.description} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
         <meta property="og:url" content={pageUrl} />
-        <meta
-          property="og:image"
-          content="https://koloonline.online/og-image.jpg"
-        />
-
-        {/* Twitter */}
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
-        <meta
-          name="twitter:title"
-          content={page.title}
-        />
-        <meta
-          name="twitter:description"
-          content={page.description}
-        />
-        <meta
-          name="twitter:image"
-          content="https://koloonline.online/og-image.jpg"
-        />
 
         {/* Article Schema */}
         <script
@@ -108,8 +106,8 @@ export default function TopPage({ page }) {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Article",
-              headline: page.title,
-              description: page.description,
+              headline: title,
+              description: description,
               url: pageUrl,
               publisher: {
                 "@type": "Organization",
@@ -143,39 +141,33 @@ export default function TopPage({ page }) {
           padding: "20px",
         }}
       >
-        <h1>{page.h1}</h1>
+        <h1>{h1}</h1>
 
-        <p>{page.intro}</p>
+        <p>{intro}</p>
 
         <h2>Top Recommendations</h2>
 
         <ul>
-          {page.items?.map((item, index) => (
-            <li key={index}>
-              <strong>{item}</strong>
-            </li>
+          {items.map((item, index) => (
+            <li key={index}>{safeText(item)}</li>
           ))}
         </ul>
 
         <h2>Buying Guide</h2>
-
-        <p>{page.buyingGuide}</p>
+        <p>{buyingGuide}</p>
 
         <h2>Frequently Asked Questions</h2>
 
-        {page.faq?.map((faq, index) => (
-          <div
-            key={index}
-            style={{ marginBottom: "20px" }}
-          >
-            <h3>{faq.question}</h3>
-            <p>{faq.answer}</p>
+        {faq.map((f, index) => (
+          <div key={index} style={{ marginBottom: 20 }}>
+            <h3>{safeText(f.question)}</h3>
+            <p>{safeText(f.answer)}</p>
           </div>
         ))}
 
         <hr />
 
-        <h2>Explore More Amazon Deals</h2>
+        <h2>Explore More</h2>
 
         <ul>
           <li>
@@ -185,9 +177,7 @@ export default function TopPage({ page }) {
           </li>
 
           <li>
-            <Link href="/blog">
-              Shopping Guides
-            </Link>
+            <Link href="/blog">Shopping Guides</Link>
           </li>
 
           <li>
@@ -211,7 +201,7 @@ export async function getStaticPaths() {
   return {
     paths: topPages.map((page) => ({
       params: {
-        slug: page.slug,
+        slug: String(page.slug || ""),
       },
     })),
     fallback: false,
@@ -220,13 +210,15 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({ params }) {
   const page =
-    topPages.find(
-      (item) => item.slug === params.slug
-    ) || null;
+    topPages.find((item) => item.slug === params.slug) || null;
+
+  if (!page) {
+    return { notFound: true };
+  }
 
   return {
     props: {
       page,
     },
   };
-          }
+        }
