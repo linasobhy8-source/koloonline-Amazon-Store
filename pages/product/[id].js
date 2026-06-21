@@ -4,27 +4,32 @@ import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
 
 /* ================= SAFE HELPERS ================= */
+
+const FALLBACK_IMAGE =
+  "https://via.placeholder.com/500x500?text=Koloonline";
+
 const safeString = (v) => {
   if (!v) return "";
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
+
   if (typeof v === "object") {
-    return v.text || v.title || v.value || v.name || "";
+    return v?.text || v?.title || v?.value || v?.name || "";
   }
+
   return "";
 };
 
 const safeImage = (v) => {
-  const fallback =
-    "https://via.placeholder.com/500x500?text=Koloonline";
+  if (!v) return FALLBACK_IMAGE;
 
   if (typeof v === "string" && v.trim()) return v;
 
   if (typeof v === "object") {
-    return v.url || v.image || v.src || fallback;
+    return v?.url || v?.image || v?.src || FALLBACK_IMAGE;
   }
 
-  return fallback;
+  return FALLBACK_IMAGE;
 };
 
 const safeNumber = (v) => {
@@ -33,6 +38,7 @@ const safeNumber = (v) => {
 };
 
 /* ================= PAGE ================= */
+
 export default function ProductPage({ product, related }) {
   if (!product) {
     return <div style={{ padding: 20 }}>Product not found</div>;
@@ -109,6 +115,7 @@ export default function ProductPage({ product, related }) {
 }
 
 /* ================= DATA ================= */
+
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
@@ -147,6 +154,7 @@ export async function getStaticProps({ params }) {
 }
 
 /* ================= PATHS ================= */
+
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
@@ -166,4 +174,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-            }
+}
