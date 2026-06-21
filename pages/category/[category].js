@@ -8,6 +8,8 @@ import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
+import { normalizeProduct, safeText, safeImage, safeNumber } from "../../lib/normalizeProduct";
+
 export default function CategoryPage() {
   const router = useRouter();
   const { category } = router.query;
@@ -19,7 +21,7 @@ export default function CategoryPage() {
 
   /* ================= SAFE CATEGORY ================= */
   const safeCategory = useMemo(() => {
-    return (category || "").toString().toLowerCase().trim();
+    return safeText(category).toLowerCase().trim();
   }, [category]);
 
   useEffect(() => {
@@ -33,33 +35,33 @@ export default function CategoryPage() {
 
       const snap = await getDocs(collection(db, "products"));
 
-      const all = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
+      // 🔥 GLOBAL SAFE PIPELINE
+      const all = snap.docs.map((d) =>
+        normalizeProduct({
+          id: d.id,
+          ...d.data(),
+        })
+      );
 
       setAllProducts(all);
 
       let filtered = all
-        .filter((p) => {
-          const productCategory = (p.category || "").toLowerCase().trim();
-          return productCategory === safeCategory;
-        })
+        .filter((p) => safeText(p.category).toLowerCase().trim() === safeCategory)
         .map((p) => {
           const trendScore =
-            (p.score || 0) * 3 +
-            (p.clicks || 0) * 2 +
-            (p.views || 0) +
-            (p.orders || 0) * 5 +
-            (p.rating || 0) * 20 +
+            safeNumber(p.score) * 3 +
+            safeNumber(p.clicks) * 2 +
+            safeNumber(p.views) +
+            safeNumber(p.orders) * 5 +
+            safeNumber(p.rating) * 20 +
             (p.viralBoost ? 80 : 0);
 
           return { ...p, trendScore };
         })
         .sort((a, b) => {
-          if (sort === "price_low") return (a.price || 0) - (b.price || 0);
-          if (sort === "price_high") return (b.price || 0) - (a.price || 0);
-          if (sort === "rating") return (b.rating || 0) - (a.rating || 0);
+          if (sort === "price_low") return safeNumber(a.price) - safeNumber(b.price);
+          if (sort === "price_high") return safeNumber(b.price) - safeNumber(a.price);
+          if (sort === "rating") return safeNumber(b.rating) - safeNumber(a.rating);
 
           return (b.trendScore || 0) - (a.trendScore || 0);
         });
@@ -75,7 +77,9 @@ export default function CategoryPage() {
 
   /* ================= RELATED CATEGORIES ================= */
   const relatedCategories = useMemo(() => {
-    return [...new Set(allProducts.map((p) => p.category).filter(Boolean))].slice(0, 8);
+    return [
+      ...new Set(allProducts.map((p) => safeText(p.category)).filter(Boolean)),
+    ].slice(0, 8);
   }, [allProducts]);
 
   /* ================= SEO ================= */
@@ -96,7 +100,6 @@ export default function CategoryPage() {
 
   return (
     <div style={{ background: "#f3f4f6", minHeight: "100vh", padding: 20 }}>
-
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
@@ -120,9 +123,7 @@ export default function CategoryPage() {
         📦 {safeCategory || "Category"}
       </h1>
 
-      <p style={{ color: "#666" }}>
-        Trending products & AI-ranked deals
-      </p>
+      <p style={{ color: "#666" }}>Trending products & AI-ranked deals</p>
 
       <select
         value={sort}
@@ -135,6 +136,7 @@ export default function CategoryPage() {
         <option value="price_high">Highest Price</option>
       </select>
 
+      {/* ================= CATEGORIES ================= */}
       <div style={{ marginTop: 20 }}>
         <h3>🔥 Categories</h3>
 
@@ -157,6 +159,7 @@ export default function CategoryPage() {
         </div>
       </div>
 
+      {/* ================= PRODUCTS ================= */}
       {loading ? (
         <p>Loading...</p>
       ) : products.length === 0 ? (
@@ -174,16 +177,16 @@ export default function CategoryPage() {
             <Link key={p.id} href={`/product/${p.id}`}>
               <div style={{ background: "#fff", padding: 12, borderRadius: 12 }}>
                 <Image
-                  src={p.image || "https://via.placeholder.com/400"}
+                  src={safeImage(p.image)}
                   width={300}
                   height={300}
-                  alt={p.title || "product"}
+                  alt={safeText(p.title)}
                 />
 
-                <h3 style={{ fontSize: 16 }}>{p.title}</h3>
+                <h3 style={{ fontSize: 16 }}>{safeText(p.title)}</h3>
 
                 <p style={{ color: "#B12704", fontWeight: "bold" }}>
-                  ${p.price}
+                  ${safeNumber(p.price)}
                 </p>
               </div>
             </Link>
@@ -192,4 +195,4 @@ export default function CategoryPage() {
       )}
     </div>
   );
-  }
+            }
