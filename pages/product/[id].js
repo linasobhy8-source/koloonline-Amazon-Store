@@ -44,6 +44,7 @@ export default function ProductPage({ product, related }) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
+  // ✅ FIXED (as requested)
   const title = safeString(product.title);
   const description = safeString(product.description);
   const image = safeImage(product.image);
