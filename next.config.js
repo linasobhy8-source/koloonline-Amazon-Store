@@ -1,9 +1,6 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  compress: true,
-  poweredByHeader: false,
-
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
@@ -13,10 +10,6 @@ const nextConfig = {
       { protocol: "https", hostname: "**.firebaseapp.com" },
       { protocol: "https", hostname: "via.placeholder.com" },
     ],
-  },
-
-  experimental: {
-    optimizePackageImports: ["firebase"],
   },
 };
 
