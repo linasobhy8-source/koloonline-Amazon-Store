@@ -2,40 +2,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
-
-/* ================= SAFE HELPERS ================= */
-
-const FALLBACK_IMAGE =
-  "https://via.placeholder.com/500x500?text=Koloonline";
-
-const safeString = (v) => {
-  if (!v) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-
-  if (typeof v === "object") {
-    return v?.text || v?.title || v?.value || v?.name || "";
-  }
-
-  return "";
-};
-
-const safeImage = (v) => {
-  if (!v) return FALLBACK_IMAGE;
-
-  if (typeof v === "string" && v.trim()) return v;
-
-  if (typeof v === "object") {
-    return v?.url || v?.image || v?.src || FALLBACK_IMAGE;
-  }
-
-  return FALLBACK_IMAGE;
-};
-
-const safeNumber = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
+import { safeText, safeImage, safeNumber } from "../../lib/normalizeProduct";
 
 /* ================= PAGE ================= */
 
@@ -44,9 +11,9 @@ export default function ProductPage({ product, related }) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  // ✅ FIXED (as requested)
-  const title = safeString(product.title);
-  const description = safeString(product.description);
+  // ✅ SAFE FINAL OUTPUT
+  const title = safeText(product.title);
+  const description = safeText(product.description);
   const image = safeImage(product.image);
   const price = safeNumber(product.price);
 
@@ -77,8 +44,9 @@ export default function ProductPage({ product, related }) {
 
         <Link href="/">← Home</Link>
 
+        {/* ================= RELATED ================= */}
         {Array.isArray(related) && related.length > 0 && (
-          <>
+          <div style={{ marginTop: 20 }}>
             <h3>Related Products</h3>
 
             <div
@@ -90,11 +58,12 @@ export default function ProductPage({ product, related }) {
               }}
             >
               {related.map((p) => {
-                const rTitle = safeString(p.title);
-                const rImage = safeImage(p.image);
+                // 🔥 IMPORTANT: double safety layer
+                const rTitle = safeText(p?.title);
+                const rImage = safeImage(p?.image);
 
                 return (
-                  <Link key={p.id} href={`/product/${p.id}`}>
+                  <Link key={p?.id || rTitle} href={`/product/${p?.id}`}>
                     <div style={{ cursor: "pointer" }}>
                       <Image
                         src={rImage}
@@ -108,7 +77,7 @@ export default function ProductPage({ product, related }) {
                 );
               })}
             </div>
-          </>
+          </div>
         )}
       </div>
     </>
@@ -121,10 +90,11 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
+    // 🔥 FORCE CLEAN PIPELINE
     const clean = (products || []).map((p) => ({
       id: String(p?.id || ""),
-      title: safeString(p?.title),
-      description: safeString(p?.description),
+      title: safeText(p?.title),
+      description: safeText(p?.description),
       image: safeImage(p?.image),
       price: safeNumber(p?.price),
     }));
@@ -133,18 +103,14 @@ export async function getStaticProps({ params }) {
       (p) => p.id === String(params?.id || "")
     );
 
-    if (!product) {
-      return { notFound: true };
-    }
-
-    const related = clean
-      .filter((p) => p.id !== product.id)
-      .slice(0, 6);
+    if (!product) return { notFound: true };
 
     return {
       props: {
         product,
-        related,
+        related: clean
+          .filter((p) => p.id !== product.id)
+          .slice(0, 6),
       },
       revalidate: 3600,
     };
@@ -175,4 +141,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-}
+    }
