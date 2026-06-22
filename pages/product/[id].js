@@ -2,53 +2,50 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
+import { safeText, safeImage, safeNumber } from "../../lib/normalizeProduct";
 
-/* ================= SAFE ================= */
-const safeText = (v) => {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (typeof v === "object") return v?.title || v?.text || v?.name || "";
-  return "";
+const safe = (v) => {
+  try {
+    if (typeof v === "string" || typeof v === "number") return String(v);
+    if (v?.text) return String(v.text);
+    if (v?.title) return String(v.title);
+    if (v?.name) return String(v.name);
+    return "";
+  } catch {
+    return "";
+  }
 };
 
-const safeNumber = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
-
-const safeImage = (v) => {
-  if (typeof v === "string" && v.startsWith("http")) return v;
-  if (typeof v === "object" && v) return v.url || v.image || "";
-  return "https://via.placeholder.com/500x500?text=Koloonline";
-};
-
-/* ================= COMPONENT ================= */
 export default function ProductPage({ product, related }) {
-  if (!product) return <div>Not found</div>;
+  if (!product || typeof product !== "object") {
+    return <div style={{ padding: 20 }}>Not found</div>;
+  }
 
-  const title = safeText(product.title);
-  const description = safeText(product.description);
+  const title = safe(product.title);
+  const description = safe(product.description);
   const image = safeImage(product.image);
-  const price = safeNumber(product.price);
+  const price = Number(product.price || 0);
 
   return (
     <>
       <Head>
-        <title>{title}</title>
-        <meta name="description" content={description} />
+        <title>{title || "Product"}</title>
+        <meta name="description" content={description || ""} />
       </Head>
 
       <div style={{ padding: 20 }}>
         <h1>{title}</h1>
 
-        <Image
-          src={image}
-          width={500}
-          height={500}
-          alt={title}
-          unoptimized
-        />
+        {/* 🔥 حماية كاملة */}
+        {typeof image === "string" && image.startsWith("http") && (
+          <Image
+            src={image}
+            width={500}
+            height={500}
+            alt={title}
+            unoptimized
+          />
+        )}
 
         {price > 0 && <h2>${price}</h2>}
 
@@ -58,59 +55,43 @@ export default function ProductPage({ product, related }) {
 
         <hr />
 
-        {/* 🔥 SAFE RELATED (NO OBJECT RENDERING) */}
         {Array.isArray(related) &&
-          related.map((p) => {
-            const t = safeText(p?.title);
-            const id = safeText(p?.id);
-
-            return (
-              <div key={id}>
-                {t}
-              </div>
-            );
-          })}
+          related.map((p, i) => (
+            <div key={p?.id || i}>
+              {safe(p?.title)}
+            </div>
+          ))}
       </div>
     </>
   );
 }
 
 /* ================= DATA ================= */
+
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const clean = (products || [])
-      .filter((p) => p && typeof p === "object")
-      .map((p) => ({
-        id: String(p.id || ""),
-        title: safeText(p.title),
-        description: safeText(p.description),
-        image: safeImage(p.image),
-        price: safeNumber(p.price),
-      }))
-      .filter((p) => p.id);
-
-    const product = clean.find(
-      (p) => p.id === String(params?.id)
+    const product = products.find(
+      (p) => String(p?.id) === String(params?.id)
     );
 
     if (!product) return { notFound: true };
 
     return {
       props: {
-        product,
-        related: clean.filter((p) => p.id !== product.id).slice(0, 6),
+        product: JSON.parse(JSON.stringify(product)), // 🔥 مهم جدًا
+        related: products.slice(0, 6),
       },
       revalidate: 3600,
     };
   } catch (e) {
-    console.error(e);
     return { notFound: true };
   }
 }
 
 /* ================= PATHS ================= */
+
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
@@ -130,4 +111,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-         }
+    }
