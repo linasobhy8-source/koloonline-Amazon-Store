@@ -9,6 +9,10 @@ import {
   safeNumber,
 } from "../../lib/safe";
 
+/* ================= FALLBACK ================= */
+const FALLBACK_IMAGE =
+  "https://via.placeholder.com/500x500?text=Koloonline";
+
 /* ================= PAGE ================= */
 
 export default function ProductPage({ product, related }) {
@@ -16,10 +20,15 @@ export default function ProductPage({ product, related }) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  // 🔥 HARD SAFE (مهم جدًا)
+  // 🔥 HARD SAFE FINAL
   const title = String(safeText(product?.title) || "");
   const description = String(safeText(product?.description) || "");
-  const image = String(safeImage(product?.image) || "");
+  const imageRaw = safeImage(product?.image);
+  const image =
+    typeof imageRaw === "string" && imageRaw.startsWith("http")
+      ? imageRaw
+      : FALLBACK_IMAGE;
+
   const price = Number(safeNumber(product?.price) || 0);
 
   const url = `https://koloonline.online/product/${product?.id || ""}`;
@@ -35,12 +44,9 @@ export default function ProductPage({ product, related }) {
       <div style={{ padding: 20 }}>
         <h1>{title}</h1>
 
-        {/* 🔥 IMPORTANT FIX FOR IMAGE #130 */}
+        {/* 🔥 SAFE IMAGE (NO OBJECT EVER) */}
         <Image
-          src={typeof image === "string" && image.startsWith("http")
-            ? image
-            : "https://via.placeholder.com/500x500?text=Koloonline"
-          }
+          src={image}
           width={500}
           height={500}
           alt={title || "Product"}
@@ -67,7 +73,13 @@ export default function ProductPage({ product, related }) {
             >
               {related.map((p) => {
                 const rTitle = String(safeText(p?.title) || "");
-                const rImage = String(safeImage(p?.image) || "");
+                const rImageRaw = safeImage(p?.image);
+
+                const rImage =
+                  typeof rImageRaw === "string" &&
+                  rImageRaw.startsWith("http")
+                    ? rImageRaw
+                    : FALLBACK_IMAGE;
 
                 return (
                   <Link
@@ -76,11 +88,7 @@ export default function ProductPage({ product, related }) {
                   >
                     <div style={{ cursor: "pointer" }}>
                       <Image
-                        src={
-                          rImage.startsWith("http")
-                            ? rImage
-                            : "https://via.placeholder.com/300"
-                        }
+                        src={rImage}
                         width={200}
                         height={200}
                         alt={rTitle || "Product"}
@@ -160,4 +168,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-}
+                }
