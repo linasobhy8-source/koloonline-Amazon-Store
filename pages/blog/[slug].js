@@ -6,159 +6,102 @@ import Script from "next/script";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-/* ================= READING TIME ================= */
-function estimateReadingTime(text = "") {
-  const cleanText = text.replace(/<[^>]+>/g, "");
-  const words = cleanText.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
-}
+/* ================= SAFE ================= */
+const safeText = (v) => {
+  if (v == null) return "";
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+    return String(v);
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+  if (typeof v === "object") {
+    return v?.text || v?.title || v?.value || v?.name || "";
+  }
+  return "";
+};
+
+const safeImage = (v) => {
+  const fallback = "https://via.placeholder.com/1200x630?text=Koloonline";
+
+  if (typeof v === "string") return v.startsWith("http") ? v : fallback;
+  if (typeof v === "object" && v) {
+    const img = v.url || v.image || v.src;
+    return typeof img === "string" ? img : fallback;
+  }
+  return fallback;
+};
+
+const safeDate = (v) => {
+  try {
+    if (v?.toDate) return v.toDate().toISOString();
+    return new Date().toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+};
 
 /* ================= PAGE ================= */
 export default function BlogPost({ post, relatedPosts }) {
-  if (!post) {
-    return (
-      <div style={{ padding: 20, fontFamily: "Arial" }}>
-        <h1>Article Not Found</h1>
-        <Link href="/blog">Go Back</Link>
-      </div>
-    );
-  }
+  if (!post) return <div>Not Found</div>;
 
   const url = `https://koloonline.online/blog/${post.slug}`;
-  const readingTime = estimateReadingTime(post.content || "");
 
   return (
-    <div style={{ fontFamily: "Arial", background: "#f5f5f5", minHeight: "100vh" }}>
-      
-      {/* ================= SEO ================= */}
+    <div>
       <Head>
-        <title>{post.title} | Koloonline</title>
-
-        <meta name="description" content={post.excerpt || post.title} />
-        <meta name="robots" content="index,follow,max-image-preview:large" />
+        <title>{safeText(post.title)}</title>
+        <meta name="description" content={safeText(post.excerpt)} />
         <link rel="canonical" href={url} />
 
-        {/* ================= OPEN GRAPH ================= */}
-        <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="Koloonline" />
-        <meta property="og:title" content={post.title} />
-        <meta property="og:description" content={post.excerpt || ""} />
-        <meta property="og:image" content={post.image || ""} />
-        <meta property="og:url" content={url} />
+        <meta property="og:title" content={safeText(post.title)} />
+        <meta property="og:description" content={safeText(post.excerpt)} />
+        <meta property="og:image" content={safeImage(post.image)} />
 
-        {/* ================= TWITTER ================= */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={post.title} />
-        <meta name="twitter:description" content={post.excerpt || ""} />
-        {post.image && (
-          <meta name="twitter:image" content={post.image} />
-        )}
-
-        {/* ================= ARTICLE SCHEMA ================= */}
+        {/* 🔥 FIXED SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Article",
-              headline: post.title,
-              description: post.excerpt || post.title,
-              image: post.image || "",
+              headline: safeText(post.title),
+              description: safeText(post.excerpt),
+              image: safeImage(post.image),
+              datePublished: safeDate(post.createdAt),
               author: {
                 "@type": "Organization",
                 name: "Koloonline",
               },
-              publisher: {
-                "@type": "Organization",
-                name: "Koloonline",
-              },
-              mainEntityOfPage: url,
-              datePublished: post.createdAt?.toDate?.() || new Date(),
             }),
           }}
         />
       </Head>
 
-      {/* ================= ADS SCRIPT ================= */}
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1294940976431468"
-        crossOrigin="anonymous"
-      />
+      <article>
+        <h1>{safeText(post.title)}</h1>
 
-      {/* ================= ARTICLE ================= */}
-      <article
-        style={{
-          maxWidth: 900,
-          margin: "auto",
-          background: "#fff",
-          padding: 20,
-          borderRadius: 10,
-        }}
-      >
-        <h1>{post.title}</h1>
-
-        <p style={{ color: "#666" }}>
-          ⏱ Estimated reading time: {readingTime} min
-        </p>
-
-        {post.image && (
-          <Image
-            src={post.image}
-            alt={post.title}
-            width={1200}
-            height={630}
-            style={{ width: "100%", height: "auto" }}
-          />
-        )}
+        <Image
+          src={safeImage(post.image)}
+          width={1200}
+          height={630}
+          alt={safeText(post.title)}
+        />
 
         <div
-          style={{ marginTop: 20, lineHeight: 1.7 }}
-          dangerouslySetInnerHTML={{ __html: post.content || "" }}
+          dangerouslySetInnerHTML={{
+            __html: safeText(post.content),
+          }}
         />
       </article>
 
-      {/* ================= RELATED POSTS ================= */}
-      <section style={{ maxWidth: 900, margin: "30px auto" }}>
-        <h2>Related Articles</h2>
-
-        {relatedPosts?.map((p) => (
-          <Link key={p.id} href={`/blog/${p.slug}`}>
-            <div
-              style={{
-                padding: 10,
-                background: "#fff",
-                marginTop: 10,
-                borderRadius: 6,
-              }}
-            >
-              {p.title}
-            </div>
-          </Link>
-        ))}
-      </section>
+      {relatedPosts?.map((p) => (
+        <Link key={p.id} href={`/blog/${p.slug}`}>
+          {safeText(p.title)}
+        </Link>
+      ))}
     </div>
   );
 }
 
-/* ================= STATIC PATHS ================= */
-export async function getStaticPaths() {
-  const snap = await getDocs(collection(db, "blog"));
-
-  const paths = snap.docs.map((d) => {
-    const data = d.data();
-    return {
-      params: { slug: data.slug || d.id },
-    };
-  });
-
-  return {
-    paths,
-    fallback: "blocking",
-  };
-}
-
-/* ================= STATIC PROPS ================= */
+/* ================= DATA ================= */
 export async function getStaticProps({ params }) {
   const snap = await getDocs(collection(db, "blog"));
 
@@ -169,19 +112,24 @@ export async function getStaticProps({ params }) {
 
   const post = posts.find((p) => p.slug === params.slug);
 
-  if (!post) {
-    return { notFound: true };
-  }
-
-  const relatedPosts = posts
-    .filter((p) => p.slug !== params.slug)
-    .slice(0, 4);
+  if (!post) return { notFound: true };
 
   return {
     props: {
       post,
-      relatedPosts,
+      relatedPosts: posts.slice(0, 4),
     },
     revalidate: 3600,
   };
-        }
+}
+
+export async function getStaticPaths() {
+  const snap = await getDocs(collection(db, "blog"));
+
+  return {
+    paths: snap.docs.map((d) => ({
+      params: { slug: d.data()?.slug || d.id },
+    })),
+    fallback: "blocking",
+  };
+              }
