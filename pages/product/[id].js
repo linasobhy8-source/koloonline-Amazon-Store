@@ -3,21 +3,27 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { safeText, safeImage, safeNumber } from "../../lib/normalizeProduct";
+import { safeText, safeImage, safeNumber } from "../../lib/safe";
 
 export default function ProductPage({ product, related }) {
-  if (!product) return <div>Not found</div>;
+  if (!product) {
+    return <div style={{ padding: 20 }}>Not found</div>;
+  }
 
-  const title = String(safeText(product.title));
-  const description = String(safeText(product.description));
-  const image = String(safeImage(product.image));
-  const price = Number(safeNumber(product.price));
+  // 🔥 SAFE CONVERSIONS (prevent React #130)
+  const title = safeText(product.title);
+  const description = safeText(product.description);
+  const image = safeImage(product.image);
+  const price = safeNumber(product.price);
+
+  const url = `https://koloonline.online/product/${product.id || ""}`;
 
   return (
     <>
       <Head>
-        <title>{title}</title>
-        <meta name="description" content={description} />
+        <title>{title || "Product"}</title>
+        <meta name="description" content={description || ""} />
+        <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
@@ -25,57 +31,118 @@ export default function ProductPage({ product, related }) {
 
         <Image
           src={
-            image.startsWith("http")
+            typeof image === "string" && image.startsWith("http")
               ? image
-              : "https://via.placeholder.com/500"
+              : "https://via.placeholder.com/500x500?text=Koloonline"
           }
           width={500}
           height={500}
-          alt={title}
+          alt={title || "Product"}
+          priority
         />
 
-        <h2>{price > 0 ? `$${price}` : ""}</h2>
+        {price > 0 && <h2>${price}</h2>}
 
         <p>{description}</p>
 
-        <Link href="/">Home</Link>
+        <Link href="/">← Home</Link>
 
-        {Array.isArray(related) &&
-          related.map((p) => (
-            <div key={p.id}>
-              {String(p.title)}
+        {/* ================= RELATED ================= */}
+        {Array.isArray(related) && related.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <h3>Related Products</h3>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+                gap: 15,
+              }}
+            >
+              {related.map((p) => {
+                const rTitle = safeText(p.title);
+                const rImage = safeImage(p.image);
+
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/product/${p.id}`}
+                  >
+                    <div style={{ cursor: "pointer" }}>
+                      <Image
+                        src={
+                          typeof rImage === "string" &&
+                          rImage.startsWith("http")
+                            ? rImage
+                            : "https://via.placeholder.com/300"
+                        }
+                        width={200}
+                        height={200}
+                        alt={rTitle || "Product"}
+                      />
+                      <p>{rTitle}</p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
-          ))}
+          </div>
+        )}
       </div>
     </>
   );
 }
 
+/* ================= DATA ================= */
+
 export async function getStaticProps({ params }) {
-  const products = await getProductsFast();
+  try {
+    const products = await getProductsFast();
 
-  const product = products.find(
-    (p) => p.id === params.id
-  );
+    const product = products.find(
+      (p) => String(p.id) === String(params.id)
+    );
 
-  if (!product) return { notFound: true };
+    if (!product) {
+      return { notFound: true };
+    }
 
-  return {
-    props: {
-      product,
-      related: products.slice(0, 6),
-    },
-    revalidate: 3600,
-  };
+    return {
+      props: {
+        product,
+        related: products
+          .filter((p) => p.id !== product.id)
+          .slice(0, 6),
+      },
+      revalidate: 3600,
+    };
+  } catch (error) {
+    console.error("Product error:", error);
+    return { notFound: true };
+  }
 }
 
-export async function getStaticPaths() {
-  const products = await getProductsFast();
+/* ================= PATHS ================= */
 
-  return {
-    paths: products.slice(0, 20).map((p) => ({
-      params: { id: p.id },
-    })),
-    fallback: "blocking",
-  };
-      }
+export async function getStaticPaths() {
+  try {
+    const products = await getProductsFast();
+
+    return {
+      paths: (products || [])
+        .filter((p) => p?.id)
+        .slice(0, 20)
+        .map((p) => ({
+          params: { id: String(p.id) },
+        })),
+      fallback: "blocking",
+    };
+  } catch (error) {
+    console.error("Paths error:", error);
+
+    return {
+      paths: [],
+      fallback: "blocking",
+    };
+  }
+          }
