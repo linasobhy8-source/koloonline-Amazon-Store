@@ -2,25 +2,28 @@ import { getDocs, collection } from "firebase/firestore";
 import { db } from "../config/firebase";
 
 export async function getServerSideProps({ res }) {
-  try {
-    const baseUrl = "https://koloonline.online";
+  const baseUrl = "https://koloonline.online";
 
+  try {
     const snap = await getDocs(collection(db, "blog"));
 
-    let urls = "";
+    const urls = snap.docs
+      .map((doc) => {
+        const data = doc.data();
 
-    snap.forEach((doc) => {
-      const data = doc.data();
-      const slug = data?.slug || doc.id;
+        const slug =
+          typeof data?.slug === "string"
+            ? data.slug
+            : String(doc.id);
 
-      urls += `
-        <url>
-          <loc>${baseUrl}/blog/${slug}</loc>
-          <changefreq>weekly</changefreq>
-          <priority>0.6</priority>
-        </url>
-      `;
-    });
+        return `
+<url>
+  <loc>${baseUrl}/blog/${slug}</loc>
+  <changefreq>weekly</changefreq>
+  <priority>0.6</priority>
+</url>`;
+      })
+      .join("");
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -28,17 +31,12 @@ ${urls}
 </urlset>`;
 
     res.setHeader("Content-Type", "application/xml");
-    res.write(xml);
-    res.end();
+    res.end(xml);
 
     return { props: {} };
   } catch (e) {
-    console.error(e);
-
     res.setHeader("Content-Type", "application/xml");
-    res.write(`<?xml version="1.0"?><urlset></urlset>`);
-    res.end();
-
+    res.end(`<?xml version="1.0"?><urlset></urlset>`);
     return { props: {} };
   }
 }
