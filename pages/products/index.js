@@ -1,8 +1,5 @@
 import Head from "next/head";
-import Image from "next/image";
-import Link from "next/link";
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { safeText, safeImage } from "../../lib/normalizeProduct";
 
 export default function Products({ products = [] }) {
 return (
@@ -22,22 +19,16 @@ return (
   >
     {Array.isArray(products) &&
       products.map((p) => (
-        <Link
+        <div
           key={String(p?.id || "")}
-          href={`/product/${encodeURIComponent(String(p?.id || ""))}`}
+          style={{
+            border: "1px solid #ddd",
+            padding: 10,
+          }}
         >
-          <div>
-            <Image
-              src={safeImage(p?.image)}
-              width={300}
-              height={300}
-              alt={safeText(p?.title)}
-              unoptimized
-            />
-
-            <h3>{safeText(p?.title)}</h3>
-          </div>
-        </Link>
+          <div>ID: {String(p?.id || "")}</div>
+          <div>Title: {String(p?.title || "")}</div>
+        </div>
       ))}
   </div>
 </div>
@@ -54,8 +45,7 @@ const clean = Array.isArray(products)
       .filter((p) => p && typeof p === "object")
       .map((p) => ({
         id: String(p?.id || ""),
-        title: safeText(p?.title),
-        image: safeImage(p?.image),
+        title: String(p?.title || ""),
       }))
   : [];
 
@@ -77,4 +67,4 @@ return {
 };
 
 }
-}
+        }
