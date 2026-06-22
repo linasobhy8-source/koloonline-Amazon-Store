@@ -9,10 +9,6 @@ import {
   safeNumber,
 } from "../../lib/safe";
 
-/* ================= FALLBACK ================= */
-const FALLBACK_IMAGE =
-  "https://via.placeholder.com/500x500?text=Koloonline";
-
 /* ================= PAGE ================= */
 
 export default function ProductPage({ product, related }) {
@@ -20,15 +16,10 @@ export default function ProductPage({ product, related }) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  // 🔥 HARD SAFE FINAL
+  // 🔥 FORCE STRING/NUMBER (منع React #130)
   const title = String(safeText(product?.title) || "");
   const description = String(safeText(product?.description) || "");
-  const imageRaw = safeImage(product?.image);
-  const image =
-    typeof imageRaw === "string" && imageRaw.startsWith("http")
-      ? imageRaw
-      : FALLBACK_IMAGE;
-
+  const image = String(safeImage(product?.image) || "");
   const price = Number(safeNumber(product?.price) || 0);
 
   const url = `https://koloonline.online/product/${product?.id || ""}`;
@@ -44,9 +35,13 @@ export default function ProductPage({ product, related }) {
       <div style={{ padding: 20 }}>
         <h1>{title}</h1>
 
-        {/* 🔥 SAFE IMAGE (NO OBJECT EVER) */}
+        {/* 🔥 IMAGE SAFE MODE (مهم جدًا لتجنب React #130) */}
         <Image
-          src={image}
+          src={
+            typeof image === "string" && image.startsWith("http")
+              ? image
+              : "https://via.placeholder.com/500x500?text=Koloonline"
+          }
           width={500}
           height={500}
           alt={title || "Product"}
@@ -59,6 +54,7 @@ export default function ProductPage({ product, related }) {
 
         <Link href="/">← Home</Link>
 
+        {/* ================= RELATED ================= */}
         {Array.isArray(related) && related.length > 0 && (
           <div style={{ marginTop: 20 }}>
             <h3>Related Products</h3>
@@ -66,29 +62,23 @@ export default function ProductPage({ product, related }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit,minmax(200px,1fr))",
+                gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
                 gap: 15,
               }}
             >
               {related.map((p) => {
                 const rTitle = String(safeText(p?.title) || "");
-                const rImageRaw = safeImage(p?.image);
-
-                const rImage =
-                  typeof rImageRaw === "string" &&
-                  rImageRaw.startsWith("http")
-                    ? rImageRaw
-                    : FALLBACK_IMAGE;
+                const rImage = String(safeImage(p?.image) || "");
 
                 return (
-                  <Link
-                    key={String(p?.id || rTitle)}
-                    href={`/product/${p?.id}`}
-                  >
+                  <Link key={String(p?.id || rTitle)} href={`/product/${p?.id}`}>
                     <div style={{ cursor: "pointer" }}>
                       <Image
-                        src={rImage}
+                        src={
+                          rImage && rImage.startsWith("http")
+                            ? rImage
+                            : "https://via.placeholder.com/300"
+                        }
                         width={200}
                         height={200}
                         alt={rTitle || "Product"}
@@ -112,21 +102,21 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const clean = (products || []).map((p) => ({
-      id: String(p?.id || ""),
-      title: String(safeText(p?.title) || ""),
-      description: String(safeText(p?.description) || ""),
-      image: String(safeImage(p?.image) || ""),
-      price: Number(safeNumber(p?.price) || 0),
-    }));
+    const clean = (products || [])
+      .map((p) => ({
+        id: String(p?.id || ""),
+        title: String(safeText(p?.title) || ""),
+        description: String(safeText(p?.description) || ""),
+        image: String(safeImage(p?.image) || ""),
+        price: Number(safeNumber(p?.price) || 0),
+      }))
+      .filter((p) => p.id);
 
     const product = clean.find(
       (p) => p.id === String(params?.id || "")
     );
 
-    if (!product) {
-      return { notFound: true };
-    }
+    if (!product) return { notFound: true };
 
     return {
       props: {
@@ -154,9 +144,7 @@ export async function getStaticPaths() {
         .filter((p) => p?.id)
         .slice(0, 20)
         .map((p) => ({
-          params: {
-            id: String(p.id),
-          },
+          params: { id: String(p.id) },
         })),
       fallback: "blocking",
     };
@@ -168,4 +156,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-                }
+            }
