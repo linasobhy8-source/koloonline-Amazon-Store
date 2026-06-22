@@ -1,52 +1,42 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-
 import { getProductsFast } from "../../lib/firebaseQuery";
-import { normalizeProduct } from "../../lib/normalizeProduct";
 
-/* ================= FORCE SAFE ================= */
-
-const forceString = (v) => {
-  const p = normalizeProduct({ title: v });
-  return String(p.title || "");
+/* ================= SAFE ================= */
+const safeText = (v) => {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (typeof v === "object") return v?.title || v?.text || v?.name || "";
+  return "";
 };
 
-const forceNumber = (v) => {
+const safeNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-const forceImage = (v) => {
-  const p = normalizeProduct({ image: v });
-
-  const img = p.image;
-
-  return typeof img === "string" && img.startsWith("http")
-    ? img
-    : "https://via.placeholder.com/500x500?text=Koloonline";
+const safeImage = (v) => {
+  if (typeof v === "string" && v.startsWith("http")) return v;
+  if (typeof v === "object" && v) return v.url || v.image || "";
+  return "https://via.placeholder.com/500x500?text=Koloonline";
 };
 
-/* ================= PAGE ================= */
-
+/* ================= COMPONENT ================= */
 export default function ProductPage({ product, related }) {
-  if (!product) {
-    return <div style={{ padding: 20 }}>Not found</div>;
-  }
+  if (!product) return <div>Not found</div>;
 
-  const title = forceString(product.title);
-  const description = forceString(product.description);
-  const image = forceImage(product.image);
-  const price = forceNumber(product.price);
-
-  const url = `https://koloonline.online/product/${product.id}`;
+  const title = safeText(product.title);
+  const description = safeText(product.description);
+  const image = safeImage(product.image);
+  const price = safeNumber(product.price);
 
   return (
     <>
       <Head>
-        <title>{title || "Product"}</title>
+        <title>{title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
@@ -68,14 +58,14 @@ export default function ProductPage({ product, related }) {
 
         <hr />
 
-        <h3>Related</h3>
-
+        {/* 🔥 SAFE RELATED (NO OBJECT RENDERING) */}
         {Array.isArray(related) &&
           related.map((p) => {
-            const t = forceString(p?.title);
+            const t = safeText(p?.title);
+            const id = safeText(p?.id);
 
             return (
-              <div key={p?.id || t}>
+              <div key={id}>
                 {t}
               </div>
             );
@@ -86,15 +76,23 @@ export default function ProductPage({ product, related }) {
 }
 
 /* ================= DATA ================= */
-
 export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const cleanProducts = (products || []).map(normalizeProduct);
+    const clean = (products || [])
+      .filter((p) => p && typeof p === "object")
+      .map((p) => ({
+        id: String(p.id || ""),
+        title: safeText(p.title),
+        description: safeText(p.description),
+        image: safeImage(p.image),
+        price: safeNumber(p.price),
+      }))
+      .filter((p) => p.id);
 
-    const product = cleanProducts.find(
-      (p) => String(p.id) === String(params?.id)
+    const product = clean.find(
+      (p) => p.id === String(params?.id)
     );
 
     if (!product) return { notFound: true };
@@ -102,7 +100,7 @@ export async function getStaticProps({ params }) {
     return {
       props: {
         product,
-        related: cleanProducts.slice(0, 6),
+        related: clean.filter((p) => p.id !== product.id).slice(0, 6),
       },
       revalidate: 3600,
     };
@@ -113,15 +111,12 @@ export async function getStaticProps({ params }) {
 }
 
 /* ================= PATHS ================= */
-
 export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
-    const clean = (products || []).map(normalizeProduct);
-
     return {
-      paths: clean
+      paths: (products || [])
         .filter((p) => p?.id)
         .slice(0, 20)
         .map((p) => ({
@@ -129,10 +124,10 @@ export async function getStaticPaths() {
         })),
       fallback: "blocking",
     };
-  } catch (e) {
+  } catch {
     return {
       paths: [],
       fallback: "blocking",
     };
   }
-}
+         }
