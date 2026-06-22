@@ -16,12 +16,12 @@ export default function ProductPage({ product, related }) {
     return <div style={{ padding: 20 }}>Product not found</div>;
   }
 
-  const title = safeText(product?.title);
-  const description = safeText(product?.description);
-  const image = safeImage(product?.image);
-  const price = safeNumber(product?.price);
+  // 🔥 HARD SAFE (مهم جدًا)
+  const title = String(safeText(product?.title) || "");
+  const description = String(safeText(product?.description) || "");
+  const image = String(safeImage(product?.image) || "");
+  const price = Number(safeNumber(product?.price) || 0);
 
-  // ✅ FIXED
   const url = `https://koloonline.online/product/${product?.id || ""}`;
 
   return (
@@ -35,8 +35,12 @@ export default function ProductPage({ product, related }) {
       <div style={{ padding: 20 }}>
         <h1>{title}</h1>
 
+        {/* 🔥 IMPORTANT FIX FOR IMAGE #130 */}
         <Image
-          src={image}
+          src={typeof image === "string" && image.startsWith("http")
+            ? image
+            : "https://via.placeholder.com/500x500?text=Koloonline"
+          }
           width={500}
           height={500}
           alt={title || "Product"}
@@ -62,8 +66,8 @@ export default function ProductPage({ product, related }) {
               }}
             >
               {related.map((p) => {
-                const rTitle = safeText(p?.title);
-                const rImage = safeImage(p?.image);
+                const rTitle = String(safeText(p?.title) || "");
+                const rImage = String(safeImage(p?.image) || "");
 
                 return (
                   <Link
@@ -72,7 +76,11 @@ export default function ProductPage({ product, related }) {
                   >
                     <div style={{ cursor: "pointer" }}>
                       <Image
-                        src={rImage}
+                        src={
+                          rImage.startsWith("http")
+                            ? rImage
+                            : "https://via.placeholder.com/300"
+                        }
                         width={200}
                         height={200}
                         alt={rTitle || "Product"}
@@ -98,10 +106,10 @@ export async function getStaticProps({ params }) {
 
     const clean = (products || []).map((p) => ({
       id: String(p?.id || ""),
-      title: safeText(p?.title),
-      description: safeText(p?.description),
-      image: safeImage(p?.image),
-      price: safeNumber(p?.price),
+      title: String(safeText(p?.title) || ""),
+      description: String(safeText(p?.description) || ""),
+      image: String(safeImage(p?.image) || ""),
+      price: Number(safeNumber(p?.price) || 0),
     }));
 
     const product = clean.find(
@@ -152,4 +160,4 @@ export async function getStaticPaths() {
       fallback: "blocking",
     };
   }
-          }
+}
