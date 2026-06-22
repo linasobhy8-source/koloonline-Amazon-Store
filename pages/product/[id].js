@@ -1,22 +1,27 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductsFast } from "../../lib/firebaseQuery";
-import { safeText, safeImage, safeNumber } from "../../lib/normalizeProduct";
 
-/* ================= SAFE FORCE ================= */
+import { getProductsFast } from "../../lib/firebaseQuery";
+import { normalizeProduct } from "../../lib/normalizeProduct";
+
+/* ================= FORCE SAFE ================= */
+
 const forceString = (v) => {
-  const s = safeText(v);
-  return typeof s === "string" ? s : "";
+  const p = normalizeProduct({ title: v });
+  return String(p.title || "");
 };
 
 const forceNumber = (v) => {
-  const n = safeNumber(v);
+  const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
 const forceImage = (v) => {
-  const img = safeImage(v);
+  const p = normalizeProduct({ image: v });
+
+  const img = p.image;
+
   return typeof img === "string" && img.startsWith("http")
     ? img
     : "https://via.placeholder.com/500x500?text=Koloonline";
@@ -34,11 +39,14 @@ export default function ProductPage({ product, related }) {
   const image = forceImage(product.image);
   const price = forceNumber(product.price);
 
+  const url = `https://koloonline.online/product/${product.id}`;
+
   return (
     <>
       <Head>
         <title>{title || "Product"}</title>
         <meta name="description" content={description} />
+        <link rel="canonical" href={url} />
       </Head>
 
       <div style={{ padding: 20 }}>
@@ -60,12 +68,18 @@ export default function ProductPage({ product, related }) {
 
         <hr />
 
+        <h3>Related</h3>
+
         {Array.isArray(related) &&
-          related.map((p) => (
-            <div key={p?.id || Math.random()}>
-              {forceString(p?.title)}
-            </div>
-          ))}
+          related.map((p) => {
+            const t = forceString(p?.title);
+
+            return (
+              <div key={p?.id || t}>
+                {t}
+              </div>
+            );
+          })}
       </div>
     </>
   );
@@ -77,20 +91,23 @@ export async function getStaticProps({ params }) {
   try {
     const products = await getProductsFast();
 
-    const product = (products || []).find(
-      (p) => String(p?.id) === String(params?.id)
+    const cleanProducts = (products || []).map(normalizeProduct);
+
+    const product = cleanProducts.find(
+      (p) => String(p.id) === String(params?.id)
     );
 
     if (!product) return { notFound: true };
 
     return {
       props: {
-        product: JSON.parse(JSON.stringify(product)),
-        related: (products || []).slice(0, 6),
+        product,
+        related: cleanProducts.slice(0, 6),
       },
       revalidate: 3600,
     };
   } catch (e) {
+    console.error(e);
     return { notFound: true };
   }
 }
@@ -101,8 +118,10 @@ export async function getStaticPaths() {
   try {
     const products = await getProductsFast();
 
+    const clean = (products || []).map(normalizeProduct);
+
     return {
-      paths: (products || [])
+      paths: clean
         .filter((p) => p?.id)
         .slice(0, 20)
         .map((p) => ({
@@ -110,10 +129,10 @@ export async function getStaticPaths() {
         })),
       fallback: "blocking",
     };
-  } catch {
+  } catch (e) {
     return {
       paths: [],
       fallback: "blocking",
     };
   }
-            }
+}
