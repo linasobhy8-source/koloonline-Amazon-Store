@@ -4,228 +4,135 @@ import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 
-/* ================= SAFE HELPERS ================= */
+/* ================= FALLBACK ================= */
+const fallbackImage =
+  "https://via.placeholder.com/300x300?text=Koloonline";
 
-const FALLBACK_IMAGE =
-"https://via.placeholder.com/300x300?text=Koloonline";
+/* ================= SAFE TEXT ================= */
+const safeText = (v) => {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+  if (typeof v === "object") return v.title || v.name || v.text || "";
+  return "";
+};
 
-function safeText(v) {
-if (v == null) return "";
+/* ================= SAFE IMAGE ================= */
+const safeImage = (v) => {
+  if (!v) return fallbackImage;
 
-if (
-typeof v === "string" ||
-typeof v === "number" ||
-typeof v === "boolean"
-) {
-return String(v);
-}
+  if (typeof v === "string") return v.startsWith("http") ? v : fallbackImage;
 
-if (Array.isArray(v)) {
-return v.map(safeText).join(" ");
-}
+  if (typeof v === "object") {
+    const img = v.url || v.image || v.src;
+    if (typeof img === "string") return img;
+  }
 
-if (typeof v === "object") {
-return String(
-v.title ||
-v.name ||
-v.text ||
-v.value ||
-""
-);
-}
+  return fallbackImage;
+};
 
-return "";
-}
+/* ================= VIRAL SCORE ================= */
+const viralScore = (p = {}) => {
+  let score = 0;
 
-function safeImage(v) {
-if (!v) return FALLBACK_IMAGE;
+  score += Number(p.views || 0) * 0.5;
+  score += Number(p.clicks || 0) * 2;
+  score += Number(p.addToCart || 0) * 5;
+  score += Number(p.orders || 0) * 10;
+  score += Number(p.rating || 0) * 20;
 
-if (typeof v === "string") {
-return v.startsWith("http")
-? v
-: FALLBACK_IMAGE;
-}
+  if (p.trending) score += 50;
+  if (p.viralBoost) score += 40;
 
-if (typeof v === "object") {
-const img =
-v.url ||
-v.image ||
-v.src ||
-v.value;
-
-if (
-  typeof img === "string" &&
-  img.startsWith("http")
-) {
-  return img;
-}
-
-}
-
-return FALLBACK_IMAGE;
-}
-
-function safeNumber(v) {
-const n = Number(v);
-return Number.isFinite(n) ? n : 0;
-}
-
-function viralScore(p = {}) {
-let score = 0;
-
-score += safeNumber(p.views) * 0.5;
-score += safeNumber(p.clicks) * 2;
-score += safeNumber(p.addToCart) * 5;
-score += safeNumber(p.orders) * 10;
-score += safeNumber(p.rating) * 20;
-
-if (p.trending) score += 50;
-if (p.viralBoost) score += 40;
-
-return Math.round(score);
-}
+  return Math.max(0, Math.min(100, score));
+};
 
 /* ================= PAGE ================= */
+export default function Home({ products = [] }) {
+  return (
+    <div style={{ padding: 20 }}>
+      <Head>
+        <title>Koloonline - Trending Products</title>
+      </Head>
 
-export default function HomePage({
-products = [],
-}) {
-return (
-<>
-<Head>
-<title>
-Trending Products | Koloonline
-</title>
+      <h1>🔥 Trending Products</h1>
 
-    <meta
-      name="description"
-      content="Trending Amazon products and viral deals."
-    />
-  </Head>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gap: 20,
+        }}
+      >
+        {Array.isArray(products) &&
+          products.map((p) => {
+            const id = String(p?.id || "");
+            const title = safeText(p?.title);
+            const image = safeImage(p?.image);
 
-  <div
-    style={{
-      padding: 20,
-    }}
-  >
-    <h1>
-      🔥 Viral & Trending Products
-    </h1>
+            if (!id) return null;
 
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns:
-          "repeat(auto-fit,minmax(220px,1fr))",
-        gap: 20,
-      }}
-    >
-      {products.map((p) => (
-        <Link
-          key={String(p.id)}
-          href={`/product/${encodeURIComponent(
-            String(p.id)
-          )}`}
-          style={{
-            textDecoration: "none",
-            color: "inherit",
-          }}
-        >
-          <div
-            style={{
-              border: "1px solid #eee",
-              borderRadius: 10,
-              padding: 12,
-            }}
-          >
-            <Image
-              src={safeImage(p.image)}
-              alt={safeText(p.title)}
-              width={300}
-              height={300}
-              unoptimized
-            />
+            return (
+              <Link
+                key={id}
+                href={`/product/${encodeURIComponent(id)}`}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  style={{
+                    background: "#fff",
+                    padding: 12,
+                    borderRadius: 12,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <Image
+                    src={image}
+                    width={300}
+                    height={300}
+                    alt={title}
+                    unoptimized
+                  />
 
-            <h3>
-              {safeText(p.title)}
-            </h3>
+                  <h3>{title}</h3>
 
-            <p>
-              Score:{" "}
-              {safeNumber(
-                p.viralScore
-              )}
-            </p>
-
-            <p>
-              $
-              {safeNumber(
-                p.price
-              )}
-            </p>
-          </div>
-        </Link>
-      ))}
+                  <p style={{ fontSize: 12, color: "#666" }}>
+                    Score: {Math.round(viralScore(p))}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+      </div>
     </div>
-  </div>
-</>
-
-);
+  );
 }
 
 /* ================= DATA ================= */
-
 export async function getStaticProps() {
-try {
-const snap = await getDocs(
-collection(db, "products")
-);
+  try {
+    const snap = await getDocs(collection(db, "products"));
 
-const products = snap.docs
-  .map((doc) => {
-    const data = doc.data() || {};
+    const products = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
     return {
-      id: String(doc.id),
-      title: safeText(data.title),
-      image: safeImage(data.image),
-      price: safeNumber(data.price),
-      views: safeNumber(data.views),
-      clicks: safeNumber(data.clicks),
-      orders: safeNumber(data.orders),
-      rating: safeNumber(data.rating),
-      trending: !!data.trending,
-      viralBoost: !!data.viralBoost,
+      props: {
+        products: JSON.parse(JSON.stringify(products)),
+      },
+      revalidate: 1800,
     };
-  })
-  .map((p) => ({
-    ...p,
-    viralScore: viralScore(p),
-  }))
-  .sort(
-    (a, b) =>
-      b.viralScore - a.viralScore
-  );
+  } catch (e) {
+    console.error(e);
 
-return {
-  props: {
-    products,
-  },
-  revalidate: 1800,
-};
-
-} catch (error) {
-console.error(
-"HOME ERROR:",
-error
-);
-
-return {
-  props: {
-    products: [],
-  },
-  revalidate: 300,
-};
-
-}
-                    }
+    return {
+      props: {
+        products: [],
+      },
+      revalidate: 300,
+    };
+  }
+                      }
