@@ -6,23 +6,15 @@ import Image from "next/image";
 const FALLBACK =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
-/* ================= ABSOLUTE SAFE ================= */
-const toText = (v) => {
+/* ================= FINAL SAFE GUARD ================= */
+const safe = (v) => {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
-
   if (!v) return "";
 
   if (typeof v === "object") {
     try {
-      return (
-        v.title ||
-        v.name ||
-        v.text ||
-        v.value ||
-        JSON.stringify(v) || // 🔥 يمنع crash نهائي 100%
-        ""
-      );
+      return v.title || v.name || v.text || JSON.stringify(v) || "";
     } catch {
       return "";
     }
@@ -31,21 +23,13 @@ const toText = (v) => {
   return "";
 };
 
-const toNumber = (v) => {
+const safeNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-const toImage = (v) => {
+const safeImage = (v) => {
   if (typeof v === "string" && v.startsWith("http")) return v;
-
-  if (v && typeof v === "object") {
-    const img = v.url || v.image || v.src;
-    if (typeof img === "string" && img.startsWith("http")) {
-      return img;
-    }
-  }
-
   return FALLBACK;
 };
 
@@ -53,30 +37,22 @@ const toImage = (v) => {
 export default function SearchPage({ products = [] }) {
   const [q, setQ] = useState("");
 
-  /* 🔥 HARD SANITIZE EVERYTHING */
   const safeProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
 
     return products
       .filter((p) => p && typeof p === "object")
-      .map((p) => {
-        const title = toText(p.title);
-        const image = toImage(p.image);
-        const price = toNumber(p.price);
+      .map((p) => ({
+        id: String(p.id || ""),
+        title: safe(p.title),
+        image: safeImage(p.image),
+        price: safeNumber(p.price),
 
-        const views = toNumber(p.views);
-        const clicks = toNumber(p.clicks);
-        const orders = toNumber(p.orders);
-
-        return {
-          id: String(p.id || ""),
-          title,
-          image,
-          price,
-
-          score: views + clicks * 3 + orders * 8,
-        };
-      })
+        score:
+          safeNumber(p.views) +
+          safeNumber(p.clicks) * 3 +
+          safeNumber(p.orders) * 8,
+      }))
       .filter((p) => p.id);
   }, [products]);
 
@@ -84,7 +60,7 @@ export default function SearchPage({ products = [] }) {
     const query = q.toLowerCase();
 
     return safeProducts
-      .filter((p) => (p.title || "").toLowerCase().includes(query))
+      .filter((p) => safe(p.title).toLowerCase().includes(query))
       .sort((a, b) => b.score - a.score)
       .slice(0, 50);
   }, [q, safeProducts]);
@@ -103,18 +79,22 @@ export default function SearchPage({ products = [] }) {
 
       <div style={{ display: "grid", gap: 20, marginTop: 20 }}>
         {filtered.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
+          <Link
+            key={p.id}
+            href={`/product/${p.id}`}
+            style={{ textDecoration: "none" }}
+          >
             <div style={{ border: "1px solid #ddd", padding: 10 }}>
               <Image
-                src={p.image}
+                src={p.image || FALLBACK}
                 width={300}
                 height={300}
-                alt={p.title}
+                alt={p.title || "product"}
                 unoptimized
               />
 
-              <h3>{p.title}</h3>
-              <p>${p.price}</p>
+              <h3>{p.title || "No title"}</h3>
+              <p>${p.price || 0}</p>
             </div>
           </Link>
         ))}
@@ -136,10 +116,10 @@ export async function getStaticProps() {
       },
       revalidate: 300,
     };
-  } catch (e) {
+  } catch {
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-          }
+    }
