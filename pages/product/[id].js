@@ -39,12 +39,8 @@ export async function getStaticProps({ params }) {
 export async function getStaticPaths() {
   return {
     paths: [
-      {
-        params: {
-          id: "B0GWTCCHFZ",
-        },
-      },
+      { params: { id: "B0GWTCCHFZ" } }
     ],
     fallback: false,
   };
-      }
+}
