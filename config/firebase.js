@@ -11,13 +11,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/* ================= VALIDATION (IMPORTANT) ================= */
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.warn("⚠️ Firebase config missing env variables");
+/* ================= VALIDATION ================= */
+const isValid =
+  firebaseConfig.apiKey && firebaseConfig.projectId;
+
+if (!isValid && typeof window !== "undefined") {
+  console.warn("⚠️ Firebase env variables are missing");
 }
 
-/* ================= SINGLETON APP ================= */
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+/* ================= SINGLETON APP (SAFE SSR) ================= */
+const app =
+  getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 /* ================= FIRESTORE ================= */
 const db = getFirestore(app);
