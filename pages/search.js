@@ -2,60 +2,26 @@ import Head from "next/head";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { normalizeProduct } from "../lib/dataFirewall";
 
-const FALLBACK = "https://via.placeholder.com/500x500?text=Koloonline";
+export default function SearchPage(props) {
+  // 🔥 HARD SAFE GUARD (مهم جدًا)
+  const products = Array.isArray(props?.products) ? props.products : [];
 
-/* ================= SAFE ================= */
-const safeText = (v) => {
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (Array.isArray(v)) return v.map(safeText).join(" ");
-  if (v && typeof v === "object") return v.title || v.name || v.text || "";
-  return "";
-};
-
-const safeNumber = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
-
-const safeImage = (v) => {
-  if (typeof v === "string" && v.startsWith("http")) return v;
-  if (v && typeof v === "object") {
-    const img = v.url || v.image || v.src;
-    if (typeof img === "string" && img.startsWith("http")) return img;
-  }
-  return FALLBACK;
-};
-
-/* ================= PAGE ================= */
-export default function SearchPage({ products = [] }) {
   const [q, setQ] = useState("");
 
   const safeProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
-
     return products
       .filter((p) => p && typeof p === "object")
-      .map((p) => ({
-        id: String(p.id || ""),
-        title: safeText(p.title),
-        image: safeImage(p.image),
-        price: safeNumber(p.price),
-        score:
-          safeNumber(p.views) +
-          safeNumber(p.clicks) * 3 +
-          safeNumber(p.orders) * 8,
-      }))
-      .filter((p) => p.id);
+      .map(normalizeProduct)
+      .filter((p) => p.id && p.title);
   }, [products]);
 
   const filtered = useMemo(() => {
     const query = q.toLowerCase();
 
     return safeProducts
-      .filter((p) => p.title.toLowerCase().includes(query))
-      .sort((a, b) => b.score - a.score)
+      .filter((p) => (p.title || "").toLowerCase().includes(query))
       .slice(0, 50);
   }, [q, safeProducts]);
 
@@ -66,8 +32,9 @@ export default function SearchPage({ products = [] }) {
       </Head>
 
       <input
-        placeholder="Search products..."
+        value={q}
         onChange={(e) => setQ(e.target.value || "")}
+        placeholder="Search..."
         style={{ width: "100%", padding: 12 }}
       />
 
@@ -75,16 +42,17 @@ export default function SearchPage({ products = [] }) {
         {filtered.map((p) => (
           <Link key={p.id} href={`/product/${p.id}`}>
             <div style={{ border: "1px solid #ddd", padding: 10 }}>
+              {/* 🔥 HARD SAFE IMAGE */}
               <Image
-                src={p.image}
+                src={typeof p.image === "string" ? p.image : ""}
                 width={300}
                 height={300}
-                alt={p.title || "product"}
+                alt={typeof p.title === "string" ? p.title : "product"}
                 unoptimized
               />
 
-              <h3>{p.title || ""}</h3>
-              <p>${p.price || 0}</p>
+              <h3>{typeof p.title === "string" ? p.title : ""}</h3>
+              <p>${Number(p.price || 0)}</p>
             </div>
           </Link>
         ))}
@@ -93,7 +61,7 @@ export default function SearchPage({ products = [] }) {
   );
 }
 
-/* ================= ISR ================= */
+/* ================= SAFE STATIC ================= */
 export async function getStaticProps() {
   try {
     const { getProductsFast } = await import("../lib/firebaseQuery");
@@ -106,10 +74,10 @@ export async function getStaticProps() {
       },
       revalidate: 300,
     };
-  } catch (e) {
+  } catch {
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-        }
+  }
