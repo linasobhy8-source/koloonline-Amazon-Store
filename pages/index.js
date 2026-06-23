@@ -4,70 +4,114 @@ import Link from "next/link";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 
-const fallback = "https://via.placeholder.com/300x300?text=Koloonline";
+/* ================= SAFE HELPERS ================= */
+const fallbackImage =
+  "https://via.placeholder.com/300x300?text=Koloonline";
 
 const safeText = (v) => {
+  if (v == null) return "";
+
   if (typeof v === "string") return v;
-  if (typeof v === "number") return String(v);
-  if (typeof v === "object" && v !== null) {
-    return v.title || v.text || v.name || "";
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+
+  if (typeof v === "object") {
+    return (
+      v?.title ||
+      v?.text ||
+      v?.name ||
+      v?.value ||
+      v?.description ||
+      ""
+    );
   }
+
   return "";
 };
 
 const safeImage = (v) => {
-  if (typeof v === "string") return v;
+  if (typeof v === "string" && v.startsWith("http")) return v;
+
   if (typeof v === "object" && v !== null) {
-    return v.url || v.image || v.src || fallback;
+    const img = v?.url || v?.image || v?.src;
+    if (typeof img === "string" && img.startsWith("http")) return img;
   }
-  return fallback;
+
+  return fallbackImage;
 };
 
+const safeNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/* ================= PAGE ================= */
 export default function Home({ products = [] }) {
   return (
     <div style={{ padding: 20 }}>
       <Head>
-        <title>Koloonline</title>
+        <title>Koloonline Products</title>
       </Head>
 
       <h1>🔥 Trending Products</h1>
 
-      <div style={{ display: "grid", gap: 20 }}>
-        {products.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
-            <div>
-              <Image
-                src={safeImage(p.image)}
-                width={300}
-                height={300}
-                alt={safeText(p.title)}
-                unoptimized
-              />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gap: 20,
+        }}
+      >
+        {Array.isArray(products) &&
+          products.map((p) => (
+            <Link key={p.id} href={`/product/${p.id}`}>
+              <div style={{ cursor: "pointer" }}>
+                <Image
+                  src={safeImage(p.image)}
+                  width={300}
+                  height={300}
+                  alt={safeText(p.title)}
+                  unoptimized
+                />
 
-              <h3>{safeText(p.title)}</h3>
-              <p>${Number(p.price || 0)}</p>
-            </div>
-          </Link>
-        ))}
+                <h3>{safeText(p.title)}</h3>
+
+                <p>${safeNumber(p.price)}</p>
+              </div>
+            </Link>
+          ))}
       </div>
     </div>
   );
 }
 
+/* ================= DATA ================= */
 export async function getStaticProps() {
   try {
     const snap = await getDocs(collection(db, "products"));
 
-    const products = snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const products = snap.docs.map((doc) => {
+      const d = doc.data();
+
+      return {
+        id: doc.id,
+        title: safeText(d.title),
+        image: safeImage(d.image),
+        price: safeNumber(d.price),
+      };
+    });
 
     return {
       props: { products },
       revalidate: 300,
     };
-  } catch {
-    return { props: { products: [] } };
+  } catch (error) {
+    console.error("Firebase error:", error);
+
+    return {
+      props: { products: [] },
+      revalidate: 300,
+    };
   }
-          }
+    }
