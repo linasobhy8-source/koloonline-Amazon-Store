@@ -1,12 +1,22 @@
 import Link from "next/link";
 import { useState, useMemo, useRef, useEffect } from "react";
 
+/* ================= SAFE ================= */
+const safeText = (v) => {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (typeof v === "object") return v?.text || v?.title || v?.name || "";
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+  return "";
+};
+
 export default function Navbar({ products = [] }) {
   const [q, setQ] = useState("");
   const timeoutRef = useRef(null);
   const mountedRef = useRef(true);
 
-  /* ================= MOUNT SAFETY ================= */
+  /* ================= CLEANUP ================= */
   useEffect(() => {
     return () => {
       mountedRef.current = false;
@@ -14,7 +24,7 @@ export default function Navbar({ products = [] }) {
     };
   }, []);
 
-  /* ================= DEBOUNCE ================= */
+  /* ================= DEBOUNCE SEARCH ================= */
   const handleSearch = (value) => {
     clearTimeout(timeoutRef.current);
 
@@ -24,20 +34,18 @@ export default function Navbar({ products = [] }) {
     }, 150);
   };
 
-  /* ================= FAST FILTER ================= */
+  /* ================= FILTER ================= */
   const results = useMemo(() => {
     const query = String(q || "").trim().toLowerCase();
 
     if (!query) return [];
-
     if (!Array.isArray(products)) return [];
 
     return products
+      .filter((p) => p && typeof p === "object")
       .slice(0, 200)
       .filter((p) =>
-        String(p?.title || "")
-          .toLowerCase()
-          .includes(query)
+        String(p?.title || "").toLowerCase().includes(query)
       )
       .slice(0, 5);
   }, [q, products]);
@@ -78,24 +86,31 @@ export default function Navbar({ products = [] }) {
               overflow: "hidden",
             }}
           >
-            {results.map((p, i) => (
-              <Link
-                key={p?.id || i}
-                href={`/product/${p?.id || ""}`}
-                style={{
-                  display: "block",
-                  padding: "10px",
-                  color: "#111827",
-                  textDecoration: "none",
-                  borderBottom: "1px solid #f3f4f6",
-                }}
-              >
-                {String(p?.title || "Product")}
-              </Link>
-            ))}
+            {results.map((p, i) => {
+              const id = String(p?.id || "");
+              const title = safeText(p?.title);
+
+              if (!id) return null;
+
+              return (
+                <Link
+                  key={id}
+                  href={`/product/${encodeURIComponent(id)}`}
+                  style={{
+                    display: "block",
+                    padding: "10px",
+                    color: "#111827",
+                    textDecoration: "none",
+                    borderBottom: "1px solid #f3f4f6",
+                  }}
+                >
+                  {title || "Product"}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
     </nav>
   );
-            }
+              }
