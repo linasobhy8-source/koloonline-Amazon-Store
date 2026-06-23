@@ -6,11 +6,33 @@ import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 
+/* ================= FALLBACK ================= */
 const fallbackImage =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
+/* ================= SAFE TEXT (IMPORTANT FIX) ================= */
+const safeText = (v) => {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+
+  if (typeof v === "object") {
+    return v?.title || v?.name || v?.text || "";
+  }
+
+  return "";
+};
+
+/* ================= SAFE NUMBER ================= */
+const safeNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 /* ================= PAGE ================= */
-export default function SearchPage({ products }) {
+export default function SearchPage({ products = [] }) {
   const router = useRouter();
 
   const [search, setSearch] = useState("");
@@ -24,21 +46,41 @@ export default function SearchPage({ products }) {
     clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(() => {
-      setSearch(value);
+      setSearch(value || "");
     }, 200);
   };
 
-  /* ================= AI SCORE (MEMOIZED) ================= */
+  /* ================= NORMALIZE PRODUCTS (ANTI-CRASH) ================= */
+  const normalizedProducts = useMemo(() => {
+    return (products || [])
+      .filter((p) => p && typeof p === "object")
+      .map((p) => ({
+        id: String(p?.id || ""),
+        title: safeText(p?.title),
+        category: safeText(p?.category),
+        image:
+          typeof p?.image === "string"
+            ? p.image
+            : fallbackImage,
+        price: safeNumber(p?.price),
+        views: safeNumber(p?.views),
+        clicks: safeNumber(p?.clicks),
+        orders: safeNumber(p?.orders),
+        viralBoost: Boolean(p?.viralBoost),
+      }));
+  }, [products]);
+
+  /* ================= AI SCORE ================= */
   const enrichedProducts = useMemo(() => {
-    return (products || []).map((d) => ({
+    return normalizedProducts.map((d) => ({
       ...d,
       aiScore:
-        (d.views || 0) * 1 +
-        (d.clicks || 0) * 3 +
-        (d.orders || 0) * 8 +
+        d.views * 1 +
+        d.clicks * 3 +
+        d.orders * 8 +
         (d.viralBoost ? 40 : 0),
     }));
-  }, [products]);
+  }, [normalizedProducts]);
 
   /* ================= SUGGESTIONS ================= */
   useEffect(() => {
@@ -50,14 +92,16 @@ export default function SearchPage({ products }) {
     const lower = search.toLowerCase();
 
     const results = enrichedProducts
-      .filter((p) => (p.title || "").toLowerCase().includes(lower))
+      .filter((p) =>
+        (p.title || "").toLowerCase().includes(lower)
+      )
       .sort((a, b) => b.aiScore - a.aiScore)
       .slice(0, 5);
 
     setSuggestions(results);
   }, [search, enrichedProducts]);
 
-  /* ================= FILTERED LIST ================= */
+  /* ================= FILTER ================= */
   const filtered = useMemo(() => {
     const lower = search.toLowerCase();
 
@@ -68,7 +112,8 @@ export default function SearchPage({ products }) {
 
         const matchSearch = title.includes(lower);
         const matchCategory =
-          category === "all" || cat === category.toLowerCase();
+          category === "all" ||
+          cat === category.toLowerCase();
 
         return matchSearch && matchCategory;
       })
@@ -85,7 +130,7 @@ export default function SearchPage({ products }) {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      {/* ================= SEARCH INPUT ================= */}
+      {/* ================= INPUT ================= */}
       <div style={{ padding: 20 }}>
         <input
           onChange={(e) => handleSearch(e.target.value)}
@@ -118,18 +163,19 @@ export default function SearchPage({ products }) {
                   borderBottom: "1px solid #eee",
                 }}
               >
-                {s.title}
+                {safeText(s.title)}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* ================= PRODUCTS GRID ================= */}
+      {/* ================= GRID ================= */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit,minmax(220px,1fr))",
           gap: 20,
           padding: 20,
         }}
@@ -141,21 +187,20 @@ export default function SearchPage({ products }) {
                 background: "white",
                 padding: 15,
                 borderRadius: 12,
-                cursor: "pointer",
               }}
             >
               <Image
                 src={p.image || fallbackImage}
                 width={300}
                 height={300}
-                alt={p.title || "product"}
+                alt={safeText(p.title)}
                 style={{ width: "100%", height: "auto" }}
               />
 
-              <h3>{p.title}</h3>
+              <h3>{safeText(p.title)}</h3>
 
               <p style={{ color: "#B12704" }}>
-                ${p.price || 0}
+                ${safeNumber(p.price)}
               </p>
             </div>
           </Link>
@@ -165,30 +210,37 @@ export default function SearchPage({ products }) {
   );
 }
 
-/* ================= ISR (FAST CACHE) ================= */
+/* ================= ISR ================= */
 export async function getStaticProps() {
   try {
     const snap = await getDocs(collection(db, "products"));
 
-    const products = snap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const products = snap.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        title: data?.title || "",
+        image: data?.image || "",
+        price: data?.price || 0,
+        category: data?.category || "",
+        views: data?.views || 0,
+        clicks: data?.clicks || 0,
+        orders: data?.orders || 0,
+        viralBoost: data?.viralBoost || false,
+      };
+    });
 
     return {
-      props: {
-        products,
-      },
-      revalidate: 300, // 5 minutes cache
+      props: { products },
+      revalidate: 300,
     };
   } catch (error) {
     console.error("SearchPage error:", error);
 
     return {
-      props: {
-        products: [],
-      },
+      props: { products: [] },
       revalidate: 300,
     };
   }
-      }
+}
