@@ -6,36 +6,44 @@ import Image from "next/image";
 const FALLBACK =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
-/* ================= HARD SAFE ================= */
-const safeText = (v) => {
+/* ================= ABSOLUTE SAFE ================= */
+const toText = (v) => {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
+
   if (!v) return "";
 
   if (typeof v === "object") {
-    return (
-      v.title ||
-      v.name ||
-      v.text ||
-      JSON.stringify(v) || // 🔥 يمنع crash نهائي
-      ""
-    );
+    try {
+      return (
+        v.title ||
+        v.name ||
+        v.text ||
+        v.value ||
+        JSON.stringify(v) || // 🔥 يمنع crash نهائي 100%
+        ""
+      );
+    } catch {
+      return "";
+    }
   }
 
   return "";
 };
 
-const safeNumber = (v) => {
+const toNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-const safeImage = (v) => {
+const toImage = (v) => {
   if (typeof v === "string" && v.startsWith("http")) return v;
 
   if (v && typeof v === "object") {
     const img = v.url || v.image || v.src;
-    if (typeof img === "string") return img;
+    if (typeof img === "string" && img.startsWith("http")) {
+      return img;
+    }
   }
 
   return FALLBACK;
@@ -45,27 +53,38 @@ const safeImage = (v) => {
 export default function SearchPage({ products = [] }) {
   const [q, setQ] = useState("");
 
+  /* 🔥 HARD SANITIZE EVERYTHING */
   const safeProducts = useMemo(() => {
-    return (products || [])
-      .filter((p) => p && typeof p === "object")
-      .map((p) => ({
-        id: String(p.id || ""),
-        title: safeText(p.title),
-        image: safeImage(p.image),
-        price: safeNumber(p.price),
+    if (!Array.isArray(products)) return [];
 
-        score:
-          safeNumber(p.views) +
-          safeNumber(p.clicks) * 3 +
-          safeNumber(p.orders) * 8,
-      }));
+    return products
+      .filter((p) => p && typeof p === "object")
+      .map((p) => {
+        const title = toText(p.title);
+        const image = toImage(p.image);
+        const price = toNumber(p.price);
+
+        const views = toNumber(p.views);
+        const clicks = toNumber(p.clicks);
+        const orders = toNumber(p.orders);
+
+        return {
+          id: String(p.id || ""),
+          title,
+          image,
+          price,
+
+          score: views + clicks * 3 + orders * 8,
+        };
+      })
+      .filter((p) => p.id);
   }, [products]);
 
   const filtered = useMemo(() => {
-    const lower = q.toLowerCase();
+    const query = q.toLowerCase();
 
     return safeProducts
-      .filter((p) => (p.title || "").toLowerCase().includes(lower))
+      .filter((p) => (p.title || "").toLowerCase().includes(query))
       .sort((a, b) => b.score - a.score)
       .slice(0, 50);
   }, [q, safeProducts]);
@@ -77,7 +96,7 @@ export default function SearchPage({ products = [] }) {
       </Head>
 
       <input
-        placeholder="Search..."
+        placeholder="Search products..."
         onChange={(e) => setQ(e.target.value)}
         style={{ width: "100%", padding: 12 }}
       />
@@ -104,7 +123,7 @@ export default function SearchPage({ products = [] }) {
   );
 }
 
-/* ================= SAFE SSR ================= */
+/* ================= SAFE BUILD ================= */
 export async function getStaticProps() {
   try {
     const { getProductsFast } = await import("../lib/firebaseQuery");
