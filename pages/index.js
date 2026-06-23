@@ -7,10 +7,8 @@ import { db } from "../config/firebase";
 /* ================= SAFE ================= */
 const safeText = (v) => {
   if (v == null) return "";
-
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
-
   if (Array.isArray(v)) return v.map(safeText).join(" ");
 
   if (typeof v === "object") {
@@ -40,14 +38,14 @@ const safeNumber = (v) => {
 };
 
 /* ================= PAGE ================= */
-export default function ProductsPage({ products = [] }) {
+export default function Home({ products = [] }) {
   return (
     <div style={{ padding: 20 }}>
       <Head>
-        <title>🔥 Trending Products</title>
+        <title>Koloonline Products</title>
       </Head>
 
-      <h1>🔥 Products</h1>
+      <h1>🔥 Trending Products</h1>
 
       <div
         style={{
@@ -56,24 +54,23 @@ export default function ProductsPage({ products = [] }) {
           gap: 20,
         }}
       >
-        {Array.isArray(products) &&
-          products.map((p) => (
-            <Link key={p.id} href={`/product/${p.id}`}>
-              <div>
-                <Image
-                  src={safeImage(p.image)}
-                  width={300}
-                  height={300}
-                  alt={safeText(p.title)}
-                  unoptimized
-                />
+        {products.map((p) => (
+          <Link key={p.id} href={`/product/${p.id}`}>
+            <div>
+              <Image
+                src={safeImage(p.image)}
+                width={300}
+                height={300}
+                alt={safeText(p.title)}
+                unoptimized
+              />
 
-                <h3>{safeText(p.title)}</h3>
+              <h3>{safeText(p.title)}</h3>
 
-                <p>${safeNumber(p.price)}</p>
-              </div>
-            </Link>
-          ))}
+              <p>${safeNumber(p.price)}</p>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
@@ -85,13 +82,13 @@ export async function getStaticProps() {
     const snap = await getDocs(collection(db, "products"));
 
     const products = snap.docs.map((doc) => {
-      const data = doc.data();
+      const d = doc.data();
 
       return {
         id: doc.id,
-        title: safeText(data.title),
-        image: safeImage(data.image),
-        price: safeNumber(data.price),
+        title: safeText(d.title),
+        image: safeImage(d.image),
+        price: safeNumber(d.price),
       };
     });
 
@@ -99,8 +96,8 @@ export async function getStaticProps() {
       props: { products },
       revalidate: 300,
     };
-  } catch (error) {
-    console.error("HOME ERROR:", error);
+  } catch (e) {
+    console.error(e);
 
     return {
       props: { products: [] },
