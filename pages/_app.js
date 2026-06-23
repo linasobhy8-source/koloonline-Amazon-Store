@@ -1,7 +1,6 @@
 import Head from "next/head";
 import Script from "next/script";
 import { Component } from "react";
-
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "../styles/globals.css";
@@ -10,15 +9,11 @@ import "../styles/globals.css";
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      hasError: false,
-    };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError() {
-    return {
-      hasError: true,
-    };
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
@@ -29,12 +24,7 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          style={{
-            padding: 20,
-            textAlign: "center",
-          }}
-        >
+        <div style={{ padding: 20, textAlign: "center" }}>
           ⚠️ Something went wrong. Please refresh the page.
         </div>
       );
@@ -45,45 +35,18 @@ class ErrorBoundary extends Component {
 }
 
 /* ================= APP ================= */
-export default function App({
-  Component,
-  pageProps,
-}) {
+export default function App({ Component, pageProps }) {
   return (
     <ErrorBoundary>
       <>
         <Head>
           <meta charSet="UTF-8" />
-
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1"
-          />
-
-          <meta
-            name="robots"
-            content="index,follow,max-image-preview:large"
-          />
-
-          <meta
-            name="theme-color"
-            content="#111827"
-          />
-
-          <meta
-            name="author"
-            content="Koloonline"
-          />
-
-          <meta
-            name="application-name"
-            content="Koloonline"
-          />
-
-          <link
-            rel="icon"
-            href="/favicon.ico"
-          />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="robots" content="index,follow,max-image-preview:large" />
+          <meta name="theme-color" content="#111827" />
+          <meta name="author" content="Koloonline" />
+          <meta name="application-name" content="Koloonline" />
+          <link rel="icon" href="/favicon.ico" />
         </Head>
 
         {/* ================= GTM ================= */}
@@ -94,30 +57,14 @@ export default function App({
             __html: `
               (function(w,d,s,l,i){
                 w[l]=w[l]||[];
-                w[l].push({
-                  'gtm.start': new Date().getTime(),
-                  event:'gtm.js'
-                });
-
+                w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
                 var f=d.getElementsByTagName(s)[0],
                     j=d.createElement(s),
-                    dl=l!='dataLayer'
-                      ? '&l='+l
-                      : '';
-
+                    dl=l!='dataLayer'?'&l='+l:'';
                 j.async=true;
-                j.src=
-                  'https://www.googletagmanager.com/gtm.js?id='
-                  + i + dl;
-
+                j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
                 f.parentNode.insertBefore(j,f);
-              })(
-                window,
-                document,
-                'script',
-                'dataLayer',
-                'GTM-KNQM8KBN'
-              );
+              })(window,document,'script','dataLayer','GTM-KNQM8KBN');
             `,
           }}
         />
@@ -133,23 +80,13 @@ export default function App({
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer =
-                window.dataLayer || [];
-
-              function gtag(){
-                dataLayer.push(arguments);
-              }
-
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
 
-              gtag(
-                'config',
-                'G-YS8L61XLPR',
-                {
-                  page_path:
-                    window.location.pathname,
-                }
-              );
+              gtag('config', 'G-YS8L61XLPR', {
+                page_path: window.location.pathname
+              });
             `,
           }}
         />
@@ -160,16 +97,9 @@ export default function App({
             src="https://www.googletagmanager.com/ns.html?id=GTM-KNQM8KBN"
             height="0"
             width="0"
-            style={{
-              display: "none",
-              visibility: "hidden",
-            }}
+            style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-
-        {/* ================= TEST ================= */}
-        {/* Navbar Disabled */}
-        {/* Footer Disabled */}
 
         <main>
           <Component {...pageProps} />
@@ -179,4 +109,4 @@ export default function App({
       </>
     </ErrorBoundary>
   );
-              }
+          }
