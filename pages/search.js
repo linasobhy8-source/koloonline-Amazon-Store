@@ -1,14 +1,13 @@
 import Head from "next/head";
-import { useMemo, useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/router";
 
 const FALLBACK =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
 /* ================= HARD SAFE ================= */
-const text = (v) => {
+const safeText = (v) => {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   if (!v) return "";
@@ -18,7 +17,6 @@ const text = (v) => {
       v.title ||
       v.name ||
       v.text ||
-      v.value ||
       JSON.stringify(v) || // 🔥 يمنع crash نهائي
       ""
     );
@@ -27,17 +25,17 @@ const text = (v) => {
   return "";
 };
 
-const num = (v) => {
+const safeNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-const img = (v) => {
+const safeImage = (v) => {
   if (typeof v === "string" && v.startsWith("http")) return v;
 
   if (v && typeof v === "object") {
-    const x = v.url || v.image || v.src;
-    if (typeof x === "string") return x;
+    const img = v.url || v.image || v.src;
+    if (typeof img === "string") return img;
   }
 
   return FALLBACK;
@@ -45,44 +43,32 @@ const img = (v) => {
 
 /* ================= PAGE ================= */
 export default function SearchPage({ products = [] }) {
-  const router = useRouter();
-  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
 
-  /* 🔥 SAFE NORMALIZATION */
   const safeProducts = useMemo(() => {
     return (products || [])
-      .map((p) => {
-        if (!p || typeof p !== "object") return null;
+      .filter((p) => p && typeof p === "object")
+      .map((p) => ({
+        id: String(p.id || ""),
+        title: safeText(p.title),
+        image: safeImage(p.image),
+        price: safeNumber(p.price),
 
-        return {
-          id: String(p.id || ""),
-          title: text(p.title),
-          category: text(p.category),
-          image: img(p.image),
-          price: num(p.price),
-          views: num(p.views),
-          clicks: num(p.clicks),
-          orders: num(p.orders),
-          viralBoost: Boolean(p.viralBoost),
-
-          aiScore:
-            num(p.views) +
-            num(p.clicks) * 3 +
-            num(p.orders) * 8 +
-            (p.viralBoost ? 40 : 0),
-        };
-      })
-      .filter(Boolean);
+        score:
+          safeNumber(p.views) +
+          safeNumber(p.clicks) * 3 +
+          safeNumber(p.orders) * 8,
+      }));
   }, [products]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const lower = q.toLowerCase();
 
     return safeProducts
-      .filter((p) => (p.title || "").toLowerCase().includes(q))
-      .sort((a, b) => b.aiScore - a.aiScore)
+      .filter((p) => (p.title || "").toLowerCase().includes(lower))
+      .sort((a, b) => b.score - a.score)
       .slice(0, 50);
-  }, [safeProducts, search]);
+  }, [q, safeProducts]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -92,7 +78,7 @@ export default function SearchPage({ products = [] }) {
 
       <input
         placeholder="Search..."
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => setQ(e.target.value)}
         style={{ width: "100%", padding: 12 }}
       />
 
@@ -137,4 +123,4 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   }
-}
+          }
