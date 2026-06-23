@@ -6,7 +6,8 @@ import { useRouter } from "next/router";
 import { getProductsFast } from "../lib/firebaseQuery";
 import { safeText, safeImage, safeNumber } from "../lib/safe";
 
-const fallback = "https://via.placeholder.com/500x500?text=Koloonline";
+const fallback =
+  "https://via.placeholder.com/500x500?text=Koloonline";
 
 export default function SearchPage({ products = [] }) {
   const router = useRouter();
@@ -25,26 +26,31 @@ export default function SearchPage({ products = [] }) {
     }, 200);
   };
 
-  const enriched = useMemo(() => {
-    return (products || []).map((p) => ({
-      id: p.id,
-      title: safeText(p.title),
-      image: safeImage(p.image),
-      price: safeNumber(p.price),
-      category: safeText(p.category),
-      views: safeNumber(p.views),
-      clicks: safeNumber(p.clicks),
-      orders: safeNumber(p.orders),
-      viralBoost: Boolean(p.viralBoost),
+  /* ================= SAFE NORMALIZATION ================= */
+  const safeProducts = useMemo(() => {
+    return (products || [])
+      .filter(Boolean)
+      .map((p) => ({
+        id: String(p?.id || ""),
+        title: safeText(p?.title),
+        category: safeText(p?.category),
+        image: safeImage(p?.image),
+        price: safeNumber(p?.price),
+        views: safeNumber(p?.views),
+        clicks: safeNumber(p?.clicks),
+        orders: safeNumber(p?.orders),
+        viralBoost: Boolean(p?.viralBoost),
 
-      aiScore:
-        safeNumber(p.views) +
-        safeNumber(p.clicks) * 3 +
-        safeNumber(p.orders) * 8 +
-        (p.viralBoost ? 40 : 0),
-    }));
+        aiScore:
+          safeNumber(p?.views) +
+          safeNumber(p?.clicks) * 3 +
+          safeNumber(p?.orders) * 8 +
+          (p?.viralBoost ? 40 : 0),
+      }))
+      .filter((p) => p.id);
   }, [products]);
 
+  /* ================= SUGGESTIONS ================= */
   useEffect(() => {
     if (!search) {
       setSuggestions([]);
@@ -53,17 +59,19 @@ export default function SearchPage({ products = [] }) {
 
     const lower = search.toLowerCase();
 
-    const res = enriched
+    const res = safeProducts
       .filter((p) => (p.title || "").toLowerCase().includes(lower))
+      .sort((a, b) => b.aiScore - a.aiScore)
       .slice(0, 5);
 
     setSuggestions(res);
-  }, [search, enriched]);
+  }, [search, safeProducts]);
 
+  /* ================= FILTER ================= */
   const filtered = useMemo(() => {
     const lower = search.toLowerCase();
 
-    return enriched
+    return safeProducts
       .filter((p) => {
         const title = (p.title || "").toLowerCase();
         const cat = (p.category || "").toLowerCase();
@@ -74,7 +82,7 @@ export default function SearchPage({ products = [] }) {
         );
       })
       .slice(0, 60);
-  }, [enriched, search, category]);
+  }, [safeProducts, search, category]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -84,20 +92,26 @@ export default function SearchPage({ products = [] }) {
 
       <input
         onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Search..."
+        placeholder="Search products..."
         style={{ width: "100%", padding: 12 }}
       />
 
-      {suggestions.map((s) => (
-        <div
-          key={s.id}
-          onClick={() => router.push(`/product/${s.id}`)}
-          style={{ padding: 10, cursor: "pointer" }}
-        >
-          {s.title}
+      {/* Suggestions */}
+      {suggestions.length > 0 && (
+        <div style={{ background: "#fff", marginTop: 10 }}>
+          {suggestions.map((s) => (
+            <div
+              key={s.id}
+              onClick={() => router.push(`/product/${s.id}`)}
+              style={{ padding: 10, cursor: "pointer" }}
+            >
+              {s.title}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
 
+      {/* Grid */}
       <div style={{ display: "grid", gap: 20, marginTop: 20 }}>
         {filtered.map((p) => (
           <Link key={p.id} href={`/product/${p.id}`}>
@@ -106,7 +120,7 @@ export default function SearchPage({ products = [] }) {
                 src={p.image || fallback}
                 width={300}
                 height={300}
-                alt={p.title}
+                alt={p.title || "product"}
                 unoptimized
               />
 
@@ -120,11 +134,21 @@ export default function SearchPage({ products = [] }) {
   );
 }
 
+/* ================= SAFE SSR ================= */
 export async function getStaticProps() {
-  const products = await getProductsFast();
+  try {
+    const { getProductsFast } = await import("../lib/firebaseQuery");
+    const products = await getProductsFast();
 
-  return {
-    props: { products },
-    revalidate: 300,
-  };
-        }
+    return {
+      props: { products: products || [] },
+      revalidate: 300,
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      props: { products: [] },
+      revalidate: 300,
+    };
+  }
+    }
