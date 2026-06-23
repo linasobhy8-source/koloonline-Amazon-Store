@@ -7,8 +7,10 @@ import { db } from "../config/firebase";
 /* ================= SAFE ================= */
 const safeText = (v) => {
   if (v == null) return "";
+
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
+
   if (Array.isArray(v)) return v.map(safeText).join(" ");
 
   if (typeof v === "object") {
@@ -55,30 +57,23 @@ export default function Home({ products = [] }) {
         }}
       >
         {Array.isArray(products) &&
-          products.map((p, i) => {
-            const id = typeof p?.id === "string" ? p.id : String(p?.id || "");
-            const title = safeText(p?.title);
-            const image = safeImage(p?.image);
-            const price = safeNumber(p?.price);
+          products.map((p) => (
+            <Link key={p.id} href={`/product/${p.id}`}>
+              <div>
+                <Image
+                  src={safeImage(p.image)}
+                  width={300}
+                  height={300}
+                  alt={safeText(p.title)}
+                  unoptimized
+                />
 
-            return (
-              <Link key={id || i} href={`/product/${id}`}>
-                <div>
-                  <Image
-                    src={image}
-                    width={300}
-                    height={300}
-                    alt={title || "Product"}
-                    unoptimized
-                  />
+                <h3>{safeText(p.title)}</h3>
 
-                  <h3>{title}</h3>
-
-                  <p>${price}</p>
-                </div>
-              </Link>
-            );
-          })}
+                <p>${safeNumber(p.price)}</p>
+              </div>
+            </Link>
+          ))}
       </div>
     </div>
   );
@@ -90,10 +85,10 @@ export async function getStaticProps() {
     const snap = await getDocs(collection(db, "products"));
 
     const products = snap.docs.map((doc) => {
-      const d = doc.data() || {};
+      const d = doc.data();
 
       return {
-        id: String(doc.id || ""),
+        id: doc.id,
         title: safeText(d.title),
         image: safeImage(d.image),
         price: safeNumber(d.price),
@@ -105,11 +100,11 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   } catch (e) {
-    console.error("HOME ERROR:", e);
+    console.error(e);
 
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-                         }
+                    }
