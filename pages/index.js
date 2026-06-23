@@ -54,23 +54,31 @@ export default function Home({ products = [] }) {
           gap: 20,
         }}
       >
-        {products.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}>
-            <div>
-              <Image
-                src={safeImage(p.image)}
-                width={300}
-                height={300}
-                alt={safeText(p.title)}
-                unoptimized
-              />
+        {Array.isArray(products) &&
+          products.map((p, i) => {
+            const id = typeof p?.id === "string" ? p.id : String(p?.id || "");
+            const title = safeText(p?.title);
+            const image = safeImage(p?.image);
+            const price = safeNumber(p?.price);
 
-              <h3>{safeText(p.title)}</h3>
+            return (
+              <Link key={id || i} href={`/product/${id}`}>
+                <div>
+                  <Image
+                    src={image}
+                    width={300}
+                    height={300}
+                    alt={title || "Product"}
+                    unoptimized
+                  />
 
-              <p>${safeNumber(p.price)}</p>
-            </div>
-          </Link>
-        ))}
+                  <h3>{title}</h3>
+
+                  <p>${price}</p>
+                </div>
+              </Link>
+            );
+          })}
       </div>
     </div>
   );
@@ -82,10 +90,10 @@ export async function getStaticProps() {
     const snap = await getDocs(collection(db, "products"));
 
     const products = snap.docs.map((doc) => {
-      const d = doc.data();
+      const d = doc.data() || {};
 
       return {
-        id: doc.id,
+        id: String(doc.id || ""),
         title: safeText(d.title),
         image: safeImage(d.image),
         price: safeNumber(d.price),
@@ -97,11 +105,11 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   } catch (e) {
-    console.error(e);
+    console.error("HOME ERROR:", e);
 
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-}
+                         }
