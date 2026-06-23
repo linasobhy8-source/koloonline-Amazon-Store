@@ -1,56 +1,91 @@
 import Head from "next/head";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { getProductsFast } from "../lib/firebaseQuery";
-import { safeText, safeImage, safeNumber } from "../lib/safe";
 
 const fallback =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
+/* ================= HARD SAFE ================= */
+const text = (v) => {
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return String(v);
+  if (typeof v === "boolean") return v ? "true" : "false";
+
+  if (v && typeof v === "object") {
+    return (
+      v.title ||
+      v.name ||
+      v.text ||
+      v.value ||
+      JSON.stringify(v) || // 🔥 مهم جدًا لمنع crash
+      ""
+    );
+  }
+
+  return "";
+};
+
+const num = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const img = (v) => {
+  if (typeof v === "string" && v.startsWith("http")) return v;
+  if (v && typeof v === "object") {
+    const x = v.url || v.image || v.src;
+    if (typeof x === "string") return x;
+  }
+  return fallback;
+};
+
+/* ================= PAGE ================= */
 export default function SearchPage({ products = [] }) {
   const router = useRouter();
-
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
   const [suggestions, setSuggestions] = useState([]);
 
   const timeoutRef = useRef(null);
+
+  const safeProducts = useMemo(() => {
+    return (products || [])
+      .map((p) => {
+        if (!p || typeof p !== "object") return null;
+
+        const id = String(p.id || "");
+
+        return {
+          id,
+          title: text(p.title),
+          category: text(p.category),
+          image: img(p.image),
+          price: num(p.price),
+          views: num(p.views),
+          clicks: num(p.clicks),
+          orders: num(p.orders),
+          viralBoost: Boolean(p.viralBoost),
+
+          aiScore:
+            num(p.views) +
+            num(p.clicks) * 3 +
+            num(p.orders) * 8 +
+            (p.viralBoost ? 40 : 0),
+        };
+      })
+      .filter(Boolean);
+  }, [products]);
 
   const handleSearch = (value) => {
     clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(() => {
-      setSearch(value || "");
+      setSearch(String(value || ""));
     }, 200);
   };
 
-  /* ================= SAFE NORMALIZATION ================= */
-  const safeProducts = useMemo(() => {
-    return (products || [])
-      .filter(Boolean)
-      .map((p) => ({
-        id: String(p?.id || ""),
-        title: safeText(p?.title),
-        category: safeText(p?.category),
-        image: safeImage(p?.image),
-        price: safeNumber(p?.price),
-        views: safeNumber(p?.views),
-        clicks: safeNumber(p?.clicks),
-        orders: safeNumber(p?.orders),
-        viralBoost: Boolean(p?.viralBoost),
-
-        aiScore:
-          safeNumber(p?.views) +
-          safeNumber(p?.clicks) * 3 +
-          safeNumber(p?.orders) * 8 +
-          (p?.viralBoost ? 40 : 0),
-      }))
-      .filter((p) => p.id);
-  }, [products]);
-
-  /* ================= SUGGESTIONS ================= */
   useEffect(() => {
     if (!search) {
       setSuggestions([]);
@@ -67,22 +102,15 @@ export default function SearchPage({ products = [] }) {
     setSuggestions(res);
   }, [search, safeProducts]);
 
-  /* ================= FILTER ================= */
   const filtered = useMemo(() => {
     const lower = search.toLowerCase();
 
     return safeProducts
-      .filter((p) => {
-        const title = (p.title || "").toLowerCase();
-        const cat = (p.category || "").toLowerCase();
-
-        return (
-          title.includes(lower) &&
-          (category === "all" || cat === category.toLowerCase())
-        );
-      })
+      .filter((p) =>
+        (p.title || "").toLowerCase().includes(lower)
+      )
       .slice(0, 60);
-  }, [safeProducts, search, category]);
+  }, [safeProducts, search]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -91,19 +119,18 @@ export default function SearchPage({ products = [] }) {
       </Head>
 
       <input
+        placeholder="Search..."
         onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Search products..."
         style={{ width: "100%", padding: 12 }}
       />
 
-      {/* Suggestions */}
+      {/* suggestions */}
       {suggestions.length > 0 && (
-        <div style={{ background: "#fff", marginTop: 10 }}>
+        <div>
           {suggestions.map((s) => (
             <div
               key={s.id}
               onClick={() => router.push(`/product/${s.id}`)}
-              style={{ padding: 10, cursor: "pointer" }}
             >
               {s.title}
             </div>
@@ -111,7 +138,7 @@ export default function SearchPage({ products = [] }) {
         </div>
       )}
 
-      {/* Grid */}
+      {/* grid */}
       <div style={{ display: "grid", gap: 20, marginTop: 20 }}>
         {filtered.map((p) => (
           <Link key={p.id} href={`/product/${p.id}`}>
@@ -120,7 +147,7 @@ export default function SearchPage({ products = [] }) {
                 src={p.image || fallback}
                 width={300}
                 height={300}
-                alt={p.title || "product"}
+                alt={p.title}
                 unoptimized
               />
 
@@ -134,21 +161,20 @@ export default function SearchPage({ products = [] }) {
   );
 }
 
-/* ================= SAFE SSR ================= */
+/* ================= SSR SAFE ================= */
 export async function getStaticProps() {
   try {
     const { getProductsFast } = await import("../lib/firebaseQuery");
     const products = await getProductsFast();
 
     return {
-      props: { products: products || [] },
+      props: { products: Array.isArray(products) ? products : [] },
       revalidate: 300,
     };
   } catch (e) {
-    console.error(e);
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-    }
+          }
