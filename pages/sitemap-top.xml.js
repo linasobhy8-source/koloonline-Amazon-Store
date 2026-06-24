@@ -15,9 +15,7 @@ res.setHeader("Content-Type", "application/xml");
 res.write(xml);
 res.end();
 
-return {
-props: {},
-};
+return { props: {} };
 }
 
 export default function SitemapTop() {
