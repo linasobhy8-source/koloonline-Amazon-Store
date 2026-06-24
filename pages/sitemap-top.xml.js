@@ -22,4 +22,4 @@ props: {},
 
 export default function SitemapTop() {
 return null;
-}
+  }
