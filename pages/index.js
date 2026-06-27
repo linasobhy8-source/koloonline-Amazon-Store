@@ -1,18 +1,30 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 
 const FALLBACK_IMAGE =
   "https://via.placeholder.com/300?text=Koloonline";
 
 /* ================= PAGE ================= */
 export default function Home({ products = [] }) {
+  const safeProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
+
+    return products
+      .filter((p) => p && typeof p === "object" && p.id)
+      .map((p) => ({
+        id: String(p.id),
+        title: String(p.title || ""),
+        image: String(p.image || ""),
+        price: Number(p.price || 0),
+      }));
+  }, [products]);
+
   return (
     <>
       <Head>
-        <title>
-          Koloonline | Trending Amazon Products
-        </title>
+        <title>Koloonline | Trending Amazon Products</title>
 
         <meta
           name="description"
@@ -29,10 +41,7 @@ export default function Home({ products = [] }) {
           content="index,follow,max-image-preview:large"
         />
 
-        <meta
-          name="theme-color"
-          content="#111827"
-        />
+        <meta name="theme-color" content="#111827" />
 
         <link
           rel="canonical"
@@ -40,49 +49,34 @@ export default function Home({ products = [] }) {
         />
 
         {/* Open Graph */}
-
-        <meta
-          property="og:type"
-          content="website"
-        />
-
-        <meta
-          property="og:site_name"
-          content="Koloonline"
-        />
-
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Koloonline" />
         <meta
           property="og:title"
           content="Koloonline | Trending Amazon Products"
         />
-
         <meta
           property="og:description"
           content="Discover trending Amazon products and shopping guides."
         />
-
         <meta
           property="og:url"
           content="https://koloonline.online/"
         />
-
         <meta
           property="og:image"
           content="https://koloonline.online/favicon.ico"
         />
 
         {/* Twitter */}
-
         <meta
           name="twitter:card"
           content="summary_large_image"
         />
-
         <meta
           name="twitter:title"
           content="Koloonline | Trending Amazon Products"
         />
-
         <meta
           name="twitter:description"
           content="Discover trending Amazon products and shopping guides."
@@ -106,7 +100,7 @@ export default function Home({ products = [] }) {
             gap: 20,
           }}
         >
-          {products.map((p, index) => (
+          {safeProducts.map((p, index) => (
             <Link
               key={p.id}
               href={`/product/${p.id}`}
@@ -123,19 +117,19 @@ export default function Home({ products = [] }) {
             >
               <Image
                 src={
-                  p.image && p.image.startsWith("http")
+                  p.image?.startsWith("http")
                     ? p.image
                     : FALLBACK_IMAGE
                 }
                 alt={p.title || "Product"}
                 width={220}
                 height={220}
-                priority={index < 4}
+                priority={index < 2}
                 loading={
-                  index < 4 ? "eager" : "lazy"
+                  index < 2 ? "eager" : "lazy"
                 }
                 sizes="(max-width:768px) 50vw,220px"
-                quality={75}
+                quality={70}
                 style={{
                   width: "100%",
                   height: "auto",
@@ -153,11 +147,7 @@ export default function Home({ products = [] }) {
                 {p.title}
               </h2>
 
-              <p
-                style={{
-                  fontWeight: "bold",
-                }}
-              >
+              <p style={{ fontWeight: "bold" }}>
                 ${p.price}
               </p>
             </Link>
@@ -169,7 +159,6 @@ export default function Home({ products = [] }) {
 }
 
 /* ================= DATA ================= */
-
 export async function getStaticProps() {
   try {
     const { getProductsFast } = await import(
@@ -196,21 +185,15 @@ export async function getStaticProps() {
       : [];
 
     return {
-      props: {
-        products,
-      },
+      props: { products },
       revalidate: 300,
     };
   } catch (error) {
-    console.error(
-      "Home Page Error:",
-      error
-    );
+    console.error("Home Page Error:", error);
 
     return {
-      props: {
-        products: [],
-      },
+      props: { products: [] },
       revalidate: 300,
     };
- 
+  }
+            }
