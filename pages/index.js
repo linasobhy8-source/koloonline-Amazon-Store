@@ -2,14 +2,24 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
-/* ================= SAFE HELPERS ================= */
-const safeText = (v) => {
+const FALLBACK =
+  "https://via.placeholder.com/300?text=Koloonline";
+
+/* ================= FINAL SAFE ================= */
+const safe = (v) => {
   if (v == null) return "";
 
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean"
+  ) {
+    return String(v);
+  }
 
-  if (Array.isArray(v)) return v.map(safeText).join(" ");
+  if (Array.isArray(v)) {
+    return v.map(safe).join(" ");
+  }
 
   if (typeof v === "object") {
     return (
@@ -24,51 +34,45 @@ const safeText = (v) => {
   return "";
 };
 
-const safeNumber = (v) => {
+const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-const safeImage = (v) => {
+const img = (v) => {
   if (typeof v === "string" && v.startsWith("http")) return v;
-
-  return "https://via.placeholder.com/300?text=Koloonline";
+  return FALLBACK;
 };
 
 /* ================= PAGE ================= */
 export default function Home({ products = [] }) {
   const safeProducts = Array.isArray(products)
-    ? products.filter(Boolean)
+    ? products
+        .filter(Boolean)
+        .map((p) => ({
+          id: safe(p?.id),
+          title: safe(p?.title),
+          image: img(p?.image),
+          price: num(p?.price),
+        }))
+        .filter((p) => p.id)
     : [];
 
   return (
     <>
-      {/* ================= SEO ================= */}
       <Head>
         <title>Koloonline | Trending Amazon Products</title>
-
         <meta
           name="description"
-          content="Discover trending Amazon products, smart gadgets and best Amazon deals."
+          content="Discover trending Amazon products"
         />
-
-        <meta
-          name="robots"
-          content="index,follow,max-image-preview:large"
-        />
-
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        />
-
+        <meta name="robots" content="index,follow" />
         <link
           rel="canonical"
           href="https://koloonline.online/"
         />
       </Head>
 
-      {/* ================= PAGE ================= */}
       <main
         style={{
           maxWidth: 1400,
@@ -86,65 +90,39 @@ export default function Home({ products = [] }) {
             gap: 20,
           }}
         >
-          {safeProducts.map((p, index) => {
-            const id = safeText(p?.id);
-            const title = safeText(p?.title);
-            const price = safeNumber(p?.price);
-            const image = safeImage(p?.image);
-
-            // 🚨 HARD GUARD (يحمي build 100%)
-            if (!id || typeof id !== "string") return null;
-
-            return (
-              <Link
-                key={id}
-                href={`/product/${id}`}
+          {safeProducts.map((p, i) => (
+            <Link
+              key={p.id}
+              href={`/product/${p.id}`}
+              style={{
+                display: "block",
+                padding: 10,
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <Image
+                src={p.image}
+                alt={p.title || "product"}
+                width={220}
+                height={220}
+                priority={i < 4}
                 style={{
-                  display: "block",
-                  padding: 10,
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  textDecoration: "none",
-                  color: "inherit",
-                  background: "#fff",
+                  width: "100%",
+                  height: "auto",
+                  borderRadius: 8,
                 }}
-              >
-                <Image
-                  src={image}
-                  alt={title || "Product"}
-                  width={220}
-                  height={220}
-                  priority={index < 4}
-                  loading={index < 4 ? "eager" : "lazy"}
-                  sizes="220px"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    objectFit: "cover",
-                    borderRadius: 8,
-                  }}
-                />
+              />
 
-                <h3
-                  style={{
-                    fontSize: 16,
-                    marginTop: 10,
-                  }}
-                >
-                  {title || "Untitled Product"}
-                </h3>
+              <h3>{p.title || "Untitled"}</h3>
 
-                <p
-                  style={{
-                    fontWeight: "bold",
-                    color: "#111",
-                  }}
-                >
-                  ${price}
-                </p>
-              </Link>
-            );
-          })}
+              <p style={{ fontWeight: "bold" }}>
+                ${p.price}
+              </p>
+            </Link>
+          ))}
         </div>
       </main>
     </>
@@ -158,29 +136,15 @@ export async function getStaticProps() {
       "../lib/firebaseQuery"
     );
 
-    const productsRaw =
-      await getProductsFast();
+    const raw = await getProductsFast();
 
-    const products = Array.isArray(productsRaw)
-      ? productsRaw
-          .filter(
-            (p) =>
-              p &&
-              typeof p === "object"
-          )
-          .map((p) => ({
-            id: String(p?.id || ""),
-            title:
-              typeof p?.title === "string"
-                ? p.title
-                : "",
-            image:
-              typeof p?.image === "string"
-                ? p.image
-                : "",
-            price: Number(p?.price || 0),
-          }))
-          .filter((p) => p.id) // 🚀 يمنع أي object corrupt
+    const products = Array.isArray(raw)
+      ? raw.map((p) => ({
+          id: String(p?.id || ""),
+          title: String(p?.title || ""),
+          image: String(p?.image || ""),
+          price: Number(p?.price || 0),
+        }))
       : [];
 
     return {
@@ -188,11 +152,10 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   } catch (e) {
-    console.error("Home Error:", e);
-
+    console.error(e);
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-            }
+        }
