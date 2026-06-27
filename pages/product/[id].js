@@ -1,25 +1,12 @@
 import Head from "next/head";
 
 /* ================= SAFE ================= */
-const safeText = (value) => {
-  if (value == null) return "";
-
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
-    return String(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.map(safeText).join(" ");
-  }
-
-  if (typeof value === "object") {
-    return value.title || value.name || value.text || "";
-  }
-
+const safeText = (v) => {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+  if (typeof v === "object") return v.title || v.name || v.text || "";
   return "";
 };
 
@@ -27,74 +14,94 @@ const safeText = (value) => {
 export default function ProductPage({ productId }) {
   const id = safeText(productId);
 
-  const siteName = "Koloonline";
-
-  const pageTitle = id
-    ? `Amazon Product ${id} | ${siteName}`
-    : `${siteName} Product`;
+  const pageTitle =
+    id ? `Amazon Product ${id} | Koloonline` : "Amazon Product | Koloonline";
 
   const pageDescription = id
-    ? `View Amazon product ${id}, reviews, price insights and buying guide on ${siteName}.`
-    : `Discover Amazon products, reviews and deals on ${siteName}.`;
+    ? `View Amazon product ${id}, reviews, price and buying guide on Koloonline.`
+    : "Discover Amazon products and deals on Koloonline.";
 
   const pageUrl = `https://koloonline.online/product/${id}`;
-
-  const imageUrl =
-    "https://koloonline.online/favicon.ico";
 
   return (
     <>
       <Head>
-        {/* ================= BASIC SEO ================= */}
         <title>{pageTitle}</title>
 
-        <meta
-          name="description"
-          content={pageDescription}
-        />
-
+        <meta name="description" content={pageDescription} />
         <meta
           name="keywords"
-          content="Amazon Product, Deals, Reviews, Buying Guide, Smart Shopping"
+          content="Amazon Product, Deals, Reviews, Buying Guide"
         />
 
+        <meta name="robots" content="index,follow,max-image-preview:large" />
+
+        <link rel="canonical" href={pageUrl} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content={pageUrl} />
         <meta
-          name="robots"
-          content="index,follow,max-image-preview:large"
+          property="og:image"
+          content="https://koloonline.online/favicon.ico"
         />
 
-        <link
-          rel="canonical"
-          href={pageUrl}
-        />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
 
-        <meta
-          name="theme-color"
-          content="#111827"
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Product",
+              name: pageTitle,
+              url: pageUrl,
+              image: "https://koloonline.online/favicon.ico",
+              brand: {
+                "@type": "Organization",
+                name: "Koloonline",
+              },
+            }),
+          }}
         />
+      </Head>
 
-        {/* ================= OPEN GRAPH ================= */}
-        <meta
-          property="og:type"
-          content="product"
-        />
+      <main
+        style={{
+          maxWidth: 900,
+          margin: "0 auto",
+          padding: 20,
+        }}
+      >
+        <h1>{pageTitle}</h1>
+        <p>
+          <strong>Product ID:</strong> {id}
+        </p>
+      </main>
+    </>
+  );
+}
 
-        <meta
-          property="og:site_name"
-          content={siteName}
-        />
+/* ================= STATIC PROPS ================= */
+export async function getStaticProps({ params }) {
+  return {
+    props: {
+      productId: params?.id || "",
+    },
+    revalidate: 300,
+  };
+}
 
-        <meta
-          property="og:title"
-          content={pageTitle}
-        />
-
-        <meta
-          property="og:description"
-          content={pageDescription}
-        />
-
-        <meta
-          property="og:url"
-          content={pageUrl}
-        />
+/* ================= STATIC PATHS ================= */
+export async function getStaticPaths() {
+  return {
+    paths: [{ params: { id: "B0GWTCCHFZ" } }],
+    fallback: "blocking",
+  };
+            }
