@@ -2,16 +2,17 @@
   "name": "koloonline-amazon-store",
   "version": "1.0.0",
   "private": true,
+
   "type": "module",
 
   "engines": {
-    "node": "24.x"
+    "node": "20.x"
   },
 
   "dependencies": {
     "next": "15.5.15",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
 
     "firebase": "^10.12.0",
     "googleapis": "^140.0.0",
