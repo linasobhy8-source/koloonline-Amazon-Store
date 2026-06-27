@@ -1,194 +1,136 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
-import SmartImage from "../components/SmartImage";
 
-/* ================= HOME PAGE ================= */
+const FALLBACK_IMAGE =
+  "https://via.placeholder.com/300?text=Koloonline";
+
+/* ================= SAFE HELPERS ================= */
+const safeText = (v) => {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) return v.map(safeText).join(" ");
+  if (typeof v === "object") return v?.title || v?.name || "";
+  return "";
+};
+
+const safeNumber = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const safeImage = (v) => {
+  if (typeof v === "string" && v.startsWith("http")) return v;
+  return FALLBACK_IMAGE;
+};
+
+/* ================= PAGE ================= */
 export default function Home({ products = [] }) {
+  const safeProducts = Array.isArray(products)
+    ? products.filter(Boolean)
+    : [];
+
   return (
     <>
       <Head>
-        {/* ================= SEO ================= */}
         <title>Koloonline | Trending Amazon Products</title>
 
         <meta
           name="description"
-          content="Discover trending Amazon products, smart gadgets, deals and buying guides updated daily."
+          content="Discover trending Amazon products, smart gadgets and best Amazon deals."
         />
 
-        <meta
-          name="keywords"
-          content="Amazon Deals, Trending Products, Smart Gadgets, Buying Guide, Reviews"
-        />
-
-        <meta
-          name="robots"
-          content="index,follow,max-image-preview:large"
-        />
-
-        <link
-          rel="canonical"
-          href="https://koloonline.online/"
-        />
-
-        {/* ================= OPEN GRAPH ================= */}
-        <meta
-          property="og:type"
-          content="website"
-        />
-
-        <meta
-          property="og:site_name"
-          content="Koloonline"
-        />
-
-        <meta
-          property="og:title"
-          content="Koloonline | Trending Amazon Products"
-        />
-
-        <meta
-          property="og:description"
-          content="Discover trending Amazon products and shopping guides."
-        />
-
-        <meta
-          property="og:url"
-          content="https://koloonline.online/"
-        />
-
-        <meta
-          property="og:image"
-          content="https://koloonline.online/favicon.ico"
-        />
-
-        {/* ================= TWITTER ================= */}
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
-
-        <meta
-          name="twitter:title"
-          content="Koloonline | Trending Amazon Products"
-        />
-
-        <meta
-          name="twitter:description"
-          content="Discover trending Amazon products and deals."
-        />
+        <meta name="robots" content="index,follow" />
+        <link rel="canonical" href="https://koloonline.online/" />
       </Head>
 
-      {/* ================= PAGE ================= */}
-      <main
-        style={{
-          maxWidth: 1300,
-          margin: "0 auto",
-          padding: 20,
-        }}
-      >
-        {/* HERO */}
-        <section style={{ marginBottom: 30 }}>
-          <h1 style={{ fontSize: 32 }}>
-            🔥 Trending Amazon Products
-          </h1>
+      <main style={{ maxWidth: 1400, margin: "0 auto", padding: 20 }}>
+        <h1>🔥 Trending Products</h1>
 
-          <p style={{ color: "#666" }}>
-            Best deals, reviews and shopping insights updated daily.
-          </p>
-        </section>
-
-        {/* PRODUCTS GRID */}
-        <section
+        <div
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(auto-fit, minmax(220px, 1fr))",
+              "repeat(auto-fit,minmax(220px,1fr))",
             gap: 20,
           }}
         >
-          {Array.isArray(products) &&
-            products.map((p, index) => (
+          {safeProducts.map((p, index) => {
+            const id = safeText(p?.id);
+            const title = safeText(p?.title);
+            const price = safeNumber(p?.price);
+            const image = safeImage(p?.image);
+
+            if (!id) return null;
+
+            return (
               <Link
-                key={p.id || index}
-                href={`/product/${p.id}`}
-                prefetch={true}
+                key={id}
+                href={`/product/${id}`}
                 style={{
                   display: "block",
-                  padding: 12,
-                  border: "1px solid #eee",
+                  padding: 10,
+                  border: "1px solid #ddd",
                   borderRadius: 10,
                   textDecoration: "none",
                   color: "inherit",
                   background: "#fff",
-                  transition: "0.2s",
                 }}
               >
-                {/* IMAGE (OPTIMIZED) */}
-                <SmartImage
-                  src={p.image}
-                  alt={p.title}
+                <Image
+                  src={image}
+                  alt={title || "Product"}
+                  width={220}
+                  height={220}
                   priority={index < 4}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  sizes="220px"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "cover",
+                    borderRadius: 8,
+                  }}
                 />
 
-                {/* TITLE */}
-                <h2
-                  style={{
-                    fontSize: 16,
-                    marginTop: 10,
-                  }}
-                >
-                  {p.title || "Untitled Product"}
-                </h2>
+                <h3>{title || "No title"}</h3>
 
-                {/* PRICE */}
-                <p
-                  style={{
-                    fontWeight: "bold",
-                    color: "#B12704",
-                  }}
-                >
-                  ${Number(p.price || 0)}
+                <p style={{ fontWeight: "bold" }}>
+                  ${price}
                 </p>
               </Link>
-            ))}
-        </section>
+            );
+          })}
+        </div>
       </main>
     </>
   );
 }
 
-/* ================= DATA FETCH ================= */
+/* ================= DATA ================= */
 export async function getStaticProps() {
   try {
     const { getProductsFast } = await import(
       "../lib/firebaseQuery"
     );
 
-    const raw = await getProductsFast();
+    const productsRaw = await getProductsFast();
 
-    const products = Array.isArray(raw)
-      ? raw
-          .filter(
-            (p) =>
-              p &&
-              typeof p === "object" &&
-              p.id
-          )
-          .map((p) => ({
-            id: String(p.id),
-            title: String(p.title || ""),
-            image: String(p.image || ""),
-            price: Number(p.price || 0),
-          }))
+    const products = Array.isArray(productsRaw)
+      ? productsRaw.map((p) => ({
+          id: String(p?.id || ""),
+          title: String(p?.title || ""),
+          image: String(p?.image || ""),
+          price: Number(p?.price || 0),
+        }))
       : [];
 
     return {
       props: { products },
       revalidate: 300,
     };
-  } catch (error) {
-    console.error("Index Error:", error);
-
+  } catch (e) {
     return {
       props: { products: [] },
       revalidate: 300,
