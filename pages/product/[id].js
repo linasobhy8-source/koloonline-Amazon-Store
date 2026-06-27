@@ -1,46 +1,187 @@
 import Head from "next/head";
 
 /* ================= SAFE ================= */
-const safeText = (v) => {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (Array.isArray(v)) return v.map(safeText).join(" ");
-  if (typeof v === "object") return v.title || v.name || v.text || "";
+
+const safeText = (value) => {
+  if (value === null || value === undefined) return "";
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(safeText).join(" ");
+  }
+
+  if (typeof value === "object") {
+    return (
+      value.title ||
+      value.name ||
+      value.text ||
+      ""
+    );
+  }
+
   return "";
 };
 
 /* ================= PAGE ================= */
-export default function ProductPage({ productId }) {
+
+export default function ProductPage({
+  productId,
+}) {
+  const id = safeText(productId);
+
+  const pageTitle =
+    id.length > 0
+      ? `Amazon Product ${id} | Koloonline`
+      : "Amazon Product | Koloonline";
+
+  const pageDescription =
+    id.length > 0
+      ? `View Amazon product ${id}, specifications, reviews and buying guide on Koloonline.`
+      : "Discover Amazon products on Koloonline.";
+
+  const pageUrl = `https://koloonline.online/product/${id}`;
+
   return (
-    <div style={{ padding: 20 }}>
+    <>
       <Head>
-        <title>Product | Koloonline</title>
+        <title>{pageTitle}</title>
+
+        <meta
+          name="description"
+          content={pageDescription}
+        />
+
+        <meta
+          name="keywords"
+          content="Amazon Product, Amazon Deals, Product Review, Buying Guide"
+        />
+
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large"
+        />
+
+        <link
+          rel="canonical"
+          href={pageUrl}
+        />
+
+        {/* Open Graph */}
+
+        <meta
+          property="og:type"
+          content="product"
+        />
+
+        <meta
+          property="og:title"
+          content={pageTitle}
+        />
+
+        <meta
+          property="og:description"
+          content={pageDescription}
+        />
+
+        <meta
+          property="og:url"
+          content={pageUrl}
+        />
+
+        <meta
+          property="og:image"
+          content="https://koloonline.online/favicon.ico"
+        />
+
+        {/* Twitter */}
+
+        <meta
+          name="twitter:card"
+          content="summary_large_image"
+        />
+
+        <meta
+          name="twitter:title"
+          content={pageTitle}
+        />
+
+        <meta
+          name="twitter:description"
+          content={pageDescription}
+        />
+
+        {/* Structured Data */}
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Product",
+              name: pageTitle,
+              url: pageUrl,
+              image:
+                "https://koloonline.online/favicon.ico",
+              brand: {
+                "@type": "Organization",
+                name: "Koloonline",
+              },
+            }),
+          }}
+        />
       </Head>
 
-      <h1>🛍 Product Page</h1>
+      <main
+        style={{
+          maxWidth: 900,
+          margin: "0 auto",
+          padding: 20,
+        }}
+      >
+        <h1>{pageTitle}</h1>
 
-      <p>Product ID: {safeText(productId)}</p>
-    </div>
+        <p>
+          <strong>Product ID:</strong> {id}
+        </p>
+      </main>
+    </>
   );
 }
 
 /* ================= STATIC PROPS ================= */
-export async function getStaticProps({ params }) {
+
+export async function getStaticProps({
+  params,
+}) {
   return {
     props: {
-      productId: params?.id || "",
+      productId:
+        typeof params?.id === "string"
+          ? params.id
+          : "",
     },
-    revalidate: 60,
+    revalidate: 300,
   };
 }
 
 /* ================= STATIC PATHS ================= */
+
 export async function getStaticPaths() {
   return {
     paths: [
-      { params: { id: "B0GWTCCHFZ" } }
+      {
+        params: {
+          id: "B0GWTCCHFZ",
+        },
+      },
     ],
-    fallback: false,
+    fallback: "blocking",
   };
-}
+            }
