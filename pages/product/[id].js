@@ -1,9 +1,8 @@
 import Head from "next/head";
 
 /* ================= SAFE ================= */
-
 const safeText = (value) => {
-  if (value === null || value === undefined) return "";
+  if (value == null) return "";
 
   if (
     typeof value === "string" ||
@@ -18,39 +17,35 @@ const safeText = (value) => {
   }
 
   if (typeof value === "object") {
-    return (
-      value.title ||
-      value.name ||
-      value.text ||
-      ""
-    );
+    return value.title || value.name || value.text || "";
   }
 
   return "";
 };
 
 /* ================= PAGE ================= */
-
-export default function ProductPage({
-  productId,
-}) {
+export default function ProductPage({ productId }) {
   const id = safeText(productId);
 
-  const pageTitle =
-    id.length > 0
-      ? `Amazon Product ${id} | Koloonline`
-      : "Amazon Product | Koloonline";
+  const siteName = "Koloonline";
 
-  const pageDescription =
-    id.length > 0
-      ? `View Amazon product ${id}, specifications, reviews and buying guide on Koloonline.`
-      : "Discover Amazon products on Koloonline.";
+  const pageTitle = id
+    ? `Amazon Product ${id} | ${siteName}`
+    : `${siteName} Product`;
+
+  const pageDescription = id
+    ? `View Amazon product ${id}, reviews, price insights and buying guide on ${siteName}.`
+    : `Discover Amazon products, reviews and deals on ${siteName}.`;
 
   const pageUrl = `https://koloonline.online/product/${id}`;
+
+  const imageUrl =
+    "https://koloonline.online/favicon.ico";
 
   return (
     <>
       <Head>
+        {/* ================= BASIC SEO ================= */}
         <title>{pageTitle}</title>
 
         <meta
@@ -60,7 +55,7 @@ export default function ProductPage({
 
         <meta
           name="keywords"
-          content="Amazon Product, Amazon Deals, Product Review, Buying Guide"
+          content="Amazon Product, Deals, Reviews, Buying Guide, Smart Shopping"
         />
 
         <meta
@@ -73,11 +68,20 @@ export default function ProductPage({
           href={pageUrl}
         />
 
-        {/* Open Graph */}
+        <meta
+          name="theme-color"
+          content="#111827"
+        />
 
+        {/* ================= OPEN GRAPH ================= */}
         <meta
           property="og:type"
           content="product"
+        />
+
+        <meta
+          property="og:site_name"
+          content={siteName}
         />
 
         <meta
@@ -94,94 +98,3 @@ export default function ProductPage({
           property="og:url"
           content={pageUrl}
         />
-
-        <meta
-          property="og:image"
-          content="https://koloonline.online/favicon.ico"
-        />
-
-        {/* Twitter */}
-
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
-
-        <meta
-          name="twitter:title"
-          content={pageTitle}
-        />
-
-        <meta
-          name="twitter:description"
-          content={pageDescription}
-        />
-
-        {/* Structured Data */}
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Product",
-              name: pageTitle,
-              url: pageUrl,
-              image:
-                "https://koloonline.online/favicon.ico",
-              brand: {
-                "@type": "Organization",
-                name: "Koloonline",
-              },
-            }),
-          }}
-        />
-      </Head>
-
-      <main
-        style={{
-          maxWidth: 900,
-          margin: "0 auto",
-          padding: 20,
-        }}
-      >
-        <h1>{pageTitle}</h1>
-
-        <p>
-          <strong>Product ID:</strong> {id}
-        </p>
-      </main>
-    </>
-  );
-}
-
-/* ================= STATIC PROPS ================= */
-
-export async function getStaticProps({
-  params,
-}) {
-  return {
-    props: {
-      productId:
-        typeof params?.id === "string"
-          ? params.id
-          : "",
-    },
-    revalidate: 300,
-  };
-}
-
-/* ================= STATIC PATHS ================= */
-
-export async function getStaticPaths() {
-  return {
-    paths: [
-      {
-        params: {
-          id: "B0GWTCCHFZ",
-        },
-      },
-    ],
-    fallback: "blocking",
-  };
-            }
