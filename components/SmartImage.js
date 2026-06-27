@@ -7,55 +7,36 @@ const FALLBACK =
 export default function SmartImage({
   src,
   alt = "Product Image",
+  priority = false,
 }) {
   const [error, setError] = useState(false);
 
-  /* ================= SAFE IMAGE ================= */
   const finalSrc = useMemo(() => {
-    try {
-      if (error) return FALLBACK;
+    if (error) return FALLBACK;
 
-      if (typeof src !== "string") {
-        return FALLBACK;
-      }
-
-      const clean = src.trim();
-
-      if (!clean) {
-        return FALLBACK;
-      }
-
-      if (
-        !clean.startsWith("http://") &&
-        !clean.startsWith("https://")
-      ) {
-        return FALLBACK;
-      }
-
-      return clean;
-    } catch (err) {
-      console.error(
-        "SmartImage Error:",
-        err
-      );
-
+    if (typeof src !== "string") {
       return FALLBACK;
     }
+
+    const clean = src.trim();
+
+    if (!clean) {
+      return FALLBACK;
+    }
+
+    if (
+      !clean.startsWith("https://") &&
+      !clean.startsWith("http://")
+    ) {
+      return FALLBACK;
+    }
+
+    return clean;
   }, [src, error]);
 
-  /* ================= ERROR HANDLER ================= */
   const handleError = useCallback(() => {
     setError(true);
   }, []);
-
-  /* ================= DEBUG ================= */
-  if (typeof window === "undefined") {
-    console.log(
-      "SMART IMAGE:",
-      finalSrc,
-      typeof finalSrc
-    );
-  }
 
   return (
     <div
@@ -65,15 +46,22 @@ export default function SmartImage({
         aspectRatio: "1 / 1",
         overflow: "hidden",
         background: "#f5f5f5",
+        borderRadius: 8,
       }}
     >
       <Image
         src={finalSrc}
-        alt={String(alt || "Product Image")}
+        alt={alt}
         fill
-        sizes="(max-width:768px) 100vw, 500px"
-        quality={65}
-        unoptimized
+        priority={priority}
+        loading={priority ? "eager" : "lazy"}
+        quality={75}
+        sizes="
+          (max-width:640px) 100vw,
+          (max-width:768px) 50vw,
+          (max-width:1200px) 33vw,
+          300px
+        "
         onError={handleError}
         style={{
           objectFit: "contain",
@@ -81,4 +69,4 @@ export default function SmartImage({
       />
     </div>
   );
-}
+          }
