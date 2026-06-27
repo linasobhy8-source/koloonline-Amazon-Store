@@ -13,10 +13,10 @@ const safeText = (v) => {
 
   if (typeof v === "object") {
     return (
-      v.title ||
-      v.name ||
-      v.text ||
-      v.value ||
+      v?.title ||
+      v?.name ||
+      v?.text ||
+      v?.value ||
       ""
     );
   }
@@ -31,6 +31,7 @@ const safeNumber = (v) => {
 
 const safeImage = (v) => {
   if (typeof v === "string" && v.startsWith("http")) return v;
+
   return "https://via.placeholder.com/300?text=Koloonline";
 };
 
@@ -42,6 +43,7 @@ export default function Home({ products = [] }) {
 
   return (
     <>
+      {/* ================= SEO ================= */}
       <Head>
         <title>Koloonline | Trending Amazon Products</title>
 
@@ -50,17 +52,37 @@ export default function Home({ products = [] }) {
           content="Discover trending Amazon products, smart gadgets and best Amazon deals."
         />
 
-        <meta name="robots" content="index,follow,max-image-preview:large" />
-        <link rel="canonical" href="https://koloonline.online/" />
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large"
+        />
+
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1"
+        />
+
+        <link
+          rel="canonical"
+          href="https://koloonline.online/"
+        />
       </Head>
 
-      <main style={{ maxWidth: 1400, margin: "0 auto", padding: 20 }}>
+      {/* ================= PAGE ================= */}
+      <main
+        style={{
+          maxWidth: 1400,
+          margin: "0 auto",
+          padding: 20,
+        }}
+      >
         <h1>🔥 Trending Products</h1>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(220px,1fr))",
             gap: 20,
           }}
         >
@@ -70,7 +92,7 @@ export default function Home({ products = [] }) {
             const price = safeNumber(p?.price);
             const image = safeImage(p?.image);
 
-            // ❌ يمنع crash نهائي
+            // 🚨 HARD GUARD (يحمي build 100%)
             if (!id || typeof id !== "string") return null;
 
             return (
@@ -89,7 +111,7 @@ export default function Home({ products = [] }) {
               >
                 <Image
                   src={image}
-                  alt={typeof title === "string" ? title : "Product"}
+                  alt={title || "Product"}
                   width={220}
                   height={220}
                   priority={index < 4}
@@ -103,13 +125,23 @@ export default function Home({ products = [] }) {
                   }}
                 />
 
-                <h3>
-                  {typeof title === "string" && title.length > 0
-                    ? title
-                    : "Untitled Product"}
+                <h3
+                  style={{
+                    fontSize: 16,
+                    marginTop: 10,
+                  }}
+                >
+                  {title || "Untitled Product"}
                 </h3>
 
-                <p style={{ fontWeight: "bold" }}>${price}</p>
+                <p
+                  style={{
+                    fontWeight: "bold",
+                    color: "#111",
+                  }}
+                >
+                  ${price}
+                </p>
               </Link>
             );
           })}
@@ -122,19 +154,33 @@ export default function Home({ products = [] }) {
 /* ================= DATA ================= */
 export async function getStaticProps() {
   try {
-    const { getProductsFast } = await import("../lib/firebaseQuery");
+    const { getProductsFast } = await import(
+      "../lib/firebaseQuery"
+    );
 
-    const productsRaw = await getProductsFast();
+    const productsRaw =
+      await getProductsFast();
 
     const products = Array.isArray(productsRaw)
       ? productsRaw
-          .filter((p) => p && typeof p === "object")
+          .filter(
+            (p) =>
+              p &&
+              typeof p === "object"
+          )
           .map((p) => ({
             id: String(p?.id || ""),
-            title: p?.title ?? "",
-            image: p?.image ?? "",
-            price: p?.price ?? 0,
+            title:
+              typeof p?.title === "string"
+                ? p.title
+                : "",
+            image:
+              typeof p?.image === "string"
+                ? p.image
+                : "",
+            price: Number(p?.price || 0),
           }))
+          .filter((p) => p.id) // 🚀 يمنع أي object corrupt
       : [];
 
     return {
