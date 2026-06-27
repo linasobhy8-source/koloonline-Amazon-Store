@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { memo } from "react";
 
-export default function InternalLinks({
+function InternalLinks({
   items = [],
   title = "Related Products",
 }) {
-  if (!items || items.length === 0) return null;
+  if (!Array.isArray(items) || items.length === 0) return null;
 
   return (
     <section style={{ marginTop: 40 }}>
@@ -22,16 +23,16 @@ export default function InternalLinks({
           }}
         >
           {items.map((item, index) => {
-            const id = item.asin || item.id || item.slug || index;
+            const id = item?.asin || item?.id || item?.slug || index;
 
-            const href = item.asin
+            const href = item?.asin
               ? `/product/${item.asin}`
-              : item.slug
+              : item?.slug
               ? `/blog/${item.slug}`
               : "#";
 
             return (
-              <Link key={id} href={href}>
+              <Link key={id} href={href} prefetch={false}>
                 <div
                   style={{
                     border: "1px solid #e5e5e5",
@@ -40,6 +41,7 @@ export default function InternalLinks({
                     background: "#fff",
                     cursor: "pointer",
                     transition: "0.2s",
+                    willChange: "transform",
                   }}
                 >
                   <div
@@ -49,10 +51,10 @@ export default function InternalLinks({
                       lineHeight: 1.4,
                     }}
                   >
-                    {item.title || "Untitled Product"}
+                    {item?.title || "Untitled Product"}
                   </div>
 
-                  {item.price !== undefined && (
+                  {typeof item?.price !== "undefined" && (
                     <div
                       style={{
                         marginTop: 8,
@@ -65,7 +67,7 @@ export default function InternalLinks({
                     </div>
                   )}
 
-                  {item.excerpt && (
+                  {item?.excerpt && (
                     <p
                       style={{
                         marginTop: 6,
@@ -74,7 +76,7 @@ export default function InternalLinks({
                         lineHeight: 1.4,
                       }}
                     >
-                      {item.excerpt.slice(0, 90)}...
+                      {String(item.excerpt).slice(0, 90)}...
                     </p>
                   )}
                 </div>
@@ -86,3 +88,5 @@ export default function InternalLinks({
     </section>
   );
 }
+
+export default memo(InternalLinks);
