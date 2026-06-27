@@ -1,73 +1,193 @@
 import Head from "next/head";
 
+const FALLBACK_IMAGE =
+  "https://koloonline.online/favicon.ico";
+
 function safeString(value, fallback = "") {
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
   return fallback;
 }
 
-export default function SEOHead(props) {
-  const title = safeString(props?.title, "Koloonline");
-  const description = safeString(
-    props?.description,
-    "Best Amazon Deals, Reviews & Buying Guides"
-  );
-  const image = safeString(
-    props?.image,
-    "https://via.placeholder.com/1200x630?text=Koloonline"
-  );
-  const url = safeString(
-    props?.url,
-    "https://koloonline.online"
+export default function SEOHead({
+  title,
+  description,
+  image,
+  url,
+  type = "website",
+  noindex = false,
+}) {
+  const siteName = "Koloonline";
+
+  const pageTitle = safeString(title, siteName);
+
+  const pageDescription = safeString(
+    description,
+    "Discover the best Amazon deals, trending products, buying guides and expert reviews."
   );
 
-  const siteName = "Koloonline";
+  const pageImage = safeString(
+    image,
+    FALLBACK_IMAGE
+  );
+
+  const pageUrl = safeString(
+    url,
+    "https://koloonline.online"
+  );
 
   return (
     <Head>
 
-      {/* ================= BASIC SEO ================= */}
-      <title>{title}</title>
-      <meta name="description" content={description} />
-      <meta name="robots" content="index,follow" />
-      <link rel="canonical" href={url} />
+      {/* Primary SEO */}
+      <title>{pageTitle}</title>
 
-      {/* ================= OPEN GRAPH (FACEBOOK + WHATSAPP) ================= */}
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
-      <meta property="og:url" content={url} />
-      <meta property="og:type" content="website" />
-      <meta property="og:site_name" content={siteName} />
+      <meta
+        name="description"
+        content={pageDescription}
+      />
 
-      {/* ================= TWITTER CARDS ================= */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+      <meta
+        name="robots"
+        content={
+          noindex
+            ? "noindex,nofollow"
+            : "index,follow,max-image-preview:large"
+        }
+      />
 
-      {/* ================= AD SENSE FRIENDLY META ================= */}
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <meta name="theme-color" content="#ffffff" />
+      <link
+        rel="canonical"
+        href={pageUrl}
+      />
 
-      {/* ================= STRUCTURED DATA (GOOGLE RICH RESULTS) ================= */}
+      <meta
+        name="theme-color"
+        content="#111827"
+      />
+
+      <meta
+        name="author"
+        content="Koloonline"
+      />
+
+      <meta
+        name="application-name"
+        content="Koloonline"
+      />
+
+      {/* Open Graph */}
+
+      <meta
+        property="og:type"
+        content={type}
+      />
+
+      <meta
+        property="og:site_name"
+        content={siteName}
+      />
+
+      <meta
+        property="og:title"
+        content={pageTitle}
+      />
+
+      <meta
+        property="og:description"
+        content={pageDescription}
+      />
+
+      <meta
+        property="og:url"
+        content={pageUrl}
+      />
+
+      <meta
+        property="og:image"
+        content={pageImage}
+      />
+
+      <meta
+        property="og:image:width"
+        content="1200"
+      />
+
+      <meta
+        property="og:image:height"
+        content="630"
+      />
+
+      <meta
+        property="og:locale"
+        content="en_US"
+      />
+
+      {/* Twitter */}
+
+      <meta
+        name="twitter:card"
+        content="summary_large_image"
+      />
+
+      <meta
+        name="twitter:title"
+        content={pageTitle}
+      />
+
+      <meta
+        name="twitter:description"
+        content={pageDescription}
+      />
+
+      <meta
+        name="twitter:image"
+        content={pageImage}
+      />
+
+      {/* Mobile */}
+
+      <meta
+        name="mobile-web-app-capable"
+        content="yes"
+      />
+
+      <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+      />
+
+      {/* Structured Data */}
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: title,
-            description: description,
-            url: url,
-            image: image,
+            name: pageTitle,
+            description: pageDescription,
+            url: pageUrl,
+            image: pageImage,
             publisher: {
               "@type": "Organization",
               name: siteName,
+              url: "https://koloonline.online",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://koloonline.online/favicon.ico",
+              },
             },
           }),
         }}
       />
+
     </Head>
   );
-    }
+          }
