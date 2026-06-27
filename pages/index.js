@@ -11,7 +11,7 @@ export default function Home({ products = [] }) {
 
         <meta
           name="description"
-          content="Discover trending Amazon products, best deals, smart gadgets, and shopping guides."
+          content="Discover trending Amazon products, smart gadgets, shopping guides and today's best Amazon deals."
         />
 
         <meta
@@ -71,20 +71,20 @@ export default function Home({ products = [] }) {
             >
               <Image
                 src={
-                  p.image && p.image.length > 5
+                  p.image
                     ? p.image
                     : "https://via.placeholder.com/300"
                 }
                 alt={p.title || "Product"}
                 width={220}
                 height={220}
-                loading="lazy"
                 sizes="220px"
+                loading="lazy"
                 style={{
-                  objectFit: "cover",
-                  borderRadius: 8,
                   width: "100%",
                   height: "auto",
+                  objectFit: "cover",
+                  borderRadius: 8,
                 }}
               />
 
@@ -114,4 +114,25 @@ export async function getStaticProps() {
           .map((p) => ({
             id: String(p.id || ""),
             title: String(p.title || ""),
-            image: String
+            image: String(p.image || ""),
+            price: Number(p.price || 0),
+          }))
+      : [];
+
+    return {
+      props: {
+        products,
+      },
+      revalidate: 300,
+    };
+  } catch (e) {
+    console.error(e);
+
+    return {
+      props: {
+        products: [],
+      },
+      revalidate: 300,
+    };
+  }
+            }
