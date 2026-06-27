@@ -1,17 +1,27 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function ImagePreloader({ images = [] }) {
+  const loadedRef = useRef(false);
+
   useEffect(() => {
-    if (!Array.isArray(images)) return;
+    if (loadedRef.current) return;
+    if (!Array.isArray(images) || images.length === 0) return;
 
-    images.forEach((url) => {
-      if (typeof url !== "string" || !url.trim()) return;
+    loadedRef.current = true;
 
+    const validImages = images.filter(
+      (url) => typeof url === "string" && url.trim()
+    );
+
+    validImages.forEach((url) => {
       const img = new window.Image();
 
-      img.src =
-        `/api/cdn/ai-image?url=${encodeURIComponent(url)}` +
-        "&w=600&q=80&priority=high";
+      img.decoding = "async";
+      img.loading = "eager";
+
+      img.src = `/api/cdn/ai-image?url=${encodeURIComponent(
+        url
+      )}&w=600&q=80&priority=high`;
     });
   }, [images]);
 
