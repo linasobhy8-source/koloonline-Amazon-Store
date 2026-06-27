@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useMemo } from "react";
 import { topPages } from "../../data/topPages";
 
 /* ================= SAFE HELPERS ================= */
@@ -25,6 +26,7 @@ const safeText = (v) => {
   return "";
 };
 
+/* ================= COMPONENT ================= */
 export default function TopPage({ page }) {
   if (!page) return <div>Page Not Found</div>;
 
@@ -37,47 +39,53 @@ export default function TopPage({ page }) {
   const items = Array.isArray(page.items) ? page.items : [];
   const faq = Array.isArray(page.faq) ? page.faq : [];
 
-  const pageUrl = `https://koloonline.online/top/${safeText(page.slug)}`;
+  const pageUrl = useMemo(
+    () => `https://koloonline.online/top/${safeText(page.slug)}`,
+    [page.slug]
+  );
 
-  /* ================= FAQ SCHEMA ================= */
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faq.map((f) => ({
-      "@type": "Question",
-      name: safeText(f?.question),
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: safeText(f?.answer),
-      },
-    })),
-  };
+  /* ================= SCHEMAS (MEMOIZED) ================= */
+  const faqSchema = useMemo(() => {
+    return {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faq.map((f) => ({
+        "@type": "Question",
+        name: safeText(f?.question),
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: safeText(f?.answer),
+        },
+      })),
+    };
+  }, [faq]);
 
-  /* ================= BREADCRUMB ================= */
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: "https://koloonline.online",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Top Products",
-        item: "https://koloonline.online/top",
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: title,
-        item: pageUrl,
-      },
-    ],
-  };
+  const breadcrumbSchema = useMemo(() => {
+    return {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://koloonline.online",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Top Products",
+          item: "https://koloonline.online/top",
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: title,
+          item: pageUrl,
+        },
+      ],
+    };
+  }, [title, pageUrl]);
 
   return (
     <>
@@ -90,16 +98,25 @@ export default function TopPage({ page }) {
           content={`${title}, Amazon Deals, Best Products, Top Products`}
         />
 
-        <meta name="robots" content="index,follow,max-image-preview:large" />
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large"
+        />
+
         <link rel="canonical" href={pageUrl} />
 
-        {/* OG */}
+        {/* OPEN GRAPH */}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={pageUrl} />
 
-        {/* Article Schema */}
+        {/* PERFORMANCE SEO */}
+        <meta name="author" content="Koloonline" />
+        <meta name="theme-color" content="#111827" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        {/* ARTICLE SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -107,7 +124,7 @@ export default function TopPage({ page }) {
               "@context": "https://schema.org",
               "@type": "Article",
               headline: title,
-              description: description,
+              description,
               url: pageUrl,
               publisher: {
                 "@type": "Organization",
@@ -117,7 +134,7 @@ export default function TopPage({ page }) {
           }}
         />
 
-        {/* FAQ Schema */}
+        {/* FAQ SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -125,7 +142,7 @@ export default function TopPage({ page }) {
           }}
         />
 
-        {/* Breadcrumb Schema */}
+        {/* BREADCRUMB SCHEMA */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -149,7 +166,7 @@ export default function TopPage({ page }) {
 
         <ul>
           {items.map((item, index) => (
-            <li key={index}>{safeText(item)}</li>
+            <li key={`${item}-${index}`}>{safeText(item)}</li>
           ))}
         </ul>
 
@@ -197,6 +214,7 @@ export default function TopPage({ page }) {
   );
 }
 
+/* ================= STATIC PATHS ================= */
 export async function getStaticPaths() {
   return {
     paths: topPages.map((page) => ({
@@ -208,6 +226,7 @@ export async function getStaticPaths() {
   };
 }
 
+/* ================= STATIC PROPS ================= */
 export async function getStaticProps({ params }) {
   const page =
     topPages.find((item) => item.slug === params.slug) || null;
@@ -221,4 +240,4 @@ export async function getStaticProps({ params }) {
       page,
     },
   };
-        }
+            }
