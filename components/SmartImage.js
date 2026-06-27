@@ -1,74 +1,73 @@
 import Image from "next/image";
 import { useMemo, useState, useCallback } from "react";
 
-const FALLBACK =
+/* ================= FALLBACK ================= */
+const FALLBACK_IMAGE =
   "https://via.placeholder.com/500x500?text=Koloonline";
 
+/* ================= SMART IMAGE (PRODUCTION READY) ================= */
 export default function SmartImage({
   src,
   alt = "Product Image",
   priority = false,
-  className = "",
+  sizes = "(max-width:768px) 100vw, 300px",
 }) {
   const [error, setError] = useState(false);
 
+  /* ================= VALIDATION + SANITIZATION ================= */
   const finalSrc = useMemo(() => {
-    if (error) return FALLBACK;
+    try {
+      if (error) return FALLBACK_IMAGE;
 
-    if (typeof src !== "string") {
-      return FALLBACK;
+      if (!src || typeof src !== "string") {
+        return FALLBACK_IMAGE;
+      }
+
+      const clean = src.trim();
+
+      if (!clean) return FALLBACK_IMAGE;
+
+      if (
+        !clean.startsWith("http://") &&
+        !clean.startsWith("https://")
+      ) {
+        return FALLBACK_IMAGE;
+      }
+
+      return clean;
+    } catch (e) {
+      console.error("SmartImage Error:", e);
+      return FALLBACK_IMAGE;
     }
-
-    const clean = src.trim();
-
-    if (!clean) {
-      return FALLBACK;
-    }
-
-    if (
-      !clean.startsWith("https://") &&
-      !clean.startsWith("http://")
-    ) {
-      return FALLBACK;
-    }
-
-    return clean;
   }, [src, error]);
 
+  /* ================= ERROR HANDLER ================= */
   const handleError = useCallback(() => {
     setError(true);
   }, []);
 
   return (
     <div
-      className={className}
       style={{
         position: "relative",
         width: "100%",
         aspectRatio: "1 / 1",
         overflow: "hidden",
         background: "#f5f5f5",
-        borderRadius: 8,
+        borderRadius: 10,
       }}
     >
       <Image
         src={finalSrc}
-        alt={String(alt || "Product Image")}
+        alt={typeof alt === "string" ? alt : "Product Image"}
         fill
         priority={priority}
         loading={priority ? "eager" : "lazy"}
         quality={75}
-        sizes="
-          (max-width:640px) 100vw,
-          (max-width:768px) 50vw,
-          (max-width:1200px) 33vw,
-          300px
-        "
-        placeholder="empty"
+        sizes={sizes}
         onError={handleError}
         style={{
           objectFit: "contain",
-          objectPosition: "center",
         }}
       />
     </div>
