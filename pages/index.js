@@ -1,17 +1,48 @@
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
 
 /* ================= PAGE ================= */
 export default function Home({ products = [] }) {
   return (
     <>
       <Head>
-        <title>Koloonline</title>
+        <title>Koloonline | Trending Amazon Products</title>
+
         <meta
           name="description"
-          content="Discover trending Amazon products, best deals, and top recommendations."
+          content="Discover trending Amazon products, best deals, smart gadgets, and shopping guides."
         />
-        <link rel="canonical" href="https://koloonline.online/" />
+
+        <meta
+          name="robots"
+          content="index,follow,max-image-preview:large"
+        />
+
+        <link
+          rel="canonical"
+          href="https://koloonline.online/"
+        />
+
+        <meta
+          property="og:title"
+          content="Koloonline | Trending Amazon Products"
+        />
+
+        <meta
+          property="og:description"
+          content="Discover trending Amazon products and shopping guides."
+        />
+
+        <meta
+          property="og:url"
+          content="https://koloonline.online/"
+        />
+
+        <meta
+          property="og:type"
+          content="website"
+        />
       </Head>
 
       <main style={{ padding: 20 }}>
@@ -25,42 +56,43 @@ export default function Home({ products = [] }) {
             gap: 20,
           }}
         >
-          {Array.isArray(products) &&
-            products.map((p) => (
-              <a
-                key={p.id}
-                href={`/product/${p.id}`}
+          {products.map((p) => (
+            <Link
+              key={p.id}
+              href={`/product/${p.id}`}
+              style={{
+                display: "block",
+                padding: 10,
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <Image
+                src={
+                  p.image && p.image.length > 5
+                    ? p.image
+                    : "https://via.placeholder.com/300"
+                }
+                alt={p.title || "Product"}
+                width={220}
+                height={220}
+                loading="lazy"
+                sizes="220px"
                 style={{
-                  display: "block",
-                  padding: 10,
-                  border: "1px solid #ddd",
+                  objectFit: "cover",
                   borderRadius: 8,
-                  textDecoration: "none",
-                  color: "inherit",
+                  width: "100%",
+                  height: "auto",
                 }}
-              >
-                <Image
-                  src={
-                    p.image && p.image.length > 5
-                      ? p.image
-                      : "https://via.placeholder.com/300"
-                  }
-                  alt={p.title || "Product"}
-                  width={200}
-                  height={200}
-                  loading="lazy"
-                  sizes="200px"
-                  style={{
-                    objectFit: "cover",
-                    borderRadius: 8,
-                  }}
-                />
+              />
 
-                <h3>{p.title || "No Title"}</h3>
+              <h3>{p.title}</h3>
 
-                <p>${Number(p.price || 0)}</p>
-              </a>
-            ))}
+              <p>${p.price}</p>
+            </Link>
+          ))}
         </div>
       </main>
     </>
@@ -81,32 +113,5 @@ export async function getStaticProps() {
           .filter((p) => p && typeof p === "object")
           .map((p) => ({
             id: String(p.id || ""),
-            title:
-              typeof p.title === "string"
-                ? p.title
-                : "",
-            image:
-              typeof p.image === "string"
-                ? p.image
-                : "",
-            price: Number(p.price || 0),
-          }))
-      : [];
-
-    return {
-      props: {
-        products,
-      },
-      revalidate: 300,
-    };
-  } catch (error) {
-    console.error("Home error:", error);
-
-    return {
-      props: {
-        products: [],
-      },
-      revalidate: 300,
-    };
-  }
-                    }
+            title: String(p.title || ""),
+            image: String
