@@ -1,64 +1,99 @@
-import Link from "next/link";
 import Head from "next/head";
+import Link from "next/link";
 
-export default function Breadcrumb({ items }) {
-  const baseUrl = "https://koloonline.online";
+const BASE_URL = "https://koloonline.online";
 
-  const safeItems = Array.isArray(items)
-    ? items.filter(
-        (item) =>
-          item &&
-          typeof item === "object" &&
-          item.name &&
-          item.link
-      )
-    : [];
+function normalizeItems(items) {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .filter(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        typeof item.name === "string" &&
+        item.name.trim() &&
+        typeof item.link === "string" &&
+        item.link.trim()
+    )
+    .map((item) => ({
+      name: item.name.trim(),
+      link: item.link.startsWith("http")
+        ? item.link
+        : `${BASE_URL}${item.link}`,
+      href: item.link.startsWith("http")
+        ? item.link
+        : item.link,
+    }));
+}
+
+export default function Breadcrumb({ items = [] }) {
+  const breadcrumbItems = normalizeItems(items);
 
   return (
     <>
-      <Head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "BreadcrumbList",
-              itemListElement: safeItems.map(
-                (item, index) => ({
-                  "@type": "ListItem",
-                  position: index + 1,
-                  name: String(item.name),
-                  item: `${baseUrl}${item.link}`,
-                })
-              ),
-            }),
-          }}
-        />
-      </Head>
+      {breadcrumbItems.length > 0 && (
+        <Head>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BreadcrumbList",
+                itemListElement: breadcrumbItems.map(
+                  (item, index) => ({
+                    "@type": "ListItem",
+                    position: index + 1,
+                    name: item.name,
+                    item: item.link,
+                  })
+                ),
+              }),
+            }}
+          />
+        </Head>
+      )}
 
       <nav
-        aria-label="breadcrumb"
+        aria-label="Breadcrumb"
         style={styles.container}
       >
-        {safeItems.map((item, index) => (
-          <span
-            key={`${item.link}-${index}`}
-            style={styles.item}
-          >
-            <Link
-              href={String(item.link)}
-              style={styles.link}
-            >
-              {String(item.name)}
-            </Link>
+        {breadcrumbItems.map((item, index) => {
+          const isLast =
+            index === breadcrumbItems.length - 1;
 
-            {index < safeItems.length - 1 && (
-              <span style={styles.separator}>
-                ›
-              </span>
-            )}
-          </span>
-        ))}
+          return (
+            <span
+              key={`${item.link}-${index}`}
+              style={styles.item}
+            >
+              {isLast ? (
+                <span
+                  aria-current="page"
+                  style={styles.current}
+                >
+                  {item.name}
+                </span>
+              ) : (
+                <Link
+                  href={item.href}
+                  style={styles.link}
+                >
+                  {item.name}
+                </Link>
+              )}
+
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  style={styles.separator}
+                >
+                  ›
+                </span>
+              )}
+            </span>
+          );
+        })}
       </nav>
     </>
   );
@@ -66,12 +101,13 @@ export default function Breadcrumb({ items }) {
 
 const styles = {
   container: {
-    fontSize: 12,
-    padding: "10px 0",
-    color: "#555",
     display: "flex",
     flexWrap: "wrap",
     alignItems: "center",
+    gap: 0,
+    padding: "10px 0",
+    fontSize: 13,
+    color: "#555",
   },
 
   item: {
@@ -85,8 +121,13 @@ const styles = {
     fontWeight: 500,
   },
 
+  current: {
+    color: "#222",
+    fontWeight: 600,
+  },
+
   separator: {
-    margin: "0 6px",
+    margin: "0 8px",
     color: "#999",
   },
 };
