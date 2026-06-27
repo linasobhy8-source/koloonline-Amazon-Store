@@ -2,19 +2,28 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
-/* ================= SAFE CORE ================= */
-const toText = (v) => {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (Array.isArray(v)) return v.map(toText).join(" ");
+const FALLBACK_IMAGE =
+  "https://via.placeholder.com/300?text=Koloonline";
+
+/* ================= SAFE HELPERS ================= */
+const safeText = (v) => {
+  if (v === null || v === undefined) return "";
+
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+    return String(v);
+  }
+
+  if (Array.isArray(v)) {
+    return v.map(safeText).join(" ");
+  }
 
   if (typeof v === "object") {
     return (
-      v?.title ||
-      v?.name ||
-      v?.text ||
-      v?.value ||
+      v?.title ??
+      v?.name ??
+      v?.text ??
+      v?.value ??
+      JSON.stringify(v) ?? // 🔥 يمنع React crash
       ""
     );
   }
@@ -22,35 +31,34 @@ const toText = (v) => {
   return "";
 };
 
-const toNumber = (v) => {
+const safeNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-const toImage = (v) => {
+const safeImage = (v) => {
   if (typeof v === "string" && v.startsWith("http")) return v;
-
-  if (typeof v === "object" && v !== null) {
-    const img = v.url || v.image || v.src || "";
-    if (typeof img === "string" && img.startsWith("http")) return img;
-  }
-
-  return "https://via.placeholder.com/300?text=Koloonline";
+  return FALLBACK_IMAGE;
 };
 
 /* ================= PAGE ================= */
 export default function Home({ products = [] }) {
-  const safeProducts = Array.isArray(products) ? products : [];
+  const safeProducts = Array.isArray(products)
+    ? products.filter((p) => p && typeof p === "object")
+    : [];
 
   return (
     <>
       <Head>
         <title>Koloonline | Trending Amazon Products</title>
+
         <meta
           name="description"
-          content="Discover trending Amazon products, smart gadgets and best deals."
+          content="Discover trending Amazon products, smart gadgets and best Amazon deals."
         />
+
         <meta name="robots" content="index,follow" />
+        <link rel="canonical" href="https://koloonline.online/" />
       </Head>
 
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: 20 }}>
@@ -63,11 +71,11 @@ export default function Home({ products = [] }) {
             gap: 20,
           }}
         >
-          {safeProducts.map((p, i) => {
-            const id = toText(p?.id);
-            const title = toText(p?.title);
-            const image = toImage(p?.image);
-            const price = toNumber(p?.price);
+          {safeProducts.map((p, index) => {
+            const id = safeText(p?.id);
+            const title = safeText(p?.title);
+            const price = safeNumber(p?.price);
+            const image = safeImage(p?.image);
 
             if (!id) return null;
 
@@ -81,22 +89,31 @@ export default function Home({ products = [] }) {
                   border: "1px solid #ddd",
                   borderRadius: 10,
                   textDecoration: "none",
-                  color: "#000",
+                  color: "inherit",
+                  background: "#fff",
                 }}
               >
                 <Image
                   src={image}
-                  alt={title || "product"}
-                  width={300}
-                  height={300}
-                  priority={i < 3}
+                  alt={title || "Product"}
+                  width={220}
+                  height={220}
+                  priority={index < 4}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  sizes="220px"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "cover",
+                    borderRadius: 8,
+                  }}
                 />
 
-                <h3>
-                  {title || "Untitled Product"}
-                </h3>
+                <h3>{title || "Untitled Product"}</h3>
 
-                <p>${price}</p>
+                <p style={{ fontWeight: "bold" }}>
+                  ${price}
+                </p>
               </Link>
             );
           })}
@@ -111,18 +128,17 @@ export async function getStaticProps() {
   try {
     const { getProductsFast } = await import("../lib/firebaseQuery");
 
-    const raw = await getProductsFast();
+    const productsRaw = await getProductsFast();
 
-    const products = Array.isArray(raw)
-      ? raw
-          .filter((x) => x && typeof x === "object")
+    const products = Array.isArray(productsRaw)
+      ? productsRaw
+          .filter((p) => p && typeof p === "object")
           .map((p) => ({
-            id: toText(p?.id),
-            title: toText(p?.title),
-            image: toImage(p?.image),
-            price: toNumber(p?.price),
+            id: String(p?.id ?? ""),
+            title: safeText(p?.title),
+            image: safeImage(p?.image),
+            price: safeNumber(p?.price),
           }))
-          .filter((p) => p.id)
       : [];
 
     return {
@@ -130,6 +146,8 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   } catch (e) {
+    console.error("Home Error:", e);
+
     return {
       props: { products: [] },
       revalidate: 300,
