@@ -8,10 +8,21 @@ const FALLBACK_IMAGE =
 /* ================= SAFE HELPERS ================= */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
+
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
+
   if (Array.isArray(v)) return v.map(safeText).join(" ");
-  if (typeof v === "object") return v?.title || v?.name || "";
+
+  if (typeof v === "object") {
+    return (
+      v?.title ||
+      v?.name ||
+      v?.text ||
+      ""
+    );
+  }
+
   return "";
 };
 
@@ -21,31 +32,35 @@ const safeNumber = (v) => {
 };
 
 const safeImage = (v) => {
-  if (typeof v === "string" && v.startsWith("http")) return v;
+  if (typeof v === "string" && v.startsWith("http")) {
+    return v;
+  }
   return FALLBACK_IMAGE;
 };
 
 /* ================= PAGE ================= */
 export default function Home({ products = [] }) {
-  const safeProducts = Array.isArray(products)
-    ? products.filter(Boolean)
-    : [];
+  const safeProducts = Array.isArray(products) ? products : [];
 
   return (
     <>
       <Head>
         <title>Koloonline | Trending Amazon Products</title>
-
         <meta
           name="description"
           content="Discover trending Amazon products, smart gadgets and best Amazon deals."
         />
-
         <meta name="robots" content="index,follow" />
         <link rel="canonical" href="https://koloonline.online/" />
       </Head>
 
-      <main style={{ maxWidth: 1400, margin: "0 auto", padding: 20 }}>
+      <main
+        style={{
+          maxWidth: 1400,
+          margin: "0 auto",
+          padding: 20,
+        }}
+      >
         <h1>🔥 Trending Products</h1>
 
         <div
@@ -118,12 +133,14 @@ export async function getStaticProps() {
     const productsRaw = await getProductsFast();
 
     const products = Array.isArray(productsRaw)
-      ? productsRaw.map((p) => ({
-          id: String(p?.id || ""),
-          title: String(p?.title || ""),
-          image: String(p?.image || ""),
-          price: Number(p?.price || 0),
-        }))
+      ? productsRaw
+          .filter((p) => p && typeof p === "object")
+          .map((p) => ({
+            id: String(p?.id || ""),
+            title: safeText(p?.title),
+            image: safeImage(p?.image),
+            price: safeNumber(p?.price),
+          }))
       : [];
 
     return {
@@ -131,9 +148,11 @@ export async function getStaticProps() {
       revalidate: 300,
     };
   } catch (e) {
+    console.error(e);
+
     return {
       props: { products: [] },
       revalidate: 300,
     };
   }
-            }
+  }
