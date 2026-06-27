@@ -1,67 +1,69 @@
 import Head from "next/head";
+import Image from "next/image";
 
 /* ================= PAGE ================= */
 export default function Home({ products = [] }) {
   return (
-    <div style={{ padding: 20 }}>
+    <>
       <Head>
         <title>Koloonline</title>
-        <meta name="description" content="Trending Products" />
+        <meta
+          name="description"
+          content="Discover trending Amazon products, best deals, and top recommendations."
+        />
+        <link rel="canonical" href="https://koloonline.online/" />
       </Head>
 
-      <h1>🔥 Trending Products</h1>
+      <main style={{ padding: 20 }}>
+        <h1>🔥 Trending Products</h1>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(220px,1fr))",
-          gap: 20,
-        }}
-      >
-        {Array.isArray(products) &&
-          products.map((p) => (
-            <a
-              key={p?.id || Math.random()}
-              href={`/product/${p?.id || ""}`}
-              style={{
-                display: "block",
-                padding: 10,
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              <img
-                src={
-                  typeof p?.image === "string" && p.image.length > 5
-                    ? p.image
-                    : "https://via.placeholder.com/300"
-                }
-                width={200}
-                height={200}
-                alt={typeof p?.title === "string" ? p.title : ""}
-                loading="lazy"
-                style={{ objectFit: "cover" }}
-              />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(220px,1fr))",
+            gap: 20,
+          }}
+        >
+          {Array.isArray(products) &&
+            products.map((p) => (
+              <a
+                key={p.id}
+                href={`/product/${p.id}`}
+                style={{
+                  display: "block",
+                  padding: 10,
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <Image
+                  src={
+                    p.image && p.image.length > 5
+                      ? p.image
+                      : "https://via.placeholder.com/300"
+                  }
+                  alt={p.title || "Product"}
+                  width={200}
+                  height={200}
+                  loading="lazy"
+                  sizes="200px"
+                  style={{
+                    objectFit: "cover",
+                    borderRadius: 8,
+                  }}
+                />
 
-              <h3>
-                {typeof p?.title === "string"
-                  ? p.title
-                  : "No Title"}
-              </h3>
+                <h3>{p.title || "No Title"}</h3>
 
-              <p>
-                $
-                {Number.isFinite(Number(p?.price))
-                  ? Number(p.price)
-                  : 0}
-              </p>
-            </a>
-          ))}
-      </div>
-    </div>
+                <p>${Number(p.price || 0)}</p>
+              </a>
+            ))}
+        </div>
+      </main>
+    </>
   );
 }
 
@@ -74,7 +76,6 @@ export async function getStaticProps() {
 
     const productsRaw = await getProductsFast();
 
-    // 🔥 حماية إضافية ضد أي object corrupt
     const products = Array.isArray(productsRaw)
       ? productsRaw
           .filter((p) => p && typeof p === "object")
@@ -93,15 +94,19 @@ export async function getStaticProps() {
       : [];
 
     return {
-      props: { products },
+      props: {
+        products,
+      },
       revalidate: 300,
     };
-  } catch (e) {
-    console.error("Home error:", e);
+  } catch (error) {
+    console.error("Home error:", error);
 
     return {
-      props: { products: [] },
+      props: {
+        products: [],
+      },
       revalidate: 300,
     };
   }
-                  }
+}
