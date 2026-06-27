@@ -8,6 +8,7 @@ export default function SmartImage({
   src,
   alt = "Product Image",
   priority = false,
+  className = "",
 }) {
   const [error, setError] = useState(false);
 
@@ -40,6 +41,7 @@ export default function SmartImage({
 
   return (
     <div
+      className={className}
       style={{
         position: "relative",
         width: "100%",
@@ -51,7 +53,7 @@ export default function SmartImage({
     >
       <Image
         src={finalSrc}
-        alt={alt}
+        alt={String(alt || "Product Image")}
         fill
         priority={priority}
         loading={priority ? "eager" : "lazy"}
@@ -62,9 +64,11 @@ export default function SmartImage({
           (max-width:1200px) 33vw,
           300px
         "
+        placeholder="empty"
         onError={handleError}
         style={{
           objectFit: "contain",
+          objectPosition: "center",
         }}
       />
     </div>
