@@ -1,3 +1,4 @@
+
 import Head from "next/head";
 
 const FALLBACK_IMAGE =
@@ -82,6 +83,11 @@ export default function SEOHead({
         content="Koloonline"
       />
 
+      <meta
+        name="referrer"
+        content="strict-origin-when-cross-origin"
+      />
+
       {/* Open Graph */}
 
       <meta
@@ -112,6 +118,11 @@ export default function SEOHead({
       <meta
         property="og:image"
         content={pageImage}
+      />
+
+      <meta
+        property="og:image:alt"
+        content={pageTitle}
       />
 
       <meta
@@ -181,7 +192,7 @@ export default function SEOHead({
               url: "https://koloonline.online",
               logo: {
                 "@type": "ImageObject",
-                url: "https://koloonline.online/favicon.ico",
+                url: FALLBACK_IMAGE,
               },
             },
           }),
