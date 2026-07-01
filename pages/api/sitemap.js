@@ -7,10 +7,9 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app =
-  getApps().length > 0
-    ? getApps()[0]
-    : initializeApp(firebaseConfig);
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
@@ -107,13 +106,12 @@ export default async function handler(req, res) {
       new Map(urls.map((u) => [u.loc, u])).values()
     );
 
-    // ================= SORT =================
+    // ================= SORT URLS =================
     uniqueUrls.sort((a, b) => a.loc.localeCompare(b.loc));
 
     // ================= XML =================
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${uniqueUrls
   .map(
     (u) => `
