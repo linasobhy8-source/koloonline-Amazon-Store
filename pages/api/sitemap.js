@@ -7,9 +7,10 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = getApps().length
-  ? getApps()[0]
-  : initializeApp(firebaseConfig);
+const app =
+  getApps().length > 0
+    ? getApps()[0]
+    : initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
@@ -21,11 +22,11 @@ export default async function handler(req, res) {
   try {
     const now = new Date().toISOString();
 
-    const productsSnap = await getDocs(collection(db, "products"));
-
     const urls = [];
 
     // ================= PRODUCTS =================
+    const productsSnap = await getDocs(collection(db, "products"));
+
     productsSnap.forEach((doc) => {
       const p = doc.data();
 
@@ -49,6 +50,11 @@ export default async function handler(req, res) {
       "/products",
       "/categories",
       "/blog",
+      "/amazon-haul",
+      "/audible",
+      "/aliexpress",
+      "/fiverr",
+      "/search",
 
       // Blog Pages
       "/blog/amazon-finds-under-25",
@@ -62,6 +68,11 @@ export default async function handler(req, res) {
       "/blog/usb-c-accessories",
       "/blog/viral-products-amazon",
 
+      // Top Pages
+      "/top/top-smart-watches",
+      "/top/top-earbuds",
+      "/top/top-smart-watches-under-100",
+
       // Company Pages
       "/about",
       "/contact",
@@ -74,24 +85,35 @@ export default async function handler(req, res) {
       urls.push({
         loc: `${SITE_URL}${page}`,
         lastmod: now,
-        changefreq: page.startsWith("/blog/") ? "monthly" : "weekly",
+        changefreq:
+          page.startsWith("/blog/")
+            ? "monthly"
+            : page.startsWith("/top/")
+            ? "weekly"
+            : "weekly",
         priority:
           page === ""
             ? 1.0
+            : page.startsWith("/top/")
+            ? 0.9
             : page.startsWith("/blog/")
             ? 0.85
             : 0.8,
       });
     });
 
-    // إزالة أي روابط مكررة
+    // ================= REMOVE DUPLICATES =================
     const uniqueUrls = Array.from(
       new Map(urls.map((u) => [u.loc, u])).values()
     );
 
+    // ================= SORT =================
+    uniqueUrls.sort((a, b) => a.loc.localeCompare(b.loc));
+
     // ================= XML =================
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${uniqueUrls
   .map(
     (u) => `
