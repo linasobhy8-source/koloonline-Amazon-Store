@@ -4,11 +4,6 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
-  // تحسين تجربة التصفح (Back/Forward + UX)
-  experimental: {
-    scrollRestoration: true,
-  },
-
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
@@ -99,4 +94,4 @@ const nextConfig = {
   },
 };
 
-module.exports = next
+module.exports = nextConfig;
