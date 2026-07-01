@@ -5,6 +5,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 
+// ================= FIREBASE INIT =================
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -18,10 +19,12 @@ const app =
 
 const db = getFirestore(app);
 
+// ================= SITE URL =================
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://www.koloonline.online";
+  "https://koloonline.online";
 
+// ================= HANDLER =================
 export default async function handler(req, res) {
   try {
     const now = new Date().toISOString();
@@ -29,14 +32,12 @@ export default async function handler(req, res) {
     const urls = [];
 
     // ================= PRODUCTS =================
-    const productsSnap = await getDocs(
-      collection(db, "products")
-    );
+    const productsSnap = await getDocs(collection(db, "products"));
 
     productsSnap.forEach((doc) => {
       const p = doc.data();
 
-      if (!p.slug) return;
+      if (!p?.slug) return;
 
       urls.push({
         loc: `${SITE_URL}/product/${p.slug}`,
@@ -48,15 +49,13 @@ export default async function handler(req, res) {
       });
     });
 
-    // ================= BLOG POSTS (AUTO) =================
-    const blogSnap = await getDocs(
-      collection(db, "blog")
-    );
+    // ================= BLOG POSTS =================
+    const blogSnap = await getDocs(collection(db, "blog"));
 
     blogSnap.forEach((doc) => {
       const post = doc.data();
 
-      if (!post.slug) return;
+      if (!post?.slug) return;
 
       urls.push({
         loc: `${SITE_URL}/blog/${post.slug}`,
@@ -71,21 +70,17 @@ export default async function handler(req, res) {
     // ================= STATIC PAGES =================
     const staticPages = [
       "",
-
       "/products",
       "/categories",
       "/blog",
-
       "/amazon-haul",
       "/audible",
       "/aliexpress",
       "/fiverr",
       "/search",
-
       "/top/top-smart-watches",
       "/top/top-earbuds",
       "/top/top-smart-watches-under-100",
-
       "/about",
       "/contact",
       "/privacy",
@@ -97,15 +92,8 @@ export default async function handler(req, res) {
       urls.push({
         loc: `${SITE_URL}${page}`,
         lastmod: now,
-        changefreq: page.startsWith("/top/")
-          ? "weekly"
-          : "weekly",
-        priority:
-          page === ""
-            ? 1.0
-            : page.startsWith("/top/")
-            ? 0.9
-            : 0.8,
+        changefreq: "weekly",
+        priority: page === "" ? 1.0 : page.startsWith("/top/") ? 0.9 : 0.8,
       });
     });
 
@@ -115,11 +103,9 @@ export default async function handler(req, res) {
     );
 
     // ================= SORT =================
-    uniqueUrls.sort((a, b) =>
-      a.loc.localeCompare(b.loc)
-    );
+    uniqueUrls.sort((a, b) => a.loc.localeCompare(b.loc));
 
-    // ================= XML =================
+    // ================= XML BUILD =================
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${uniqueUrls
@@ -128,4 +114,19 @@ ${uniqueUrls
   <url>
     <loc>${u.loc}</loc>
     <lastmod>${u.lastmod}</lastmod>
-    <
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`
+  )
+  .join("")}
+</urlset>`;
+
+    // ================= RESPONSE =================
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
+    res.status(200).send(sitemap);
+  } catch (error) {
+    console.error("Sitemap error:", error);
+    res.status(500).json({ error: "Failed to generate sitemap" });
+  }
+      }
