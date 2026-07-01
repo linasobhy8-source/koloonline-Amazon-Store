@@ -7,17 +7,25 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const app = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
 
-const SITE_URL = "https://www.koloonline.online";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://www.koloonline.online";
 
 export default async function handler(req, res) {
   try {
+    const now = new Date().toISOString();
+
     const productsSnap = await getDocs(collection(db, "products"));
 
     const urls = [];
 
+    // ================= PRODUCTS =================
     productsSnap.forEach((doc) => {
       const p = doc.data();
 
@@ -25,30 +33,40 @@ export default async function handler(req, res) {
 
       urls.push({
         loc: `${SITE_URL}/product/${p.slug}`,
-        lastmod: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString(),
+        lastmod: p.updatedAt
+          ? new Date(p.updatedAt).toISOString()
+          : now,
         changefreq: "daily",
         priority: 0.9,
       });
     });
 
+    // ================= STATIC PAGES =================
     const staticPages = [
       "",
+      "/products",
+      "/categories",
+      "/blog",
       "/about",
       "/contact",
-      "/blog",
+      "/privacy",
+      "/terms",
+      "/disclaimer",
     ];
 
     staticPages.forEach((page) => {
       urls.push({
         loc: `${SITE_URL}${page}`,
-        lastmod: new Date().toISOString(),
+        lastmod: now,
         changefreq: "weekly",
-        priority: 1.0,
+        priority: page === "" ? 1.0 : 0.8,
       });
     });
 
+    // ================= XML =================
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
   .map(
     (u) => `
@@ -62,10 +80,19 @@ ${urls
   .join("")}
 </urlset>`;
 
-    res.setHeader("Content-Type", "text/xml");
-    res.status(200).send(sitemap);
+    res.setHeader("Content-Type", "text/xml; charset=utf-8");
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=86400"
+    );
+
+    return res.status(200).send(sitemap);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Sitemap generation failed" });
+    console.error("Sitemap Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Sitemap generation failed",
+    });
   }
 }
