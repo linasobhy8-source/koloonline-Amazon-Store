@@ -1,6 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
-import { aiDecision } from "../../lib/aiEngine";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,96 +10,62 @@ const firebaseConfig = {
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
+const SITE_URL = "https://www.koloonline.online";
 
-/* ================= Helpers ================= */
-
-function safeDate(value) {
+export default async function handler(req, res) {
   try {
-    if (!value) return new Date().toISOString();
-    if (typeof value?.toDate === "function") return value.toDate().toISOString();
-    return new Date(value).toISOString();
-  } catch {
-    return new Date().toISOString();
-  }
-}
+    const productsSnap = await getDocs(collection(db, "products"));
 
-function escapeXml(str = "") {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
+    const urls = [];
 
-/* ================= Firestore Fetch ================= */
+    productsSnap.forEach((doc) => {
+      const p = doc.data();
 
-async function getProducts() {
-  try {
-    const snapshot = await getDocs(collection(db, "products"));
+      if (!p.slug) return;
 
-    const products = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-
-      products.push({
-        id: doc.id,
-        slug: data.slug || doc.id,
-        updatedAt: data.updatedAt || null,
-        title: data.title || "",
-        status: data.status || "active",
-        visibility: data.visibility || "public",
+      urls.push({
+        loc: `${SITE_URL}/product/${p.slug}`,
+        lastmod: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString(),
+        changefreq: "daily",
+        priority: 0.9,
       });
     });
 
-    return products;
-  } catch (error) {
-    console.error("Firestore fetch error:", error);
-    return [];
-  }
-}
+    const staticPages = [
+      "",
+      "/about",
+      "/contact",
+      "/blog",
+    ];
 
-/* ================= AI Filtering Layer ================= */
-
-async function filterProductsWithAI(products) {
-  try {
-    if (!products.length) return [];
-
-    // AI decides which products should be in sitemap
-    const result = await aiDecision({
-      type: "sitemap_filter",
-      products,
+    staticPages.forEach((page) => {
+      urls.push({
+        loc: `${SITE_URL}${page}`,
+        lastmod: new Date().toISOString(),
+        changefreq: "weekly",
+        priority: 1.0,
+      });
     });
 
-    // Expected format:
-    // result = { allowedIds: [] } OR directly array OR filtered products
-    if (!result) return products;
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls
+  .map(
+    (u) => `
+  <url>
+    <loc>${u.loc}</loc>
+    <lastmod>${u.lastmod}</lastmod>
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`
+  )
+  .join("")}
+</urlset>`;
 
-    if (Array.isArray(result)) return result;
-
-    if (result.allowedIds) {
-      return products.filter((p) => result.allowedIds.includes(p.id));
-    }
-
-    if (result.filteredProducts) {
-      return result.filteredProducts;
-    }
-
-    return products;
+    res.setHeader("Content-Type", "text/xml");
+    res.status(200).send(sitemap);
   } catch (error) {
-    console.error("AI decision error:", error);
-    return products;
+    console.error(error);
+    res.status(500).json({ error: "Sitemap generation failed" });
   }
 }
-
-/* ================= URL Builder ================= */
-
-function buildProductUrls(products) {
-  return products.map((p) => ({
-    url: `${baseUrl}/product/${p.slug}`,
-    lastmod: safeDate(p.updatedAt),
-    changefreq: "daily",
-    priority: 0.9,
