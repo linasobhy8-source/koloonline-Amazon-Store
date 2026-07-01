@@ -2,11 +2,9 @@
   "name": "koloonline-amazon-store",
   "version": "1.0.0",
   "private": true,
-
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
-
   "dependencies": {
     "next": "15.5.15",
     "react": "18.2.0",
@@ -16,12 +14,10 @@
     "@vercel/speed-insights": "latest",
     "uuid": "^11.0.0"
   },
-
   "devDependencies": {
     "eslint": "^8",
     "eslint-config-next": "15.5.15"
   },
-
   "scripts": {
     "dev": "next dev",
     "build": "next build",
