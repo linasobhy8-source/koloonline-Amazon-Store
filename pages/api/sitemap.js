@@ -44,9 +44,25 @@ export default async function handler(req, res) {
     // ================= STATIC PAGES =================
     const staticPages = [
       "",
+
+      // Main Pages
       "/products",
       "/categories",
       "/blog",
+
+      // Blog Pages
+      "/blog/amazon-finds-under-25",
+      "/blog/best-gaming-accessories",
+      "/blog/best-headphones-2026",
+      "/blog/best-power-banks-2026",
+      "/blog/best-smart-watches",
+      "/blog/budget-tech-products",
+      "/blog/smart-home-devices-2026",
+      "/blog/tiktok-amazon-gadgets",
+      "/blog/usb-c-accessories",
+      "/blog/viral-products-amazon",
+
+      // Company Pages
       "/about",
       "/contact",
       "/privacy",
@@ -58,16 +74,25 @@ export default async function handler(req, res) {
       urls.push({
         loc: `${SITE_URL}${page}`,
         lastmod: now,
-        changefreq: "weekly",
-        priority: page === "" ? 1.0 : 0.8,
+        changefreq: page.startsWith("/blog/") ? "monthly" : "weekly",
+        priority:
+          page === ""
+            ? 1.0
+            : page.startsWith("/blog/")
+            ? 0.85
+            : 0.8,
       });
     });
 
+    // إزالة أي روابط مكررة
+    const uniqueUrls = Array.from(
+      new Map(urls.map((u) => [u.loc, u])).values()
+    );
+
     // ================= XML =================
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${uniqueUrls
   .map(
     (u) => `
   <url>
