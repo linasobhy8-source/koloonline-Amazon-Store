@@ -26,6 +26,17 @@ const SITE_URL =
 
 // ================= HANDLER =================
 export default async function handler(req, res) {
+  console.log("========== SITEMAP REQUEST ==========");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  console.log("=====================================");
+
+  if (req.method !== "GET") {
+    return res
+      .status(405)
+      .json({ error: "Method Not Allowed" });
+  }
+
   try {
     const now = new Date().toISOString();
 
@@ -34,13 +45,15 @@ export default async function handler(req, res) {
     // ================= PRODUCTS =================
     const productsSnap = await getDocs(collection(db, "products"));
 
+    console.log("Products:", productsSnap.size);
+
     productsSnap.forEach((doc) => {
       const p = doc.data();
 
-      if (!p?.slug) return;
+      const productId = p.slug || doc.id;
 
       urls.push({
-        loc: `${SITE_URL}/product/${p.slug}`,
+        loc: `${SITE_URL}/product/${productId}`,
         lastmod: p.updatedAt
           ? new Date(p.updatedAt).toISOString()
           : now,
@@ -49,16 +62,18 @@ export default async function handler(req, res) {
       });
     });
 
-    // ================= BLOG POSTS =================
+    // ================= BLOG =================
     const blogSnap = await getDocs(collection(db, "blog"));
+
+    console.log("Blog:", blogSnap.size);
 
     blogSnap.forEach((doc) => {
       const post = doc.data();
 
-      if (!post?.slug) return;
+      const slug = post.slug || doc.id;
 
       urls.push({
-        loc: `${SITE_URL}/blog/${post.slug}`,
+        loc: `${SITE_URL}/blog/${slug}`,
         lastmod: post.updatedAt
           ? new Date(post.updatedAt).toISOString()
           : now,
@@ -67,7 +82,7 @@ export default async function handler(req, res) {
       });
     });
 
-    // ================= STATIC PAGES =================
+    // ================= STATIC =================
     const staticPages = [
       "",
       "/products",
@@ -93,7 +108,12 @@ export default async function handler(req, res) {
         loc: `${SITE_URL}${page}`,
         lastmod: now,
         changefreq: "weekly",
-        priority: page === "" ? 1.0 : page.startsWith("/top/") ? 0.9 : 0.8,
+        priority:
+          page === ""
+            ? 1.0
+            : page.startsWith("/top/")
+            ? 0.9
+            : 0.8,
       });
     });
 
@@ -102,10 +122,13 @@ export default async function handler(req, res) {
       new Map(urls.map((u) => [u.loc, u])).values()
     );
 
-    // ================= SORT =================
-    uniqueUrls.sort((a, b) => a.loc.localeCompare(b.loc));
+    uniqueUrls.sort((a, b) =>
+      a.loc.localeCompare(b.loc)
+    );
 
-    // ================= XML BUILD =================
+    console.log("Total URLs:", uniqueUrls.length);
+
+    // ================= XML =================
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${uniqueUrls
@@ -121,12 +144,19 @@ ${uniqueUrls
   .join("")}
 </urlset>`;
 
-    // ================= RESPONSE =================
     res.setHeader("Content-Type", "application/xml");
-    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
-    res.status(200).send(sitemap);
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate"
+    );
+
+    return res.status(200).send(sitemap);
   } catch (error) {
-    console.error("Sitemap error:", error);
-    res.status(500).json({ error: "Failed to generate sitemap" });
+    console.error("SITEMAP ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
-      }
+}
