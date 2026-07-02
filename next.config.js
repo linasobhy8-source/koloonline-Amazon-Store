@@ -33,16 +33,6 @@ const nextConfig = {
     ],
   },
 
-  // ================= SITEMAP ROUTE =================
-  async rewrites() {
-    return [
-      {
-        source: "/sitemap.xml",
-        destination: "/api/sitemap",
-      },
-    ];
-  },
-
   // ================= HEADERS =================
   async headers() {
     return [
