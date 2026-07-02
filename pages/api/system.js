@@ -3,7 +3,7 @@ import { collection, getDocs, limit, query } from "firebase/firestore";
 import { productBrain } from "../../lib/ai/productBrain";
 import { detectVirals } from "../../lib/ai/viralDetector";
 
-// ================= CACHE LAYER =================
+// ================= CACHE =================
 let CACHE = {
   feed: null,
   trending: null,
@@ -19,7 +19,6 @@ export default async function handler(req, res) {
     const { action } = req.query;
     const now = Date.now();
 
-    // ================= CACHE VALIDATION =================
     const isCacheValid = now - CACHE.lastUpdate < CACHE_TIME;
 
     // ================= FEED =================
@@ -42,18 +41,18 @@ export default async function handler(req, res) {
         ...d.data(),
       }));
 
-      // ================= AI PROCESSING =================
+      // ================= AI =================
       try {
         products = productBrain(products);
       } catch (e) {
-        console.error("productBrain error:", e.message);
+        console.error("productBrain error:", e);
       }
 
       let virals = [];
       try {
         virals = detectVirals(products);
       } catch (e) {
-        console.error("viralDetector error:", e.message);
+        console.error("viralDetector error:", e);
       }
 
       products.sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -61,7 +60,6 @@ export default async function handler(req, res) {
       const result = products.slice(0, 20);
       const viralResult = virals.slice(0, 5);
 
-      // ================= SAVE CACHE =================
       CACHE = {
         feed: result,
         trending: CACHE.trending,
@@ -99,4 +97,74 @@ export default async function handler(req, res) {
       // ================= AI =================
       try {
         products = productBrain(products);
+      } catch (e) {
+        console.error("productBrain error:", e);
       }
+
+      const trending = products
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, 10);
+
+      CACHE.trending = trending;
+      CACHE.lastUpdate = now;
+
+      return res.status(200).json({
+        success: true,
+        cached: false,
+        trending,
+      });
+    }
+
+    // ================= VIRAL ONLY =================
+    if (action === "viral") {
+      if (isCacheValid && CACHE.viral) {
+        return res.status(200).json({
+          success: true,
+          cached: true,
+          viral: CACHE.viral,
+        });
+      }
+
+      const snap = await getDocs(
+        query(collection(db, "products"), limit(100))
+      );
+
+      let products = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      let virals = [];
+      try {
+        virals = detectVirals(products);
+      } catch (e) {
+        console.error("viralDetector error:", e);
+      }
+
+      const viralResult = virals.slice(0, 10);
+
+      CACHE.viral = viralResult;
+      CACHE.lastUpdate = now;
+
+      return res.status(200).json({
+        success: true,
+        cached: false,
+        viral: viralResult,
+      });
+    }
+
+    // ================= DEFAULT =================
+    return res.status(400).json({
+      success: false,
+      message: "Invalid action. Use ?action=feed | trending | viral",
+    });
+
+  } catch (e) {
+    console.error("SYSTEM ERROR:", e);
+
+    return res.status(500).json({
+      success: false,
+      error: e.message,
+    });
+  }
+        }
