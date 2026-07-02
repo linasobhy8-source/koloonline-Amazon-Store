@@ -4,10 +4,14 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  // ================= PERFORMANCE =================
+  swcMinify: true,
+
   // ================= IMAGES =================
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
+    dangerouslyAllowSVG: false,
 
     remotePatterns: [
       {
@@ -33,27 +37,23 @@ const nextConfig = {
     ],
   },
 
-  // ================= HEADERS =================
+  // ================= SECURITY HEADERS =================
   async headers() {
     return [
       {
         source: "/:path*",
         headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+
+          // حماية إضافية (SEO + security boost)
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
         ],
       },
 
+      // ================= STATIC CACHE =================
       {
         source: "/_next/static/:path*",
         headers: [
