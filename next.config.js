@@ -4,6 +4,7 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  // ================= IMAGES =================
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
@@ -32,6 +33,7 @@ const nextConfig = {
     ],
   },
 
+  // ================= ROUTES =================
   async rewrites() {
     return [
       {
@@ -41,6 +43,7 @@ const nextConfig = {
     ];
   },
 
+  // ================= SEO + SECURITY HEADERS =================
   async headers() {
     return [
       {
@@ -89,6 +92,24 @@ const nextConfig = {
             value: "public, max-age=31536000, immutable",
           },
         ],
+      },
+    ];
+  },
+
+  // ================= OPTIONAL (SEO FIX IMPORTANT) =================
+  async redirects() {
+    return [
+      // توحيد الدومين (مهم جدًا SEO)
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "koloonline.online",
+          },
+        ],
+        destination: "https://www.koloonline.online/:path*",
+        permanent: true,
       },
     ];
   },
