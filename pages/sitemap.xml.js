@@ -1,9 +1,18 @@
-export async function getServerSideProps({ res }) {
+export async function getServerSideProps({ req, res }) {
+  const protocol =
+    process.env.NODE_ENV === "development" ? "http" : "https";
+
+  const host = req.headers.host;
+
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
+    process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
 
   try {
-    const response = await fetch(`${baseUrl}/api/sitemap`);
+    const response = await fetch(`${baseUrl}/api/sitemap`, {
+      headers: {
+        Accept: "application/xml",
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`API returned ${response.status}`);
@@ -24,7 +33,7 @@ export async function getServerSideProps({ res }) {
     console.error("Sitemap Error:", err);
 
     res.statusCode = 500;
-    res.setHeader("Content-Type", "text/plain");
+    res.setHeader("Content-Type", "text/plain; charset=UTF-8");
     res.end("Sitemap Error");
   }
 
