@@ -1,41 +1,87 @@
 import { db } from "../../config/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, limit } from "firebase/firestore";
 
-/* ================= SAFE ================= */
-const num = (v) => Number(v) || 0;
+/* ================= SAFE NUMBER ================= */
+const num = (v) => (typeof v === "number" ? v : parseFloat(v) || 0);
 
-/* ================= SCORE ================= */
+/* ================= SCORE ENGINE ================= */
 function score(p) {
   const views = num(p.views);
   const clicks = num(p.clicks);
-  const viral = p.viralBoost ? 50 : 0;
+  const likes = num(p.likes);
+  const viralBoost = p.viralBoost ? 100 : 0;
 
-  return views + clicks * 2 + viral;
+  // weighted scoring (more realistic)
+  return views * 1 + clicks * 2 + likes * 3 + viralBoost;
 }
+
+/* ================= CACHE (simple in-memory) ================= */
+let cached = null;
+let cachedTime = 0;
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 /* ================= HANDLER ================= */
 export default async function handler(req, res) {
   try {
-    const snap = await getDocs(collection(db, "products"));
+    const now = Date.now();
 
-    const products = snap.docs.map((d) => ({
+    // ================= RETURN CACHE =================
+    if (cached && now - cachedTime < CACHE_TTL) {
+      return res.status(200).json({
+        success: true,
+        trending: cached,
+        cached: true,
+      });
+    }
+
+    // ================= FETCH LIMITED =================
+    const snap = await getDocs(
+      query(collection(db, "products"), limit(100))
+    );
+
+    let products = snap.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     }));
 
+    if (!products.length) {
+      return res.status(200).json({
+        success: true,
+        trending: [],
+        message: "No products found",
+      });
+    }
+
+    // ================= COMPUTE TRENDING =================
     const trending = products
-      .sort((a, b) => score(b) - score(a))
+      .map((p) => ({
+        ...p,
+        score: score(p),
+      }))
+      .sort((a, b) => b.score - a.score)
       .slice(0, 10);
+
+    // ================= UPDATE CACHE =================
+    cached = trending;
+    cachedTime = now;
 
     return res.status(200).json({
       success: true,
       trending,
+      cached: false,
       meta: {
         total: products.length,
-        engine: "lite-v1",
+        engine: "lite-v2",
       },
     });
+
   } catch (e) {
-    return res.status(500).json({ success: false, error: e.message });
+    console.error("Trending engine error:", e);
+
+    return res.status(500).json({
+      success: false,
+      error: e.message,
+      trending: [],
+    });
   }
-}
+    }
