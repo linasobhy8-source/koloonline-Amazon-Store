@@ -3,24 +3,36 @@ export default async function handler(req, res) {
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
 
-    // نجيب السايت ماب من الـ API الداخلي
-    const response = await fetch(`${baseUrl}/api/sitemap`);
+    // ناخد البيانات من API الأساسي
+    const apiRes = await fetch(`${baseUrl}/api/sitemap`);
+    const data = await apiRes.json();
 
-    const data = await response.text();
+    const urls = data?.urls || data?.data || [];
 
-    // مهم جدًا: نرجع XML زي ما هو
-    res.setHeader("Content-Type", "application/xml");
-    res.setHeader("Cache-Control", "public, max-age=3600");
-
-    return res.status(200).send(data);
-  } catch (error) {
-    console.error("Sitemap proxy error:", error);
-
-    return res.status(200).send(`<?xml version="1.0"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls
+  .map(
+    (u) => `
   <url>
-    <loc>https://koloonline.online</loc>
-  </url>
-</urlset>`);
+    <loc>${u.loc}</loc>
+    <lastmod>${u.lastmod || new Date().toISOString()}</lastmod>
+    <changefreq>${u.changefreq || "weekly"}</changefreq>
+    <priority>${u.priority || 0.7}</priority>
+  </url>`
+  )
+  .join("")}
+</urlset>`;
+
+    res.setHeader("Content-Type", "application/xml");
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=86400"
+    );
+
+    return res.status(200).send(xml);
+  } catch (e) {
+    console.error("Sitemap XML error:", e);
+    return res.status(500).send("Sitemap Error");
   }
 }
