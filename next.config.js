@@ -4,6 +4,16 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  // ================= REWRITES =================
+  async rewrites() {
+    return [
+      {
+        source: "/sitemap.xml",
+        destination: "/api/sitemap",
+      },
+    ];
+  },
+
   // ================= IMAGES OPTIMIZATION =================
   images: {
     formats: ["image/avif", "image/webp"],
@@ -26,8 +36,14 @@ const nextConfig = {
         source: "/:path*",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-DNS-Prefetch-Control", value: "on" },
         ],
@@ -37,7 +53,10 @@ const nextConfig = {
       {
         source: "/_next/static/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
 
@@ -45,7 +64,10 @@ const nextConfig = {
       {
         source: "/favicon.ico",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
 
@@ -53,7 +75,10 @@ const nextConfig = {
       {
         source: "/:all*(svg|jpg|jpeg|png|gif|webp|avif|ico)",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
     ];
