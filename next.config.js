@@ -22,7 +22,6 @@ const nextConfig = {
   // ================= HEADERS (SEO + SECURITY) =================
   async headers() {
     return [
-      // Global security headers
       {
         source: "/:path*",
         headers: [
@@ -34,16 +33,7 @@ const nextConfig = {
         ],
       },
 
-      // Sitemap optimization for Google
-      {
-        source: "/sitemap.xml",
-        headers: [
-          { key: "Content-Type", value: "application/xml" },
-          { key: "Cache-Control", value: "public, max-age=3600" },
-        ],
-      },
-
-      // Next static assets caching
+      // Next static caching
       {
         source: "/_next/static/:path*",
         headers: [
@@ -59,7 +49,7 @@ const nextConfig = {
         ],
       },
 
-      // Image caching
+      // Images caching
       {
         source: "/:all*(svg|jpg|jpeg|png|gif|webp|avif|ico)",
         headers: [
