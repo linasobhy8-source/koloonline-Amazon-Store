@@ -4,52 +4,37 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+
         {/* ================= BASIC SEO ================= */}
         <meta charSet="UTF-8" />
-        <meta name="robots" content="index,follow,max-image-preview:large" />
-        <meta name="googlebot" content="index,follow" />
+
+        {/* مهم: نخلي الافتراضي index بس بدون spam signals */}
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="googlebot" content="index, follow, max-image-preview:large" />
+
         <meta name="theme-color" content="#ff9900" />
+
+        {/* ================= CANONICAL DOMAIN SIGNAL ================= */}
+        <link rel="canonical" href="https://www.koloonline.online" />
 
         {/* ================= SITEMAP ================= */}
         <link
           rel="sitemap"
           type="application/xml"
-          href="https://koloonline.online/sitemap.xml"
+          href="https://www.koloonline.online/sitemap.xml"
         />
 
-        {/* ================= DNS PREFETCH ================= */}
-        <link
-          rel="dns-prefetch"
-          href="//pagead2.googlesyndication.com"
-        />
-        <link
-          rel="dns-prefetch"
-          href="//www.google-analytics.com"
-        />
-        <link
-          rel="dns-prefetch"
-          href="//www.googletagmanager.com"
-        />
+        {/* ================= PERFORMANCE ================= */}
+        <link rel="dns-prefetch" href="//pagead2.googlesyndication.com" />
+        <link rel="dns-prefetch" href="//www.google-analytics.com" />
+        <link rel="dns-prefetch" href="//www.googletagmanager.com" />
 
-        {/* ================= PRECONNECT ================= */}
-        <link
-          rel="preconnect"
-          href="https://pagead2.googlesyndication.com"
-        />
-        <link
-          rel="preconnect"
-          href="https://www.google-analytics.com"
-        />
-        <link
-          rel="preconnect"
-          href="https://www.googletagmanager.com"
-        />
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
 
         {/* ================= ADSENSE ================= */}
-        <meta
-          name="google-adsense-account"
-          content="ca-pub-1294940976431468"
-        />
+        <meta name="google-adsense-account" content="ca-pub-1294940976431468" />
 
         <script
           async
@@ -65,11 +50,10 @@ export default function Document() {
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "Koloonline",
-              url: "https://koloonline.online",
+              url: "https://www.koloonline.online",
               potentialAction: {
                 "@type": "SearchAction",
-                target:
-                  "https://koloonline.online/search?q={search_term_string}",
+                target: "https://www.koloonline.online/search?q={search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             }),
@@ -84,8 +68,8 @@ export default function Document() {
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "Koloonline",
-              url: "https://koloonline.online",
-              logo: "https://koloonline.online/logo.png",
+              url: "https://www.koloonline.online",
+              logo: "https://www.koloonline.online/logo.png",
             }),
           }}
         />
@@ -93,21 +77,18 @@ export default function Document() {
         {/* ================= OPEN GRAPH ================= */}
         <meta property="og:site_name" content="Koloonline" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://koloonline.online" />
+        <meta property="og:url" content="https://www.koloonline.online" />
         <meta
           property="og:title"
           content="Koloonline - Amazon Deals & Trending Products"
         />
         <meta
           property="og:description"
-          content="Discover trending Amazon products, reviews, Amazon Haul deals and buying guides."
+          content="Discover trending Amazon products, reviews and deals."
         />
 
         {/* ================= TWITTER ================= */}
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
           content="Koloonline - Amazon Deals & Trending Products"
@@ -124,4 +105,4 @@ export default function Document() {
       </body>
     </Html>
   );
-          }
+    }
