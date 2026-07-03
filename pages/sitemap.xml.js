@@ -1,7 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
-// ================= FIREBASE =================
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,111 +13,102 @@ const app =
 const db = getFirestore(app);
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://koloonline.online";
 
 export async function getServerSideProps({ res }) {
-  try {
-    const now = new Date().toISOString();
-    const urls = [];
+  const now = new Date().toISOString();
 
-    // ================= PRODUCTS =================
+  const urls = [];
+
+  const staticPages = [
+    "",
+    "/about",
+    "/aliexpress",
+    "/amazon-haul",
+    "/audible",
+    "/blog",
+    "/categories",
+    "/contact",
+    "/disclaimer",
+    "/fiverr",
+    "/privacy",
+    "/products",
+    "/search",
+    "/terms",
+    "/top/top-earbuds",
+    "/top/top-smart-watches",
+    "/top/top-smart-watches-under-100",
+  ];
+
+  staticPages.forEach((page) => {
+    urls.push({
+      loc: `${SITE_URL}${page}`,
+      lastmod: now,
+      changefreq: "weekly",
+      priority: page === "" ? 1 : page.startsWith("/top/") ? 0.9 : 0.8,
+    });
+  });
+
+  try {
     const products = await getDocs(collection(db, "products"));
 
     products.forEach((doc) => {
-      const data = doc.data();
+      const p = doc.data();
 
       urls.push({
-        loc: `${SITE_URL}/product/${data.slug || doc.id}`,
-        lastmod: data.updatedAt
-          ? new Date(data.updatedAt).toISOString()
-          : now,
+        loc: `${SITE_URL}/product/${p.slug || doc.id}`,
+        lastmod: now,
         changefreq: "daily",
-        priority: "0.9",
+        priority: 0.9,
       });
     });
+  } catch (e) {
+    console.log(e);
+  }
 
-    // ================= BLOG =================
-    const blog = await getDocs(collection(db, "blog"));
+  try {
+    const posts = await getDocs(collection(db, "blog"));
 
-    blog.forEach((doc) => {
-      const data = doc.data();
+    posts.forEach((doc) => {
+      const p = doc.data();
 
       urls.push({
-        loc: `${SITE_URL}/blog/${data.slug || doc.id}`,
-        lastmod: data.updatedAt
-          ? new Date(data.updatedAt).toISOString()
-          : now,
-        changefreq: "monthly",
-        priority: "0.8",
-      });
-    });
-
-    // ================= STATIC PAGES =================
-    [
-      "",
-      "/about",
-      "/products",
-      "/categories",
-      "/blog",
-      "/amazon-haul",
-      "/audible",
-      "/aliexpress",
-      "/fiverr",
-      "/search",
-      "/contact",
-      "/privacy",
-      "/terms",
-      "/disclaimer",
-      "/top/top-smart-watches",
-      "/top/top-earbuds",
-      "/top/top-smart-watches-under-100",
-    ].forEach((page) => {
-      urls.push({
-        loc: `${SITE_URL}${page}`,
+        loc: `${SITE_URL}/blog/${p.slug || doc.id}`,
         lastmod: now,
         changefreq: "weekly",
-        priority:
-          page === ""
-            ? "1.0"
-            : page.startsWith("/top/")
-            ? "0.9"
-            : "0.8",
+        priority: 0.8,
       });
     });
+  } catch (e) {
+    console.log(e);
+  }
 
-    const unique = [...new Map(urls.map((u) => [u.loc, u])).values()];
-
-    unique.sort((a, b) => a.loc.localeCompare(b.loc));
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${unique
+
+${urls
   .map(
-    (u) => `<url>
+    (u) => `
+<url>
 <loc>${u.loc}</loc>
 <lastmod>${u.lastmod}</lastmod>
 <changefreq>${u.changefreq}</changefreq>
 <priority>${u.priority}</priority>
 </url>`
   )
-  .join("\n")}
+  .join("")}
+
 </urlset>`;
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/xml; charset=UTF-8");
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=3600, stale-while-revalidate=86400"
-    );
+  res.setHeader("Content-Type", "text/xml");
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=3600, stale-while-revalidate=86400"
+  );
 
-    res.write(xml);
-    res.end();
-  } catch (err) {
-    console.error(err);
-
-    res.statusCode = 500;
-    res.end("Sitemap Error");
-  }
+  res.write(xml);
+  res.end();
 
   return {
     props: {},
