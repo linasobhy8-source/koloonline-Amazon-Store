@@ -11,7 +11,10 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const baseUrl = "https://koloonline.online";
+/* ================= SITE ================= */
+const baseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://koloonline.online";
 
 /* ================= HELPERS ================= */
 function safe(v) {
@@ -42,26 +45,42 @@ function getPriority(score) {
   return 0.4;
 }
 
-/* ================= INDEXNOW CALL ================= */
+/* ================= INDEXNOW ================= */
 async function sendIndexNow(urlList) {
   const KEY = process.env.INDEXNOW_KEY;
 
-  if (!KEY) return null;
+  if (!KEY) {
+    return {
+      ok: false,
+      error: "INDEXNOW_KEY not found",
+    };
+  }
 
   try {
-    const res = await fetch("https://api.indexnow.org/indexnow", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        host: "koloonline.online",
-        key: KEY,
-        urlList,
-      }),
-    });
+    const response = await fetch(
+      "https://api.indexnow.org/indexnow",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          host: "koloonline.online",
+          key: KEY,
+          urlList,
+        }),
+      }
+    );
 
-    return { ok: res.ok, status: res.status };
+    return {
+      ok: response.ok,
+      status: response.status,
+    };
   } catch (e) {
-    return { ok: false, error: e.message };
+    return {
+      ok: false,
+      error: e.message,
+    };
   }
 }
 
@@ -80,23 +99,24 @@ export default async function handler(req, res) {
 
       const score = viralScore(data);
 
-      // ❌ remove weak products
+      // تجاهل المنتجات الضعيفة
       if (score < 25) return;
 
       const priority = getPriority(score);
 
-      const url = `${baseUrl}/product/${doc.id}`;
+      const slug = safe(data.slug) || doc.id;
+
+      const url = `${baseUrl}/product/${slug}`;
 
       urls.push(url);
 
-      // priority urls only
       if (priority >= 0.7) {
         priorityUrls.push(url);
       }
     });
 
-    /* ================= DEDUP ================= */
-    const unique = [...new Set(urls)];
+    /* ================= REMOVE DUPLICATES ================= */
+    const uniqueUrls = [...new Set(urls)];
     const uniquePriority = [...new Set(priorityUrls)];
 
     /* ================= CHUNKING ================= */
@@ -107,31 +127,38 @@ export default async function handler(req, res) {
       chunks.push(uniquePriority.slice(i, i + chunkSize));
     }
 
-    /* ================= INDEXNOW ================= */
+    /* ================= SEND TO INDEXNOW ================= */
     const results = [];
 
     for (const chunk of chunks) {
-      const r = await sendIndexNow(chunk);
-      results.push(r);
+      const result = await sendIndexNow(chunk);
+      results.push(result);
     }
 
-    /* ================= GOOGLE PING ================= */
-    fetch(
-      `https://www.google.com/ping?sitemap=${baseUrl}/sitemap.xml`
-    ).catch(() => {});
-
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-      totalUrls: unique.length,
-      priorityUrls: uniquePriority.length,
+
+      sitemap: `${baseUrl}/sitemap.xml`,
+
+      totalProducts: snap.size,
+
+      indexedProducts: uniqueUrls.length,
+
+      priorityProducts: uniquePriority.length,
+
       chunks: chunks.length,
-      runtime: Date.now() - start,
+
+      runtime: `${Date.now() - start} ms`,
+
       results,
     });
   } catch (err) {
+    console.error(err);
+
     return res.status(500).json({
       success: false,
       error: err.message,
     });
   }
-      }
+    }
