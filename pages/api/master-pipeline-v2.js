@@ -46,9 +46,7 @@ const PRODUCT_POOL = [
 
 /* ================= HELPERS ================= */
 function randomProduct() {
-  return PRODUCT_POOL[
-    Math.floor(Math.random() * PRODUCT_POOL.length)
-  ];
+  return PRODUCT_POOL[Math.floor(Math.random() * PRODUCT_POOL.length)];
 }
 
 function generateSlug(text = "") {
@@ -71,9 +69,11 @@ function generateBlog(product) {
     seoDescription: `Detailed review of ${product.title}. Features, price, pros, cons and best alternatives.`,
     content: `
 <h2>${product.title} Full Review</h2>
-<p>Trending product in ${product.category} category with strong value.</p>
+
+<p>Trending product in ${product.category} category with strong value and demand.</p>
+
 <h3>Verdict</h3>
-<p>Recommended for budget buyers.</p>
+<p>Recommended for users looking for budget-friendly performance and viral tech value.</p>
 `,
     tags: [product.category, "review", "amazon", "2026"],
     affiliateReady: true,
@@ -93,9 +93,15 @@ async function safeFetch(url, options = {}) {
 
     clearTimeout(timer);
 
-    return { ok: response.ok, status: response.status };
+    return {
+      ok: response.ok,
+      status: response.status,
+    };
   } catch (e) {
-    return { ok: false, error: e.message };
+    return {
+      ok: false,
+      error: e?.message || "Fetch Error",
+    };
   }
 }
 
@@ -109,110 +115,15 @@ async function submitIndexNow(urls = []) {
     urlList: urls.slice(0, 50),
   };
 
-  return await safeFetch(
-    "https://api.indexnow.org/indexnow",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
-  );
-}
-
-/* ================= HANDLER ================= */
-export default async function handler(req, res) {
-  const started = Date.now();
-
   try {
-    /* ===== SECURITY ===== */
-    if (
-      process.env.CRON_SECRET &&
-      req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`
-    ) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized",
-      });
-    }
-
-    /* ===== LIMIT CONTROL ===== */
-    const countSnap = await getCountFromServer(
-      collection(db, "products")
-    );
-
-    const existingProducts = countSnap.data().count;
-
-    if (existingProducts > 5000) {
-      return res.status(200).json({
-        success: false,
-        reason: "limit_reached",
-      });
-    }
-
-    /* ===== GENERATE PRODUCT ===== */
-    const product = randomProduct();
-
-    /* ===== AI FILTER (IMPORTANT FIX) ===== */
-    if (!shouldIndexProduct(product)) {
-      return res.status(200).json({
-        success: false,
-        reason: "product_failed_ai_gate",
-      });
-    }
-
-    const productRef = await addDoc(
-      collection(db, "products"),
+    const res = await safeFetch(
+      "https://api.indexnow.org/indexnow",
       {
-        ...product,
-        views: 0,
-        clicks: 0,
-        rating: 4.5,
-        trendingScore: getIndexPriority(product) * 100,
-        createdAt: serverTimestamp(),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       }
     );
 
-    /* ===== GENERATE BLOG ===== */
-    const blog = generateBlog(product);
-
-    const blogRef = await addDoc(
-      collection(db, "blog"),
-      {
-        ...blog,
-        createdAt: serverTimestamp(),
-      }
-    );
-
-    /* ===== URLS ===== */
-    const urls = [
-      `${BASE_URL}/product/${productRef.id}`,
-      `${BASE_URL}/blog/${blog.slug}`,
-    ];
-
-    /* ===== INDEXING (ONLY HIGH QUALITY) ===== */
-    let indexNow = null;
-
-    if (shouldSubmitToIndexNow(product)) {
-      indexNow = await submitIndexNow(urls);
-    }
-
-    return res.status(200).json({
-      success: true,
-      runtime: Date.now() - started,
-
-      productId: productRef.id,
-      blogId: blogRef.id,
-
-      seoBoost: true,
-      trendingInjected: true,
-
-      urlsIndexed: indexNow ? urls.length : 0,
-      indexNow,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error?.message || "Internal Error",
-    });
-  }
-        }
+    return {
+      success
