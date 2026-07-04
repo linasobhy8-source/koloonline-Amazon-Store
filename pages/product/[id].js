@@ -40,17 +40,14 @@ const safeImage = (img) =>
 /* ================= AI SCORE ENGINE ================= */
 
 function calculateScore(product = {}) {
-  let score = 0;
-
-  score += safeNumber(product.score);
-  score += safeNumber(product.views) * 0.2;
-  score += safeNumber(product.clicks) * 0.6;
-  score += safeNumber(product.orders) * 4;
-  score += safeNumber(product.rating) * 15;
-
-  if (product.viralBoost) score += 70;
-
-  return Math.round(score);
+  return Math.round(
+    safeNumber(product.score) +
+      safeNumber(product.views) * 0.2 +
+      safeNumber(product.clicks) * 0.6 +
+      safeNumber(product.orders) * 4 +
+      safeNumber(product.rating) * 15 +
+      (product.viralBoost ? 70 : 0)
+  );
 }
 
 /* ================= AI SEO ENGINE ================= */
@@ -95,8 +92,6 @@ export default function ProductPage({
       ? `${description.slice(0, 152)}...`
       : description;
 
-  /* ================= AI BADGES ================= */
-
   const aiBadges = [];
 
   if (seoLevel === "elite") aiBadges.push("🔥 Elite Product");
@@ -105,8 +100,6 @@ export default function ProductPage({
   if (safeNumber(product.orders) > 20) aiBadges.push("💰 Best Seller");
   if (safeNumber(product.rating) >= 4.5) aiBadges.push("✅ Top Rated");
   if (product.viralBoost) aiBadges.push("🚀 Viral Trend");
-
-  /* ================= SCHEMA ================= */
 
   const schemaProduct = {
     "@context": "https://schema.org",
@@ -134,24 +127,20 @@ export default function ProductPage({
   return (
     <>
       <Head>
-        {/* ================= BASIC SEO ================= */}
         <title>{seoTitle} | Koloonline</title>
         <meta name="description" content={seoDescription} />
         <meta name="robots" content={robotsContent} />
         <meta name="theme-color" content="#ff9900" />
         <link rel="canonical" href={url} />
 
-        {/* ================= OPEN GRAPH ================= */}
         <meta property="og:type" content="product" />
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:image" content={image} />
         <meta property="og:url" content={url} />
 
-        {/* ================= TWITTER ================= */}
         <meta name="twitter:card" content="summary_large_image" />
 
-        {/* ================= STRUCTURED DATA ================= */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -163,15 +152,8 @@ export default function ProductPage({
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
         <h1>{title}</h1>
 
-        <Image
-          src={image}
-          width={1200}
-          height={800}
-          priority
-          alt={title}
-        />
+        <Image src={image} width={1200} height={800} priority alt={title} />
 
-        {/* ================= AI BADGES ================= */}
         {aiBadges.length > 0 && (
           <div style={{ marginTop: 10 }}>
             {aiBadges.map((b, i) => (
@@ -191,7 +173,6 @@ export default function ProductPage({
           </div>
         )}
 
-        {/* ================= PRODUCT INFO ================= */}
         <p style={{ marginTop: 15 }}>{description}</p>
 
         <p>
@@ -202,7 +183,6 @@ export default function ProductPage({
           <strong>AI Score:</strong> {score} ({seoLevel})
         </p>
 
-        {/* ================= ACTIONS ================= */}
         <div style={{ marginTop: 20 }}>
           {product.link && (
             <a
@@ -225,33 +205,20 @@ export default function ProductPage({
           <Link href="/products">Browse Products</Link>
         </div>
 
-        {/* ================= AI INSIGHTS ================= */}
-        <section
-          style={{
-            marginTop: 40,
-            padding: 20,
-            background: "#fafafa",
-            borderRadius: 12,
-          }}
-        >
+        <section style={{ marginTop: 40, padding: 20, background: "#fafafa", borderRadius: 12 }}>
           <h2>AI Insight Engine</h2>
-
           <p>
             {seoLevel === "elite" &&
               "🔥 This product is ranked in the top AI tier due to extremely strong engagement and conversion signals."}
-
             {seoLevel === "strong" &&
               "⭐ Strong performing product with high user engagement and positive signals."}
-
             {seoLevel === "good" &&
               "👍 Stable product with moderate performance."}
-
             {seoLevel === "weak" &&
               "⚠️ Low engagement product — may not be highly recommended."}
           </p>
         </section>
 
-        {/* ================= RELATED PRODUCTS ================= */}
         {relatedProducts?.length > 0 && (
           <section style={{ marginTop: 50 }}>
             <h2>Related Products</h2>
@@ -267,7 +234,6 @@ export default function ProductPage({
           </section>
         )}
 
-        {/* ================= BLOGS ================= */}
         {relatedBlogs?.length > 0 && (
           <section style={{ marginTop: 50 }}>
             <h2>Buying Guides</h2>
@@ -287,7 +253,7 @@ export default function ProductPage({
   );
 }
 
-/* ================= STATIC PROPS ================= */
+/* ================= STATIC PROPS (OPTIMIZED ONLY) ================= */
 
 export async function getStaticProps({ params }) {
   try {
@@ -303,42 +269,20 @@ export async function getStaticProps({ params }) {
 
     if (!product) return { notFound: true };
 
+    const scoreCache = new Map();
+
+    const getScore = (p) => {
+      if (!scoreCache.has(p.id)) {
+        scoreCache.set(p.id, calculateScore(p));
+      }
+      return scoreCache.get(p.id);
+    };
+
     const relatedProducts = products
       .filter((p) => p.id !== product.id)
-      .sort(
-        (a, b) =>
-          calculateScore(b) - calculateScore(a)
-      )
+      .sort((a, b) => getScore(b) - getScore(a))
       .slice(0, 8);
 
     const blogSnap = await getDocs(collection(db, "blog"));
 
-    const relatedBlogs = blogSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .slice(0, 6);
-
-    return {
-      props: {
-        product,
-        relatedProducts,
-        relatedBlogs,
-      },
-      revalidate: 600,
-    };
-  } catch (e) {
-    return { notFound: true };
-  }
-}
-
-/* ================= STATIC PATHS ================= */
-
-export async function getStaticPaths() {
-  const snap = await getDocs(collection(db, "products"));
-
-  return {
-    paths: snap.docs.map((d) => ({
-      params: { id: String(d.data().slug || d.id) },
-    })),
-    fallback: "blocking",
-  };
-}
+    const relatedBlogs = blogSnap
