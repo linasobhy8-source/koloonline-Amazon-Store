@@ -1,3 +1,4 @@
+
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +9,12 @@ import { useEffect, useState, useMemo } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-import { normalizeProduct, safeText, safeImage, safeNumber } from "../../lib/normalizeProduct";
+import {
+  normalizeProduct,
+  safeText,
+  safeImage,
+  safeNumber,
+} from "../../lib/normalizeProduct";
 
 export default function CategoryPage() {
   const router = useRouter();
@@ -35,7 +41,6 @@ export default function CategoryPage() {
 
       const snap = await getDocs(collection(db, "products"));
 
-      // 🔥 GLOBAL SAFE PIPELINE
       const all = snap.docs.map((d) =>
         normalizeProduct({
           id: d.id,
@@ -45,8 +50,11 @@ export default function CategoryPage() {
 
       setAllProducts(all);
 
-      let filtered = all
-        .filter((p) => safeText(p.category).toLowerCase().trim() === safeCategory)
+      const filtered = all
+        .filter(
+          (p) =>
+            safeText(p.category).toLowerCase().trim() === safeCategory
+        )
         .map((p) => {
           const trendScore =
             safeNumber(p.score) * 3 +
@@ -59,9 +67,14 @@ export default function CategoryPage() {
           return { ...p, trendScore };
         })
         .sort((a, b) => {
-          if (sort === "price_low") return safeNumber(a.price) - safeNumber(b.price);
-          if (sort === "price_high") return safeNumber(b.price) - safeNumber(a.price);
-          if (sort === "rating") return safeNumber(b.rating) - safeNumber(a.rating);
+          if (sort === "price_low")
+            return safeNumber(a.price) - safeNumber(b.price);
+
+          if (sort === "price_high")
+            return safeNumber(b.price) - safeNumber(a.price);
+
+          if (sort === "rating")
+            return safeNumber(b.rating) - safeNumber(a.rating);
 
           return (b.trendScore || 0) - (a.trendScore || 0);
         });
@@ -78,7 +91,11 @@ export default function CategoryPage() {
   /* ================= RELATED CATEGORIES ================= */
   const relatedCategories = useMemo(() => {
     return [
-      ...new Set(allProducts.map((p) => safeText(p.category)).filter(Boolean)),
+      ...new Set(
+        allProducts
+          .map((p) => safeText(p.category))
+          .filter(Boolean)
+      ),
     ].slice(0, 8);
   }, [allProducts]);
 
@@ -86,10 +103,11 @@ export default function CategoryPage() {
   const title = `${safeCategory || "Category"} Products | Koloonline`;
 
   const description =
-    `Discover trending ${safeCategory} products, viral Amazon deals, and smart shopping offers.`;
+    `Discover trending ${safeCategory} products, Amazon deals, and best offers.`;
 
   const url = `https://koloonline.online/category/${safeCategory}`;
 
+  /* ================= STRUCTURED DATA ================= */
   const schema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -99,18 +117,23 @@ export default function CategoryPage() {
   };
 
   return (
-    <div style={{ background: "#f3f4f6", minHeight: "100vh", padding: 20 }}>
+    <div style={styles.page}>
       <Head>
         <title>{title}</title>
+
         <meta name="description" content={description} />
+
+        {/* ================= SEO CONTROL ================= */}
         <meta name="robots" content="index,follow,max-image-preview:large" />
         <link rel="canonical" href={url} />
 
+        {/* Open Graph */}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={url} />
 
+        {/* Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -119,16 +142,19 @@ export default function CategoryPage() {
         />
       </Head>
 
-      <h1 style={{ fontSize: 36, textTransform: "capitalize" }}>
+      <h1 style={styles.h1}>
         📦 {safeCategory || "Category"}
       </h1>
 
-      <p style={{ color: "#666" }}>Trending products & AI-ranked deals</p>
+      <p style={styles.sub}>
+        Trending products & AI-ranked deals
+      </p>
 
+      {/* ================= SORT ================= */}
       <select
         value={sort}
         onChange={(e) => setSort(e.target.value)}
-        style={{ padding: 10, marginTop: 10 }}
+        style={styles.select}
       >
         <option value="trend">Trending</option>
         <option value="rating">Top Rated</option>
@@ -136,24 +162,14 @@ export default function CategoryPage() {
         <option value="price_high">Highest Price</option>
       </select>
 
-      {/* ================= CATEGORIES ================= */}
+      {/* ================= RELATED ================= */}
       <div style={{ marginTop: 20 }}>
         <h3>🔥 Categories</h3>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        <div style={styles.tags}>
           {relatedCategories.map((c) => (
             <Link key={c} href={`/category/${c}`}>
-              <span
-                style={{
-                  padding: "8px 12px",
-                  border: "1px solid #ddd",
-                  borderRadius: 20,
-                  background: "white",
-                  display: "inline-block",
-                }}
-              >
-                {c}
-              </span>
+              <span style={styles.tag}>{c}</span>
             </Link>
           ))}
         </div>
@@ -165,17 +181,10 @@ export default function CategoryPage() {
       ) : products.length === 0 ? (
         <p>No products found</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
-            gap: 20,
-            marginTop: 20,
-          }}
-        >
+        <div style={styles.grid}>
           {products.map((p) => (
             <Link key={p.id} href={`/product/${p.id}`}>
-              <div style={{ background: "#fff", padding: 12, borderRadius: 12 }}>
+              <div style={styles.card}>
                 <Image
                   src={safeImage(p.image)}
                   width={300}
@@ -183,9 +192,11 @@ export default function CategoryPage() {
                   alt={safeText(p.title)}
                 />
 
-                <h3 style={{ fontSize: 16 }}>{safeText(p.title)}</h3>
+                <h3 style={styles.title}>
+                  {safeText(p.title)}
+                </h3>
 
-                <p style={{ color: "#B12704", fontWeight: "bold" }}>
+                <p style={styles.price}>
                   ${safeNumber(p.price)}
                 </p>
               </div>
@@ -195,4 +206,63 @@ export default function CategoryPage() {
       )}
     </div>
   );
-            }
+}
+
+/* ================= STYLES ================= */
+const styles = {
+  page: {
+    background: "#f3f4f6",
+    minHeight: "100vh",
+    padding: 20,
+  },
+
+  h1: {
+    fontSize: 36,
+    textTransform: "capitalize",
+  },
+
+  sub: {
+    color: "#666",
+  },
+
+  select: {
+    padding: 10,
+    marginTop: 10,
+  },
+
+  tags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+
+  tag: {
+    padding: "8px 12px",
+    border: "1px solid #ddd",
+    borderRadius: 20,
+    background: "#fff",
+    display: "inline-block",
+  },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
+    gap: 20,
+    marginTop: 20,
+  },
+
+  card: {
+    background: "#fff",
+    padding: 12,
+    borderRadius: 12,
+  },
+
+  title: {
+    fontSize: 16,
+  },
+
+  price: {
+    color: "#B12704",
+    fontWeight: "bold",
+  },
+};
