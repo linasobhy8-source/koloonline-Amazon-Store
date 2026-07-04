@@ -253,7 +253,7 @@ export default function ProductPage({
   );
 }
 
-/* ================= STATIC PROPS (OPTIMIZED ONLY) ================= */
+/* ================= STATIC PROPS ================= */
 
 export async function getStaticProps({ params }) {
   try {
@@ -285,4 +285,32 @@ export async function getStaticProps({ params }) {
 
     const blogSnap = await getDocs(collection(db, "blog"));
 
-    const relatedBlogs = blogSnap
+    const relatedBlogs = blogSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .slice(0, 6);
+
+    return {
+      props: {
+        product,
+        relatedProducts,
+        relatedBlogs,
+      },
+      revalidate: 600,
+    };
+  } catch (e) {
+    return { notFound: true };
+  }
+}
+
+/* ================= STATIC PATHS ================= */
+
+export async function getStaticPaths() {
+  const snap = await getDocs(collection(db, "products"));
+
+  return {
+    paths: snap.docs.map((d) => ({
+      params: { id: String(d.data().slug || d.id) },
+    })),
+    fallback: "blocking",
+  };
+}
