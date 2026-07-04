@@ -4,10 +4,10 @@ export default async function handler(req, res) {
       process.env.NEXT_PUBLIC_BASE_URL ||
       "https://koloonline.online";
 
-    console.log("🤖 SEO ORCHESTRATOR v3 STARTED");
+    console.log("🧠 AI MASTER ORCHESTRATOR v4 STARTED");
 
     /* ================= SAFE FETCH ================= */
-    const fetchWithTimeout = async (url, options = {}, timeout = 8000) => {
+    const fetchWithTimeout = async (url, options = {}, timeout = 9000) => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeout);
 
@@ -25,18 +25,14 @@ export default async function handler(req, res) {
       }
     };
 
-    /* ================= LOAD DATA ================= */
+    /* ================= LOAD SIGNALS ================= */
     let products = [];
     let blogs = [];
 
     try {
       const [pRes, bRes] = await Promise.all([
-        fetchWithTimeout(
-          `${baseUrl}/api/get-recommendations?type=products`
-        ),
-        fetchWithTimeout(
-          `${baseUrl}/api/get-recommendations?type=blog`
-        ),
+        fetchWithTimeout(`${baseUrl}/api/get-recommendations?type=products`),
+        fetchWithTimeout(`${baseUrl}/api/get-recommendations?type=blog`),
       ]);
 
       const pJson = await pRes?.json?.().catch(() => ({}));
@@ -45,13 +41,10 @@ export default async function handler(req, res) {
       products = pJson?.items || [];
       blogs = bJson?.items || [];
     } catch (e) {
-      console.log("⚠️ fetch failed:", e.message);
+      console.log("⚠️ DATA LOAD ERROR:", e.message);
     }
 
-    /* ================= IMPORT MASTER AI (IMPORTANT) ================= */
-    // لازم يكون عندك decisionEngine موحد
-    // import { decisionEngine } from "@/lib/ai/decisionEngine";
-
+    /* ================= AI CORE SCORING ================= */
     const scoreItem = (item) => {
       const views = Number(item?.views) || 0;
       const clicks = Number(item?.clicks) || 0;
@@ -61,10 +54,11 @@ export default async function handler(req, res) {
       const conv = clicks > 0 ? orders / clicks : 0;
 
       let score =
-        ctr * 120 +
-        conv * 250 +
-        (item?.viralBoost ? 80 : 0) +
-        (views > 100 ? 20 : 0);
+        ctr * 140 +
+        conv * 300 +
+        (item?.viralBoost ? 100 : 0) +
+        (views > 100 ? 20 : 0) +
+        (orders > 10 ? 50 : 0);
 
       /* ================= FRESHNESS ================= */
       const updated = new Date(
@@ -74,89 +68,140 @@ export default async function handler(req, res) {
       const ageHours =
         (Date.now() - updated.getTime()) / (1000 * 60 * 60);
 
-      const freshnessBoost = 1 / Math.log(ageHours + 3);
+      const freshness = 1 / Math.log(ageHours + 3);
 
-      score = score * freshnessBoost;
-
-      if (!isFinite(score)) score = 0;
+      score = score * freshness;
 
       return Math.round(score);
     };
 
-    /* ================= RANK PRODUCTS ================= */
-    const rankedProducts = products
-      .map((p) => ({
-        ...p,
-        score: scoreItem(p),
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+    /* ================= DECISION ENGINE ================= */
+    const decide = (item) => {
+      const score = item.score;
 
-    /* ================= RANK BLOGS ================= */
-    const rankedBlogs = blogs
-      .map((b) => ({
-        ...b,
-        score: scoreItem(b),
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-
-    console.log("🔥 TOP PRODUCTS:", rankedProducts.map((p) => p.id));
-    console.log("📚 TOP BLOGS:", rankedBlogs.map((b) => b.id));
-
-    /* ================= ORCHESTRATOR RUNNER ================= */
-    const runOrchestrator = async (type, id) => {
-      return fetchWithTimeout(
-        `${baseUrl}/api/seo/seo-orchestrator-run`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type, id }),
-        }
-      );
+      if (score >= 500) return "elite_index";
+      if (score >= 300) return "index_boost";
+      if (score >= 150) return "index";
+      if (score >= 80) return "maybe";
+      return "reject";
     };
 
-    /* ================= BATCH EXECUTION ================= */
-    const runBatch = async (items, type) => {
-      const tasks = items
-        .filter((i) => i?.id)
-        .map((i) => runOrchestrator(type, i.id));
+    /* ================= PROCESS PRODUCTS ================= */
+    const processedProducts = products
+      .map((p) => {
+        const score = scoreItem(p);
+        const decision = decide({ ...p, score });
 
+        return {
+          ...p,
+          score,
+          decision,
+        };
+      })
+      .filter((p) => p.decision !== "reject")
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+
+    /* ================= PROCESS BLOGS ================= */
+    const processedBlogs = blogs
+      .map((b) => {
+        const score = scoreItem(b);
+        const decision = score >= 120 ? "index" : "maybe";
+
+        return {
+          ...b,
+          score,
+          decision,
+        };
+      })
+      .filter((b) => b.decision !== "reject")
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+
+    console.log("🔥 TOP PRODUCTS:", processedProducts.map((p) => p.id));
+    console.log("📚 TOP BLOGS:", processedBlogs.map((b) => b.id));
+
+    /* ================= INDEXING SYSTEM ================= */
+    const runAction = async (type, item) => {
+      const endpoints = {
+        index: "/api/seo/indexnow",
+        boost: "/api/seo/indexnow",
+        elite: "/api/seo/indexnow",
+      };
+
+      const endpoint = endpoints[type] || endpoints.index;
+
+      return fetchWithTimeout(`${baseUrl}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          id: item.id,
+          score: item.score,
+          decision: item.decision,
+        }),
+      });
+    };
+
+    /* ================= AUTO EXECUTION ================= */
+    const executeBatch = async (items) => {
+      const tasks = items.map((item) => runAction(item.decision, item));
       await Promise.allSettled(tasks);
     };
 
-    /* ================= PARALLEL EXECUTION ================= */
     await Promise.all([
-      runBatch(rankedProducts, "product"),
-      runBatch(rankedBlogs, "blog"),
+      executeBatch(processedProducts),
+      executeBatch(processedBlogs),
     ]);
+
+    /* ================= INDEXNOW BATCH ================= */
+    const indexUrls = processedProducts.map(
+      (p) => `${baseUrl}/product/${p.slug || p.id}`
+    );
+
+    if (indexUrls.length > 0) {
+      await fetchWithTimeout(`${baseUrl}/api/indexnow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          urls: indexUrls.slice(0, 50),
+        }),
+      });
+    }
 
     /* ================= LOGGING ================= */
     await fetchWithTimeout(`${baseUrl}/api/cron-logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        type: "seo_orchestrator_v3",
+        type: "ai_master_orchestrator_v4",
         status: "success",
-        products: rankedProducts.length,
-        blogs: rankedBlogs.length,
+        products: processedProducts.length,
+        blogs: processedBlogs.length,
         timestamp: new Date().toISOString(),
       }),
     });
 
-    console.log("✅ SEO ORCHESTRATOR v3 COMPLETED");
+    console.log("✅ AI MASTER ORCHESTRATOR v4 COMPLETED");
 
     return res.status(200).json({
       success: true,
-      engine: "seo-orchestrator-v3",
+      engine: "ai-master-orchestrator-v4",
 
-      processed: {
-        products: rankedProducts.length,
-        blogs: rankedBlogs.length,
+      stats: {
+        products: processedProducts.length,
+        blogs: processedBlogs.length,
+        indexed: indexUrls.length,
+      },
+
+      decisions: {
+        elite: processedProducts.filter((p) => p.decision === "elite_index").length,
+        boost: processedProducts.filter((p) => p.decision === "index_boost").length,
+        index: processedProducts.filter((p) => p.decision === "index").length,
       },
     });
   } catch (e) {
-    console.error("❌ SEO ORCHESTRATOR FAILED:", e);
+    console.error("❌ MASTER ORCHESTRATOR FAILED:", e);
 
     return res.status(500).json({
       success: false,
