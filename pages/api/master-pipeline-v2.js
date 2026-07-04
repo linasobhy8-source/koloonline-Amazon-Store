@@ -6,6 +6,13 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+/* ================= AI INDEX GATE ================= */
+import {
+  shouldIndexProduct,
+  shouldSubmitToIndexNow,
+  getIndexPriority,
+} from "../../lib/ai-index-gate";
+
 /* ================= CONFIG ================= */
 const BASE_URL = "https://koloonline.online";
 
@@ -52,7 +59,7 @@ function generateSlug(text = "") {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-/* ================= SEO BLOG GENERATOR (IMPROVED) ================= */
+/* ================= SEO BLOG ================= */
 function generateBlog(product) {
   const slug = generateSlug(product.title);
 
@@ -64,28 +71,9 @@ function generateBlog(product) {
     seoDescription: `Detailed review of ${product.title}. Features, price, pros, cons and best alternatives.`,
     content: `
 <h2>${product.title} Full Review</h2>
-
-<p>
-This is one of the trending products in ${product.category} category.
-We analyze performance, price and real value.
-</p>
-
-<h3>Key Features</h3>
-<ul>
-<li>High quality build</li>
-<li>Affordable price</li>
-<li>Good user ratings</li>
-</ul>
-
-<h3>Why People Buy It</h3>
-<p>
-Because it offers strong value compared to competitors.
-</p>
-
-<h3>Final Verdict</h3>
-<p>
-Recommended for budget buyers looking for reliable performance.
-</p>
+<p>Trending product in ${product.category} category with strong value.</p>
+<h3>Verdict</h3>
+<p>Recommended for budget buyers.</p>
 `,
     tags: [product.category, "review", "amazon", "2026"],
     affiliateReady: true,
@@ -105,15 +93,9 @@ async function safeFetch(url, options = {}) {
 
     clearTimeout(timer);
 
-    return {
-      ok: response.ok,
-      status: response.status,
-    };
+    return { ok: response.ok, status: response.status };
   } catch (e) {
-    return {
-      ok: false,
-      error: e.message,
-    };
+    return { ok: false, error: e.message };
   }
 }
 
@@ -127,7 +109,7 @@ async function submitIndexNow(urls = []) {
     urlList: urls.slice(0, 50),
   };
 
-  const res = await safeFetch(
+  return await safeFetch(
     "https://api.indexnow.org/indexnow",
     {
       method: "POST",
@@ -135,11 +117,6 @@ async function submitIndexNow(urls = []) {
       body: JSON.stringify(payload),
     }
   );
-
-  return {
-    ...res,
-    submittedUrls: urls.length,
-  };
 }
 
 /* ================= HANDLER ================= */
@@ -158,7 +135,7 @@ export default async function handler(req, res) {
       });
     }
 
-    /* ===== LIMIT CONTROL (ANTI-SPAM) ===== */
+    /* ===== LIMIT CONTROL ===== */
     const countSnap = await getCountFromServer(
       collection(db, "products")
     );
@@ -175,6 +152,14 @@ export default async function handler(req, res) {
     /* ===== GENERATE PRODUCT ===== */
     const product = randomProduct();
 
+    /* ===== AI FILTER (IMPORTANT FIX) ===== */
+    if (!shouldIndexProduct(product)) {
+      return res.status(200).json({
+        success: false,
+        reason: "product_failed_ai_gate",
+      });
+    }
+
     const productRef = await addDoc(
       collection(db, "products"),
       {
@@ -182,7 +167,7 @@ export default async function handler(req, res) {
         views: 0,
         clicks: 0,
         rating: 4.5,
-        trendingScore: product.viralBoost ? 80 : 40,
+        trendingScore: getIndexPriority(product) * 100,
         createdAt: serverTimestamp(),
       }
     );
@@ -201,26 +186,27 @@ export default async function handler(req, res) {
     /* ===== URLS ===== */
     const urls = [
       `${BASE_URL}/product/${productRef.id}`,
-      `${BASE_URL}/blog/${blogRef.id}`,
+      `${BASE_URL}/blog/${blog.slug}`,
     ];
 
-    /* ===== INDEXING ===== */
-    const [indexNow] = await Promise.all([
-      submitIndexNow(urls),
-    ]);
+    /* ===== INDEXING (ONLY HIGH QUALITY) ===== */
+    let indexNow = null;
+
+    if (shouldSubmitToIndexNow(product)) {
+      indexNow = await submitIndexNow(urls);
+    }
 
     return res.status(200).json({
       success: true,
       runtime: Date.now() - started,
 
-      existingProducts,
       productId: productRef.id,
       blogId: blogRef.id,
 
       seoBoost: true,
       trendingInjected: true,
 
-      urlsIndexed: urls.length,
+      urlsIndexed: indexNow ? urls.length : 0,
       indexNow,
     });
   } catch (error) {
@@ -229,4 +215,4 @@ export default async function handler(req, res) {
       error: error?.message || "Internal Error",
     });
   }
-    }
+        }
