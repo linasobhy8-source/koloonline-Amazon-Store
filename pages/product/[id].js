@@ -2,28 +2,17 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
 /* ================= SAFE HELPERS ================= */
 
 const safeText = (v) => {
   if (v == null) return "";
-
-  if (
-    typeof v === "string" ||
-    typeof v === "number" ||
-    typeof v === "boolean"
-  ) {
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
     return String(v).trim();
-  }
-
   if (Array.isArray(v)) return v.map(safeText).join(" ");
-
-  if (typeof v === "object") {
-    return v.title || v.name || v.text || v.value || "";
-  }
-
+  if (typeof v === "object") return v.title || v.name || v.text || v.value || "";
   return "";
 };
 
@@ -37,7 +26,7 @@ const safeImage = (img) =>
     ? img
     : "https://www.koloonline.online/logo.png";
 
-/* ================= AI SCORE ENGINE ================= */
+/* ================= AI CORE ENGINE ================= */
 
 function calculateScore(product = {}) {
   return Math.round(
@@ -50,8 +39,6 @@ function calculateScore(product = {}) {
   );
 }
 
-/* ================= AI SEO ENGINE ================= */
-
 function getSEOLevel(score) {
   if (score >= 320) return "elite";
   if (score >= 220) return "strong";
@@ -63,6 +50,129 @@ function getRobots(score) {
   return score >= 120
     ? "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
     : "noindex,follow";
+}
+
+/* ================= REVENUE ENGINE ================= */
+
+function getRevenueScore(product) {
+  return (
+    safeNumber(product.orders) * 5 +
+    safeNumber(product.clicks) * 1.5 +
+    safeNumber(product.rating) * 10 +
+    (product.viralBoost ? 80 : 0)
+  );
+}
+
+function getTrendingScore(product) {
+  return (
+    safeNumber(product.views) * 0.3 +
+    safeNumber(product.clicks) * 0.8 +
+    safeNumber(product.orders) * 5 +
+    (product.viralBoost ? 100 : 0)
+  );
+}
+
+function isBestSeller(product) {
+  return safeNumber(product.orders) > 30 && safeNumber(product.rating) >= 4.3;
+}
+
+function getBestCTA(product) {
+  const score = getRevenueScore(product);
+
+  if (score > 400) return "🔥 Buy Now - Limited Offer";
+  if (score > 250) return "⭐ Best Deal - Buy Now";
+  if (score > 120) return "🛒 Check Price";
+  return "View Product";
+}
+
+/* ================= SMART ENGINE ================= */
+
+function getSmartRelated(products, currentId) {
+  return products
+    .filter((p) => p.id !== currentId)
+    .map((p) => ({
+      ...p,
+      score: calculateScore(p) * 0.5 + getRevenueScore(p) * 0.5,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+}
+
+function getTrendingProducts(products) {
+  return products
+    .map((p) => ({ ...p, trendingScore: getTrendingScore(p) }))
+    .sort((a, b) => b.trendingScore - a.trendingScore)
+    .slice(0, 5);
+}
+
+function getProfitTrending(products) {
+  return products
+    .map((p) => ({
+      ...p,
+      hybridScore:
+        getTrendingScore(p) * 0.6 + getRevenueScore(p) * 0.4,
+    }))
+    .sort((a, b) => b.hybridScore - a.hybridScore)
+    .slice(0, 5);
+}
+
+/* ================= CONVERSION ENGINE ================= */
+
+function getBestFor(product, seoLevel) {
+  const list = [];
+  if (safeNumber(product.price) < 50) list.push("Budget buyers");
+  if (safeNumber(product.rating) >= 4.5) list.push("Quality-focused users");
+  if (product.viralBoost) list.push("Trend seekers");
+  if (seoLevel === "elite") list.push("Premium buyers");
+  return list.length ? list : ["General users"];
+}
+
+function getWhoShouldBuy(product, seoLevel) {
+  const list = [];
+  if (safeNumber(product.orders) > 20)
+    list.push("Users who trust social proof");
+  if (seoLevel !== "weak")
+    list.push("Users looking for proven products");
+  return list.length ? list : ["General shoppers"];
+}
+
+function getWhyTrust(product) {
+  return [
+    "AI-based scoring system",
+    safeNumber(product.orders) > 10
+      ? "Real purchase signals detected"
+      : "Limited purchase data",
+    safeNumber(product.rating) >= 4
+      ? "Positive reviews trend"
+      : "Mixed feedback",
+  ];
+}
+
+/* ================= FAQ ENGINE ================= */
+
+function generateFAQs(product, seoLevel) {
+  const title = safeText(product.title);
+
+  return [
+    {
+      q: `Is ${title} worth buying?`,
+      a:
+        seoLevel === "elite"
+          ? "Yes, top-tier AI-ranked product."
+          : "Depends on your needs.",
+    },
+    {
+      q: `Is ${title} good quality?`,
+      a:
+        safeNumber(product.rating) >= 4
+          ? "Yes, high quality."
+          : "Moderate quality.",
+    },
+    {
+      q: `Is it suitable for beginners?`,
+      a: seoLevel !== "weak" ? "Yes" : "Needs caution.",
+    },
+  ];
 }
 
 /* ================= PAGE ================= */
@@ -84,29 +194,25 @@ export default function ProductPage({
   const seoLevel = getSEOLevel(score);
   const robotsContent = getRobots(score);
 
-  const seoTitle =
-    title.length > 60 ? `${title.slice(0, 57)}...` : title;
-
+  const seoTitle = title.length > 60 ? title.slice(0, 57) + "..." : title;
   const seoDescription =
     description.length > 155
-      ? `${description.slice(0, 152)}...`
+      ? description.slice(0, 152) + "..."
       : description;
 
-  const aiBadges = [];
-
-  if (seoLevel === "elite") aiBadges.push("🔥 Elite Product");
-  if (seoLevel === "strong") aiBadges.push("⭐ Strong Performer");
-  if (score > 250) aiBadges.push("🏆 High Conversion");
-  if (safeNumber(product.orders) > 20) aiBadges.push("💰 Best Seller");
-  if (safeNumber(product.rating) >= 4.5) aiBadges.push("✅ Top Rated");
-  if (product.viralBoost) aiBadges.push("🚀 Viral Trend");
+  const revenueRelated = getSmartRelated(relatedProducts || [], product.id);
+  const trendingProducts = getTrendingProducts(relatedProducts || []);
+  const profitTrending = getProfitTrending(relatedProducts || []);
+  const bestCTA = getBestCTA(product);
+  const isBest = isBestSeller(product);
+  const faqs = generateFAQs(product, seoLevel);
 
   const schemaProduct = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: title,
     image: [image],
-    description,
+    description: seoDescription,
     sku: product.id,
     url,
     brand: { "@type": "Brand", name: "Koloonline" },
@@ -117,11 +223,16 @@ export default function ProductPage({
       availability: "https://schema.org/InStock",
       url,
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: safeNumber(product.rating) || 4.5,
-      reviewCount: safeNumber(product.orders) || 1,
-    },
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
   };
 
   return (
@@ -130,16 +241,12 @@ export default function ProductPage({
         <title>{seoTitle} | Koloonline</title>
         <meta name="description" content={seoDescription} />
         <meta name="robots" content={robotsContent} />
-        <meta name="theme-color" content="#ff9900" />
         <link rel="canonical" href={url} />
 
         <meta property="og:type" content="product" />
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:image" content={image} />
-        <meta property="og:url" content={url} />
-
-        <meta name="twitter:card" content="summary_large_image" />
 
         <script
           type="application/ld+json"
@@ -147,33 +254,28 @@ export default function ProductPage({
             __html: JSON.stringify(schemaProduct),
           }}
         />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(faqSchema),
+          }}
+        />
       </Head>
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
         <h1>{title}</h1>
 
-        <Image src={image} width={1200} height={800} priority alt={title} />
+        <Image
+          src={image}
+          width={1200}
+          height={800}
+          priority
+          alt={title}
+          style={{ width: "100%", height: "auto" }}
+        />
 
-        {aiBadges.length > 0 && (
-          <div style={{ marginTop: 10 }}>
-            {aiBadges.map((b, i) => (
-              <span
-                key={i}
-                style={{
-                  marginRight: 8,
-                  padding: "4px 10px",
-                  background: "#f3f3f3",
-                  borderRadius: 6,
-                  fontSize: 12,
-                }}
-              >
-                {b}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <p style={{ marginTop: 15 }}>{description}</p>
+        <p>{description}</p>
 
         <p>
           <strong>Price:</strong> ${safeNumber(product.price)}
@@ -183,71 +285,58 @@ export default function ProductPage({
           <strong>AI Score:</strong> {score} ({seoLevel})
         </p>
 
-        <div style={{ marginTop: 20 }}>
-          {product.link && (
-            <a
-              href={product.link}
-              target="_blank"
-              rel="nofollow sponsored noopener"
-              style={{
-                background: "#ff9900",
-                color: "#fff",
-                padding: "12px 20px",
-                borderRadius: 8,
-                marginRight: 10,
-                fontWeight: 700,
-              }}
-            >
-              Buy on Amazon
-            </a>
-          )}
+        {product.link && (
+          <a
+            href={product.link}
+            target="_blank"
+            rel="nofollow sponsored"
+            style={{
+              background: "#ff9900",
+              color: "#fff",
+              padding: 12,
+              display: "inline-block",
+              marginTop: 10,
+            }}
+          >
+            {bestCTA}
+          </a>
+        )}
 
-          <Link href="/products">Browse Products</Link>
-        </div>
-
-        <section style={{ marginTop: 40, padding: 20, background: "#fafafa", borderRadius: 12 }}>
-          <h2>AI Insight Engine</h2>
-          <p>
-            {seoLevel === "elite" &&
-              "🔥 This product is ranked in the top AI tier due to extremely strong engagement and conversion signals."}
-            {seoLevel === "strong" &&
-              "⭐ Strong performing product with high user engagement and positive signals."}
-            {seoLevel === "good" &&
-              "👍 Stable product with moderate performance."}
-            {seoLevel === "weak" &&
-              "⚠️ Low engagement product — may not be highly recommended."}
-          </p>
+        {/* REVENUE */}
+        <section>
+          <h2>🔥 Revenue Picks</h2>
+          {revenueRelated.map((p) => (
+            <Link key={p.id} href={`/product/${p.slug || p.id}`}>
+              <div>{safeText(p.title)}</div>
+            </Link>
+          ))}
         </section>
 
-        {relatedProducts?.length > 0 && (
-          <section style={{ marginTop: 50 }}>
-            <h2>Related Products</h2>
-            <ul>
-              {relatedProducts.map((p) => (
-                <li key={p.id}>
-                  <Link href={`/product/${p.slug || p.id}`}>
-                    {safeText(p.title)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* TRENDING */}
+        <section>
+          <h2>📈 Trending</h2>
+          {trendingProducts.map((p) => (
+            <Link key={p.id} href={`/product/${p.slug || p.id}`}>
+              <div>{safeText(p.title)}</div>
+            </Link>
+          ))}
+        </section>
 
-        {relatedBlogs?.length > 0 && (
-          <section style={{ marginTop: 50 }}>
-            <h2>Buying Guides</h2>
-            <ul>
-              {relatedBlogs.map((b) => (
-                <li key={b.id}>
-                  <Link href={`/blog/${b.slug}`}>
-                    {safeText(b.title)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* FAQ */}
+        <section>
+          <h2>❓ FAQ</h2>
+          {faqs.map((f, i) => (
+            <div key={i}>
+              <h4>{f.q}</h4>
+              <p>{f.a}</p>
+            </div>
+          ))}
+        </section>
+
+        <section>
+          <h2>🔥 Best Seller</h2>
+          <p>{isBest ? "YES 🔥" : "No"}</p>
+        </section>
       </main>
     </>
   );
@@ -256,50 +345,34 @@ export default function ProductPage({
 /* ================= STATIC PROPS ================= */
 
 export async function getStaticProps({ params }) {
-  try {
-    const snap = await getDocs(collection(db, "products"));
+  const snap = await getDocs(query(collection(db, "products"), limit(200)));
 
-    const products = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    }));
+  const products = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-    const product =
-      products.find((p) => (p.slug || p.id) === params.id) || null;
+  const product =
+    products.find((p) => (p.slug || p.id) === params.id) || null;
 
-    if (!product) return { notFound: true };
+  if (!product) return { notFound: true };
 
-    const scoreCache = new Map();
+  const relatedProducts = products
+    .filter((p) => p.id !== product.id)
+    .slice(0, 10);
 
-    const getScore = (p) => {
-      if (!scoreCache.has(p.id)) {
-        scoreCache.set(p.id, calculateScore(p));
-      }
-      return scoreCache.get(p.id);
-    };
+  const blogSnap = await getDocs(query(collection(db, "blog"), limit(6)));
 
-    const relatedProducts = products
-      .filter((p) => p.id !== product.id)
-      .sort((a, b) => getScore(b) - getScore(a))
-      .slice(0, 8);
+  const relatedBlogs = blogSnap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
 
-    const blogSnap = await getDocs(collection(db, "blog"));
-
-    const relatedBlogs = blogSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .slice(0, 6);
-
-    return {
-      props: {
-        product,
-        relatedProducts,
-        relatedBlogs,
-      },
-      revalidate: 600,
-    };
-  } catch (e) {
-    return { notFound: true };
-  }
+  return {
+    props: {
+      product,
+      relatedProducts,
+      relatedBlogs,
+    },
+    revalidate: 300,
+  };
 }
 
 /* ================= STATIC PATHS ================= */
@@ -313,4 +386,4 @@ export async function getStaticPaths() {
     })),
     fallback: "blocking",
   };
-}
+    }
