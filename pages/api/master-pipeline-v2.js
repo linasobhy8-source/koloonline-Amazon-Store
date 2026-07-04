@@ -2,7 +2,7 @@ import { db } from "../../config/firebase";
 import {
   collection,
   addDoc,
-  getCountFromServer,
+  getDocs,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -57,7 +57,7 @@ function generateSlug(text = "") {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-/* ================= SEO BLOG ================= */
+/* ================= BLOG GENERATOR ================= */
 function generateBlog(product) {
   const slug = generateSlug(product.title);
 
@@ -107,7 +107,9 @@ async function safeFetch(url, options = {}) {
 
 /* ================= INDEXNOW ================= */
 async function submitIndexNow(urls = []) {
-  if (!process.env.INDEXNOW_KEY) return { skipped: true };
+  if (!process.env.INDEXNOW_KEY) {
+    return { success: false, skipped: true };
+  }
 
   const payload = {
     host: "koloonline.online",
@@ -120,10 +122,75 @@ async function submitIndexNow(urls = []) {
       "https://api.indexnow.org/indexnow",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       }
     );
 
     return {
-      success
+      success: res.ok,
+      status: res.status || 500,
+      sentCount: urls.length,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e?.message || "IndexNow Error",
+    };
+  }
+}
+
+/* ================= MAIN PIPELINE ================= */
+export default async function handler(req, res) {
+  try {
+    const productsSnap = await getDocs(collection(db, "products"));
+
+    const products = productsSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const indexableUrls = [];
+
+    const createdBlogs = [];
+
+    for (const p of products) {
+      if (!shouldIndexProduct(p)) continue;
+
+      const url = `${BASE_URL}/product/${p.slug || p.id}`;
+
+      if (shouldSubmitToIndexNow && !shouldSubmitToIndexNow(p)) continue;
+
+      indexableUrls.push(url);
+
+      /* ================= AUTO BLOG GENERATION ================= */
+      const blog = generateBlog(p);
+
+      await addDoc(collection(db, "blog"), {
+        ...blog,
+        createdAt: serverTimestamp(),
+      });
+
+      createdBlogs.push(blog);
+    }
+
+    /* ================= INDEXNOW SUBMIT ================= */
+    const indexNowResult = await submitIndexNow(indexableUrls);
+
+    return res.status(200).json({
+      success: true,
+      indexed: indexableUrls.length,
+      blogsCreated: createdBlogs.length,
+      indexNow: indexNowResult,
+    });
+  } catch (error) {
+    console.error("PIPELINE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+        }
