@@ -1,5 +1,3 @@
-import indexNow from "../indexnow";
-import pingGoogle from "../ping-google";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { initializeApp, getApps } from "firebase/app";
 
@@ -10,17 +8,68 @@ const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApps()[0];
+
 const db = getFirestore(app);
+
+/* ================= HELPERS ================= */
+
+/* Ping Google */
+async function pingGoogleSitemap() {
+  try {
+    const url =
+      "https://www.google.com/ping?sitemap=https://koloonline.online/sitemap.xml";
+
+    await fetch(url);
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+/* IndexNow */
+async function sendIndexNow(urls = []) {
+  try {
+    const payload = {
+      host: "koloonline.online",
+      key: process.env.INDEXNOW_KEY,
+      urlList: urls.slice(0, 50),
+    };
+
+    if (!payload.key) {
+      return { skipped: true };
+    }
+
+    const res = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return {
+      success: res.ok,
+      status: res.status,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e.message,
+    };
+  }
+}
 
 /* ================= CORE ENGINE ================= */
 export default async function handler(req, res) {
   try {
     const mode = req.query.mode || "full";
-
     const logs = [];
 
-    /* ================= 1. FETCH DATA ================= */
+    /* ================= FETCH DATA ================= */
     const productsSnap = await getDocs(collection(db, "products"));
     const blogSnap = await getDocs(collection(db, "blog"));
 
@@ -34,26 +83,21 @@ export default async function handler(req, res) {
 
     const urls = [...productUrls, ...blogUrls];
 
-    /* ================= 2. INDEXNOW ================= */
-    try {
-      await indexNow(req, res);
-      logs.push("IndexNow executed");
-    } catch (e) {
-      logs.push("IndexNow error: " + e.message);
-    }
+    /* ================= INDEXNOW ================= */
+    const indexResult = await sendIndexNow(urls);
+    logs.push("IndexNow executed");
 
-    /* ================= 3. GOOGLE PING ================= */
-    try {
-      await pingGoogle(req, res);
-      logs.push("Google ping executed");
-    } catch (e) {
-      logs.push("Google ping error: " + e.message);
-    }
+    /* ================= GOOGLE PING ================= */
+    const pingResult = await pingGoogleSitemap();
+    logs.push("Google ping executed");
 
+    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       mode,
       totalUrls: urls.length,
+      indexNow: indexResult,
+      googlePing: pingResult,
       logs,
     });
 
@@ -63,4 +107,4 @@ export default async function handler(req, res) {
       error: error.message,
     });
   }
-}
+      }
