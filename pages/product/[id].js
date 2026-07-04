@@ -1,218 +1,90 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-/* ================= SAFE HELPERS ================= */
+/* ================= FAST HELPERS ================= */
 
-const safeText = (v) => {
-  if (v == null) return "";
-  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
-    return String(v).trim();
-  if (Array.isArray(v)) return v.map(safeText).join(" ");
-  if (typeof v === "object") return v.title || v.name || v.text || v.value || "";
-  return "";
-};
+const safeText = (v) =>
+  typeof v === "string" || typeof v === "number"
+    ? String(v)
+    : v?.title || v?.name || "";
 
-const safeNumber = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
+const safeNumber = (v) => (v && !isNaN(v) ? Number(v) : 0);
 
 const safeImage = (img) =>
   typeof img === "string" && img.startsWith("http")
     ? img
     : "https://www.koloonline.online/logo.png";
 
-/* ================= AI CORE ENGINE ================= */
+/* ================= LIGHT AI SCORE ================= */
 
-function calculateScore(product = {}) {
-  return Math.round(
-    safeNumber(product.score) +
-      safeNumber(product.views) * 0.2 +
-      safeNumber(product.clicks) * 0.6 +
-      safeNumber(product.orders) * 4 +
-      safeNumber(product.rating) * 15 +
-      (product.viralBoost ? 70 : 0)
-  );
-}
+const calcScore = (p) => {
+  const v = safeNumber(p.views);
+  const c = safeNumber(p.clicks);
+  const o = safeNumber(p.orders);
+  const r = safeNumber(p.rating);
 
-function getSEOLevel(score) {
-  if (score >= 320) return "elite";
-  if (score >= 220) return "strong";
-  if (score >= 120) return "good";
-  return "weak";
-}
+  return v * 0.1 + c * 0.4 + o * 3 + r * 10 + (p.viralBoost ? 50 : 0);
+};
 
-function getRobots(score) {
-  return score >= 120
-    ? "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+const getLevel = (s) =>
+  s >= 300 ? "elite" : s >= 180 ? "strong" : s >= 100 ? "good" : "weak";
+
+const getRobots = (s) =>
+  s >= 100
+    ? "index,follow,max-image-preview:large,max-snippet:-1"
     : "noindex,follow";
-}
 
-/* ================= REVENUE ENGINE ================= */
+/* ================= TRENDING (FAST) ================= */
 
-function getRevenueScore(product) {
-  return (
-    safeNumber(product.orders) * 5 +
-    safeNumber(product.clicks) * 1.5 +
-    safeNumber(product.rating) * 10 +
-    (product.viralBoost ? 80 : 0)
-  );
-}
-
-function getTrendingScore(product) {
-  return (
-    safeNumber(product.views) * 0.3 +
-    safeNumber(product.clicks) * 0.8 +
-    safeNumber(product.orders) * 5 +
-    (product.viralBoost ? 100 : 0)
-  );
-}
-
-function isBestSeller(product) {
-  return safeNumber(product.orders) > 30 && safeNumber(product.rating) >= 4.3;
-}
-
-function getBestCTA(product) {
-  const score = getRevenueScore(product);
-
-  if (score > 400) return "🔥 Buy Now - Limited Offer";
-  if (score > 250) return "⭐ Best Deal - Buy Now";
-  if (score > 120) return "🛒 Check Price";
-  return "View Product";
-}
-
-/* ================= SMART ENGINE ================= */
-
-function getSmartRelated(products, currentId) {
-  return products
-    .filter((p) => p.id !== currentId)
+const getTrending = (list) => {
+  return list
+    .slice(0, 8)
     .map((p) => ({
-      ...p,
-      score: calculateScore(p) * 0.5 + getRevenueScore(p) * 0.5,
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      score:
+        safeNumber(p.views) * 0.2 +
+        safeNumber(p.clicks) * 0.6 +
+        safeNumber(p.orders) * 4 +
+        (p.viralBoost ? 80 : 0),
     }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 6);
-}
-
-function getTrendingProducts(products) {
-  return products
-    .map((p) => ({ ...p, trendingScore: getTrendingScore(p) }))
-    .sort((a, b) => b.trendingScore - a.trendingScore)
     .slice(0, 5);
-}
-
-function getProfitTrending(products) {
-  return products
-    .map((p) => ({
-      ...p,
-      hybridScore:
-        getTrendingScore(p) * 0.6 + getRevenueScore(p) * 0.4,
-    }))
-    .sort((a, b) => b.hybridScore - a.hybridScore)
-    .slice(0, 5);
-}
-
-/* ================= CONVERSION ENGINE ================= */
-
-function getBestFor(product, seoLevel) {
-  const list = [];
-  if (safeNumber(product.price) < 50) list.push("Budget buyers");
-  if (safeNumber(product.rating) >= 4.5) list.push("Quality-focused users");
-  if (product.viralBoost) list.push("Trend seekers");
-  if (seoLevel === "elite") list.push("Premium buyers");
-  return list.length ? list : ["General users"];
-}
-
-function getWhoShouldBuy(product, seoLevel) {
-  const list = [];
-  if (safeNumber(product.orders) > 20)
-    list.push("Users who trust social proof");
-  if (seoLevel !== "weak")
-    list.push("Users looking for proven products");
-  return list.length ? list : ["General shoppers"];
-}
-
-function getWhyTrust(product) {
-  return [
-    "AI-based scoring system",
-    safeNumber(product.orders) > 10
-      ? "Real purchase signals detected"
-      : "Limited purchase data",
-    safeNumber(product.rating) >= 4
-      ? "Positive reviews trend"
-      : "Mixed feedback",
-  ];
-}
-
-/* ================= FAQ ENGINE ================= */
-
-function generateFAQs(product, seoLevel) {
-  const title = safeText(product.title);
-
-  return [
-    {
-      q: `Is ${title} worth buying?`,
-      a:
-        seoLevel === "elite"
-          ? "Yes, top-tier AI-ranked product."
-          : "Depends on your needs.",
-    },
-    {
-      q: `Is ${title} good quality?`,
-      a:
-        safeNumber(product.rating) >= 4
-          ? "Yes, high quality."
-          : "Moderate quality.",
-    },
-    {
-      q: `Is it suitable for beginners?`,
-      a: seoLevel !== "weak" ? "Yes" : "Needs caution.",
-    },
-  ];
-}
+};
 
 /* ================= PAGE ================= */
 
-export default function ProductPage({
-  product,
-  relatedProducts,
-  relatedBlogs,
-}) {
+export default function ProductPage({ product, relatedProducts }) {
   if (!product) return <div>Product Not Found</div>;
 
   const title = safeText(product.title);
-  const description = safeText(product.description);
+  const desc = safeText(product.description);
   const image = safeImage(product.image);
 
   const url = `https://koloonline.online/product/${product.slug || product.id}`;
 
-  const score = calculateScore(product);
-  const seoLevel = getSEOLevel(score);
-  const robotsContent = getRobots(score);
+  const score = calcScore(product);
+  const level = getLevel(score);
+  const robots = getRobots(score);
 
-  const seoTitle = title.length > 60 ? title.slice(0, 57) + "..." : title;
-  const seoDescription =
-    description.length > 155
-      ? description.slice(0, 152) + "..."
-      : description;
+  const seoTitle =
+    title.length > 58 ? title.slice(0, 55) + "..." : title;
 
-  const revenueRelated = getSmartRelated(relatedProducts || [], product.id);
-  const trendingProducts = getTrendingProducts(relatedProducts || []);
-  const profitTrending = getProfitTrending(relatedProducts || []);
-  const bestCTA = getBestCTA(product);
-  const isBest = isBestSeller(product);
-  const faqs = generateFAQs(product, seoLevel);
+  const seoDesc =
+    desc.length > 150 ? desc.slice(0, 147) + "..." : desc;
 
-  const schemaProduct = {
+  const trending = getTrending(relatedProducts || []);
+
+  const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: title,
     image: [image],
-    description: seoDescription,
+    description: seoDesc,
     sku: product.id,
     url,
     brand: { "@type": "Brand", name: "Koloonline" },
@@ -225,64 +97,54 @@ export default function ProductPage({
     },
   };
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
-      "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
-    })),
-  };
-
   return (
     <>
       <Head>
         <title>{seoTitle} | Koloonline</title>
-        <meta name="description" content={seoDescription} />
-        <meta name="robots" content={robotsContent} />
+        <meta name="description" content={seoDesc} />
+        <meta name="robots" content={robots} />
         <link rel="canonical" href={url} />
+
+        {/* 🔥 LCP BOOST */}
+        <link rel="preload" as="image" href={image} />
+        <link rel="preconnect" href="https://www.koloonline.online" />
 
         <meta property="og:type" content="product" />
         <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={seoDescription} />
+        <meta property="og:description" content={seoDesc} />
         <meta property="og:image" content={image} />
 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(schemaProduct),
-          }}
-        />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqSchema),
+            __html: JSON.stringify(schema),
           }}
         />
       </Head>
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
+      <main style={{ maxWidth: 820, margin: "0 auto", padding: 16 }}>
         <h1>{title}</h1>
 
+        {/* ⚡ OPTIMIZED LCP IMAGE */}
         <Image
           src={image}
-          width={1200}
-          height={800}
+          width={820}
+          height={540}
           priority
+          quality={70}
           alt={title}
+          sizes="(max-width: 768px) 100vw, 820px"
           style={{ width: "100%", height: "auto" }}
         />
 
-        <p>{description}</p>
+        <p>{desc}</p>
 
         <p>
           <strong>Price:</strong> ${safeNumber(product.price)}
         </p>
 
         <p>
-          <strong>AI Score:</strong> {score} ({seoLevel})
+          <strong>Score:</strong> {score.toFixed(0)} ({level})
         </p>
 
         {product.link && (
@@ -298,92 +160,60 @@ export default function ProductPage({
               marginTop: 10,
             }}
           >
-            {bestCTA}
+            Buy Now
           </a>
         )}
 
-        {/* REVENUE */}
+        {/* 🔥 TRENDING */}
         <section>
-          <h2>🔥 Revenue Picks</h2>
-          {revenueRelated.map((p) => (
+          <h2>Trending</h2>
+
+          {trending.map((p) => (
             <Link key={p.id} href={`/product/${p.slug || p.id}`}>
-              <div>{safeText(p.title)}</div>
+              <div style={{ padding: 6 }}>{p.title}</div>
             </Link>
           ))}
-        </section>
-
-        {/* TRENDING */}
-        <section>
-          <h2>📈 Trending</h2>
-          {trendingProducts.map((p) => (
-            <Link key={p.id} href={`/product/${p.slug || p.id}`}>
-              <div>{safeText(p.title)}</div>
-            </Link>
-          ))}
-        </section>
-
-        {/* FAQ */}
-        <section>
-          <h2>❓ FAQ</h2>
-          {faqs.map((f, i) => (
-            <div key={i}>
-              <h4>{f.q}</h4>
-              <p>{f.a}</p>
-            </div>
-          ))}
-        </section>
-
-        <section>
-          <h2>🔥 Best Seller</h2>
-          <p>{isBest ? "YES 🔥" : "No"}</p>
         </section>
       </main>
     </>
   );
 }
 
-/* ================= STATIC PROPS ================= */
+/* ================= SSR DATA ================= */
 
 export async function getStaticProps({ params }) {
-  const snap = await getDocs(query(collection(db, "products"), limit(200)));
+  const snap = await getDocs(
+    query(collection(db, "products"), limit(120))
+  );
 
-  const products = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const products = snap.docs.map((d) => ({
+    id: d.id,
+    ...d.data(),
+  }));
 
   const product =
     products.find((p) => (p.slug || p.id) === params.id) || null;
 
   if (!product) return { notFound: true };
 
-  const relatedProducts = products
-    .filter((p) => p.id !== product.id)
-    .slice(0, 10);
-
-  const blogSnap = await getDocs(query(collection(db, "blog"), limit(6)));
-
-  const relatedBlogs = blogSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
-
   return {
     props: {
       product,
-      relatedProducts,
-      relatedBlogs,
+      relatedProducts: products.slice(0, 12),
     },
-    revalidate: 300,
+    revalidate: 900,
   };
 }
 
-/* ================= STATIC PATHS ================= */
+/* ================= PATHS ================= */
 
 export async function getStaticPaths() {
   const snap = await getDocs(collection(db, "products"));
 
   return {
-    paths: snap.docs.map((d) => ({
+    paths: snap.docs.slice(0, 150).map((d) => ({
       params: { id: String(d.data().slug || d.id) },
     })),
     fallback: "blocking",
   };
-    }
+}
