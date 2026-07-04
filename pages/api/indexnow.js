@@ -4,63 +4,61 @@ import { getFirestore, collection, getDocs } from "firebase/firestore";
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  authDomain: process.env.FIREBASE_AUTH_AUTH_DOMAIN,
   projectId: process.env.FIREBASE_PROJECT_ID,
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ================= BASE ================= */
+/* ================= CONFIG ================= */
 const baseUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
 
-/* ================= SAFE ================= */
-const safe = (v) =>
-  typeof v === "string" ? v.trim() : "";
+const KEY = process.env.INDEXNOW_KEY;
 
-/* ================= VALIDATION ================= */
+/* ================= HELPERS ================= */
+const safe = (v) => (typeof v === "string" ? v.trim() : "");
+
 function isValidUrl(url) {
   try {
-    return Boolean(new URL(url));
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname.includes("koloonline");
   } catch {
     return false;
   }
 }
 
-/* ================= VIRAL SCORE ================= */
+/* ================= SCORE ENGINE ================= */
 function viralScore(data = {}) {
-  const views = Math.min(data.views || 0, 1000);
-  const clicks = Math.min(data.clicks || 0, 500);
-  const likes = Math.min(data.likes || 0, 200);
-  const orders = Math.min(data.orders || 0, 100);
-  const rating = Math.min(data.rating || 0, 5);
+  const views = Math.min(Number(data.views) || 0, 2000);
+  const clicks = Math.min(Number(data.clicks) || 0, 1000);
+  const likes = Math.min(Number(data.likes) || 0, 500);
+  const orders = Math.min(Number(data.orders) || 0, 200);
+  const rating = Math.min(Number(data.rating) || 0, 5);
 
   let score =
-    views * 0.3 +
-    clicks * 1 +
-    likes * 2 +
+    views * 0.25 +
+    clicks * 0.8 +
+    likes * 1.5 +
     orders * 5 +
     rating * 10;
 
-  if (data.viralBoost) score += 30;
+  if (data.viralBoost) score += 40;
 
-  return Math.min(score, 120);
+  return Math.min(score, 150);
 }
 
 /* ================= PRIORITY ================= */
-function getPriority(score) {
-  if (score >= 90) return 1.0;
-  if (score >= 70) return 0.85;
-  if (score >= 50) return 0.7;
-  if (score >= 30) return 0.6;
-  return 0.4;
+function getTier(score) {
+  if (score >= 90) return "elite";
+  if (score >= 60) return "high";
+  if (score >= 35) return "normal";
+  return "low";
 }
 
-/* ================= INDEXNOW ================= */
-async function sendIndexNow(urlList = []) {
-  const KEY = process.env.INDEXNOW_KEY;
-
+/* ================= INDEXNOW REQUEST ================= */
+async function sendIndexNow(urlList) {
   if (!KEY) return { ok: false, error: "Missing KEY" };
   if (!urlList.length) return { ok: false, error: "Empty batch" };
 
@@ -75,25 +73,32 @@ async function sendIndexNow(urlList = []) {
       }),
     });
 
-    return {
-      ok: res.ok,
-      status: res.status,
-    };
+    return { ok: res.ok, status: res.status };
   } catch (e) {
-    return {
-      ok: false,
-      error: e?.message || "IndexNow failed",
-    };
+    return { ok: false, error: e?.message || "failed" };
   }
 }
 
-/* ================= CHUNK ================= */
-function chunkArray(arr, size) {
-  const chunks = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
+/* ================= RETRY SYSTEM ================= */
+async function sendWithRetry(urls, retries = 2) {
+  for (let i = 0; i <= retries; i++) {
+    const res = await sendIndexNow(urls);
+
+    if (res.ok) return res;
+
+    await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
   }
-  return chunks;
+
+  return { ok: false, error: "max retries reached" };
+}
+
+/* ================= CHUNK ================= */
+function chunk(arr, size = 50) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
+  }
+  return out;
 }
 
 /* ================= HANDLER ================= */
@@ -103,68 +108,59 @@ export default async function handler(req, res) {
   try {
     const snap = await getDocs(collection(db, "products"));
 
-    const urls = [];
-    const priorityUrls = new Set(); // 🔥 prevent duplicates
+    const allUrls = new Set();
+    const eliteUrls = new Set();
 
     snap.forEach((doc) => {
-      const data = doc.data();
+      const p = doc.data();
 
-      const score = viralScore(data);
-
-      // 🔥 HARD FILTER
-      if (score < 35) return;
-
-      const slug = safe(data.slug) || doc.id;
-
+      const slug = safe(p.slug) || doc.id;
       const url = `${baseUrl}/product/${slug}`;
 
       if (!isValidUrl(url)) return;
 
-      urls.push(url);
+      const score = viralScore(p);
+      const tier = getTier(score);
 
-      if (score >= 60) {
-        priorityUrls.add(url);
+      allUrls.add(url);
+
+      if (tier === "elite" || tier === "high") {
+        eliteUrls.add(url);
       }
     });
 
-    /* ================= CLEAN UNIQUE ================= */
-    const uniqueUrls = [...new Set(urls)];
-    const highPriority = [...priorityUrls];
+    const eliteArray = [...eliteUrls];
+    const allArray = [...allUrls];
 
-    /* ================= SMART BATCHING ================= */
-    const chunks = chunkArray(highPriority, 15);
+    const chunks = chunk(eliteArray, 50);
 
     const results = [];
 
-    /* ================= THROTTLED PUSH ================= */
-    for (const chunk of chunks) {
-      const result = await sendIndexNow(chunk);
+    /* ================= PARALLEL SAFE EXECUTION ================= */
+    for (const batch of chunks) {
+      const result = await sendWithRetry(batch);
       results.push({
-        chunkSize: chunk.length,
+        size: batch.length,
         ...result,
       });
 
-      // smart delay (Google safe)
-      await new Promise((r) => setTimeout(r, 1500));
+      // safe throttle (avoid spam)
+      await new Promise((r) => setTimeout(r, 1000));
     }
 
-    /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       totalProducts: snap.size,
-      indexedTotal: uniqueUrls.length,
-      priorityIndexed: highPriority.length,
+      totalUrls: allArray.length,
+      eliteIndexed: eliteArray.length,
       chunks: chunks.length,
-      runtime: `${Date.now() - start}ms`,
+      runtimeMs: Date.now() - start,
       results,
     });
-
   } catch (err) {
-    console.error("[INDEXNOW ERROR]", err);
-
     return res.status(500).json({
       success: false,
-      error: err?.message || "Server error",
+      error: err?.message || "server error",
     });
   }
-}
+    }
