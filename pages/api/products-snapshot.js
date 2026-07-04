@@ -7,10 +7,9 @@ import {
 } from "firebase/firestore";
 import { db } from "../../config/firebase";
 
-/* ================= MEMORY CACHE ================= */
+/* ================= CACHE ================= */
 let cache = null;
 let lastFetch = 0;
-
 const CACHE_TTL = 1000 * 60 * 10;
 
 /* ================= SAFE HELPERS ================= */
@@ -33,7 +32,26 @@ const safeNumber = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/* ================= AI PRODUCT FILTER ================= */
+/* ================= ENGAGEMENT SCORE ================= */
+function engagementScore(p = {}) {
+  const views = safeNumber(p.views);
+  const clicks = safeNumber(p.clicks);
+  const orders = safeNumber(p.orders);
+  const rating = safeNumber(p.rating);
+
+  const ctr = views > 0 ? clicks / views : 0;
+
+  return (
+    views * 0.2 +
+    clicks * 0.6 +
+    orders * 2 +
+    rating * 10 +
+    ctr * 50 +
+    (p.viralBoost ? 30 : 0)
+  );
+}
+
+/* ================= JUNK FILTER ================= */
 function isValidProduct(p = {}) {
   const title = (p.title || "").trim();
   const image = p.image;
@@ -41,37 +59,40 @@ function isValidProduct(p = {}) {
   if (!title || title.length < 3) return false;
   if (!image || typeof image !== "string") return false;
 
-  const score =
-    (Number(p.score) || 0) +
-    (Number(p.views) || 0) * 0.2 +
-    (Number(p.clicks) || 0) * 0.5 +
-    (p.viralBoost ? 30 : 0);
-
-  // 🔥 مهم: تجاهل المنتجات الضعيفة
-  if (score < 20) return false;
-
-  // لو مفيش أي تفاعل → تجاهل
+  // ❌ missing engagement
   if ((p.views || 0) === 0 && (p.clicks || 0) === 0) return false;
+
+  // ❌ low quality score
+  const score = engagementScore(p);
+  if (score < 25) return false;
 
   return true;
 }
 
-/* ================= API ================= */
+/* ================= VIRAL BOOST FILTER ================= */
+function viralFilter(p = {}) {
+  if (p.viralBoost) return true;
+
+  // allow only high engagement non-viral
+  const score = engagementScore(p);
+  return score >= 60;
+}
+
+/* ================= MAIN HANDLER ================= */
 export default async function handler(req, res) {
   try {
     const now = Date.now();
 
-    /* ================= CACHE HIT ================= */
+    /* ================= CACHE ================= */
     if (cache && now - lastFetch < CACHE_TTL) {
       res.setHeader(
         "Cache-Control",
         "public, s-maxage=600, stale-while-revalidate=3600"
       );
-
       return res.status(200).json(cache);
     }
 
-    /* ================= FIRESTORE QUERY ================= */
+    /* ================= FIRESTORE ================= */
     const q = query(
       collection(db, "products"),
       orderBy("score", "desc"),
@@ -95,15 +116,24 @@ export default async function handler(req, res) {
         score: safeNumber(item.score),
         views: safeNumber(item.views),
         clicks: safeNumber(item.clicks),
+        orders: safeNumber(item.orders),
+        rating: safeNumber(item.rating),
 
         viralBoost: Boolean(item.viralBoost),
       };
     });
 
-    /* ================= AI FILTER PIPELINE ================= */
-    const data = rawData.filter(isValidProduct);
+    /* ================= PIPELINE ================= */
+    let data = rawData
+      .filter(isValidProduct)
+      .filter(viralFilter);
 
-    /* ================= SET CACHE ================= */
+    /* ================= ENGAGEMENT SORT ================= */
+    data.sort((a, b) => {
+      return engagementScore(b) - engagementScore(a);
+    });
+
+    /* ================= CACHE ================= */
     cache = data;
     lastFetch = now;
 
@@ -121,4 +151,4 @@ export default async function handler(req, res) {
       error: e?.message || "Internal Server Error",
     });
   }
-}
+                        }
