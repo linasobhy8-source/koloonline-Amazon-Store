@@ -16,8 +16,17 @@ export default function Home({ products = [] }) {
           content="Best Amazon deals & trending products"
         />
 
-        <meta name="robots" content="index,follow" />
+        <meta name="robots" content="index,follow,max-image-preview:large" />
         <link rel="canonical" href="https://koloonline.online/" />
+
+        {/* SEO BOOST */}
+        <meta property="og:title" content="Koloonline Store" />
+        <meta
+          property="og:description"
+          content="Trending Amazon products & deals"
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://koloonline.online/" />
       </Head>
 
       <main
@@ -29,6 +38,11 @@ export default function Home({ products = [] }) {
       >
         <h1>🔥 Trending Products</h1>
 
+        <p style={{ color: "#666", maxWidth: 700 }}>
+          Discover the most trending Amazon products updated automatically based
+          on user engagement and demand.
+        </p>
+
         <div
           style={{
             display: "grid",
@@ -36,8 +50,7 @@ export default function Home({ products = [] }) {
             gap: 20,
           }}
         >
-          {safeProducts.map((p, index) => {
-            // 🔥 HARD GUARD (منع أي object crash)
+          {safeProducts.map((p) => {
             if (!p || typeof p !== "object") return null;
 
             const id = safeText(p.id);
@@ -61,7 +74,7 @@ export default function Home({ products = [] }) {
                     src={image}
                     width={220}
                     height={220}
-                    alt={typeof title === "string" ? title : "product"}
+                    alt={title || "product"}
                     style={{
                       width: "100%",
                       height: "auto",
@@ -71,7 +84,7 @@ export default function Home({ products = [] }) {
                   />
 
                   <h3>
-                    {typeof title === "string" && title.length > 0
+                    {title && title.length > 0
                       ? title
                       : "Untitled Product"}
                   </h3>
@@ -89,14 +102,13 @@ export default function Home({ products = [] }) {
   );
 }
 
-/* ================= SSR SAFE (FINAL FIX) ================= */
+/* ================= SSR SAFE ================= */
 export async function getStaticProps() {
   try {
     const { getProductsFast } = await import("../lib/firebaseQuery");
 
     const raw = await getProductsFast();
 
-    // 🔥 أهم سطر في المشروع كله (kills React #130 forever)
     const products = JSON.parse(JSON.stringify(raw || []));
 
     return {
