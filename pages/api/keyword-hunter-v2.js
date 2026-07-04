@@ -13,20 +13,20 @@ import {
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
-const app = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig);
-
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* ================= CONFIG ================= */
 const BLOG_ENDPOINT =
   process.env.AUTO_BLOG_ENDPOINT ||
   "https://koloonline.online/api/auto-blog-generator-v2";
+
+/* ================= LIMIT CONTROL (ANTI SPAM) ================= */
+const DAILY_LIMIT = 20;
 
 /* ================= SEEDS ================= */
 const seedKeywords = [
@@ -45,35 +45,57 @@ const seedKeywords = [
   "viral tiktok amazon products",
 ];
 
-/* ================= SCORE ================= */
+/* ================= SCORE ENGINE ================= */
 function calculateScore(keyword = "") {
   const k = keyword.toLowerCase();
 
   let score = 0;
 
+  // intent signals
   if (k.includes("best")) score += 25;
-  if (k.includes("cheap")) score += 20;
-  if (k.includes("review")) score += 18;
+  if (k.includes("cheap")) score += 18;
+  if (k.includes("review")) score += 22;
   if (k.includes("deal")) score += 25;
   if (k.includes("buy")) score += 30;
   if (k.includes("under")) score += 20;
+
+  // platform signals
   if (k.includes("amazon")) score += 10;
 
+  // trend signals
   if (k.includes("2026")) score += 15;
   if (k.includes("viral")) score += 30;
   if (k.includes("tiktok")) score += 25;
 
+  // category signals
   if (k.includes("headphones")) score += 20;
-  if (k.includes("earbuds")) score += 20;
+  if (k.includes("earbuds")) score += 22;
   if (k.includes("smart watch")) score += 20;
   if (k.includes("laptop")) score += 15;
-  if (k.includes("gaming")) score += 20;
-
+  if (k.includes("gaming")) score += 18;
+  if (k.includes("fitness")) score += 12;
   if (k.includes("gifts")) score += 15;
-  if (k.includes("fitness")) score += 10;
   if (k.includes("accessories")) score += 10;
 
   return score;
+}
+
+/* ================= NORMALIZE ================= */
+function normalizeKeyword(k = "") {
+  return k.toLowerCase().trim();
+}
+
+/* ================= VALIDATION ================= */
+function isValidKeyword(keyword = "") {
+  const k = normalizeKeyword(keyword);
+
+  if (!k || k.length < 6) return false;
+
+  // reject weak/generic keywords
+  const banned = ["products", "amazon stuff", "buy things", "random"];
+  if (banned.some((b) => k.includes(b))) return false;
+
+  return true;
 }
 
 /* ================= DUPLICATE CHECK ================= */
@@ -89,16 +111,25 @@ async function keywordExists(keyword) {
   return !snap.empty;
 }
 
+/* ================= DAILY LIMIT CHECK ================= */
+async function getTodayCount() {
+  const snap = await getDocs(collection(db, "keywords"));
+  const today = new Date().toDateString();
+
+  return snap.docs.filter((d) => {
+    const data = d.data();
+    if (!data.createdAt) return false;
+    return new Date(data.createdAt.toDate()).toDateString() === today;
+  }).length;
+}
+
 /* ================= LOG ================= */
 async function writeLog(data) {
   try {
-    await addDoc(
-      collection(db, "cron_logs"),
-      {
-        ...data,
-        createdAt: serverTimestamp(),
-      }
-    );
+    await addDoc(collection(db, "cron_logs"), {
+      ...data,
+      createdAt: serverTimestamp(),
+    });
   } catch {}
 }
 
@@ -107,6 +138,16 @@ export default async function handler(req, res) {
   const startTime = Date.now();
 
   try {
+    const todayCount = await getTodayCount();
+
+    if (todayCount >= DAILY_LIMIT) {
+      return res.status(200).json({
+        success: true,
+        message: "Daily limit reached",
+        processed: 0,
+      });
+    }
+
     const selected = [...seedKeywords]
       .sort(() => Math.random() - 0.5)
       .slice(0, 5);
@@ -115,82 +156,85 @@ export default async function handler(req, res) {
 
     for (const keyword of selected) {
       try {
-        const score = calculateScore(keyword);
+        const normalized = normalizeKeyword(keyword);
 
-        if (score < 40) {
+        // 1. validation gate
+        if (!isValidKeyword(normalized)) {
           results.push({
             keyword,
-            status: "skipped",
-            score,
+            status: "invalid",
           });
-
           continue;
         }
 
-        const exists = await keywordExists(keyword);
+        // 2. scoring
+        const score = calculateScore(normalized);
+
+        if (score < 55) {
+          results.push({
+            keyword,
+            status: "low_score",
+            score,
+          });
+          continue;
+        }
+
+        // 3. duplicate check
+        const exists = await keywordExists(normalized);
 
         if (exists) {
           results.push({
             keyword,
             status: "duplicate",
-            score,
           });
-
           continue;
         }
 
-        const ref = await addDoc(
-          collection(db, "keywords"),
-          {
-            keyword,
-            score,
-            priority:
-              score >= 70 ? "high" : "medium",
-            status: "approved",
-            source: "keyword_hunter_v3",
-            createdAt: serverTimestamp(),
-          }
-        );
+        // 4. save keyword
+        const ref = await addDoc(collection(db, "keywords"), {
+          keyword: normalized,
+          score,
+          priority: score >= 75 ? "high" : "medium",
+          status: "approved",
+          source: "keyword_hunter_v4",
+          createdAt: serverTimestamp(),
+        });
 
+        // 5. log
         writeLog({
           type: "keyword_added",
-          keyword,
+          keyword: normalized,
           score,
           docId: ref.id,
         });
 
-        fetch(BLOG_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            keyword,
-          }),
-        }).catch(() => {});
+        // 6. trigger blog generation (only high quality)
+        if (score >= 70) {
+          fetch(BLOG_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ keyword: normalized }),
+          }).catch(() => {});
+        }
 
         results.push({
-          keyword,
-          score,
+          keyword: normalized,
           status: "approved",
+          score,
           id: ref.id,
         });
       } catch (err) {
-        await writeLog({
+        writeLog({
           type: "keyword_error",
           keyword,
-          error:
-            err?.message ||
-            "Unknown Error",
+          error: err?.message || "Unknown error",
         });
 
         results.push({
           keyword,
           status: "error",
-          error:
-            err?.message ||
-            "Unknown Error",
         });
       }
     }
@@ -199,28 +243,14 @@ export default async function handler(req, res) {
       success: true,
       runtime: Date.now() - startTime,
       processed: selected.length,
-      approved: results.filter(
-        (r) => r.status === "approved"
-      ).length,
-      skipped: results.filter(
-        (r) => r.status === "skipped"
-      ).length,
-      duplicates: results.filter(
-        (r) => r.status === "duplicate"
-      ).length,
+      approved: results.filter((r) => r.status === "approved").length,
+      skipped: results.filter((r) => r.status !== "approved").length,
       results,
     });
   } catch (e) {
-    console.error(
-      "Keyword Hunter Error:",
-      e
-    );
-
     return res.status(500).json({
       success: false,
-      error:
-        e?.message ||
-        "Internal Server Error",
+      error: e?.message || "Internal Server Error",
     });
   }
       }
