@@ -4,7 +4,7 @@ export default async function handler(req, res) {
       process.env.NEXT_PUBLIC_BASE_URL ||
       "https://koloonline.online";
 
-    console.log("🤖 SEO ORCHESTRATOR STARTED");
+    console.log("🤖 SEO ORCHESTRATOR v3 STARTED");
 
     /* ================= SAFE FETCH ================= */
     const fetchWithTimeout = async (url, options = {}, timeout = 8000) => {
@@ -19,13 +19,13 @@ export default async function handler(req, res) {
 
         clearTimeout(timer);
         return res;
-      } catch (e) {
+      } catch {
         clearTimeout(timer);
         return null;
       }
     };
 
-    /* ================= LOAD SIGNALS ================= */
+    /* ================= LOAD DATA ================= */
     let products = [];
     let blogs = [];
 
@@ -39,60 +39,64 @@ export default async function handler(req, res) {
         ),
       ]);
 
-      products = (await pRes?.json?.().catch(() => ({})))?.items || [];
-      blogs = (await bRes?.json?.().catch(() => ({})))?.items || [];
+      const pJson = await pRes?.json?.().catch(() => ({}));
+      const bJson = await bRes?.json?.().catch(() => ({}));
+
+      products = pJson?.items || [];
+      blogs = bJson?.items || [];
     } catch (e) {
       console.log("⚠️ fetch failed:", e.message);
     }
 
-    /* ================= SMART SCORING ================= */
-    const scoreItem = (item, type) => {
-      if (!item) return 0;
+    /* ================= IMPORT MASTER AI (IMPORTANT) ================= */
+    // لازم يكون عندك decisionEngine موحد
+    // import { decisionEngine } from "@/lib/ai/decisionEngine";
 
-      let score = 30;
+    const scoreItem = (item) => {
+      const views = Number(item?.views) || 0;
+      const clicks = Number(item?.clicks) || 0;
+      const orders = Number(item?.orders) || 0;
 
-      // content quality
-      score += item.title ? 10 : 0;
-      score += item.image ? 8 : 0;
-      score += item.slug ? 5 : 0;
+      const ctr = views > 0 ? clicks / views : 0;
+      const conv = clicks > 0 ? orders / clicks : 0;
 
-      // engagement signals
-      score += Math.min(20, (item.views || 0) / 10);
-      score += Math.min(20, (item.clicks || 0) / 5);
-      score += Math.min(25, (item.conversions || 0) * 5);
+      let score =
+        ctr * 120 +
+        conv * 250 +
+        (item?.viralBoost ? 80 : 0) +
+        (views > 100 ? 20 : 0);
 
-      // freshness
+      /* ================= FRESHNESS ================= */
       const updated = new Date(
-        item.updatedAt || item.createdAt || Date.now()
+        item?.updatedAt || item?.createdAt || Date.now()
       );
 
-      const ageDays =
-        (Date.now() - updated.getTime()) /
-        (1000 * 60 * 60 * 24);
+      const ageHours =
+        (Date.now() - updated.getTime()) / (1000 * 60 * 60);
 
-      if (ageDays < 2) score += 15;
-      else if (ageDays < 7) score += 8;
+      const freshnessBoost = 1 / Math.log(ageHours + 3);
 
-      // type boost
-      if (type === "product") score += 5;
-      if (type === "blog") score += 3;
+      score = score * freshnessBoost;
 
-      return Math.min(100, Math.round(score));
+      if (!isFinite(score)) score = 0;
+
+      return Math.round(score);
     };
 
-    /* ================= RANKING ================= */
+    /* ================= RANK PRODUCTS ================= */
     const rankedProducts = products
       .map((p) => ({
         ...p,
-        score: scoreItem(p, "product"),
+        score: scoreItem(p),
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
 
+    /* ================= RANK BLOGS ================= */
     const rankedBlogs = blogs
       .map((b) => ({
         ...b,
-        score: scoreItem(b, "blog"),
+        score: scoreItem(b),
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
@@ -100,9 +104,9 @@ export default async function handler(req, res) {
     console.log("🔥 TOP PRODUCTS:", rankedProducts.map((p) => p.id));
     console.log("📚 TOP BLOGS:", rankedBlogs.map((b) => b.id));
 
-    /* ================= THROTTLED RUNNER ================= */
+    /* ================= ORCHESTRATOR RUNNER ================= */
     const runOrchestrator = async (type, id) => {
-      await fetchWithTimeout(
+      return fetchWithTimeout(
         `${baseUrl}/api/seo/seo-orchestrator-run`,
         {
           method: "POST",
@@ -112,7 +116,7 @@ export default async function handler(req, res) {
       );
     };
 
-    /* ================= PARALLEL SAFE EXECUTION ================= */
+    /* ================= BATCH EXECUTION ================= */
     const runBatch = async (items, type) => {
       const tasks = items
         .filter((i) => i?.id)
@@ -121,6 +125,7 @@ export default async function handler(req, res) {
       await Promise.allSettled(tasks);
     };
 
+    /* ================= PARALLEL EXECUTION ================= */
     await Promise.all([
       runBatch(rankedProducts, "product"),
       runBatch(rankedBlogs, "blog"),
@@ -131,7 +136,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        type: "seo_orchestrator",
+        type: "seo_orchestrator_v3",
         status: "success",
         products: rankedProducts.length,
         blogs: rankedBlogs.length,
@@ -139,11 +144,11 @@ export default async function handler(req, res) {
       }),
     });
 
-    console.log("✅ SEO ORCHESTRATOR COMPLETED");
+    console.log("✅ SEO ORCHESTRATOR v3 COMPLETED");
 
     return res.status(200).json({
       success: true,
-      engine: "seo-orchestrator-v2",
+      engine: "seo-orchestrator-v3",
 
       processed: {
         products: rankedProducts.length,
@@ -158,4 +163,4 @@ export default async function handler(req, res) {
       error: e.message,
     });
   }
-         }
+}
