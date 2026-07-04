@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
@@ -11,75 +12,81 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ================= SITE ================= */
+/* ================= BASE URL ================= */
 const baseUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://koloonline.online";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
 
-/* ================= HELPERS ================= */
-function safe(v) {
-  return typeof v === "string" ? v.trim() : "";
+/* ================= SAFE HELPERS ================= */
+const safe = (v) =>
+  typeof v === "string" ? v.trim() : "";
+
+/* ================= SAFE URL VALIDATION ================= */
+function isValidUrl(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-/* ================= VIRAL SCORE ================= */
+/* ================= VIRAL SCORE (CAPPED) ================= */
 function viralScore(data) {
   let score = 0;
 
-  score += (data.views || 0) * 0.5;
-  score += (data.clicks || 0) * 1.5;
-  score += (data.likes || 0) * 2;
-  score += (data.orders || 0) * 5;
-  score += (data.rating || 0) * 10;
+  score += Math.min(data.views || 0, 1000) * 0.3;
+  score += Math.min(data.clicks || 0, 500) * 1;
+  score += Math.min(data.likes || 0, 200) * 2;
+  score += Math.min(data.orders || 0, 100) * 5;
+  score += Math.min(data.rating || 0, 5) * 10;
 
-  if (data.viralBoost) score += 50;
+  if (data.viralBoost) score += 30;
 
-  return score;
+  return Math.min(score, 120); // cap to avoid spam
 }
 
 /* ================= PRIORITY ENGINE ================= */
 function getPriority(score) {
-  if (score > 80) return 1.0;
-  if (score > 60) return 0.85;
-  if (score > 40) return 0.7;
-  if (score > 25) return 0.6;
+  if (score > 90) return 1.0;
+  if (score > 70) return 0.85;
+  if (score > 50) return 0.7;
+  if (score > 30) return 0.6;
   return 0.4;
 }
 
-/* ================= INDEXNOW ================= */
-async function sendIndexNow(urlList) {
+/* ================= INDEXNOW PUSH ================= */
+async function sendIndexNow(urlList = []) {
   const KEY = process.env.INDEXNOW_KEY;
 
   if (!KEY) {
-    return {
-      ok: false,
-      error: "INDEXNOW_KEY not found",
-    };
+    return { ok: false, error: "Missing INDEXNOW_KEY" };
+  }
+
+  if (!urlList.length) {
+    return { ok: false, error: "Empty urlList" };
   }
 
   try {
-    const response = await fetch(
-      "https://api.indexnow.org/indexnow",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          host: "koloonline.online",
-          key: KEY,
-          urlList,
-        }),
-      }
-    );
+    const response = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        host: "koloonline.online",
+        key: KEY,
+        urlList,
+      }),
+    });
 
     return {
       ok: response.ok,
       status: response.status,
     };
-  } catch (e) {
+  } catch (error) {
     return {
       ok: false,
-      error: e.message,
+      error: error.message,
     };
   }
 }
@@ -99,62 +106,57 @@ export default async function handler(req, res) {
 
       const score = viralScore(data);
 
-      // تجاهل المنتجات الضعيفة
-      if (score < 25) return;
-
-      const priority = getPriority(score);
+      if (score < 30) return;
 
       const slug = safe(data.slug) || doc.id;
 
       const url = `${baseUrl}/product/${slug}`;
 
+      if (!isValidUrl(url)) return;
+
       urls.push(url);
 
-      if (priority >= 0.7) {
+      if (score >= 60) {
         priorityUrls.push(url);
       }
     });
 
-    /* ================= REMOVE DUPLICATES ================= */
+    /* ================= DEDUP ================= */
     const uniqueUrls = [...new Set(urls)];
     const uniquePriority = [...new Set(priorityUrls)];
 
-    /* ================= CHUNKING ================= */
-    const chunkSize = 50;
+    /* ================= BATCHING ================= */
+    const chunkSize = 20;
+
     const chunks = [];
 
     for (let i = 0; i < uniquePriority.length; i += chunkSize) {
       chunks.push(uniquePriority.slice(i, i + chunkSize));
     }
 
-    /* ================= SEND TO INDEXNOW ================= */
+    /* ================= PUSH WITH DELAY ================= */
     const results = [];
 
     for (const chunk of chunks) {
       const result = await sendIndexNow(chunk);
       results.push(result);
+
+      // throttle to avoid rate limit
+      await new Promise((r) => setTimeout(r, 1200));
     }
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
-
-      sitemap: `${baseUrl}/sitemap.xml`,
-
       totalProducts: snap.size,
-
-      indexedProducts: uniqueUrls.length,
-
-      priorityProducts: uniquePriority.length,
-
+      indexed: uniqueUrls.length,
+      priority: uniquePriority.length,
       chunks: chunks.length,
-
-      runtime: `${Date.now() - start} ms`,
-
+      runtime: `${Date.now() - start}ms`,
       results,
     });
   } catch (err) {
-    console.error(err);
+    console.error("[INDEX PUSH ERROR]", err);
 
     return res.status(500).json({
       success: false,
