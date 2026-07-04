@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
@@ -12,66 +11,63 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ================= BASE URL ================= */
+/* ================= BASE ================= */
 const baseUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://koloonline.online";
 
-/* ================= SAFE HELPERS ================= */
+/* ================= SAFE ================= */
 const safe = (v) =>
   typeof v === "string" ? v.trim() : "";
 
-/* ================= SAFE URL VALIDATION ================= */
+/* ================= VALIDATION ================= */
 function isValidUrl(url) {
   try {
-    new URL(url);
-    return true;
+    return Boolean(new URL(url));
   } catch {
     return false;
   }
 }
 
-/* ================= VIRAL SCORE (CAPPED) ================= */
-function viralScore(data) {
-  let score = 0;
+/* ================= VIRAL SCORE ================= */
+function viralScore(data = {}) {
+  const views = Math.min(data.views || 0, 1000);
+  const clicks = Math.min(data.clicks || 0, 500);
+  const likes = Math.min(data.likes || 0, 200);
+  const orders = Math.min(data.orders || 0, 100);
+  const rating = Math.min(data.rating || 0, 5);
 
-  score += Math.min(data.views || 0, 1000) * 0.3;
-  score += Math.min(data.clicks || 0, 500) * 1;
-  score += Math.min(data.likes || 0, 200) * 2;
-  score += Math.min(data.orders || 0, 100) * 5;
-  score += Math.min(data.rating || 0, 5) * 10;
+  let score =
+    views * 0.3 +
+    clicks * 1 +
+    likes * 2 +
+    orders * 5 +
+    rating * 10;
 
   if (data.viralBoost) score += 30;
 
-  return Math.min(score, 120); // cap to avoid spam
+  return Math.min(score, 120);
 }
 
-/* ================= PRIORITY ENGINE ================= */
+/* ================= PRIORITY ================= */
 function getPriority(score) {
-  if (score > 90) return 1.0;
-  if (score > 70) return 0.85;
-  if (score > 50) return 0.7;
-  if (score > 30) return 0.6;
+  if (score >= 90) return 1.0;
+  if (score >= 70) return 0.85;
+  if (score >= 50) return 0.7;
+  if (score >= 30) return 0.6;
   return 0.4;
 }
 
-/* ================= INDEXNOW PUSH ================= */
+/* ================= INDEXNOW ================= */
 async function sendIndexNow(urlList = []) {
   const KEY = process.env.INDEXNOW_KEY;
 
-  if (!KEY) {
-    return { ok: false, error: "Missing INDEXNOW_KEY" };
-  }
-
-  if (!urlList.length) {
-    return { ok: false, error: "Empty urlList" };
-  }
+  if (!KEY) return { ok: false, error: "Missing KEY" };
+  if (!urlList.length) return { ok: false, error: "Empty batch" };
 
   try {
-    const response = await fetch("https://api.indexnow.org/indexnow", {
+    const res = await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         host: "koloonline.online",
         key: KEY,
@@ -80,15 +76,24 @@ async function sendIndexNow(urlList = []) {
     });
 
     return {
-      ok: response.ok,
-      status: response.status,
+      ok: res.ok,
+      status: res.status,
     };
-  } catch (error) {
+  } catch (e) {
     return {
       ok: false,
-      error: error.message,
+      error: e?.message || "IndexNow failed",
     };
   }
+}
+
+/* ================= CHUNK ================= */
+function chunkArray(arr, size) {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
 }
 
 /* ================= HANDLER ================= */
@@ -99,14 +104,15 @@ export default async function handler(req, res) {
     const snap = await getDocs(collection(db, "products"));
 
     const urls = [];
-    const priorityUrls = [];
+    const priorityUrls = new Set(); // 🔥 prevent duplicates
 
     snap.forEach((doc) => {
       const data = doc.data();
 
       const score = viralScore(data);
 
-      if (score < 30) return;
+      // 🔥 HARD FILTER
+      if (score < 35) return;
 
       const slug = safe(data.slug) || doc.id;
 
@@ -117,50 +123,48 @@ export default async function handler(req, res) {
       urls.push(url);
 
       if (score >= 60) {
-        priorityUrls.push(url);
+        priorityUrls.add(url);
       }
     });
 
-    /* ================= DEDUP ================= */
+    /* ================= CLEAN UNIQUE ================= */
     const uniqueUrls = [...new Set(urls)];
-    const uniquePriority = [...new Set(priorityUrls)];
+    const highPriority = [...priorityUrls];
 
-    /* ================= BATCHING ================= */
-    const chunkSize = 20;
+    /* ================= SMART BATCHING ================= */
+    const chunks = chunkArray(highPriority, 15);
 
-    const chunks = [];
-
-    for (let i = 0; i < uniquePriority.length; i += chunkSize) {
-      chunks.push(uniquePriority.slice(i, i + chunkSize));
-    }
-
-    /* ================= PUSH WITH DELAY ================= */
     const results = [];
 
+    /* ================= THROTTLED PUSH ================= */
     for (const chunk of chunks) {
       const result = await sendIndexNow(chunk);
-      results.push(result);
+      results.push({
+        chunkSize: chunk.length,
+        ...result,
+      });
 
-      // throttle to avoid rate limit
-      await new Promise((r) => setTimeout(r, 1200));
+      // smart delay (Google safe)
+      await new Promise((r) => setTimeout(r, 1500));
     }
 
     /* ================= RESPONSE ================= */
     return res.status(200).json({
       success: true,
       totalProducts: snap.size,
-      indexed: uniqueUrls.length,
-      priority: uniquePriority.length,
+      indexedTotal: uniqueUrls.length,
+      priorityIndexed: highPriority.length,
       chunks: chunks.length,
       runtime: `${Date.now() - start}ms`,
       results,
     });
+
   } catch (err) {
-    console.error("[INDEX PUSH ERROR]", err);
+    console.error("[INDEXNOW ERROR]", err);
 
     return res.status(500).json({
       success: false,
-      error: err.message,
+      error: err?.message || "Server error",
     });
   }
-    }
+}
