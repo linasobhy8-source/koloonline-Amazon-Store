@@ -25,8 +25,6 @@ const nextConfig = {
 
     remotePatterns: [
 
-      // Amazon Product Images
-
       {
         protocol: "https",
         hostname: "m.media-amazon.com",
@@ -43,23 +41,17 @@ const nextConfig = {
       },
 
 
-      // Firebase Images
-
       {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
       },
 
 
-      // Google Images
-
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
 
-
-      // Placeholder
 
       {
         protocol: "https",
@@ -76,15 +68,7 @@ const nextConfig = {
 
   async rewrites() {
 
-    return [
-
-      {
-        source: "/sitemap.xml",
-        destination: "/sitemap.xml",
-      },
-
-
-    ];
+    return [];
 
   },
 
@@ -95,6 +79,8 @@ const nextConfig = {
   async redirects() {
 
     return [
+
+      // www -> non www
 
       {
 
@@ -124,29 +110,18 @@ const nextConfig = {
       },
 
 
-      // Old store routes
+
+      // Old store URL
 
       {
 
-        source:"/store",
+        source: "/store",
 
-        destination:"/",
+        destination: "/",
 
-        permanent:true,
-
-      },
-
-
-      {
-
-        source:"/product",
-
-        destination:"/products",
-
-        permanent:true,
+        permanent: true,
 
       },
-
 
     ];
 
@@ -156,19 +131,16 @@ const nextConfig = {
 
   // ================= HEADERS =================
 
-
   async headers() {
 
     return [
 
       {
 
+        source: "/:path*",
 
-        source:"/:path*",
 
-
-        headers:[
-
+        headers: [
 
           {
 
@@ -231,19 +203,15 @@ const nextConfig = {
 
 
 
-
       // Sitemap Cache
 
-
       {
-
 
         source:
         "/sitemap.xml",
 
 
-        headers:[
-
+        headers: [
 
           {
 
@@ -270,24 +238,19 @@ const nextConfig = {
 
         ],
 
-
       },
 
 
 
-
-      // Static Assets Cache
-
+      // Next Static Cache
 
       {
-
 
         source:
         "/_next/static/:path*",
 
 
-        headers:[
-
+        headers: [
 
           {
 
@@ -303,10 +266,7 @@ const nextConfig = {
 
         ],
 
-
       },
-
-
 
     ];
 
@@ -314,22 +274,17 @@ const nextConfig = {
 
 
 
-
-  // ================= EXPERIMENTAL PERFORMANCE =================
-
+  // ================= PERFORMANCE =================
 
   experimental: {
 
-
-    optimizePackageImports:[
+    optimizePackageImports: [
 
       "firebase",
 
     ],
 
-
   },
-
 
 
 };
