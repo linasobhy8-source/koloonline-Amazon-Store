@@ -1,219 +1,912 @@
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { collection, getDocs, query, limit } from "firebase/firestore";
+
+import {
+collection,
+getDocs,
+query,
+limit,
+} from "firebase/firestore";
+
 import { db } from "../../config/firebase";
 
-/* ================= FAST HELPERS ================= */
+const SITE_URL = "https://koloonline.online";
 
-const safeText = (v) =>
-  typeof v === "string" || typeof v === "number"
-    ? String(v)
-    : v?.title || v?.name || "";
+/* ================= SAFE HELPERS ================= */
 
-const safeNumber = (v) => (v && !isNaN(v) ? Number(v) : 0);
+const safeText = (v) => {
+if (v == null) return "";
 
-const safeImage = (img) =>
-  typeof img === "string" && img.startsWith("http")
-    ? img
-    : "https://www.koloonline.online/logo.png";
+if (typeof v === "string") return v.trim();
 
-/* ================= LIGHT AI SCORE ================= */
+if (
+typeof v === "number" ||
+typeof v === "boolean"
+) {
+return String(v);
+}
 
-const calcScore = (p) => {
-  const v = safeNumber(p.views);
-  const c = safeNumber(p.clicks);
-  const o = safeNumber(p.orders);
-  const r = safeNumber(p.rating);
+if (Array.isArray(v)) {
+return v.map(safeText).join(" ");
+}
 
-  return v * 0.1 + c * 0.4 + o * 3 + r * 10 + (p.viralBoost ? 50 : 0);
+if (typeof v === "object") {
+return (
+safeText(v.title) ||
+safeText(v.name) ||
+safeText(v.value) ||
+""
+);
+}
+
+return "";
 };
 
-const getLevel = (s) =>
-  s >= 300 ? "elite" : s >= 180 ? "strong" : s >= 100 ? "good" : "weak";
-
-const getRobots = (s) =>
-  s >= 100
-    ? "index,follow,max-image-preview:large,max-snippet:-1"
-    : "noindex,follow";
-
-/* ================= TRENDING (FAST) ================= */
-
-const getTrending = (list) => {
-  return list
-    .slice(0, 8)
-    .map((p) => ({
-      id: p.id,
-      title: p.title,
-      slug: p.slug,
-      score:
-        safeNumber(p.views) * 0.2 +
-        safeNumber(p.clicks) * 0.6 +
-        safeNumber(p.orders) * 4 +
-        (p.viralBoost ? 80 : 0),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+const safeNumber = (v) => {
+const n = Number(v);
+return Number.isFinite(n) ? n : 0;
 };
 
-/* ================= PAGE ================= */
+const safeImage = (img) => {
 
-export default function ProductPage({ product, relatedProducts }) {
-  if (!product) return <div>Product Not Found</div>;
-
-  const title = safeText(product.title);
-  const desc = safeText(product.description);
-  const image = safeImage(product.image);
-
-  const url = `https://koloonline.online/product/${product.slug || product.id}`;
-
-  const score = calcScore(product);
-  const level = getLevel(score);
-  const robots = getRobots(score);
-
-  const seoTitle =
-    title.length > 58 ? title.slice(0, 55) + "..." : title;
-
-  const seoDesc =
-    desc.length > 150 ? desc.slice(0, 147) + "..." : desc;
-
-  const trending = getTrending(relatedProducts || []);
-
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: title,
-    image: [image],
-    description: seoDesc,
-    sku: product.id,
-    url,
-    brand: { "@type": "Brand", name: "Koloonline" },
-    offers: {
-      "@type": "Offer",
-      price: safeNumber(product.price),
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
-      url,
-    },
-  };
-
-  return (
-    <>
-      <Head>
-        <title>{seoTitle} | Koloonline</title>
-        <meta name="description" content={seoDesc} />
-        <meta name="robots" content={robots} />
-        <link rel="canonical" href={url} />
-
-        {/* 🔥 LCP BOOST */}
-        <link rel="preload" as="image" href={image} />
-        <link rel="preconnect" href="https://www.koloonline.online" />
-
-        <meta property="og:type" content="product" />
-        <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={seoDesc} />
-        <meta property="og:image" content={image} />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(schema),
-          }}
-        />
-      </Head>
-
-      <main style={{ maxWidth: 820, margin: "0 auto", padding: 16 }}>
-        <h1>{title}</h1>
-
-        {/* ⚡ OPTIMIZED LCP IMAGE */}
-        <Image
-          src={image}
-          width={820}
-          height={540}
-          priority
-          quality={70}
-          alt={title}
-          sizes="(max-width: 768px) 100vw, 820px"
-          style={{ width: "100%", height: "auto" }}
-        />
-
-        <p>{desc}</p>
-
-        <p>
-          <strong>Price:</strong> ${safeNumber(product.price)}
-        </p>
-
-        <p>
-          <strong>Score:</strong> {score.toFixed(0)} ({level})
-        </p>
-
-        {product.link && (
-          <a
-            href={product.link}
-            target="_blank"
-            rel="nofollow sponsored"
-            style={{
-              background: "#ff9900",
-              color: "#fff",
-              padding: 12,
-              display: "inline-block",
-              marginTop: 10,
-            }}
-          >
-            Buy Now
-          </a>
-        )}
-
-        {/* 🔥 TRENDING */}
-        <section>
-          <h2>Trending</h2>
-
-          {trending.map((p) => (
-            <Link key={p.id} href={`/product/${p.slug || p.id}`}>
-              <div style={{ padding: 6 }}>{p.title}</div>
-            </Link>
-          ))}
-        </section>
-      </main>
-    </>
-  );
+if (
+typeof img === "string" &&
+img.startsWith("http")
+) {
+return img;
 }
 
-/* ================= SSR DATA ================= */
-
-export async function getStaticProps({ params }) {
-  const snap = await getDocs(
-    query(collection(db, "products"), limit(120))
-  );
-
-  const products = snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
-
-  const product =
-    products.find((p) => (p.slug || p.id) === params.id) || null;
-
-  if (!product) return { notFound: true };
-
-  return {
-    props: {
-      product,
-      relatedProducts: products.slice(0, 12),
-    },
-    revalidate: 900,
-  };
+if (Array.isArray(img) && img.length) {
+return safeImage(img[0]);
 }
 
-/* ================= PATHS ================= */
+if (typeof img === "object" && img) {
 
-export async function getStaticPaths() {
-  const snap = await getDocs(collection(db, "products"));
+return (  
+  img.url ||  
+  img.src ||  
+  img.image ||  
+  `${SITE_URL}/logo.png`  
+);
 
-  return {
-    paths: snap.docs.slice(0, 150).map((d) => ({
-      params: { id: String(d.data().slug || d.id) },
-    })),
-    fallback: "blocking",
-  };
 }
+
+return ${SITE_URL}/logo.png;
+
+};
+
+/* ================= AI SCORE ================= */
+
+const calcScore = (p = {}) => {
+
+const views = safeNumber(p.views);
+const clicks = safeNumber(p.clicks);
+const orders = safeNumber(p.orders);
+const rating = safeNumber(p.rating);
+
+return (
+views * 0.2 +
+clicks * 0.7 +
+orders * 5 +
+rating * 12 +
+(p.viralBoost ? 80 : 0)
+);
+
+};
+
+const getLevel = (score) => {
+
+if (score >= 350)
+return "elite";
+
+if (score >= 220)
+return "strong";
+
+if (score >= 120)
+return "good";
+
+return "normal";
+
+};
+
+const getRobots = () =>
+"index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1";
+
+/* ================= PRODUCT PAGE ================= */
+
+export default function ProductPage({
+product,
+relatedProducts,
+}) {
+
+const title =
+safeText(product.title) ||
+"Amazon Product";
+
+const desc =
+safeText(product.description) ||
+Discover ${title} with detailed information and Amazon offers.;
+
+const image =
+safeImage(
+product.image ||
+product.images
+);
+
+const url =
+${SITE_URL}/product/${product.slug || product.id};
+
+const score =
+calcScore(product);
+
+const level =
+getLevel(score);
+
+const seoTitle =
+${title} Review & Best Price;
+
+const seoDesc =
+desc.substring(0,160);
+
+const schema = {
+
+"@context":"https://schema.org",  
+
+"@type":"Product",  
+
+"name":title,  
+
+"image":[image],  
+
+"description":seoDesc,  
+
+"brand":{  
+  "@type":"Brand",  
+  "name":"Amazon"  
+},  
+
+
+"offers":{  
+
+  "@type":"Offer",  
+
+  "url":url,  
+
+  "priceCurrency":"USD",  
+
+  "price":safeNumber(product.price),  
+
+  "availability":  
+  "https://schema.org/InStock"  
+
+}
+
+};
+
+return (
+
+<>
+
+<Head>  <title>  
+{seoTitle} | Koloonline  
+</title>  <meta  
+name="description"  
+content={seoDesc}  
+/>
+
+<meta  
+name="robots"  
+content={getRobots()}  
+/>
+
+<link  
+rel="canonical"  
+href={url}  
+/>  <link  
+rel="preconnect"  
+href="https://m.media-amazon.com"  
+/>  <link  
+rel="dns-prefetch"  
+href="//m.media-amazon.com"  
+/>  <meta  
+property="og:type"  
+content="product"  
+/>
+
+<meta  
+property="og:site_name"  
+content="Koloonline"  
+/>
+
+<meta  
+property="og:title"  
+content={seoTitle}  
+/>
+
+<meta  
+property="og:description"  
+content={seoDesc}  
+/>
+
+<meta  
+property="og:url"  
+content={url}  
+/>
+
+<meta  
+property="og:image"  
+content={image}  
+/>
+
+<meta  
+name="twitter:card"  
+content="summary_large_image"  
+/>
+
+<meta  
+name="twitter:title"  
+content={seoTitle}  
+/>
+
+<meta  
+name="twitter:description"  
+content={seoDesc}  
+/>
+
+<meta  
+name="twitter:image"  
+content={image}  
+/>
+
+<script  
+type="application/ld+json"  
+dangerouslySetInnerHTML={{  
+__html:JSON.stringify(schema)  
+}}  
+/>  
+  
+  
+</Head>  
+  
+  
+  
+<main  
+style={{  
+maxWidth:900,  
+margin:"0 auto",  
+padding:20  
+}}  
+>  
+  
+  
+<header>  
+  
+<h1>  
+{title}  
+</h1>  
+  
+  
+<p  
+style={{  
+color:"#666",  
+lineHeight:1.7  
+}}  
+>  
+{seoDesc}  
+</p>  
+  
+  
+</header>  
+  
+  
+  
+  
+<div  
+style={{  
+marginTop:25  
+}}  
+>  
+  
+  
+<Image  
+  
+src={image}  
+  
+alt={title}  
+  
+width={900}  
+  
+height={650}  
+  
+priority  
+  
+quality={80}  
+  
+sizes="(max-width:768px)100vw,900px"  
+  
+style={{  
+width:"100%",  
+height:"auto",  
+borderRadius:12,  
+objectFit:"contain"  
+}}  
+  
+/>  
+  
+  
+</div>  
+  
+  
+  
+  
+  
+<section  
+style={{  
+marginTop:30  
+}}  
+>  
+  
+  
+<h2>  
+Product Details  
+</h2>  
+  
+  
+  
+<p>  
+{desc}  
+</p>  
+  
+  
+  
+<p>  
+<strong>  
+Price:  
+</strong>{" "}  
+${safeNumber(product.price)}  
+</p>  
+  
+  
+  
+<p>  
+<strong>  
+Category:  
+</strong>{" "}  
+{safeText(product.category)}  
+</p>  
+  
+  
+  
+<p>  
+<strong>  
+Rating:  
+</strong>{" "}  
+{safeNumber(product.rating)}  
+</p>  
+  
+  
+  
+<p>  
+<strong>  
+AI Score:  
+</strong>{" "}  
+{score.toFixed(0)}  
+</p>  
+  
+  
+  
+<p>  
+<strong>  
+Level:  
+</strong>{" "}  
+{level}  
+</p>  
+  
+  
+  
+  
+{  
+product.link && (  
+  
+<a  
+  
+href={product.link}  
+  
+target="_blank"  
+  
+rel="nofollow sponsored noopener"  
+  
+style={{  
+  
+display:"inline-block",  
+  
+marginTop:20,  
+  
+padding:"14px 26px",  
+  
+background:"#ff9900",  
+  
+color:"#fff",  
+  
+borderRadius:8,  
+  
+textDecoration:"none",  
+  
+fontWeight:700  
+  
+}}  
+  
+>  
+  
+Buy on Amazon  
+  
+</a>  
+  
+)  
+  
+}  
+  
+  
+  
+</section>  
+{/* ================= RELATED PRODUCTS ================= */}  
+  
+  
+{  
+relatedProducts &&  
+relatedProducts.length > 0 && (  
+  
+<section  
+style={{  
+marginTop:50  
+}}  
+>  
+  
+  
+<h2>  
+🔥 Trending Products  
+</h2>  
+  
+  
+  
+<div  
+  
+style={{  
+  
+display:"grid",  
+  
+gridTemplateColumns:  
+"repeat(auto-fit,minmax(220px,1fr))",  
+  
+gap:18,  
+  
+marginTop:20  
+  
+}}  
+  
+>  
+  
+  
+{  
+relatedProducts.map((item)=>{  
+  
+  
+const itemTitle =  
+safeText(item.title) ||  
+"Amazon Product";  
+  
+  
+const itemSlug =  
+item.slug ||  
+item.asin ||  
+item.id;  
+  
+  
+  
+return (  
+  
+<Link  
+  
+key={item.id}  
+  
+href={`/product/${itemSlug}`}  
+  
+style={{  
+  
+textDecoration:"none",  
+  
+color:"inherit"  
+  
+}}  
+  
+>  
+  
+  
+  
+<article  
+  
+style={{  
+  
+border:"1px solid #eee",  
+  
+borderRadius:10,  
+  
+padding:14,  
+  
+background:"#fff"  
+  
+}}  
+  
+>  
+  
+  
+  
+<h3  
+  
+style={{  
+  
+fontSize:15,  
+  
+lineHeight:1.5,  
+  
+margin:0  
+  
+}}  
+  
+>  
+  
+{itemTitle}  
+  
+</h3>  
+  
+  
+  
+<p  
+  
+style={{  
+  
+color:"#ff9900",  
+  
+fontWeight:700  
+  
+}}  
+  
+>  
+  
+AI Score:  
+{" "}  
+{  
+Math.round(  
+calcScore(item)  
+)  
+}  
+  
+</p>  
+  
+  
+  
+</article>  
+  
+  
+</Link>  
+  
+);  
+  
+  
+})  
+  
+}  
+  
+  
+</div>  
+  
+  
+</section>  
+  
+)  
+  
+}  
+  
+  
+  
+</main>  
+  
+</>  
+  
+);  
+  
+}  
+  
+  
+  
+  
+/* ================= STATIC DATA ================= */  
+  
+  
+export async function getStaticProps({params}){  
+  
+  
+try{  
+  
+  
+const snap =  
+await getDocs(  
+  
+query(  
+  
+collection(db,"products"),  
+  
+limit(300)  
+  
+)  
+  
+);  
+  
+  
+  
+const products =  
+snap.docs.map(doc=>({  
+  
+id:doc.id,  
+  
+...doc.data()  
+  
+}));  
+  
+  
+  
+  
+  
+const id =  
+String(params.id);  
+  
+  
+  
+  
+  
+const product =  
+  
+products.find(  
+  
+(p)=>  
+  
+String(p.slug || "") === id ||  
+  
+String(p.asin || "") === id ||  
+  
+String(p.id) === id  
+  
+)  
+  
+|| null;  
+  
+  
+  
+  
+  
+  
+if(!product){  
+  
+  
+return {  
+  
+notFound:true,  
+  
+revalidate:300  
+  
+};  
+  
+  
+}  
+  
+  
+  
+  
+  
+const relatedProducts =  
+  
+products  
+  
+.filter(  
+  
+(p)=>  
+  
+p.id !== product.id  
+  
+)  
+  
+.sort(  
+  
+(a,b)=>  
+  
+calcScore(b)-calcScore(a)  
+  
+)  
+  
+.slice(0,12);  
+  
+  
+  
+  
+  
+  
+return {  
+  
+  
+props:{  
+  
+  
+product,  
+  
+relatedProducts  
+  
+  
+},  
+  
+  
+  
+revalidate:300  
+  
+  
+};  
+  
+  
+  
+  
+}  
+  
+catch(error){  
+  
+  
+console.error(  
+"Product page error:",  
+error  
+);  
+  
+  
+  
+return {  
+  
+notFound:true,  
+  
+revalidate:300  
+  
+};  
+  
+  
+}  
+  
+  
+  
+}  
+  
+  
+  
+  
+  
+  
+/* ================= STATIC PATHS ================= */  
+  
+  
+export async function getStaticPaths(){  
+  
+  
+try{  
+  
+  
+const snap =  
+  
+await getDocs(  
+  
+query(  
+  
+collection(db,"products"),  
+  
+limit(300)  
+  
+)  
+  
+);  
+  
+  
+  
+  
+  
+const paths =  
+  
+snap.docs  
+  
+.map((doc)=>{  
+  
+  
+const data =  
+doc.data() || {};  
+  
+  
+  
+const slug =  
+  
+data.slug ||  
+  
+data.asin ||  
+  
+doc.id;  
+  
+  
+  
+if(!slug)  
+return null;  
+  
+  
+  
+return {  
+  
+  
+params:{  
+  
+id:String(slug)  
+  
+}  
+  
+  
+};  
+  
+  
+})  
+  
+  
+.filter(Boolean);  
+  
+  
+  
+  
+  
+  
+return {  
+  
+  
+paths,  
+  
+fallback:"blocking"  
+  
+  
+};  
+  
+  
+  
+  
+  
+}  
+  
+catch(error){  
+  
+  
+console.error(  
+  
+"getStaticPaths error:",  
+  
+error  
+  
+);  
+  
+  
+  
+  
+return {  
+  
+  
+paths:[],  
+  
+fallback:"blocking"  
+  
+  
+};  
+  
+  
+  
+}  
+  
+  
+  
+  }
