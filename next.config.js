@@ -34,9 +34,37 @@ const nextConfig = {
     ],
   },
 
+  // ================= REWRITES =================
+  async rewrites() {
+    return [
+      {
+        source: "/sitemap.xml",
+        destination: "/sitemap.xml",
+      },
+    ];
+  },
+
+  // ================= REDIRECTS =================
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.koloonline.online",
+          },
+        ],
+        destination: "https://koloonline.online/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   // ================= HEADERS (SEO + SECURITY) =================
   async headers() {
     return [
+      // Security Headers
       {
         source: "/:path*",
         headers: [
@@ -63,40 +91,20 @@ const nextConfig = {
         ],
       },
 
-      // Next.js static files
+      // Sitemap Cache
       {
-        source: "/_next/static/:path*",
+        source: "/sitemap.xml",
         headers: [
           {
+            key: "Content-Type",
+            value: "application/xml",
+          },
+          {
             key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
+            value:
+              "public, s-maxage=3600, stale-while-revalidate=86400",
           },
         ],
       },
 
-      // Favicon
-      {
-        source: "/favicon.ico",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-
-      // Images
-      {
-        source: "/:all*(svg|jpg|jpeg|png|gif|webp|avif|ico)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-    ];
-  },
-};
-
-module.exports = nextConfig;
+     
