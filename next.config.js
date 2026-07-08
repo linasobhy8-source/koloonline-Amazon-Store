@@ -40,18 +40,15 @@ const nextConfig = {
         hostname: "images.amazon.com",
       },
 
-
       {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
       },
 
-
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
-
 
       {
         protocol: "https",
@@ -63,7 +60,6 @@ const nextConfig = {
   },
 
 
-
   // ================= REWRITES =================
 
   async rewrites() {
@@ -73,48 +69,15 @@ const nextConfig = {
   },
 
 
-
   // ================= REDIRECTS =================
 
   async redirects() {
 
     return [
 
-      // www -> non www
-
-      {
-
-        source: "/:path*",
-
-
-        has: [
-
-          {
-
-            type: "host",
-
-            value:
-              "www.koloonline.online",
-
-          },
-
-        ],
-
-
-        destination:
-          "https://koloonline.online/:path*",
-
-
-        permanent: true,
-
-      },
-
-
-
       // Old store URL
 
       {
-
         source: "/store",
 
         destination: "/",
@@ -126,7 +89,6 @@ const nextConfig = {
     ];
 
   },
-
 
 
   // ================= HEADERS =================
@@ -145,10 +107,10 @@ const nextConfig = {
           {
 
             key:
-            "X-Content-Type-Options",
+              "X-Content-Type-Options",
 
             value:
-            "nosniff",
+              "nosniff",
 
           },
 
@@ -156,10 +118,10 @@ const nextConfig = {
           {
 
             key:
-            "Referrer-Policy",
+              "Referrer-Policy",
 
             value:
-            "strict-origin-when-cross-origin",
+              "strict-origin-when-cross-origin",
 
           },
 
@@ -167,10 +129,10 @@ const nextConfig = {
           {
 
             key:
-            "Permissions-Policy",
+              "Permissions-Policy",
 
             value:
-            "camera=(), microphone=(), geolocation=()",
+              "camera=(), microphone=(), geolocation=()",
 
           },
 
@@ -178,10 +140,10 @@ const nextConfig = {
           {
 
             key:
-            "X-Frame-Options",
+              "X-Frame-Options",
 
             value:
-            "SAMEORIGIN",
+              "SAMEORIGIN",
 
           },
 
@@ -189,10 +151,10 @@ const nextConfig = {
           {
 
             key:
-            "X-DNS-Prefetch-Control",
+              "X-DNS-Prefetch-Control",
 
             value:
-            "on",
+              "on",
 
           },
 
@@ -203,12 +165,12 @@ const nextConfig = {
 
 
 
-      // Sitemap Cache
+      // ================= SITEMAP CACHE =================
 
       {
 
         source:
-        "/sitemap.xml",
+          "/sitemap.xml",
 
 
         headers: [
@@ -216,10 +178,10 @@ const nextConfig = {
           {
 
             key:
-            "Content-Type",
+              "Content-Type",
 
             value:
-            "application/xml",
+              "application/xml",
 
           },
 
@@ -227,14 +189,12 @@ const nextConfig = {
           {
 
             key:
-            "Cache-Control",
+              "Cache-Control",
 
             value:
-
-            "public, s-maxage=3600, stale-while-revalidate=86400",
+              "public, s-maxage=3600, stale-while-revalidate=86400",
 
           },
-
 
         ],
 
@@ -242,12 +202,12 @@ const nextConfig = {
 
 
 
-      // Next Static Cache
+      // ================= NEXT STATIC CACHE =================
 
       {
 
         source:
-        "/_next/static/:path*",
+          "/_next/static/:path*",
 
 
         headers: [
@@ -255,14 +215,12 @@ const nextConfig = {
           {
 
             key:
-            "Cache-Control",
+              "Cache-Control",
 
             value:
-
-            "public, max-age=31536000, immutable",
+              "public, max-age=31536000, immutable",
 
           },
-
 
         ],
 
@@ -271,7 +229,6 @@ const nextConfig = {
     ];
 
   },
-
 
 
   // ================= PERFORMANCE =================
