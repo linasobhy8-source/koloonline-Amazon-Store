@@ -6,66 +6,58 @@ function mergeStrategies({
   healing,
   neural,
 }) {
+  const trending = market?.trendingProducts?.length || 0;
+  const top = market?.topProducts?.length || 0;
+  const viral = market?.viralProducts?.length || 0;
+  const opportunities = neural?.opportunities?.length || 0;
+  const performance = evolution?.performanceScore || 0;
+  const brokenPages = healing?.brokenPages || 0;
+
   const baseScore =
-    (market?.trendingProducts?.length || 0) * 2 +
-    (market?.topProducts?.length || 0) * 3 +
-    (market?.viralProducts?.length || 0) * 5 +
-    (neural?.opportunities?.length || 0) * 4 +
-    (evolution?.performanceScore || 0) -
-    (healing?.brokenPages || 0) * 2;
+    trending * 2 +
+    top * 3 +
+    viral * 5 +
+    opportunities * 4 +
+    performance -
+    brokenPages * 2;
 
   const commonActions = [
     "updateHomepage",
     "refreshRecommendations",
     "updateTrendingProducts",
-    "refreshRelatedProducts",
     "cleanupBrokenLinks",
+    "updateSitemap",
+    "submitIndexNow",
   ];
 
-  /* ================= STRATEGY MODE DECISION ================= */
-  if (baseScore > 200) {
+  if (baseScore >= 200) {
     return {
       mode: "GROWTH_FOCUS",
       score: baseScore,
       ceoMode: ceoDecision?.strategy?.mode || "AUTO",
+
       actions: [
-        "generateTopPages",
         "generateBlogArticles",
-        "generateAmazonHaulPages",
-        "generateSEOClusters",
-        "generateBuyingGuides",
-        "linkProductsToBlogs",
-        "linkBlogsToTopPages",
-        "linkAmazonHaulToProducts",
-        "generateFAQSchema",
-        "generateBreadcrumbSchema",
-        "generateProductSchema",
-        "updateSitemap",
-        "submitIndexNow",
+        "refreshTopPages",
+        "highlightViralProducts",
         "refreshMetaTitles",
         "refreshMetaDescriptions",
-        "expandHomepageRecommendations",
-        "highlightViralProducts",
         ...commonActions,
       ],
     };
   }
 
-  if (baseScore > 100) {
+  if (baseScore >= 100) {
     return {
       mode: "OPTIMIZATION_FOCUS",
       score: baseScore,
       ceoMode: ceoDecision?.strategy?.mode || "AUTO",
+
       actions: [
         "refreshOldBlogs",
         "refreshTopPages",
-        "updateTrendingProducts",
         "optimizeTitles",
         "optimizeDescriptions",
-        "improveInternalLinks",
-        "updateSitemap",
-        "submitIndexNow",
-        "refreshAffiliateLinks",
         "optimizeCTR",
         ...commonActions,
       ],
@@ -76,15 +68,13 @@ function mergeStrategies({
     mode: "STABILITY_FOCUS",
     score: baseScore,
     ceoMode: ceoDecision?.strategy?.mode || "AUTO",
+
     actions: [
       "fixSEO",
       "repairBrokenPages",
       "removeDeadLinks",
-      "removeOldSitemapEntries",
       "refreshLowPerformingContent",
       "rebuildInternalLinks",
-      "updateSitemap",
-      "submitIndexNow",
       ...commonActions,
     ],
   };
