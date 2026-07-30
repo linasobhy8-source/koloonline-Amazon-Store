@@ -58,7 +58,10 @@ const safeImage = (value) => {
   if (typeof value === "string") {
     const image = value.trim();
 
-    if (image.startsWith("http://") || image.startsWith("https://")) {
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
       return image;
     }
   }
@@ -91,7 +94,41 @@ const getProductImage = (product = {}) => {
     product.image ||
       product.images ||
       product.imageUrl ||
-      product.thumbnail
+      product.thumbnail ||
+      product["صورة"]
+  );
+};
+
+const getProductTitle = (product = {}) => {
+  return (
+    safeText(product.title) ||
+    safeText(product.name) ||
+    safeText(product["عنوان"]) ||
+    "Amazon Product"
+  );
+};
+
+const getProductCategory = (product = {}) => {
+  return (
+    safeText(product.category) ||
+    safeText(product["فئة"]) ||
+    ""
+  );
+};
+
+const getProductPrice = (product = {}) => {
+  return safeNumber(
+    product.price ??
+      product["سعر"]
+  );
+};
+
+const getProductLink = (product = {}) => {
+  return (
+    safeText(product.link) ||
+    safeText(product.url) ||
+    safeText(product["وصلة"]) ||
+    ""
   );
 };
 
@@ -100,6 +137,7 @@ const getProductBrand = (product = {}) => {
     safeText(product.brand) ||
     safeText(product.brandName) ||
     safeText(product.manufacturer) ||
+    safeText(product["العلامة التجارية"]) ||
     ""
   );
 };
@@ -112,8 +150,30 @@ const getProductCurrency = (product = {}) => {
   );
 };
 
+const getProductRating = (product = {}) => {
+  const rating = safeNumber(
+    product.rating ??
+      product["rating"] ??
+      product["التقييم"]
+  );
+
+  return rating > 0 && rating <= 5 ? rating : 0;
+};
+
+const getProductReviewCount = (product = {}) => {
+  return safeNumber(
+    product.reviewCount ??
+      product.reviewsCount ??
+      product.reviews ??
+      product["عدد المراجعات"] ??
+      0
+  );
+};
+
 const getProductAvailability = (product = {}) => {
-  const value = safeText(product.availability).toLowerCase();
+  const value = safeText(
+    product.availability
+  ).toLowerCase();
 
   if (value.includes("out")) {
     return "https://schema.org/OutOfStock";
@@ -135,17 +195,33 @@ const getProductAvailability = (product = {}) => {
 ========================================================= */
 
 const calcScore = (product = {}) => {
-  const views = safeNumber(product.views);
-  const clicks = safeNumber(product.clicks);
-  const orders = safeNumber(product.orders);
-  const rating = safeNumber(product.rating);
+  const views = safeNumber(
+    product.views ??
+      product["المشاهدات"]
+  );
+
+  const clicks = safeNumber(
+    product.clicks ??
+      product["نقرات"]
+  );
+
+  const orders = safeNumber(
+    product.orders ??
+      product["الطلبات"]
+  );
+
+  const rating = getProductRating(product);
+
+  const viralBoost =
+    product.viralBoost ??
+    product["تعزيز الانتشار الفيروسي"];
 
   return (
     views * 0.2 +
     clicks * 0.7 +
     orders * 5 +
     rating * 12 +
-    (product.viralBoost ? 80 : 0)
+    (viralBoost ? 80 : 0)
   );
 };
 
@@ -166,21 +242,23 @@ const getRobots = () =>
 
 async function findProduct(id) {
   const productsRef = collection(db, "products");
-
   const normalizedId = String(id || "").trim();
 
   if (!normalizedId) {
     return null;
   }
 
-  /* -------------------------------------------------------
-     1) BEST CASE:
-        Document ID is the product ID / ASIN
-  ------------------------------------------------------- */
+  /* 1) Direct document ID */
 
   try {
-    const directRef = doc(db, "products", normalizedId);
-    const directSnap = await getDoc(directRef);
+    const directRef = doc(
+      db,
+      "products",
+      normalizedId
+    );
+
+    const directSnap =
+      await getDoc(directRef);
 
     if (directSnap.exists()) {
       return {
@@ -189,13 +267,13 @@ async function findProduct(id) {
       };
     }
   } catch (error) {
-    console.error("Direct product lookup failed:", error);
+    console.error(
+      "Direct product lookup failed:",
+      error
+    );
   }
 
-  /* -------------------------------------------------------
-     2) FALLBACK:
-        Search by ASIN
-  ------------------------------------------------------- */
+  /* 2) ASIN */
 
   try {
     const asinSnap = await getDocs(
@@ -215,13 +293,13 @@ async function findProduct(id) {
       };
     }
   } catch (error) {
-    console.error("ASIN lookup failed:", error);
+    console.error(
+      "ASIN lookup failed:",
+      error
+    );
   }
 
-  /* -------------------------------------------------------
-     3) FALLBACK:
-        Search by slug
-  ------------------------------------------------------- */
+  /* 3) Slug */
 
   try {
     const slugSnap = await getDocs(
@@ -241,7 +319,10 @@ async function findProduct(id) {
       };
     }
   } catch (error) {
-    console.error("Slug lookup failed:", error);
+    console.error(
+      "Slug lookup failed:",
+      error
+    );
   }
 
   return null;
@@ -251,58 +332,138 @@ async function findProduct(id) {
    RELATED PRODUCTS
 ========================================================= */
 
+async function fetchProductsByField(
+  field,
+  value,
+  max = 20
+) {
+  if (!value) return [];
+
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, "products"),
+        where(field, "==", value),
+        limit(max)
+      )
+    );
+
+    return snap.docs.map((item) => ({
+      id: item.id,
+      ...item.data(),
+    }));
+  } catch (error) {
+    console.error(
+      `Related query failed for ${field}:`,
+      error
+    );
+
+    return [];
+  }
+}
+
 async function getRelatedProducts(product) {
   try {
-    const productsRef = collection(db, "products");
+    const category =
+      getProductCategory(product);
 
-    const category = safeText(product.category);
+    let related = [];
 
-    let snapshot;
+    /* -----------------------------------------------
+       1) English category
+    ----------------------------------------------- */
 
-    /* Prefer same-category products */
     if (category) {
-      try {
-        snapshot = await getDocs(
-          query(
-            productsRef,
-            where("category", "==", category),
-            limit(13)
-          )
+      related = await fetchProductsByField(
+        "category",
+        category,
+        20
+      );
+    }
+
+    /* -----------------------------------------------
+       2) Arabic category field
+    ----------------------------------------------- */
+
+    if (related.length <= 1 && category) {
+      const arabicRelated =
+        await fetchProductsByField(
+          "فئة",
+          category,
+          20
         );
+
+      related = [
+        ...related,
+        ...arabicRelated,
+      ];
+    }
+
+    /* -----------------------------------------------
+       3) General fallback
+    ----------------------------------------------- */
+
+    if (related.length <= 1) {
+      try {
+        const fallbackSnap =
+          await getDocs(
+            query(
+              collection(db, "products"),
+              limit(30)
+            )
+          );
+
+        related = [
+          ...related,
+          ...fallbackSnap.docs.map(
+            (item) => ({
+              id: item.id,
+              ...item.data(),
+            })
+          ),
+        ];
       } catch (error) {
         console.error(
-          "Category related-products query failed:",
+          "Fallback related products failed:",
           error
         );
       }
     }
 
-    /* Fallback */
-    if (!snapshot) {
-      snapshot = await getDocs(
-        query(
-          productsRef,
-          limit(13)
-        )
-      );
-    }
+    /* -----------------------------------------------
+       Remove duplicates
+    ----------------------------------------------- */
 
-    const products = snapshot.docs
-      .map((item) => ({
-        id: item.id,
-        ...item.data(),
-      }))
-      .filter(
-        (item) =>
-          String(item.id) !== String(product.id)
-      )
+    const unique = new Map();
+
+    related.forEach((item) => {
+      if (item?.id) {
+        unique.set(
+          String(item.id),
+          item
+        );
+      }
+    });
+
+    /* -----------------------------------------------
+       Remove current product
+    ----------------------------------------------- */
+
+    unique.delete(
+      String(product.id)
+    );
+
+    /* -----------------------------------------------
+       Sort by score
+    ----------------------------------------------- */
+
+    return Array.from(unique.values())
       .sort(
         (a, b) =>
-          calcScore(b) - calcScore(a)
+          calcScore(b) -
+          calcScore(a)
       )
       .slice(0, 12);
-
-    return products;
   } catch (error) {
     console.error(
       "Related products error:",
@@ -326,17 +487,20 @@ export default function ProductPage({
   }
 
   const title =
-    safeText(product.title) ||
-    safeText(product.name) ||
-    "Amazon Product";
+    getProductTitle(product);
 
   const rawDescription =
-    safeText(product.description) ||
-    safeText(product.shortDescription) ||
-    `Discover ${title}, product details, pricing information and Amazon offers.`;
+    safeText(
+      product.description ??
+      product["الوصف"]
+    ) ||
+    `Discover ${title} with detailed information and Amazon offers.`;
 
   const description =
-    rawDescription.slice(0, 5000);
+    rawDescription.slice(
+      0,
+      5000
+    );
 
   const seoDescription =
     rawDescription
@@ -344,7 +508,8 @@ export default function ProductPage({
       .trim()
       .slice(0, 160);
 
-  const image = getProductImage(product);
+  const image =
+    getProductImage(product);
 
   const productSlug =
     safeText(product.slug) ||
@@ -352,10 +517,12 @@ export default function ProductPage({
     safeText(product.id);
 
   const url =
-    `${SITE_URL}/product/${encodeURIComponent(productSlug)}`;
+    `${SITE_URL}/product/${encodeURIComponent(
+      productSlug
+    )}`;
 
   const price =
-    safeNumber(product.price);
+    getProductPrice(product);
 
   const currency =
     getProductCurrency(product);
@@ -363,8 +530,20 @@ export default function ProductPage({
   const brand =
     getProductBrand(product);
 
+  const rating =
+    getProductRating(product);
+
+  const reviewCount =
+    getProductReviewCount(product);
+
   const availability =
     getProductAvailability(product);
+
+  const category =
+    getProductCategory(product);
+
+  const amazonLink =
+    getProductLink(product);
 
   const score =
     calcScore(product);
@@ -380,8 +559,11 @@ export default function ProductPage({
   ======================================================= */
 
   const schema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
+    "@context":
+      "https://schema.org",
+
+    "@type":
+      "Product",
 
     name: title,
 
@@ -389,11 +571,14 @@ export default function ProductPage({
 
     image: [image],
 
-    description: seoDescription,
+    description:
+      seoDescription,
 
     ...(safeText(product.asin)
       ? {
-          sku: safeText(product.asin),
+          sku: safeText(
+            product.asin
+          ),
         }
       : {}),
 
@@ -411,40 +596,32 @@ export default function ProductPage({
           offers: {
             "@type": "Offer",
             url,
-            priceCurrency: currency,
-            price: price.toFixed(2),
+            priceCurrency:
+              currency,
+            price: price.toFixed(
+              2
+            ),
             availability,
             itemCondition:
               "https://schema.org/NewCondition",
           },
         }
       : {}),
-  };
 
-  /* =======================================================
-     OPTIONAL RATING SCHEMA
-  ======================================================= */
-
-  const ratingValue =
-    safeNumber(product.rating);
-
-  const reviewCount =
-    safeNumber(
-      product.reviewCount ||
-        product.reviewsCount
-    );
-
-  if (
-    ratingValue > 0 &&
-    ratingValue <= 5 &&
+    ...(rating > 0 &&
     reviewCount > 0
-  ) {
-    schema.aggregateRating = {
-      "@type": "AggregateRating",
-      ratingValue: ratingValue.toFixed(1),
-      reviewCount,
-    };
-  }
+      ? {
+          aggregateRating: {
+            "@type":
+              "AggregateRating",
+            ratingValue:
+              rating.toFixed(1),
+            reviewCount:
+              reviewCount,
+          },
+        }
+      : {}),
+  };
 
   return (
     <>
@@ -455,7 +632,9 @@ export default function ProductPage({
 
         <meta
           name="description"
-          content={seoDescription}
+          content={
+            seoDescription
+          }
         />
 
         <meta
@@ -467,18 +646,6 @@ export default function ProductPage({
           rel="canonical"
           href={url}
         />
-
-        <link
-          rel="preconnect"
-          href="https://m.media-amazon.com"
-        />
-
-        <link
-          rel="dns-prefetch"
-          href="//m.media-amazon.com"
-        />
-
-        {/* Open Graph */}
 
         <meta
           property="og:type"
@@ -492,7 +659,9 @@ export default function ProductPage({
 
         <meta
           property="og:description"
-          content={seoDescription}
+          content={
+            seoDescription
+          }
         />
 
         <meta
@@ -504,8 +673,6 @@ export default function ProductPage({
           property="og:image"
           content={image}
         />
-
-        {/* Twitter */}
 
         <meta
           name="twitter:card"
@@ -519,7 +686,9 @@ export default function ProductPage({
 
         <meta
           name="twitter:description"
-          content={seoDescription}
+          content={
+            seoDescription
+          }
         />
 
         <meta
@@ -527,12 +696,13 @@ export default function ProductPage({
           content={image}
         />
 
-        {/* Product JSON-LD */}
-
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(schema),
+            __html:
+              JSON.stringify(
+                schema
+              ),
           }}
         />
       </Head>
@@ -540,14 +710,14 @@ export default function ProductPage({
       <main
         style={{
           maxWidth: 1000,
-          margin: "0 auto",
-          padding: "24px 20px 60px",
+          margin:
+            "0 auto",
+          padding:
+            "24px 20px 60px",
         }}
       >
 
-        {/* =================================================
-            BREADCRUMB
-        ================================================= */}
+        {/* BREADCRUMB */}
 
         <nav
           aria-label="Breadcrumb"
@@ -574,17 +744,17 @@ export default function ProductPage({
           </span>
         </nav>
 
-        {/* =================================================
-            PRODUCT
-        ================================================= */}
+        {/* PRODUCT */}
 
         <article>
 
           <h1
             style={{
-              fontSize: "clamp(28px,5vw,42px)",
+              fontSize:
+                "clamp(28px,5vw,42px)",
               lineHeight: 1.2,
-              marginBottom: 14,
+              marginBottom:
+                14,
             }}
           >
             {title}
@@ -608,7 +778,8 @@ export default function ProductPage({
               background: "#fff",
               borderRadius: 16,
               overflow: "hidden",
-              border: "1px solid #eee",
+              border:
+                "1px solid #eee",
             }}
           >
             <Image
@@ -622,7 +793,8 @@ export default function ProductPage({
               style={{
                 width: "100%",
                 height: "auto",
-                objectFit: "contain",
+                objectFit:
+                  "contain",
               }}
             />
           </div>
@@ -642,7 +814,8 @@ export default function ProductPage({
             <p
               style={{
                 lineHeight: 1.8,
-                whiteSpace: "pre-line",
+                whiteSpace:
+                  "pre-line",
               }}
             >
               {description}
@@ -654,26 +827,44 @@ export default function ProductPage({
                   Price:
                 </strong>{" "}
                 {currency}{" "}
-                {price.toFixed(2)}
+                {price.toFixed(
+                  2
+                )}
               </p>
             )}
 
-            {safeText(product.category) && (
+            {category && (
               <p>
                 <strong>
                   Category:
                 </strong>{" "}
-                {safeText(product.category)}
+                {category}
               </p>
             )}
 
-            {ratingValue > 0 && (
+            {/* SHOW RATING ONLY WHEN REAL */}
+
+            {rating > 0 && (
               <p>
                 <strong>
                   Rating:
                 </strong>{" "}
-                {ratingValue.toFixed(1)}
+                {rating.toFixed(
+                  1
+                )}
                 /5
+
+                {reviewCount >
+                  0 && (
+                  <>
+                    {" "}
+                    (
+                    {
+                      reviewCount
+                    }{" "}
+                    reviews)
+                  </>
+                )}
               </p>
             )}
 
@@ -681,7 +872,9 @@ export default function ProductPage({
               <strong>
                 AI Score:
               </strong>{" "}
-              {score.toFixed(0)}
+              {score.toFixed(
+                0
+              )}
             </p>
 
             <p>
@@ -691,21 +884,28 @@ export default function ProductPage({
               {level}
             </p>
 
-            {/* AMAZON CTA */}
+            {/* AMAZON */}
 
-            {safeText(product.link) && (
+            {amazonLink && (
               <a
-                href={product.link}
+                href={
+                  amazonLink
+                }
                 target="_blank"
                 rel="nofollow sponsored noopener noreferrer"
                 style={{
-                  display: "inline-block",
+                  display:
+                    "inline-block",
                   marginTop: 20,
-                  padding: "14px 26px",
-                  background: "#ff9900",
-                  color: "#fff",
+                  padding:
+                    "14px 26px",
+                  background:
+                    "#ff9900",
+                  color:
+                    "#fff",
                   borderRadius: 8,
-                  textDecoration: "none",
+                  textDecoration:
+                    "none",
                   fontWeight: 700,
                 }}
               >
@@ -715,11 +915,10 @@ export default function ProductPage({
           </section>
         </article>
 
-        {/* =================================================
-            RELATED PRODUCTS
-        ================================================= */}
+        {/* RELATED PRODUCTS */}
 
-        {relatedProducts.length > 0 && (
+        {relatedProducts.length >
+          0 && (
           <section
             style={{
               marginTop: 60,
@@ -731,94 +930,155 @@ export default function ProductPage({
 
             <div
               style={{
-                display: "grid",
+                display:
+                  "grid",
                 gridTemplateColumns:
                   "repeat(auto-fit,minmax(220px,1fr))",
                 gap: 18,
                 marginTop: 20,
               }}
             >
-              {relatedProducts.map((item) => {
-                const itemTitle =
-                  safeText(item.title) ||
-                  safeText(item.name) ||
-                  "Amazon Product";
+              {relatedProducts.map(
+                (item) => {
+                  const itemTitle =
+                    getProductTitle(
+                      item
+                    );
 
-                const itemSlug =
-                  safeText(item.slug) ||
-                  safeText(item.asin) ||
-                  safeText(item.id);
+                  const itemSlug =
+                    safeText(
+                      item.slug
+                    ) ||
+                    safeText(
+                      item.asin
+                    ) ||
+                    safeText(
+                      item.id
+                    );
 
-                const itemImage =
-                  getProductImage(item);
+                  const itemImage =
+                    getProductImage(
+                      item
+                    );
 
-                return (
-                  <Link
-                    key={
-                      item.id ||
-                      itemSlug
-                    }
-                    href={`/product/${encodeURIComponent(
-                      itemSlug
-                    )}`}
-                    style={{
-                      textDecoration: "none",
-                      color: "inherit",
-                    }}
-                  >
-                    <article
+                  return (
+                    <Link
+                      key={
+                        item.id ||
+                        itemSlug
+                      }
+                      href={`/product/${encodeURIComponent(
+                        itemSlug
+                      )}`}
                       style={{
-                        border:
-                          "1px solid #eee",
-                        borderRadius: 12,
-                        padding: 12,
-                        background:
-                          "#fff",
-                        height: "100%",
+                        textDecoration:
+                          "none",
+                        color:
+                          "inherit",
                       }}
                     >
-                      <Image
-                        src={itemImage}
-                        alt={itemTitle}
-                        width={400}
-                        height={300}
-                        loading="lazy"
-                        sizes="(max-width:768px)50vw,220px"
+                      <article
                         style={{
-                          width: "100%",
-                          height: "auto",
-                          objectFit:
-                            "contain",
-                          borderRadius: 8,
-                        }}
-                      />
-
-                      <h3
-                        style={{
-                          fontSize: 17,
-                          lineHeight: 1.4,
-                          marginTop: 12,
+                          border:
+                            "1px solid #eee",
+                          borderRadius:
+                            12,
+                          padding: 12,
+                          background:
+                            "#fff",
+                          height:
+                            "100%",
                         }}
                       >
-                        {itemTitle}
-                      </h3>
 
-                      <p
-                        style={{
-                          color:
-                            "#ff9900",
-                          fontWeight: 700,
-                        }}
-                      >
-                        AI Score:{" "}
-                        {Math.round(
-                          calcScore(item)
+                        <Image
+                          src={
+                            itemImage
+                          }
+                          alt={
+                            itemTitle
+                          }
+                          width={
+                            400
+                          }
+                          height={
+                            300
+                          }
+                          loading="lazy"
+                          sizes="(max-width:768px)50vw,220px"
+                          style={{
+                            width:
+                              "100%",
+                            height:
+                              "auto",
+                            objectFit:
+                              "contain",
+                            borderRadius:
+                              8,
+                          }}
+                        />
+
+                        <h3
+                          style={{
+                            fontSize:
+                              17,
+                            lineHeight:
+                              1.4,
+                            marginTop:
+                              12,
+                          }}
+                        >
+                          {
+                            itemTitle
+                          }
+                        </h3>
+
+                        {getProductPrice(
+                          item
+                        ) >
+                          0 && (
+                          <p
+                            style={{
+                              fontWeight:
+                                700,
+                            }}
+                          >
+                            {
+                              getProductCurrency(
+                                item
+                              )
+                            }{" "}
+                            {
+                              getProductPrice(
+                                item
+                              ).toFixed(
+                                2
+                              )
+                            }
+                          </p>
                         )}
-                      </p>
-                    </article>
-                  </Link>
-                );
-              })}
+
+                        <p
+                          style={{
+                            color:
+                              "#ff9900",
+                            fontWeight:
+                              700,
+                          }}
+                        >
+                          AI Score:{" "}
+                          {Math.round(
+                            calcScore(
+                              item
+                            )
+                          )}
+                        </p>
+
+                      </article>
+                    </Link>
+                  );
+                }
+              )}
             </div>
           </section>
         )}
@@ -845,11 +1105,6 @@ export async function getStaticProps({
       };
     }
 
-    /* -----------------------------------------------
-       IMPORTANT:
-       Direct product lookup
-    ----------------------------------------------- */
-
     const product =
       await findProduct(id);
 
@@ -859,10 +1114,6 @@ export async function getStaticProps({
         revalidate: 300,
       };
     }
-
-    /* -----------------------------------------------
-       Related products
-    ----------------------------------------------- */
 
     const relatedProducts =
       await getRelatedProducts(
